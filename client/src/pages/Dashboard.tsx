@@ -1,15 +1,28 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAuth } from '../hooks/useAuth'
+import { createPost, listPosts } from '../lib/posts'
 
 export default function Dashboard() {
   const { user, signOut } = useAuth()
   const [userMenuOpen, setUserMenuOpen] = useState(false)
+  
+  // Post creation form state
+  const [title, setTitle] = useState('')
+  const [content, setContent] = useState('')
+  const [tags, setTags] = useState('')
+  const [isCreating, setIsCreating] = useState(false)
+  const [createError, setCreateError] = useState('')
+  
+  // Posts feed state
+  const [posts, setPosts] = useState([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [feedError, setFeedError] = useState('')
 
   const handleLogout = async () => {
     await signOut()
   }
 
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'long',
@@ -17,6 +30,50 @@ export default function Dashboard() {
       hour: '2-digit',
       minute: '2-digit'
     })
+  }
+
+  // Load posts on component mount
+  useEffect(() => {
+    loadPosts()
+  }, [])
+
+  const loadPosts = async () => {
+    setIsLoading(true)
+    const { data, error } = await listPosts({ limit: 20 })
+    
+    if (error) {
+      setFeedError(error.message)
+    } else {
+      setPosts(data || [])
+    }
+    
+    setIsLoading(false)
+  }
+
+  const handleCreatePost = async (e) => {
+    e.preventDefault()
+    setIsCreating(true)
+    setCreateError('')
+
+    const tagsArray = tags.trim() ? tags.split(',').map(tag => tag.trim()) : []
+    
+    const { data, error } = await createPost({
+      title: title.trim(),
+      content: content.trim(),
+      tags: tagsArray
+    })
+
+    if (error) {
+      setCreateError(error.message)
+    } else {
+      // Clear form and reload posts
+      setTitle('')
+      setContent('')
+      setTags('')
+      loadPosts()
+    }
+
+    setIsCreating(false)
   }
 
   return (
@@ -29,12 +86,12 @@ export default function Dashboard() {
               <div className="flex-shrink-0">
                 <div className="h-8 w-8 bg-primary-500 rounded-lg flex items-center justify-center">
                   <svg className="h-4 w-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                   </svg>
                 </div>
               </div>
               <div className="ml-4">
-                <h1 className="text-xl font-semibold text-gray-900">Dashboard</h1>
+                <h1 className="text-xl font-semibold text-gray-900">Posts</h1>
               </div>
             </div>
 
@@ -46,7 +103,6 @@ export default function Dashboard() {
                   onClick={() => setUserMenuOpen(!userMenuOpen)}
                   className="flex items-center text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 p-2 hover:bg-gray-100 transition-colors duration-200"
                 >
-                  {/* Profile avatar placeholder */}
                   <div className="h-8 w-8 rounded-full bg-primary-100 flex items-center justify-center">
                     <svg className="h-4 w-4 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
@@ -61,20 +117,6 @@ export default function Dashboard() {
                 {/* Dropdown menu */}
                 {userMenuOpen && (
                   <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-1 ring-1 ring-black ring-opacity-5">
-                    <a href="#" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-200">
-                      <svg className="inline h-4 w-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                      </svg>
-                      Profile
-                    </a>
-                    <a href="#" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-200">
-                      <svg className="inline h-4 w-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                      </svg>
-                      Settings
-                    </a>
-                    <hr className="my-1" />
                     <button
                       onClick={handleLogout}
                       className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-200"
@@ -93,128 +135,130 @@ export default function Dashboard() {
       </nav>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        <div className="px-4 py-6 sm:px-0">
-          {/* Welcome Section */}
-          <div className="bg-white overflow-hidden shadow-sm rounded-lg mb-6">
-            <div className="px-6 py-8">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <div className="h-16 w-16 bg-green-100 rounded-full flex items-center justify-center">
-                    <svg className="h-8 w-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                  </div>
-                </div>
-                <div className="ml-6">
-                  <h2 className="text-2xl font-bold text-gray-900">Welcome to your dashboard!</h2>
-                  <p className="mt-1 text-gray-600">You are successfully authenticated with Supabase.</p>
-                </div>
-              </div>
-            </div>
+      <main className="max-w-4xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+        {/* Create Post Form */}
+        <div className="bg-white shadow-sm rounded-lg mb-6">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <h2 className="text-lg font-medium text-gray-900">Create New Post</h2>
           </div>
+          <form onSubmit={handleCreatePost} className="p-6">
+            <div className="space-y-4">
+              <div>
+                <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
+                  Title
+                </label>
+                <input
+                  id="title"
+                  type="text"
+                  required
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  placeholder="Enter post title"
+                />
+              </div>
 
-          {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div className="bg-white overflow-hidden shadow-sm rounded-lg">
-              <div className="p-6">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0">
-                    <div className="h-10 w-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                      <svg className="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
-                      </svg>
-                    </div>
-                  </div>
-                  <div className="ml-4 w-0 flex-1">
-                    <dl>
-                      <dt className="text-sm font-medium text-gray-500 truncate">Active Users</dt>
-                      <dd className="text-lg font-semibold text-gray-900">2,847</dd>
-                    </dl>
-                  </div>
+              <div>
+                <label htmlFor="content" className="block text-sm font-medium text-gray-700 mb-1">
+                  Content
+                </label>
+                <textarea
+                  id="content"
+                  required
+                  rows={4}
+                  value={content}
+                  onChange={(e) => setContent(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  placeholder="Write your post content..."
+                />
+              </div>
+
+              <div>
+                <label htmlFor="tags" className="block text-sm font-medium text-gray-700 mb-1">
+                  Tags (comma-separated)
+                </label>
+                <input
+                  id="tags"
+                  type="text"
+                  value={tags}
+                  onChange={(e) => setTags(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  placeholder="tag1, tag2, tag3"
+                />
+              </div>
+
+              {createError && (
+                <div className="bg-red-50 border border-red-200 rounded-md p-3" role="alert">
+                  <p className="text-sm text-red-700">{createError}</p>
                 </div>
+              )}
+
+              <div>
+                <button
+                  type="submit"
+                  disabled={isCreating || !title.trim() || !content.trim()}
+                  className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isCreating ? 'Creating...' : 'Create Post'}
+                </button>
               </div>
             </div>
+          </form>
+        </div>
 
-            <div className="bg-white overflow-hidden shadow-sm rounded-lg">
-              <div className="p-6">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0">
-                    <div className="h-10 w-10 bg-green-100 rounded-lg flex items-center justify-center">
-                      <svg className="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                      </svg>
-                    </div>
-                  </div>
-                  <div className="ml-4 w-0 flex-1">
-                    <dl>
-                      <dt className="text-sm font-medium text-gray-500 truncate">Revenue</dt>
-                      <dd className="text-lg font-semibold text-gray-900">$24,890</dd>
-                    </dl>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white overflow-hidden shadow-sm rounded-lg">
-              <div className="p-6">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0">
-                    <div className="h-10 w-10 bg-purple-100 rounded-lg flex items-center justify-center">
-                      <svg className="h-6 w-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                    </div>
-                  </div>
-                  <div className="ml-4 w-0 flex-1">
-                    <dl>
-                      <dt className="text-sm font-medium text-gray-500 truncate">Session Time</dt>
-                      <dd className="text-lg font-semibold text-gray-900">4h 32m</dd>
-                    </dl>
-                  </div>
-                </div>
-              </div>
-            </div>
+        {/* Posts Feed */}
+        <div className="bg-white shadow-sm rounded-lg">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <h2 className="text-lg font-medium text-gray-900">Recent Posts</h2>
           </div>
-
-          {/* Authentication Info Card */}
-          <div className="bg-white overflow-hidden shadow-sm rounded-lg">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h3 className="text-lg font-medium text-gray-900">Authentication Status</h3>
-            </div>
-            <div className="p-6">
-              <dl className="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2">
-                <div>
-                  <dt className="text-sm font-medium text-gray-500">User ID</dt>
-                  <dd className="mt-1 text-sm text-gray-900 font-mono">
-                    {user?.id}
-                  </dd>
+          
+          <div className="divide-y divide-gray-200">
+            {isLoading ? (
+              <div className="p-6 text-center">
+                <div className="inline-flex items-center">
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary-500 mr-3"></div>
+                  <span className="text-gray-600">Loading posts...</span>
                 </div>
-                <div>
-                  <dt className="text-sm font-medium text-gray-500">Email</dt>
-                  <dd className="mt-1 text-sm text-gray-900">
-                    {user?.email}
-                  </dd>
+              </div>
+            ) : feedError ? (
+              <div className="p-6">
+                <div className="bg-red-50 border border-red-200 rounded-md p-3" role="alert">
+                  <p className="text-sm text-red-700">Error loading posts: {feedError}</p>
                 </div>
-                <div>
-                  <dt className="text-sm font-medium text-gray-500">Last Sign In</dt>
-                  <dd className="mt-1 text-sm text-gray-900">
-                    {user?.last_sign_in_at ? formatDate(user.last_sign_in_at) : 'N/A'}
-                  </dd>
+              </div>
+            ) : posts.length === 0 ? (
+              <div className="p-6 text-center text-gray-500">
+                No posts yet. Create your first post above!
+              </div>
+            ) : (
+              posts.map((post) => (
+                <div key={post.id} className="p-6">
+                  <div className="flex justify-between items-start">
+                    <div className="flex-1">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2">{post.title}</h3>
+                      <p className="text-gray-700 mb-3">{post.content}</p>
+                      
+                      {post.tags && post.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-2 mb-3">
+                          {post.tags.map((tag, index) => (
+                            <span
+                              key={index}
+                              className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary-100 text-primary-800"
+                            >
+                              {tag}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                      
+                      <div className="text-sm text-gray-500">
+                        By {post.profiles?.display_name || 'Unknown'} • {formatDate(post.created_at)}
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <dt className="text-sm font-medium text-gray-500">Email Confirmed</dt>
-                  <dd className="mt-1">
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                      <svg className="h-3 w-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
-                      {user?.email_confirmed_at ? 'Confirmed' : 'Pending'}
-                    </span>
-                  </dd>
-                </div>
-              </dl>
-            </div>
+              ))
+            )}
           </div>
         </div>
       </main>
