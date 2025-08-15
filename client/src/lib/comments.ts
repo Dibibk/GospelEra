@@ -1,25 +1,24 @@
 import { supabase } from './supabaseClient'
 
-interface CreatePostData {
-  title: string
+interface CreateCommentData {
+  postId: number
   content: string
-  tags?: string[]
 }
 
-interface ListPostsOptions {
+interface ListCommentsOptions {
+  postId: number
   limit?: number
   fromId?: number
 }
 
 /**
- * Creates a new post with the current user as author
- * @param {Object} postData - The post data
- * @param {string} postData.title - Post title
- * @param {string} postData.content - Post content
- * @param {string[]} postData.tags - Array of tags (optional, defaults to empty array)
+ * Creates a new comment on a post with the current user as author
+ * @param {Object} commentData - The comment data
+ * @param {number} commentData.postId - ID of the post to comment on
+ * @param {string} commentData.content - Comment content
  * @returns {Promise<{data: Object|null, error: Error|null}>}
  */
-export async function createPost({ title, content, tags = [] }: CreatePostData) {
+export async function createComment({ postId, content }: CreateCommentData) {
   try {
     // Get current user
     const { data: { user }, error: userError } = await supabase.auth.getUser()
@@ -29,23 +28,22 @@ export async function createPost({ title, content, tags = [] }: CreatePostData) 
     }
     
     if (!user) {
-      throw new Error('User must be authenticated to create posts')
+      throw new Error('User must be authenticated to create comments')
     }
 
-    // Insert the post
+    // Insert the comment
     const { data, error } = await supabase
-      .from('posts')
+      .from('comments')
       .insert({
-        title,
+        post_id: postId,
         content,
-        tags,
         author: user.id
       })
       .select()
       .single()
 
     if (error) {
-      throw new Error(`Failed to create post: ${error.message}`)
+      throw new Error(`Failed to create comment: ${error.message}`)
     }
 
     return { data, error: null }
@@ -55,33 +53,34 @@ export async function createPost({ title, content, tags = [] }: CreatePostData) 
 }
 
 /**
- * Lists recent posts with pagination support
+ * Lists comments for a post with pagination support (newest first)
  * @param {Object} options - Query options
- * @param {number} options.limit - Number of posts to return (default: 20)
+ * @param {number} options.postId - Post ID to get comments for
+ * @param {number} options.limit - Number of comments to return (default: 20)
  * @param {number} options.fromId - ID to start pagination from (optional)
  * @returns {Promise<{data: Array|null, error: Error|null}>}
  */
-export async function listPosts({ limit = 20, fromId }: ListPostsOptions = {}) {
+export async function listComments({ postId, limit = 20, fromId }: ListCommentsOptions) {
   try {
     let query = supabase
-      .from('posts')
+      .from('comments')
       .select(`
         id,
-        title,
+        post_id,
         content,
-        tags,
         created_at,
         author
       `)
+      .eq('post_id', postId)
       .eq('is_deleted', false)
       .order('created_at', { ascending: false })
       .limit(limit)
 
     // Add keyset pagination if fromId is provided
     if (fromId) {
-      // Get the created_at timestamp of the fromId post for keyset pagination
-      const { data: fromPost, error: fromError } = await supabase
-        .from('posts')
+      // Get the created_at timestamp of the fromId comment for keyset pagination
+      const { data: fromComment, error: fromError } = await supabase
+        .from('comments')
         .select('created_at')
         .eq('id', fromId)
         .single()
@@ -90,15 +89,15 @@ export async function listPosts({ limit = 20, fromId }: ListPostsOptions = {}) {
         throw new Error(`Failed to get pagination reference: ${fromError.message}`)
       }
 
-      if (fromPost) {
-        query = query.lt('created_at', fromPost.created_at)
+      if (fromComment) {
+        query = query.lt('created_at', fromComment.created_at)
       }
     }
 
     const { data, error } = await query
 
     if (error) {
-      throw new Error(`Failed to fetch posts: ${error.message}`)
+      throw new Error(`Failed to fetch comments: ${error.message}`)
     }
 
     return { data, error: null }
@@ -108,12 +107,12 @@ export async function listPosts({ limit = 20, fromId }: ListPostsOptions = {}) {
 }
 
 /**
- * Soft deletes a post by setting is_deleted=true
- * Only the author can delete their own posts
- * @param {number} id - Post ID to delete
+ * Soft deletes a comment by setting is_deleted=true
+ * Only the author can delete their own comments
+ * @param {number} id - Comment ID to delete
  * @returns {Promise<{data: Object|null, error: Error|null}>}
  */
-export async function softDeletePost(id: number) {
+export async function softDeleteComment(id: number) {
   try {
     // Get current user
     const { data: { user }, error: userError } = await supabase.auth.getUser()
@@ -123,39 +122,39 @@ export async function softDeletePost(id: number) {
     }
     
     if (!user) {
-      throw new Error('User must be authenticated to delete posts')
+      throw new Error('User must be authenticated to delete comments')
     }
 
-    // First check if the post exists and the user is the author
-    const { data: post, error: fetchError } = await supabase
-      .from('posts')
+    // First check if the comment exists and the user is the author
+    const { data: comment, error: fetchError } = await supabase
+      .from('comments')
       .select('id, author')
       .eq('id', id)
       .eq('is_deleted', false)
       .single()
 
     if (fetchError) {
-      throw new Error(`Failed to find post: ${fetchError.message}`)
+      throw new Error(`Failed to find comment: ${fetchError.message}`)
     }
 
-    if (!post) {
-      throw new Error('Post not found or already deleted')
+    if (!comment) {
+      throw new Error('Comment not found or already deleted')
     }
 
-    if (post.author !== user.id) {
-      throw new Error('Only the author can delete this post')
+    if (comment.author !== user.id) {
+      throw new Error('Only the author can delete this comment')
     }
 
     // Perform the soft delete
     const { data, error } = await supabase
-      .from('posts')
+      .from('comments')
       .update({ is_deleted: true })
       .eq('id', id)
       .select()
       .single()
 
     if (error) {
-      throw new Error(`Failed to delete post: ${error.message}`)
+      throw new Error(`Failed to delete comment: ${error.message}`)
     }
 
     return { data, error: null }
