@@ -155,59 +155,49 @@ export default function Dashboard() {
       {/* Main Content */}
       <main className="max-w-4xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
         {/* Verse of the Day */}
-        <div className="bg-gradient-to-br from-primary-50 to-blue-50 shadow-lg rounded-xl mb-8 border border-primary-100 overflow-hidden">
-          <div className="relative">
-            {/* Decorative background pattern */}
-            <div className="absolute inset-0 opacity-5">
-              <svg className="w-full h-full" viewBox="0 0 100 100" fill="none">
-                <pattern id="cross-pattern" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
-                  <path d="M10 0v20M0 10h20" stroke="currentColor" strokeWidth="0.5"/>
-                </pattern>
-                <rect width="100" height="100" fill="url(#cross-pattern)" />
-              </svg>
+        <div className="bg-white border border-gray-200 shadow-sm rounded-lg mb-8">
+          <div className="px-6 py-5 border-b border-gray-100">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-gray-900 flex items-center">
+                <svg className="h-5 w-5 text-gray-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                </svg>
+                Verse of the Day
+              </h2>
+              <span className="text-sm text-gray-500 font-medium">
+                {new Date().toLocaleDateString('en-US', { 
+                  weekday: 'long',
+                  month: 'long', 
+                  day: 'numeric' 
+                })}
+              </span>
             </div>
-            
-            <div className="relative px-8 py-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-semibold text-gray-800 flex items-center">
-                  <div className="bg-primary-500 p-2 rounded-full mr-3 shadow-sm">
-                    <svg className="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                    </svg>
-                  </div>
-                  Verse of the Day
-                </h2>
-                <div className="text-xs text-primary-600 bg-primary-100 px-2 py-1 rounded-full font-medium">
-                  {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+          </div>
+          
+          <div className="px-6 py-6">
+            {verseLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="animate-spin rounded-full h-5 w-5 border-2 border-gray-300 border-t-gray-600 mr-3"></div>
+                <span className="text-gray-600">Loading verse...</span>
+              </div>
+            ) : dailyVerse ? (
+              <div className="space-y-4">
+                <blockquote className="border-l-4 border-gray-300 pl-4">
+                  <p className="text-lg font-normal text-gray-800 leading-relaxed">
+                    "{dailyVerse.text}"
+                  </p>
+                </blockquote>
+                <div className="flex justify-end">
+                  <cite className="text-gray-600 font-medium not-italic">
+                    — {dailyVerse.reference}
+                  </cite>
                 </div>
               </div>
-              
-              {verseLoading ? (
-                <div className="flex items-center justify-center py-8 text-gray-600">
-                  <div className="animate-spin rounded-full h-6 w-6 border-2 border-primary-500 border-t-transparent mr-3"></div>
-                  <span className="text-sm font-medium">Loading today's verse...</span>
-                </div>
-              ) : dailyVerse ? (
-                <div className="space-y-4">
-                  <blockquote className="relative">
-                    <div className="absolute -top-2 -left-2 text-4xl text-primary-200 font-serif leading-none">"</div>
-                    <div className="absolute -bottom-6 -right-2 text-4xl text-primary-200 font-serif leading-none">"</div>
-                    <p className="text-lg md:text-xl font-medium text-gray-800 leading-relaxed pl-4 pr-4 relative z-10">
-                      {dailyVerse.text}
-                    </p>
-                  </blockquote>
-                  <div className="text-right">
-                    <p className="inline-block text-primary-700 font-semibold text-sm bg-white px-3 py-1 rounded-full shadow-sm border border-primary-200">
-                      {dailyVerse.reference}
-                    </p>
-                  </div>
-                </div>
-              ) : (
-                <div className="text-center py-6">
-                  <p className="text-gray-500 italic">Unable to load today's verse</p>
-                </div>
-              )}
-            </div>
+            ) : (
+              <div className="text-center py-6">
+                <p className="text-gray-500">Unable to load verse</p>
+              </div>
+            )}
           </div>
         </div>
         {/* Create Post Form */}
