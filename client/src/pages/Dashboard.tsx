@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../hooks/useAuth'
 import { createPost, listPosts } from '../lib/posts'
+import { getDailyVerse } from '../lib/scripture'
 
 export default function Dashboard() {
   const { user, signOut } = useAuth()
@@ -17,6 +18,10 @@ export default function Dashboard() {
   const [posts, setPosts] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [feedError, setFeedError] = useState('')
+  
+  // Daily verse state
+  const [dailyVerse, setDailyVerse] = useState<{reference: string, text: string} | null>(null)
+  const [verseLoading, setVerseLoading] = useState(true)
 
   const handleLogout = async () => {
     await signOut()
@@ -32,10 +37,23 @@ export default function Dashboard() {
     })
   }
 
-  // Load posts on component mount
+  // Load posts and daily verse on component mount
   useEffect(() => {
     loadPosts()
+    loadDailyVerse()
   }, [])
+
+  const loadDailyVerse = async () => {
+    try {
+      setVerseLoading(true)
+      const verse = await getDailyVerse()
+      setDailyVerse(verse)
+    } catch (error) {
+      console.error('Failed to load daily verse:', error)
+    } finally {
+      setVerseLoading(false)
+    }
+  }
 
   const loadPosts = async () => {
     setIsLoading(true)
@@ -136,6 +154,30 @@ export default function Dashboard() {
 
       {/* Main Content */}
       <main className="max-w-4xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+        {/* Verse of the Day */}
+        <div className="bg-white shadow-sm rounded-lg mb-6 border-l-4 border-primary-500">
+          <div className="px-6 py-4">
+            <h2 className="text-lg font-medium text-gray-900 mb-3 flex items-center">
+              <svg className="h-5 w-5 text-primary-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+              </svg>
+              Verse of the Day
+            </h2>
+            {verseLoading ? (
+              <div className="flex items-center text-gray-500">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-500 mr-3"></div>
+                Loading verse...
+              </div>
+            ) : dailyVerse ? (
+              <div className="text-gray-700">
+                <p className="text-lg italic leading-relaxed mb-2">"{dailyVerse.text}"</p>
+                <p className="text-primary-600 font-medium">— {dailyVerse.reference}</p>
+              </div>
+            ) : (
+              <p className="text-gray-500 italic">Unable to load daily verse</p>
+            )}
+          </div>
+        </div>
         {/* Create Post Form */}
         <div className="bg-white shadow-sm rounded-lg mb-6">
           <div className="px-6 py-4 border-b border-gray-200">
