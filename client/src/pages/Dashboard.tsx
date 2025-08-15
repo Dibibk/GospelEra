@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../hooks/useAuth'
 import { createPost, listPosts, softDeletePost } from '../lib/posts'
+import { createComment, listComments, softDeleteComment } from '../lib/comments'
+import { createReport } from '../lib/reports'
 import { getDailyVerse } from '../lib/scripture'
 
 export default function Dashboard() {
@@ -25,6 +27,22 @@ export default function Dashboard() {
   
   // Delete post state
   const [deletingPostId, setDeletingPostId] = useState<number | null>(null)
+  
+  // Comment states
+  const [commentForms, setCommentForms] = useState<{[postId: number]: boolean}>({})
+  const [commentTexts, setCommentTexts] = useState<{[postId: number]: string}>({})
+  const [postComments, setPostComments] = useState<{[postId: number]: any[]}>({})
+  const [commentLoading, setCommentLoading] = useState<{[postId: number]: boolean}>({})
+  const [loadingMoreComments, setLoadingMoreComments] = useState<{[postId: number]: boolean}>({})
+  const [submittingComment, setSubmittingComment] = useState<{[postId: number]: boolean}>({})
+  const [deletingCommentId, setDeletingCommentId] = useState<number | null>(null)
+  
+  // Report modal states
+  const [reportModal, setReportModal] = useState<{isOpen: boolean, targetType: 'post'|'comment', targetId: string, reason: string}>({isOpen: false, targetType: 'post', targetId: '', reason: ''})
+  const [submittingReport, setSubmittingReport] = useState(false)
+  
+  // Toast state
+  const [toast, setToast] = useState<{show: boolean, message: string, type: 'success'|'error'}>({show: false, message: '', type: 'success'})
 
   const handleLogout = async () => {
     await signOut()
@@ -113,6 +131,118 @@ export default function Dashboard() {
     }
     
     setDeletingPostId(null)
+  }
+
+  const toggleCommentForm = (postId: number) => {
+    setCommentForms(prev => ({...prev, [postId]: !prev[postId]}))
+    
+    // Load comments when opening the form for the first time
+    if (!commentForms[postId] && !postComments[postId]) {
+      loadComments(postId)
+    }
+  }
+
+  const loadComments = async (postId: number, fromId?: number) => {
+    const loadingKey = fromId ? 'loadingMoreComments' : 'commentLoading'
+    
+    if (fromId) {
+      setLoadingMoreComments(prev => ({...prev, [postId]: true}))
+    } else {
+      setCommentLoading(prev => ({...prev, [postId]: true}))
+    }
+    
+    const { data, error } = await listComments({ postId, limit: 3, fromId })
+    
+    if (error) {
+      showToast(`Failed to load comments: ${(error as any).message}`, 'error')
+    } else {
+      setPostComments(prev => ({
+        ...prev, 
+        [postId]: fromId ? [...(prev[postId] || []), ...(data || [])] : (data || [])
+      }))
+    }
+    
+    if (fromId) {
+      setLoadingMoreComments(prev => ({...prev, [postId]: false}))
+    } else {
+      setCommentLoading(prev => ({...prev, [postId]: false}))
+    }
+  }
+
+  const handleCreateComment = async (postId: number) => {
+    const content = commentTexts[postId]?.trim()
+    if (!content) return
+    
+    setSubmittingComment(prev => ({...prev, [postId]: true}))
+    
+    const { data, error } = await createComment({ postId, content })
+    
+    if (error) {
+      showToast(`Failed to create comment: ${(error as any).message}`, 'error')
+    } else {
+      // Clear the input and add the comment to the list
+      setCommentTexts(prev => ({...prev, [postId]: ''}))
+      setPostComments(prev => ({
+        ...prev,
+        [postId]: [data, ...(prev[postId] || [])]
+      }))
+    }
+    
+    setSubmittingComment(prev => ({...prev, [postId]: false}))
+  }
+
+  const handleDeleteComment = async (commentId: number, postId: number) => {
+    if (!confirm('Are you sure you want to delete this comment?')) {
+      return
+    }
+    
+    setDeletingCommentId(commentId)
+    
+    const { error } = await softDeleteComment(commentId)
+    
+    if (error) {
+      showToast(`Failed to delete comment: ${(error as any).message}`, 'error')
+    } else {
+      // Remove comment from the list
+      setPostComments(prev => ({
+        ...prev,
+        [postId]: (prev[postId] || []).filter(comment => comment.id !== commentId)
+      }))
+    }
+    
+    setDeletingCommentId(null)
+  }
+
+  const openReportModal = (targetType: 'post'|'comment', targetId: string) => {
+    setReportModal({isOpen: true, targetType, targetId, reason: ''})
+  }
+
+  const closeReportModal = () => {
+    setReportModal({isOpen: false, targetType: 'post', targetId: '', reason: ''})
+  }
+
+  const handleSubmitReport = async () => {
+    setSubmittingReport(true)
+    
+    const { error } = await createReport({
+      targetType: reportModal.targetType,
+      targetId: reportModal.targetId,
+      reason: reportModal.reason
+    })
+    
+    if (error) {
+      showToast(`Failed to submit report: ${(error as any).message}`, 'error')
+    } else {
+      showToast('Report submitted successfully. Thank you for helping keep our community safe.', 'success')
+      closeReportModal()
+    }
+    
+    setSubmittingReport(false)
+  }
+
+  const showToast = (message: string, type: 'success'|'error') => {
+    setToast({show: true, message, type})
+    setTimeout(() => setToast({show: false, message: '', type: 'success'}), 5000)
   }
 
   return (
@@ -318,7 +448,7 @@ export default function Dashboard() {
             ) : (
               posts.map((post) => (
                 <div key={post.id} className="p-6">
-                  <div className="flex justify-between items-start">
+                  <div className="flex justify-between items-start mb-4">
                     <div className="flex-1">
                       <h3 className="text-lg font-semibold text-gray-900 mb-2">{post.title}</h3>
                       <p className="text-gray-700 mb-3">{post.content}</p>
@@ -336,42 +466,205 @@ export default function Dashboard() {
                         </div>
                       )}
                       
-                      <div className="text-sm text-gray-500">
+                      <div className="text-sm text-gray-500 mb-3">
                         By {post.profiles?.display_name || 'Unknown'} • {formatDate(post.created_at)}
                       </div>
                     </div>
+                  </div>
+
+                  {/* Action buttons */}
+                  <div className="flex items-center space-x-4 mb-4">
+                    <button
+                      onClick={() => toggleCommentForm(post.id)}
+                      className="inline-flex items-center text-sm text-gray-500 hover:text-primary-600 transition-colors duration-200"
+                    >
+                      <svg className="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                      </svg>
+                      Comment
+                    </button>
                     
-                    {/* Delete button - only show for posts authored by current user */}
+                    <button
+                      onClick={() => openReportModal('post', post.id.toString())}
+                      className="inline-flex items-center text-sm text-gray-500 hover:text-red-600 transition-colors duration-200"
+                    >
+                      <svg className="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.35 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                      </svg>
+                      Report
+                    </button>
+                    
                     {post.author === user?.id && (
-                      <div className="ml-4">
-                        <button
-                          onClick={() => handleDeletePost(post.id)}
-                          disabled={deletingPostId === post.id}
-                          className="inline-flex items-center px-3 py-1.5 border border-red-300 text-sm font-medium rounded-md text-red-700 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
-                        >
-                          {deletingPostId === post.id ? (
-                            <>
-                              <div className="animate-spin rounded-full h-3 w-3 border border-red-300 border-t-red-600 mr-2"></div>
-                              Deleting...
-                            </>
-                          ) : (
-                            <>
-                              <svg className="h-3 w-3 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                              </svg>
-                              Delete
-                            </>
-                          )}
-                        </button>
-                      </div>
+                      <button
+                        onClick={() => handleDeletePost(post.id)}
+                        disabled={deletingPostId === post.id}
+                        className="inline-flex items-center text-sm text-gray-500 hover:text-red-600 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {deletingPostId === post.id ? (
+                          <>
+                            <div className="animate-spin rounded-full h-3 w-3 border border-gray-400 border-t-gray-600 mr-1"></div>
+                            Deleting...
+                          </>
+                        ) : (
+                          <>
+                            <svg className="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                            Delete
+                          </>
+                        )}
+                      </button>
                     )}
                   </div>
+
+                  {/* Comment form */}
+                  {commentForms[post.id] && (
+                    <div className="border-t pt-4 mb-4">
+                      <div className="flex space-x-3">
+                        <div className="flex-1">
+                          <textarea
+                            value={commentTexts[post.id] || ''}
+                            onChange={(e) => setCommentTexts(prev => ({...prev, [post.id]: e.target.value}))}
+                            placeholder="Write a comment..."
+                            rows={2}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 resize-none"
+                          />
+                        </div>
+                        <button
+                          onClick={() => handleCreateComment(post.id)}
+                          disabled={submittingComment[post.id] || !commentTexts[post.id]?.trim()}
+                          className="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+                        >
+                          {submittingComment[post.id] ? 'Posting...' : 'Post'}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Comments section */}
+                  {commentForms[post.id] && (
+                    <div className="border-t pt-4">
+                      {commentLoading[post.id] ? (
+                        <div className="flex items-center justify-center py-4">
+                          <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary-300 border-t-primary-600 mr-2"></div>
+                          <span className="text-gray-500">Loading comments...</span>
+                        </div>
+                      ) : postComments[post.id]?.length === 0 ? (
+                        <div className="text-center py-4 text-gray-500">
+                          No comments yet. Be the first to comment!
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          {(postComments[post.id] || []).map((comment) => (
+                            <div key={comment.id} className="bg-gray-50 rounded-lg p-3">
+                              <div className="flex justify-between items-start">
+                                <div className="flex-1">
+                                  <p className="text-gray-700 mb-2">{comment.content}</p>
+                                  <div className="text-xs text-gray-500">
+                                    By {comment.profiles?.display_name || 'Unknown'} • {formatDate(comment.created_at)}
+                                  </div>
+                                </div>
+                                <div className="flex items-center space-x-2 ml-3">
+                                  <button
+                                    onClick={() => openReportModal('comment', comment.id.toString())}
+                                    className="text-xs text-gray-400 hover:text-red-500 transition-colors duration-200"
+                                  >
+                                    Report
+                                  </button>
+                                  {comment.author === user?.id && (
+                                    <button
+                                      onClick={() => handleDeleteComment(comment.id, post.id)}
+                                      disabled={deletingCommentId === comment.id}
+                                      className="text-xs text-gray-400 hover:text-red-500 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                      {deletingCommentId === comment.id ? 'Deleting...' : 'Delete'}
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                          
+                          {/* Load more comments button */}
+                          {postComments[post.id]?.length >= 3 && (
+                            <div className="text-center pt-2">
+                              <button
+                                onClick={() => loadComments(post.id, postComments[post.id][postComments[post.id].length - 1].id)}
+                                disabled={loadingMoreComments[post.id]}
+                                className="text-sm text-primary-600 hover:text-primary-700 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                              >
+                                {loadingMoreComments[post.id] ? 'Loading...' : 'Load more comments'}
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               ))
             )}
           </div>
         </div>
       </main>
+
+      {/* Report Modal */}
+      {reportModal.isOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <h3 className="text-lg font-medium text-gray-900 mb-4">
+              Report {reportModal.targetType === 'post' ? 'Post' : 'Comment'}
+            </h3>
+            <div className="mb-4">
+              <label htmlFor="report-reason" className="block text-sm font-medium text-gray-700 mb-2">
+                Reason for reporting (optional)
+              </label>
+              <textarea
+                id="report-reason"
+                value={reportModal.reason}
+                onChange={(e) => setReportModal(prev => ({...prev, reason: e.target.value}))}
+                rows={3}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                placeholder="Please describe why you're reporting this content..."
+              />
+            </div>
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={closeReportModal}
+                disabled={submittingReport}
+                className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSubmitReport}
+                disabled={submittingReport}
+                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+              >
+                {submittingReport ? 'Submitting...' : 'Submit Report'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Toast Notification */}
+      {toast.show && (
+        <div className={`fixed bottom-4 right-4 p-4 rounded-md shadow-lg z-50 ${
+          toast.type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+        }`}>
+          <div className="flex items-center">
+            <svg className="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              {toast.type === 'success' ? (
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              ) : (
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              )}
+            </svg>
+            <span className="text-sm">{toast.message}</span>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

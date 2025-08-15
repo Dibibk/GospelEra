@@ -7,7 +7,7 @@
  * Uses their random verse endpoint to provide variety each day
  * @returns {Promise<{reference: string, text: string}>}
  */
-export async function getDailyVerse() {
+export async function getDailyVerse(): Promise<{reference: string, text: string}> {
   try {
     // Use Bible-API.com for free scripture access
     const response = await fetch('https://bible-api.com/random')
