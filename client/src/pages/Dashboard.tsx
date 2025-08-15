@@ -14,7 +14,7 @@ export default function Dashboard() {
   const [createError, setCreateError] = useState('')
   
   // Posts feed state
-  const [posts, setPosts] = useState([])
+  const [posts, setPosts] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [feedError, setFeedError] = useState('')
 
@@ -22,7 +22,7 @@ export default function Dashboard() {
     await signOut()
   }
 
-  const formatDate = (dateString) => {
+  const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'long',
@@ -50,7 +50,7 @@ export default function Dashboard() {
     setIsLoading(false)
   }
 
-  const handleCreatePost = async (e) => {
+  const handleCreatePost = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsCreating(true)
     setCreateError('')
@@ -240,7 +240,7 @@ export default function Dashboard() {
                       
                       {post.tags && post.tags.length > 0 && (
                         <div className="flex flex-wrap gap-2 mb-3">
-                          {post.tags.map((tag, index) => (
+                          {post.tags.map((tag: string, index: number) => (
                             <span
                               key={index}
                               className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary-100 text-primary-800"
