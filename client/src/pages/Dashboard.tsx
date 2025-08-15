@@ -155,16 +155,16 @@ export default function Dashboard() {
       {/* Main Content */}
       <main className="max-w-4xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
         {/* Verse of the Day */}
-        <div className="bg-primary-600 shadow-sm rounded-lg mb-8">
-          <div className="px-6 py-5 border-b border-primary-500">
+        <div className="bg-primary-50 border border-primary-200 shadow-sm rounded-lg mb-8">
+          <div className="px-6 py-5 border-b border-primary-200">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-white flex items-center">
-                <svg className="h-5 w-5 text-primary-100 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <h2 className="text-lg font-semibold text-primary-800 flex items-center">
+                <svg className="h-5 w-5 text-primary-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                 </svg>
                 Verse of the Day
               </h2>
-              <span className="text-sm text-primary-100 font-medium">
+              <span className="text-sm text-primary-600 font-medium">
                 {new Date().toLocaleDateString('en-US', { 
                   weekday: 'long',
                   month: 'long', 
@@ -177,25 +177,25 @@ export default function Dashboard() {
           <div className="px-6 py-6">
             {verseLoading ? (
               <div className="flex items-center justify-center py-8">
-                <div className="animate-spin rounded-full h-5 w-5 border-2 border-primary-200 border-t-white mr-3"></div>
-                <span className="text-primary-100">Loading verse...</span>
+                <div className="animate-spin rounded-full h-5 w-5 border-2 border-primary-300 border-t-primary-600 mr-3"></div>
+                <span className="text-primary-700">Loading verse...</span>
               </div>
             ) : dailyVerse ? (
               <div className="space-y-4">
                 <blockquote className="border-l-4 border-primary-400 pl-4">
-                  <p className="text-lg font-normal text-white leading-relaxed">
+                  <p className="text-lg font-normal text-primary-800 leading-relaxed">
                     "{dailyVerse.text}"
                   </p>
                 </blockquote>
                 <div className="flex justify-end">
-                  <cite className="text-primary-100 font-medium not-italic">
+                  <cite className="text-primary-600 font-medium not-italic">
                     — {dailyVerse.reference}
                   </cite>
                 </div>
               </div>
             ) : (
               <div className="text-center py-6">
-                <p className="text-primary-200">Unable to load verse</p>
+                <p className="text-primary-500">Unable to load verse</p>
               </div>
             )}
           </div>
