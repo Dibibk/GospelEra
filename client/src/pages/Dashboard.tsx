@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../hooks/useAuth'
-import { createPost, listPosts } from '../lib/posts'
+import { createPost, listPosts, softDeletePost } from '../lib/posts'
 import { getDailyVerse } from '../lib/scripture'
 
 export default function Dashboard() {
@@ -22,6 +22,9 @@ export default function Dashboard() {
   // Daily verse state
   const [dailyVerse, setDailyVerse] = useState<{reference: string, text: string} | null>(null)
   const [verseLoading, setVerseLoading] = useState(true)
+  
+  // Delete post state
+  const [deletingPostId, setDeletingPostId] = useState<number | null>(null)
 
   const handleLogout = async () => {
     await signOut()
@@ -92,6 +95,24 @@ export default function Dashboard() {
     }
 
     setIsCreating(false)
+  }
+
+  const handleDeletePost = async (postId: number) => {
+    if (!confirm('Are you sure you want to delete this post? This action cannot be undone.')) {
+      return
+    }
+    
+    setDeletingPostId(postId)
+    const { error } = await softDeletePost(postId)
+    
+    if (error) {
+      alert(`Failed to delete post: ${error.message}`)
+    } else {
+      // Remove the deleted post from the current posts array
+      setPosts(posts.filter(post => post.id !== postId))
+    }
+    
+    setDeletingPostId(null)
   }
 
   return (
@@ -319,6 +340,31 @@ export default function Dashboard() {
                         By {post.profiles?.display_name || 'Unknown'} • {formatDate(post.created_at)}
                       </div>
                     </div>
+                    
+                    {/* Delete button - only show for posts authored by current user */}
+                    {post.author === user?.id && (
+                      <div className="ml-4">
+                        <button
+                          onClick={() => handleDeletePost(post.id)}
+                          disabled={deletingPostId === post.id}
+                          className="inline-flex items-center px-3 py-1.5 border border-red-300 text-sm font-medium rounded-md text-red-700 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+                        >
+                          {deletingPostId === post.id ? (
+                            <>
+                              <div className="animate-spin rounded-full h-3 w-3 border border-red-300 border-t-red-600 mr-2"></div>
+                              Deleting...
+                            </>
+                          ) : (
+                            <>
+                              <svg className="h-3 w-3 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
+                              Delete
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
               ))
