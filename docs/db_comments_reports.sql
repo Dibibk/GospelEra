@@ -58,28 +58,6 @@ create policy "Authors can delete own comments"
   to authenticated
   using (auth.uid() = author);
 
--- Admins can update any comment
-create policy "Admins can update all comments"
-  on public.comments for update
-  to authenticated
-  using (
-    exists (
-      select 1 from public.profiles
-      where id = auth.uid() and role = 'admin'
-    )
-  );
-
--- Admins can delete any comment
-create policy "Admins can delete all comments"
-  on public.comments for delete
-  to authenticated
-  using (
-    exists (
-      select 1 from public.profiles
-      where id = auth.uid() and role = 'admin'
-    )
-  );
-
 -- REPORTS RLS POLICIES
 
 -- Authenticated users can insert reports
@@ -93,28 +71,6 @@ create policy "Reporters can view own reports"
   on public.reports for select
   to authenticated
   using (auth.uid() = reporter);
-
--- Admins can select all reports
-create policy "Admins can view all reports"
-  on public.reports for select
-  to authenticated
-  using (
-    exists (
-      select 1 from public.profiles
-      where id = auth.uid() and role = 'admin'
-    )
-  );
-
--- Admins can update all reports
-create policy "Admins can update all reports"
-  on public.reports for update
-  to authenticated
-  using (
-    exists (
-      select 1 from public.profiles
-      where id = auth.uid() and role = 'admin'
-    )
-  );
 
 -- CREATE INDEXES
 
