@@ -1,5 +1,16 @@
 import { supabase } from './supabaseClient'
 
+interface CreatePostData {
+  title: string
+  content: string
+  tags?: string[]
+}
+
+interface ListPostsOptions {
+  limit?: number
+  fromId?: number
+}
+
 /**
  * Creates a new post with the current user as author
  * @param {Object} postData - The post data
@@ -8,7 +19,7 @@ import { supabase } from './supabaseClient'
  * @param {string[]} postData.tags - Array of tags (optional, defaults to empty array)
  * @returns {Promise<{data: Object|null, error: Error|null}>}
  */
-export async function createPost({ title, content, tags = [] }) {
+export async function createPost({ title, content, tags = [] }: CreatePostData) {
   try {
     // Get current user
     const { data: { user }, error: userError } = await supabase.auth.getUser()
@@ -50,7 +61,7 @@ export async function createPost({ title, content, tags = [] }) {
  * @param {number} options.fromId - ID to start pagination from (optional)
  * @returns {Promise<{data: Array|null, error: Error|null}>}
  */
-export async function listPosts({ limit = 20, fromId } = {}) {
+export async function listPosts({ limit = 20, fromId }: ListPostsOptions = {}) {
   try {
     let query = supabase
       .from('posts')
@@ -60,7 +71,11 @@ export async function listPosts({ limit = 20, fromId } = {}) {
         content,
         tags,
         created_at,
-        author
+        author,
+        profiles!posts_author_fkey (
+          id,
+          display_name
+        )
       `)
       .eq('is_deleted', false)
       .order('created_at', { ascending: false })
