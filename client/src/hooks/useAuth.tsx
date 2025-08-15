@@ -60,27 +60,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     supabase.auth.getSession().then(async ({ data: { session } }: any) => {
       setSession(session)
       setUser(session?.user ?? null)
-      
-      // Ensure user has a profile on initial load
-      if (session?.user) {
-        await ensureUserProfile(session.user)
-      }
-      
       setLoading(false)
     })
 
     // Listen for auth changes
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event: any, session: Session | null) => {
+    } = supabase.auth.onAuthStateChange((_event: any, session: Session | null) => {
       setSession(session)
       setUser(session?.user ?? null)
-      
-      // Ensure user has a profile when they log in
-      if (session?.user) {
-        await ensureUserProfile(session.user)
-      }
-      
       setLoading(false)
     })
 
