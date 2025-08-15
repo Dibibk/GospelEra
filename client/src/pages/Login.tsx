@@ -3,13 +3,15 @@ import { Navigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 
 export default function Login() {
-  const { user, signIn } = useAuth()
+  const { user, signIn, signUp } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [rememberMe, setRememberMe] = useState(false)
+  const [isSignUp, setIsSignUp] = useState(false)
 
   // Redirect if already authenticated
   if (user) {
@@ -20,11 +22,16 @@ export default function Login() {
     e.preventDefault()
     setLoading(true)
     setError('')
+    setSuccess('')
 
-    const { error } = await signIn(email, password)
+    const { error } = isSignUp 
+      ? await signUp(email, password)
+      : await signIn(email, password)
     
     if (error) {
       setError(error.message)
+    } else if (isSignUp) {
+      setSuccess('Success! Please check your email to confirm your account.')
     }
     
     setLoading(false)
@@ -39,8 +46,12 @@ export default function Login() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
             </svg>
           </div>
-          <h2 className="text-3xl font-bold text-gray-900 mb-2">Welcome back</h2>
-          <p className="text-gray-600">Sign in to your account to continue</p>
+          <h2 className="text-3xl font-bold text-gray-900 mb-2">
+            {isSignUp ? 'Create account' : 'Welcome back'}
+          </h2>
+          <p className="text-gray-600">
+            {isSignUp ? 'Sign up to get started' : 'Sign in to your account to continue'}
+          </p>
         </div>
 
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
@@ -129,6 +140,19 @@ export default function Login() {
             </div>
           )}
 
+          {success && (
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+              <div className="flex">
+                <svg className="h-5 w-5 text-green-400 mr-3 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <div className="text-sm text-green-700">
+                  {success}
+                </div>
+              </div>
+            </div>
+          )}
+
           <div>
             <button
               type="submit"
@@ -140,16 +164,31 @@ export default function Login() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
                 </svg>
               </span>
-              <span>{loading ? 'Signing in...' : 'Sign in'}</span>
+              <span>
+                {loading 
+                  ? (isSignUp ? 'Creating account...' : 'Signing in...') 
+                  : (isSignUp ? 'Create account' : 'Sign in')
+                }
+              </span>
             </button>
           </div>
 
           <div className="text-center">
             <p className="text-sm text-gray-600">
-              Don't have an account?{' '}
-              <a href="#" className="font-medium text-primary-600 hover:text-primary-500 transition-colors duration-200">
-                Sign up here
-              </a>
+              {isSignUp ? 'Already have an account?' : "Don't have an account?"}{' '}
+              <button 
+                type="button"
+                onClick={() => {
+                  setIsSignUp(!isSignUp)
+                  setError('')
+                  setSuccess('')
+                  setEmail('')
+                  setPassword('')
+                }}
+                className="font-medium text-primary-600 hover:text-primary-500 transition-colors duration-200 underline"
+              >
+                {isSignUp ? 'Sign in here' : 'Sign up here'}
+              </button>
             </p>
           </div>
         </form>
