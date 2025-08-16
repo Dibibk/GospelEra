@@ -143,14 +143,15 @@ CREATE POLICY "users_can_update_own_comments" ON comments
 
 -- How to make a user an admin:
 -- 
--- Step 1: Find your user ID by running this query in Supabase SQL Editor:
--- SELECT id, email, display_name FROM profiles WHERE email = 'your-email@example.com';
+-- Make Divia Mathew (diviabharath@gmail.com) an admin:
+UPDATE profiles SET role = 'admin' WHERE id = 'cbf15c7c-d08a-4e2c-9748-ebbcfa45cdfb';
 --
--- Step 2: Copy your user ID and run:
--- UPDATE profiles SET role = 'admin' WHERE id = 'your-actual-user-id-here';
+-- Alternative using email:
+-- UPDATE profiles SET role = 'admin' WHERE email = 'diviabharath@gmail.com';
 --
--- Quick way to make yourself admin (replace with your email):
--- UPDATE profiles SET role = 'admin' WHERE email = 'your-email@example.com';
+-- General format for other users:
+-- UPDATE profiles SET role = 'admin' WHERE id = '<USER_UUID>';
+-- UPDATE profiles SET role = 'admin' WHERE email = 'user@example.com';
 
 -- How to ban a user (replace with their email or user ID):
 -- UPDATE profiles SET role = 'banned' WHERE email = 'user-to-ban@example.com';
