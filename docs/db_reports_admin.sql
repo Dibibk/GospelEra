@@ -89,7 +89,7 @@ CREATE POLICY "users_can_update_own_posts" ON posts
   FOR UPDATE 
   TO authenticated 
   USING (
-    author_id = auth.uid() 
+    author = auth.uid() 
     AND NOT EXISTS (
       SELECT 1 FROM profiles 
       WHERE id = auth.uid() 
@@ -129,7 +129,7 @@ CREATE POLICY "users_can_update_own_comments" ON comments
   FOR UPDATE 
   TO authenticated 
   USING (
-    author_id = auth.uid() 
+    author = auth.uid() 
     AND NOT EXISTS (
       SELECT 1 FROM profiles 
       WHERE id = auth.uid() 
