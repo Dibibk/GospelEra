@@ -81,6 +81,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Endpoint for media upload for posts (images and videos)
+  app.post("/api/media/upload", async (req, res) => {
+    const objectStorageService = new ObjectStorageService();
+    try {
+      const uploadURL = await objectStorageService.getObjectEntityUploadURL();
+      res.json({ uploadURL });
+    } catch (error) {
+      console.error("Error getting media upload URL:", error);
+      res.status(500).json({ error: "Failed to get media upload URL" });
+    }
+  });
+
+  // Endpoint for processing media after upload
+  app.put("/api/media", async (req, res) => {
+    if (!req.body.mediaURL) {
+      return res.status(400).json({ error: "mediaURL is required" });
+    }
+
+    try {
+      const objectStorageService = new ObjectStorageService();
+      const objectPath = objectStorageService.normalizeObjectEntityPath(
+        req.body.mediaURL,
+      );
+
+      res.status(200).json({
+        objectPath: objectPath,
+        mediaURL: req.body.mediaURL
+      });
+    } catch (error) {
+      console.error("Error processing media:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;

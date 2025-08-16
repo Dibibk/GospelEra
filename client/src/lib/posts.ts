@@ -4,6 +4,7 @@ interface CreatePostData {
   title: string
   content: string
   tags?: string[]
+  media_urls?: string[]
 }
 
 interface ListPostsOptions {
@@ -29,9 +30,10 @@ interface TopTagsOptions {
  * @param {string} postData.title - Post title
  * @param {string} postData.content - Post content
  * @param {string[]} postData.tags - Array of tags (optional, defaults to empty array)
+ * @param {string[]} postData.media_urls - Array of media URLs (optional, defaults to empty array)
  * @returns {Promise<{data: Object|null, error: Error|null}>}
  */
-export async function createPost({ title, content, tags = [] }: CreatePostData) {
+export async function createPost({ title, content, tags = [], media_urls = [] }: CreatePostData) {
   try {
     // Get current user
     const { data: { user }, error: userError } = await supabase.auth.getUser()
@@ -51,6 +53,7 @@ export async function createPost({ title, content, tags = [] }: CreatePostData) 
         title,
         content,
         tags,
+        media_urls,
         author: user.id
       })
       .select()

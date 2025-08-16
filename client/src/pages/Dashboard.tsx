@@ -6,7 +6,12 @@ import { createComment, listComments, softDeleteComment } from '../lib/comments'
 import { createReport } from '../lib/reports'
 import { getDailyVerse } from '../lib/scripture'
 import { getProfilesByIds } from '../lib/profiles'
+// @ts-ignore
 import { toggleBookmark, isBookmarked, toggleAmen, getAmenInfo, listBookmarks } from '../lib/engagement'
+// @ts-ignore
+import { getMediaUploadURL, processUploadedMedia } from '../lib/media'
+import { MediaUploader } from '../components/MediaUploader'
+import { MediaDisplay } from '../components/MediaDisplay'
 import { supabase } from '../lib/supabaseClient'
 
 export default function Dashboard() {
@@ -19,6 +24,8 @@ export default function Dashboard() {
   const [tags, setTags] = useState('')
   const [isCreating, setIsCreating] = useState(false)
   const [createError, setCreateError] = useState('')
+  const [uploadedMedia, setUploadedMedia] = useState<string[]>([])
+  const [isUploadingMedia, setIsUploadingMedia] = useState(false)
   
   // Posts feed state
   const [posts, setPosts] = useState<any[]>([])
@@ -306,6 +313,53 @@ export default function Dashboard() {
     }
   }
 
+  // Media upload handlers
+  const handleMediaUpload = async () => {
+    try {
+      const { uploadURL, error } = await getMediaUploadURL()
+      if (error) {
+        throw error
+      }
+      return { method: 'PUT' as const, url: uploadURL }
+    } catch (error) {
+      console.error('Failed to get upload URL:', error)
+      showToast('Failed to get upload URL', 'error')
+      throw error
+    }
+  }
+
+  const handleMediaUploadComplete = async (result: any) => {
+    setIsUploadingMedia(true)
+    try {
+      const successfulUploads = result.successful || []
+      const newMediaUrls: string[] = []
+
+      for (const upload of successfulUploads) {
+        const { objectPath, error } = await processUploadedMedia(upload.uploadURL)
+        if (error) {
+          console.error('Failed to process uploaded media:', error)
+          showToast(`Failed to process ${upload.name}`, 'error')
+        } else {
+          newMediaUrls.push(objectPath)
+        }
+      }
+
+      if (newMediaUrls.length > 0) {
+        setUploadedMedia(prev => [...prev, ...newMediaUrls])
+        showToast(`${newMediaUrls.length} media file(s) uploaded successfully!`, 'success')
+      }
+    } catch (error) {
+      console.error('Error processing media uploads:', error)
+      showToast('Error processing media uploads', 'error')
+    } finally {
+      setIsUploadingMedia(false)
+    }
+  }
+
+  const removeUploadedMedia = (indexToRemove: number) => {
+    setUploadedMedia(prev => prev.filter((_, index) => index !== indexToRemove))
+  }
+
   const handleCreatePost = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsCreating(true)
@@ -316,7 +370,8 @@ export default function Dashboard() {
     const { data, error } = await createPost({
       title: title.trim(),
       content: content.trim(),
-      tags: tagsArray
+      tags: tagsArray,
+      media_urls: uploadedMedia
     })
 
     if (error) {
@@ -326,6 +381,7 @@ export default function Dashboard() {
       setTitle('')
       setContent('')
       setTags('')
+      setUploadedMedia([])
       
       // Check if new post matches current filters
       const newPost = { ...data }
@@ -925,6 +981,63 @@ export default function Dashboard() {
                 />
               </div>
 
+              {/* Media Upload Section */}
+              <div>
+                <label className="block text-sm font-bold text-primary-800 mb-2 flex items-center">
+                  <svg className="h-4 w-4 text-gold-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  Add Photos & Videos (optional)
+                </label>
+                
+                <div className="space-y-4">
+                  <MediaUploader
+                    maxNumberOfFiles={10}
+                    maxImageSize={10485760} // 10MB
+                    maxVideoSize={104857600} // 100MB
+                    allowImages={true}
+                    allowVideos={true}
+                    onGetUploadParameters={handleMediaUpload}
+                    onComplete={handleMediaUploadComplete}
+                    disabled={isCreating || isUploadingMedia}
+                    buttonClassName="w-full flex justify-center items-center py-3 px-4 border-2 border-dashed border-primary-300 rounded-xl bg-primary-50/50 hover:bg-primary-100/50 hover:border-primary-400 transition-all duration-200 text-primary-700 font-medium"
+                  >
+                    <svg className="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
+                    {isUploadingMedia ? 'Processing...' : 'Upload Images & Videos'}
+                  </MediaUploader>
+
+                  {/* Media Preview */}
+                  {uploadedMedia.length > 0 && (
+                    <div className="space-y-3">
+                      <p className="text-sm font-medium text-primary-700">
+                        {uploadedMedia.length} media file(s) ready to share:
+                      </p>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                        {uploadedMedia.map((mediaUrl, index) => (
+                          <div key={index} className="relative group">
+                            <MediaDisplay 
+                              mediaUrls={[mediaUrl]} 
+                              className="w-full h-24"
+                              showControls={false}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => removeUploadedMedia(index)}
+                              className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs transition-colors duration-200 opacity-0 group-hover:opacity-100"
+                              aria-label="Remove media"
+                            >
+                              ×
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
               {createError && (
                 <div className="bg-gradient-to-r from-red-50 to-pink-50 border-2 border-red-200 rounded-xl p-4 shadow-sm" role="alert">
                   <div className="flex items-center">
@@ -1168,6 +1281,17 @@ export default function Dashboard() {
                         <div className="bg-gray-50 rounded-lg p-4 mb-4 border border-gray-100">
                           <p className="text-gray-700 leading-relaxed">{post.content}</p>
                         </div>
+
+                        {/* Media Display */}
+                        {post.media_urls && post.media_urls.length > 0 && (
+                          <div className="mb-4">
+                            <MediaDisplay 
+                              mediaUrls={post.media_urls} 
+                              className="w-full max-w-lg"
+                              showControls={true}
+                            />
+                          </div>
+                        )}
                         
                         {post.tags && post.tags.length > 0 && (
                           <div className="flex flex-wrap gap-2 mb-4">
