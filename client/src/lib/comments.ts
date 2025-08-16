@@ -70,7 +70,7 @@ export async function listComments({ postId, limit = 20, fromId }: ListCommentsO
         content,
         created_at,
         author,
-        profiles!author (
+        profiles:profiles!author (
           display_name
         )
       `)

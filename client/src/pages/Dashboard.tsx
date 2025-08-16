@@ -447,96 +447,129 @@ export default function Dashboard() {
               </div>
             ) : (
               posts.map((post) => (
-                <div key={post.id} className="p-6">
-                  <div className="flex justify-between items-start mb-4">
-                    <div className="flex-1">
-                      <h3 className="text-lg font-semibold text-gray-900 mb-2">{post.title}</h3>
-                      <p className="text-gray-700 mb-3">{post.content}</p>
-                      
-                      {post.tags && post.tags.length > 0 && (
-                        <div className="flex flex-wrap gap-2 mb-3">
-                          {post.tags.map((tag: string, index: number) => (
-                            <span
-                              key={index}
-                              className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary-100 text-primary-800"
-                            >
-                              {tag}
-                            </span>
-                          ))}
+                <div key={post.id} className="bg-gradient-to-r from-white to-gray-50 rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition-all duration-200 mb-6">
+                  <div className="p-6">
+                    <div className="flex items-start space-x-4 mb-4">
+                      <div className="flex-shrink-0">
+                        <div className="h-10 w-10 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center shadow-sm">
+                          <span className="text-white font-semibold text-sm">
+                            {(post.profiles?.display_name || 'U').charAt(0).toUpperCase()}
+                          </span>
                         </div>
-                      )}
-                      
-                      <div className="text-sm text-gray-500 mb-3">
-                        By {post.profiles?.display_name || 'Unknown'} • {formatDate(post.created_at)}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center space-x-2 mb-2">
+                          <h4 className="text-sm font-medium text-gray-900">
+                            {post.profiles?.display_name || 'Anonymous User'}
+                          </h4>
+                          <span className="text-gray-400">•</span>
+                          <time className="text-sm text-gray-500">
+                            {formatDate(post.created_at)}
+                          </time>
+                        </div>
+                        <h3 className="text-xl font-bold text-gray-900 mb-3 leading-tight">{post.title}</h3>
+                        <p className="text-gray-700 leading-relaxed mb-4">{post.content}</p>
+                        
+                        {post.tags && post.tags.length > 0 && (
+                          <div className="flex flex-wrap gap-2 mb-4">
+                            {post.tags.map((tag: string, index: number) => (
+                              <span
+                                key={index}
+                                className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gradient-to-r from-primary-50 to-primary-100 text-primary-700 border border-primary-200 hover:from-primary-100 hover:to-primary-150 transition-colors duration-200"
+                              >
+                                #{tag}
+                              </span>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     </div>
-                  </div>
 
-                  {/* Action buttons */}
-                  <div className="flex items-center space-x-4 mb-4">
-                    <button
-                      onClick={() => toggleCommentForm(post.id)}
-                      className="inline-flex items-center text-sm text-gray-500 hover:text-primary-600 transition-colors duration-200"
-                    >
-                      <svg className="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                      </svg>
-                      Comment
-                    </button>
-                    
-                    <button
-                      onClick={() => openReportModal('post', post.id.toString())}
-                      className="inline-flex items-center text-sm text-gray-500 hover:text-red-600 transition-colors duration-200"
-                    >
-                      <svg className="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.35 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                      </svg>
-                      Report
-                    </button>
-                    
-                    {post.author === user?.id && (
-                      <button
-                        onClick={() => handleDeletePost(post.id)}
-                        disabled={deletingPostId === post.id}
-                        className="inline-flex items-center text-sm text-gray-500 hover:text-red-600 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        {deletingPostId === post.id ? (
-                          <>
-                            <div className="animate-spin rounded-full h-3 w-3 border border-gray-400 border-t-gray-600 mr-1"></div>
-                            Deleting...
-                          </>
-                        ) : (
-                          <>
-                            <svg className="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                            </svg>
-                            Delete
-                          </>
-                        )}
-                      </button>
-                    )}
+                    {/* Action buttons */}
+                    <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+                      <div className="flex items-center space-x-6">
+                        <button
+                          onClick={() => toggleCommentForm(post.id)}
+                          className="inline-flex items-center text-sm font-medium text-gray-600 hover:text-primary-600 transition-all duration-200 hover:scale-105"
+                        >
+                          <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                          </svg>
+                          Comment
+                        </button>
+                        
+                        <button
+                          onClick={() => openReportModal('post', post.id.toString())}
+                          className="inline-flex items-center text-sm font-medium text-gray-600 hover:text-red-500 transition-all duration-200 hover:scale-105"
+                        >
+                          <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.35 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                          </svg>
+                          Report
+                        </button>
+                      </div>
+                      
+                      {post.author === user?.id && (
+                        <button
+                          onClick={() => handleDeletePost(post.id)}
+                          disabled={deletingPostId === post.id}
+                          className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-md transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed border border-red-200"
+                        >
+                          {deletingPostId === post.id ? (
+                            <>
+                              <div className="animate-spin rounded-full h-3 w-3 border border-red-300 border-t-red-600 mr-2"></div>
+                              Deleting...
+                            </>
+                          ) : (
+                            <>
+                              <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
+                              Delete
+                            </>
+                          )}
+                        </button>
+                      )}
+                    </div>
+
                   </div>
 
                   {/* Comment form */}
                   {commentForms[post.id] && (
-                    <div className="border-t pt-4 mb-4">
+                    <div className="border-t border-gray-100 pt-4 mt-4 bg-gray-50 -mx-6 px-6 pb-4">
                       <div className="flex space-x-3">
+                        <div className="flex-shrink-0">
+                          <div className="h-8 w-8 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center">
+                            <span className="text-white font-semibold text-xs">
+                              {(user?.email?.charAt(0) || 'Y').toUpperCase()}
+                            </span>
+                          </div>
+                        </div>
                         <div className="flex-1">
                           <textarea
                             value={commentTexts[post.id] || ''}
                             onChange={(e) => setCommentTexts(prev => ({...prev, [post.id]: e.target.value}))}
-                            placeholder="Write a comment..."
-                            rows={2}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 resize-none"
+                            placeholder="Write a thoughtful comment..."
+                            rows={3}
+                            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none shadow-sm bg-white"
                           />
+                          <div className="flex justify-end mt-3">
+                            <button
+                              onClick={() => handleCreateComment(post.id)}
+                              disabled={submittingComment[post.id] || !commentTexts[post.id]?.trim()}
+                              className="px-6 py-2 bg-gradient-to-r from-primary-600 to-primary-700 text-white rounded-lg hover:from-primary-700 hover:to-primary-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-medium shadow-sm hover:shadow-md"
+                            >
+                              {submittingComment[post.id] ? (
+                                <>
+                                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2 inline-block"></div>
+                                  Posting...
+                                </>
+                              ) : (
+                                'Post Comment'
+                              )}
+                            </button>
+                          </div>
                         </div>
-                        <button
-                          onClick={() => handleCreateComment(post.id)}
-                          disabled={submittingComment[post.id] || !commentTexts[post.id]?.trim()}
-                          className="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
-                        >
-                          {submittingComment[post.id] ? 'Posting...' : 'Post'}
-                        </button>
                       </div>
                     </div>
                   )}
@@ -556,30 +589,43 @@ export default function Dashboard() {
                       ) : (
                         <div className="space-y-3">
                           {(postComments[post.id] || []).map((comment) => (
-                            <div key={comment.id} className="bg-gray-50 rounded-lg p-3">
-                              <div className="flex justify-between items-start">
-                                <div className="flex-1">
-                                  <p className="text-gray-700 mb-2">{comment.content}</p>
-                                  <div className="text-xs text-gray-500">
-                                    By {comment.profiles?.display_name || 'Unknown'} • {formatDate(comment.created_at)}
+                            <div key={comment.id} className="bg-white rounded-lg border border-gray-100 p-4 shadow-sm hover:shadow-md transition-all duration-200">
+                              <div className="flex items-start space-x-3">
+                                <div className="flex-shrink-0">
+                                  <div className="h-8 w-8 rounded-full bg-gradient-to-br from-gray-400 to-gray-600 flex items-center justify-center">
+                                    <span className="text-white font-semibold text-xs">
+                                      {(comment.profiles?.display_name || 'A').charAt(0).toUpperCase()}
+                                    </span>
                                   </div>
                                 </div>
-                                <div className="flex items-center space-x-2 ml-3">
-                                  <button
-                                    onClick={() => openReportModal('comment', comment.id.toString())}
-                                    className="text-xs text-gray-400 hover:text-red-500 transition-colors duration-200"
-                                  >
-                                    Report
-                                  </button>
-                                  {comment.author === user?.id && (
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center space-x-2 mb-2">
+                                    <h5 className="text-sm font-medium text-gray-900">
+                                      {comment.profiles?.display_name || 'Anonymous User'}
+                                    </h5>
+                                    <span className="text-gray-400">•</span>
+                                    <time className="text-xs text-gray-500">
+                                      {formatDate(comment.created_at)}
+                                    </time>
+                                  </div>
+                                  <p className="text-gray-700 leading-relaxed">{comment.content}</p>
+                                  <div className="flex items-center space-x-4 mt-3">
                                     <button
-                                      onClick={() => handleDeleteComment(comment.id, post.id)}
-                                      disabled={deletingCommentId === comment.id}
-                                      className="text-xs text-gray-400 hover:text-red-500 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                                      onClick={() => openReportModal('comment', comment.id.toString())}
+                                      className="text-xs text-gray-500 hover:text-red-500 transition-colors duration-200 font-medium"
                                     >
-                                      {deletingCommentId === comment.id ? 'Deleting...' : 'Delete'}
+                                      Report
                                     </button>
-                                  )}
+                                    {comment.author === user?.id && (
+                                      <button
+                                        onClick={() => handleDeleteComment(comment.id, post.id)}
+                                        disabled={deletingCommentId === comment.id}
+                                        className="text-xs text-gray-500 hover:text-red-500 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                                      >
+                                        {deletingCommentId === comment.id ? 'Deleting...' : 'Delete'}
+                                      </button>
+                                    )}
+                                  </div>
                                 </div>
                               </div>
                             </div>

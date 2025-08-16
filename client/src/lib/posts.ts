@@ -72,7 +72,7 @@ export async function listPosts({ limit = 20, fromId }: ListPostsOptions = {}) {
         tags,
         created_at,
         author,
-        profiles!author (
+        profiles:profiles!author (
           display_name
         )
       `)
