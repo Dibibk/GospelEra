@@ -128,23 +128,7 @@ export async function softDeleteComment(id: number) {
       throw new Error('User must be authenticated to delete comments')
     }
 
-    // Debug: log the deletion attempt
-    console.log('Deleting comment - User ID:', user.id, 'Comment ID:', id)
-    
-    // First check what comment we're trying to delete
-    const { data: commentCheck, error: checkError } = await supabase
-      .from('comments')
-      .select('id, author, is_deleted')
-      .eq('id', id)
-      .single()
-    
-    console.log('Comment check result:', commentCheck, 'Error:', checkError)
-    
-    if (commentCheck) {
-      console.log('Comment author:', commentCheck.author, 'Current user:', user.id, 'Match:', commentCheck.author === user.id)
-    }
-
-    // Use RPC function to bypass RLS issues
+    // Use secure RPC function that only allows deleting your own comments
     const { data, error } = await supabase
       .rpc('soft_delete_comment', { comment_id: id })
 
