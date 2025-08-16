@@ -3,20 +3,20 @@
 @tailwind utilities;
 
 :root {
-  --background: hsl(0 0% 100%);
-  --foreground: hsl(210 25% 7.8431%);
-  --card: hsl(180 6.6667% 97.0588%);
-  --card-foreground: hsl(210 25% 7.8431%);
-  --popover: hsl(0 0% 100%);
-  --popover-foreground: hsl(210 25% 7.8431%);
-  --primary: hsl(217.2 91.2% 59.8%);
+  --background: hsl(220 100% 98%);
+  --foreground: hsl(220 83% 19%);
+  --card: hsl(220 100% 97%);
+  --card-foreground: hsl(220 83% 19%);
+  --popover: hsl(220 100% 98%);
+  --popover-foreground: hsl(220 83% 19%);
+  --primary: hsl(220 83% 43%);
   --primary-foreground: hsl(0 0% 100%);
-  --secondary: hsl(210 25% 7.8431%);
-  --secondary-foreground: hsl(0 0% 100%);
-  --muted: hsl(240 1.9608% 90%);
-  --muted-foreground: hsl(210 25% 7.8431%);
-  --accent: hsl(211.5789 51.3514% 92.7451%);
-  --accent-foreground: hsl(203.8863 88.2845% 53.1373%);
+  --secondary: hsl(45 83% 47%);
+  --secondary-foreground: hsl(220 83% 19%);
+  --muted: hsl(220 100% 94%);
+  --muted-foreground: hsl(220 83% 35%);
+  --accent: hsl(270 79% 89%);
+  --accent-foreground: hsl(270 75% 39%);
   --destructive: hsl(356.3033 90.5579% 54.3137%);
   --destructive-foreground: hsl(0 0% 100%);
   --border: hsl(201.4286 30.4348% 90.9804%);
@@ -51,10 +51,45 @@
   --spacing: 0.25rem;
   
   /* Primary color variants for matching design */
-  --primary-50: hsl(214.3 100% 97.1%);
-  --primary-500: hsl(217.2 91.2% 59.8%);
-  --primary-600: hsl(221.2 83.2% 53.3%);
-  --primary-700: hsl(224.3 76.3% 48%);
+  /* Gospel Theme - "Heavenly Grace" Colors */
+  --primary-50: hsl(220 100% 97%);
+  --primary-100: hsl(220 100% 94%);
+  --primary-200: hsl(220 100% 87%);
+  --primary-300: hsl(220 100% 78%);
+  --primary-400: hsl(220 91% 69%);
+  --primary-500: hsl(220 83% 53%);
+  --primary-600: hsl(220 83% 43%);
+  --primary-700: hsl(220 83% 35%);
+  --primary-800: hsl(220 83% 27%);
+  --primary-900: hsl(220 83% 19%);
+  
+  /* Divine Gold */
+  --gold-50: hsl(45 100% 96%);
+  --gold-100: hsl(45 100% 91%);
+  --gold-200: hsl(45 100% 81%);
+  --gold-300: hsl(45 100% 71%);
+  --gold-400: hsl(45 91% 58%);
+  --gold-500: hsl(45 83% 47%);
+  --gold-600: hsl(45 75% 39%);
+  --gold-700: hsl(45 75% 31%);
+  
+  /* Spiritual Purple */
+  --purple-50: hsl(270 100% 98%);
+  --purple-100: hsl(270 100% 95%);
+  --purple-200: hsl(270 95% 89%);
+  --purple-300: hsl(270 91% 79%);
+  --purple-400: hsl(270 85% 69%);
+  --purple-500: hsl(270 79% 59%);
+  --purple-600: hsl(270 75% 49%);
+  --purple-700: hsl(270 75% 39%);
+  
+  /* Sacred Sage */
+  --sage-50: hsl(150 20% 97%);
+  --sage-100: hsl(150 20% 93%);
+  --sage-200: hsl(150 20% 87%);
+  --sage-500: hsl(150 20% 45%);
+  --sage-600: hsl(150 20% 35%);
+  --sage-700: hsl(150 20% 25%);
 }
 
 .dark {
@@ -104,10 +139,45 @@
   --shadow-2xl: 0px 2px 0px 0px hsl(202.8169 89.1213% 53.1373% / 0.00);
   
   /* Primary color variants for matching design */
-  --primary-50: hsl(214.3 100% 97.1%);
-  --primary-500: hsl(217.2 91.2% 59.8%);
-  --primary-600: hsl(221.2 83.2% 53.3%);
-  --primary-700: hsl(224.3 76.3% 48%);
+  /* Gospel Theme - "Heavenly Grace" Colors */
+  --primary-50: hsl(220 100% 97%);
+  --primary-100: hsl(220 100% 94%);
+  --primary-200: hsl(220 100% 87%);
+  --primary-300: hsl(220 100% 78%);
+  --primary-400: hsl(220 91% 69%);
+  --primary-500: hsl(220 83% 53%);
+  --primary-600: hsl(220 83% 43%);
+  --primary-700: hsl(220 83% 35%);
+  --primary-800: hsl(220 83% 27%);
+  --primary-900: hsl(220 83% 19%);
+  
+  /* Divine Gold */
+  --gold-50: hsl(45 100% 96%);
+  --gold-100: hsl(45 100% 91%);
+  --gold-200: hsl(45 100% 81%);
+  --gold-300: hsl(45 100% 71%);
+  --gold-400: hsl(45 91% 58%);
+  --gold-500: hsl(45 83% 47%);
+  --gold-600: hsl(45 75% 39%);
+  --gold-700: hsl(45 75% 31%);
+  
+  /* Spiritual Purple */
+  --purple-50: hsl(270 100% 98%);
+  --purple-100: hsl(270 100% 95%);
+  --purple-200: hsl(270 95% 89%);
+  --purple-300: hsl(270 91% 79%);
+  --purple-400: hsl(270 85% 69%);
+  --purple-500: hsl(270 79% 59%);
+  --purple-600: hsl(270 75% 49%);
+  --purple-700: hsl(270 75% 39%);
+  
+  /* Sacred Sage */
+  --sage-50: hsl(150 20% 97%);
+  --sage-100: hsl(150 20% 93%);
+  --sage-200: hsl(150 20% 87%);
+  --sage-500: hsl(150 20% 45%);
+  --sage-600: hsl(150 20% 35%);
+  --sage-700: hsl(150 20% 25%);
 }
 
 @layer base {
@@ -116,7 +186,10 @@
   }
 
   body {
-    @apply font-sans antialiased bg-background text-foreground;
+    @apply font-sans antialiased text-foreground;
+    background: linear-gradient(135deg, hsl(220 100% 98%) 0%, hsl(45 100% 96%) 100%);
+    background-attachment: fixed;
+    min-height: 100vh;
   }
 }
 
@@ -163,4 +236,187 @@
 
 .focus\:border-primary-500:focus {
   border-color: var(--primary-500);
+}
+
+/* Gold color utilities */
+.bg-gold-50 {
+  background-color: var(--gold-50);
+}
+
+.bg-gold-100 {
+  background-color: var(--gold-100);
+}
+
+.bg-gold-500 {
+  background-color: var(--gold-500);
+}
+
+.bg-gold-600 {
+  background-color: var(--gold-600);
+}
+
+.text-gold-500 {
+  color: var(--gold-500);
+}
+
+.text-gold-600 {
+  color: var(--gold-600);
+}
+
+.text-gold-700 {
+  color: var(--gold-700);
+}
+
+.text-gold-800 {
+  color: var(--gold-800);
+}
+
+.border-gold-300 {
+  border-color: var(--gold-300);
+}
+
+.border-gold-500 {
+  border-color: var(--gold-500);
+}
+
+.focus\:ring-gold-500:focus {
+  --tw-ring-color: var(--gold-500);
+}
+
+.focus\:border-gold-500:focus {
+  border-color: var(--gold-500);
+}
+
+.from-gold-100 {
+  --tw-gradient-from: var(--gold-100);
+}
+
+.to-gold-200 {
+  --tw-gradient-to: var(--gold-200);
+}
+
+.via-gold-50 {
+  --tw-gradient-via: var(--gold-50);
+}
+
+.via-gold-500 {
+  --tw-gradient-via: var(--gold-500);
+}
+
+.from-gold-200 {
+  --tw-gradient-from: var(--gold-200);
+}
+
+.to-gold-200 {
+  --tw-gradient-to: var(--gold-200);
+}
+
+/* Purple color utilities */
+.bg-purple-50 {
+  background-color: var(--purple-50);
+}
+
+.bg-purple-100 {
+  background-color: var(--purple-100);
+}
+
+.bg-purple-500 {
+  background-color: var(--purple-500);
+}
+
+.bg-purple-600 {
+  background-color: var(--purple-600);
+}
+
+.text-purple-600 {
+  color: var(--purple-600);
+}
+
+.text-purple-700 {
+  color: var(--purple-700);
+}
+
+.from-purple-50 {
+  --tw-gradient-from: var(--purple-50);
+}
+
+.to-purple-50 {
+  --tw-gradient-to: var(--purple-50);
+}
+
+.via-purple-500 {
+  --tw-gradient-via: var(--purple-500);
+}
+
+.from-purple-600 {
+  --tw-gradient-from: var(--purple-600);
+}
+
+.to-purple-600 {
+  --tw-gradient-to: var(--purple-600);
+}
+
+.via-purple-600 {
+  --tw-gradient-via: var(--purple-600);
+}
+
+.via-purple-700 {
+  --tw-gradient-via: var(--purple-700);
+}
+
+.from-purple-100 {
+  --tw-gradient-from: var(--purple-100);
+}
+
+.to-purple-100 {
+  --tw-gradient-to: var(--purple-100);
+}
+
+.from-purple-200 {
+  --tw-gradient-from: var(--purple-200);
+}
+
+.to-purple-200 {
+  --tw-gradient-to: var(--purple-200);
+}
+
+/* Sage color utilities */
+.bg-sage-50 {
+  background-color: var(--sage-50);
+}
+
+.bg-sage-100 {
+  background-color: var(--sage-100);
+}
+
+.text-sage-600 {
+  color: var(--sage-600);
+}
+
+.text-sage-700 {
+  color: var(--sage-700);
+}
+
+.border-sage-200 {
+  border-color: var(--sage-200);
+}
+
+.from-sage-100 {
+  --tw-gradient-from: var(--sage-100);
+}
+
+.to-sage-50 {
+  --tw-gradient-to: var(--sage-50);
+}
+
+.from-sage-200 {
+  --tw-gradient-from: var(--sage-200);
+}
+
+.to-sage-100 {
+  --tw-gradient-to: var(--sage-100);
+}
+
+.border-sage-200 {
+  border-color: var(--sage-200);
 }
