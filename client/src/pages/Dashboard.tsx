@@ -880,10 +880,21 @@ export default function Dashboard() {
                   <div className="relative p-8">
                     <div className="flex items-start space-x-5 mb-6">
                       <div className="flex-shrink-0">
-                        <div className="h-12 w-12 rounded-full bg-gradient-to-br from-primary-500 via-purple-500 to-primary-600 flex items-center justify-center shadow-lg ring-2 ring-white">
-                          <span className="text-white font-bold text-base">
-                            {(post.profiles?.display_name || 'U').charAt(0).toUpperCase()}
-                          </span>
+                        <div className="h-12 w-12 rounded-full bg-gradient-to-br from-primary-500 via-purple-500 to-primary-600 flex items-center justify-center shadow-lg ring-2 ring-white overflow-hidden">
+                          {post.profiles?.avatar_url ? (
+                            <img 
+                              src={post.profiles.avatar_url} 
+                              alt={post.profiles.display_name || 'User'} 
+                              className="h-12 w-12 rounded-full object-cover"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).style.display = 'none'
+                              }}
+                            />
+                          ) : (
+                            <span className="text-white font-bold text-base">
+                              {(post.profiles?.display_name || 'U').charAt(0).toUpperCase()}
+                            </span>
+                          )}
                         </div>
                       </div>
                       <div className="flex-1 min-w-0">
@@ -1043,10 +1054,21 @@ export default function Dashboard() {
                             <div key={comment.id} className="bg-gradient-to-br from-white to-primary-50/20 rounded-xl border border-primary-200/50 p-5 shadow-sm hover:shadow-lg transition-all duration-300 transform hover:scale-[1.01]">
                               <div className="flex items-start space-x-4">
                                 <div className="flex-shrink-0">
-                                  <div className="h-9 w-9 rounded-full bg-gradient-to-br from-purple-500 to-primary-600 flex items-center justify-center shadow-md ring-2 ring-white">
-                                    <span className="text-white font-bold text-sm">
-                                      {(comment.profiles?.display_name || 'A').charAt(0).toUpperCase()}
-                                    </span>
+                                  <div className="h-9 w-9 rounded-full bg-gradient-to-br from-purple-500 to-primary-600 flex items-center justify-center shadow-md ring-2 ring-white overflow-hidden">
+                                    {comment.profiles?.avatar_url ? (
+                                      <img 
+                                        src={comment.profiles.avatar_url} 
+                                        alt={comment.profiles.display_name || 'User'} 
+                                        className="h-9 w-9 rounded-full object-cover"
+                                        onError={(e) => {
+                                          (e.target as HTMLImageElement).style.display = 'none'
+                                        }}
+                                      />
+                                    ) : (
+                                      <span className="text-white font-bold text-sm">
+                                        {(comment.profiles?.display_name || 'A').charAt(0).toUpperCase()}
+                                      </span>
+                                    )}
                                   </div>
                                 </div>
                                 <div className="flex-1 min-w-0">
