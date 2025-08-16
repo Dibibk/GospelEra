@@ -31,7 +31,7 @@ CREATE POLICY "authenticated_can_insert_reports" ON reports
 CREATE POLICY "reporters_can_select_own_reports" ON reports
   FOR SELECT 
   TO authenticated 
-  USING (reporter_id = auth.uid());
+  USING (reporter = auth.uid());
 
 -- Policy 3: Admins can select all reports
 CREATE POLICY "admins_can_select_all_reports" ON reports
@@ -180,7 +180,7 @@ UPDATE profiles SET role = 'admin' WHERE id = 'cbf15c7c-d08a-4e2c-9748-ebbcfa45c
 -- Query to check reports that need admin attention:
 -- SELECT r.*, p.display_name as reporter_name 
 -- FROM reports r 
--- JOIN profiles p ON r.reporter_id = p.id 
+-- JOIN profiles p ON r.reporter = p.id 
 -- WHERE r.status = 'pending' 
 -- ORDER BY r.created_at DESC;
 
