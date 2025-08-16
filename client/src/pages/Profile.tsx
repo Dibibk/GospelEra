@@ -372,23 +372,9 @@ export default function Profile() {
                       </button>
                     </div>
                     
-                    {/* Manual URL Input */}
-                    <div>
-                      <label htmlFor="avatarUrl" className="block text-xs font-medium text-primary-700 mb-1">
-                        Or enter image URL manually:
-                      </label>
-                      <input
-                        id="avatarUrl"
-                        type="url"
-                        value={avatarUrl}
-                        onChange={(e) => setAvatarUrl(e.target.value)}
-                        className="w-full px-3 py-2 text-sm border-2 border-primary-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-gold-500 bg-white/80 backdrop-blur-sm transition-all duration-200 font-medium text-primary-900 placeholder-primary-400"
-                        placeholder=""
-                      />
-                    </div>
                     
                     <p className="text-xs text-primary-600">
-                      Upload an image from your computer or enter a URL. Recommended size: 256x256 pixels. Max file size: 5MB.
+                      Upload an image from your computer. Recommended size: 256x256 pixels. Max file size: 5MB.
                     </p>
                   </div>
                 </div>
