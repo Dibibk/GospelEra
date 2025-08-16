@@ -71,7 +71,10 @@ export async function listPosts({ limit = 20, fromId }: ListPostsOptions = {}) {
         content,
         tags,
         created_at,
-        author
+        author,
+        profiles!author (
+          display_name
+        )
       `)
       .eq('is_deleted', false)
       .order('created_at', { ascending: false })
