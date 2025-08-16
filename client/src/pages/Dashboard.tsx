@@ -4,6 +4,7 @@ import { createPost, listPosts, softDeletePost, searchPosts, getTopTags } from '
 import { createComment, listComments, softDeleteComment } from '../lib/comments'
 import { createReport } from '../lib/reports'
 import { getDailyVerse } from '../lib/scripture'
+import { supabase } from '../lib/supabaseClient'
 
 export default function Dashboard() {
   const { user, signOut } = useAuth()
@@ -55,6 +56,9 @@ export default function Dashboard() {
   
   // Toast state
   const [toast, setToast] = useState<{show: boolean, message: string, type: 'success'|'error'}>({show: false, message: '', type: 'success'})
+  
+  // User profile state
+  const [userProfile, setUserProfile] = useState<{display_name?: string, avatar_url?: string} | null>(null)
 
   const handleLogout = async () => {
     await signOut()
@@ -94,6 +98,7 @@ export default function Dashboard() {
     loadPosts()
     loadDailyVerse()
     loadTopTags()
+    loadUserProfile()
   }, [])
 
   // Debounce search query
@@ -434,6 +439,26 @@ export default function Dashboard() {
     setTimeout(() => setToast({show: false, message: '', type: 'success'}), 5000)
   }
 
+  const loadUserProfile = async () => {
+    if (!user?.id) return
+    
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('display_name, avatar_url')
+        .eq('id', user.id)
+        .single()
+      
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error loading user profile:', error)
+      } else if (data) {
+        setUserProfile(data)
+      }
+    } catch (error) {
+      console.error('Error loading user profile:', error)
+    }
+  }
+
   return (
     <div className="min-h-screen">
       {/* Navigation */}
@@ -462,10 +487,26 @@ export default function Dashboard() {
                   onClick={() => setUserMenuOpen(!userMenuOpen)}
                   className="flex items-center text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gold-500 p-3 hover:bg-gradient-to-r hover:from-primary-50 hover:to-purple-50 transition-all duration-300 border border-primary-200 bg-white/80 backdrop-blur-sm shadow-sm"
                 >
-                  <div className="h-9 w-9 rounded-full bg-gradient-to-br from-primary-500 to-purple-600 flex items-center justify-center shadow-md ring-2 ring-white">
-                    <svg className="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                    </svg>
+                  <div className="h-9 w-9 rounded-full bg-gradient-to-br from-primary-500 to-purple-600 flex items-center justify-center shadow-md ring-2 ring-white overflow-hidden">
+                    {userProfile?.avatar_url ? (
+                      <img 
+                        src={userProfile.avatar_url} 
+                        alt={userProfile.display_name || user?.email || 'User'} 
+                        className="h-9 w-9 rounded-full object-cover"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).style.display = 'none'
+                          // Show fallback icon when image fails to load
+                          const parent = (e.target as HTMLImageElement).parentElement
+                          if (parent) {
+                            parent.innerHTML = `<svg class="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>`
+                          }
+                        }}
+                      />
+                    ) : (
+                      <svg className="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                      </svg>
+                    )}
                   </div>
                   <span className="ml-3 text-primary-800 hidden sm:block font-medium">{user?.email}</span>
                   <svg className="ml-2 h-4 w-4 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
