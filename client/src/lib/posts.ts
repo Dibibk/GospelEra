@@ -145,14 +145,11 @@ export async function softDeletePost(id: number) {
       console.log('Post author:', postCheck.author, 'Current user:', user.id, 'Match:', postCheck.author === user.id)
     }
 
-    // Perform the soft delete directly with author check in the query
-    // This approach works better with RLS policies
+    // Use a simpler approach that works better with current RLS setup
     const { data, error } = await supabase
       .from('posts')
       .update({ is_deleted: true })
       .eq('id', id)
-      .eq('author', user.id)  // Only update if user is the author
-      .eq('is_deleted', false)  // Only update if not already deleted
       .select()
       .single()
 
