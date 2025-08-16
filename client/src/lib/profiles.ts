@@ -70,6 +70,14 @@ export async function upsertMyProfile({ display_name, bio, avatar_url }: UpsertP
       throw new Error('User must be authenticated to update profile')
     }
 
+    // Validate display name if provided (2-40 characters)
+    if (display_name !== undefined) {
+      const trimmed = display_name.trim()
+      if (trimmed.length < 2 || trimmed.length > 40) {
+        throw new Error('Display name must be between 2 and 40 characters')
+      }
+    }
+
     // Prepare update data (only include defined fields)
     const updateData: any = { id: user.id }
     if (display_name !== undefined) updateData.display_name = display_name

@@ -111,9 +111,17 @@ export default function Profile() {
     setError('')
     setSuccess('')
 
+    // Validate display name (2-40 characters)
+    const trimmedDisplayName = displayName.trim()
+    if (trimmedDisplayName.length < 2 || trimmedDisplayName.length > 40) {
+      setError('Display name must be between 2 and 40 characters')
+      setSaving(false)
+      return
+    }
+
     // Only include avatar_url if it has a value
     const profileData: any = {
-      display_name: displayName.trim(),
+      display_name: trimmedDisplayName,
       bio: bio.trim(),
     }
     
