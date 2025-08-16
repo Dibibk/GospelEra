@@ -475,11 +475,20 @@ export default function Dashboard() {
 
                 {/* Dropdown menu */}
                 {userMenuOpen && (
-                  <div className="absolute right-0 mt-3 w-52 bg-white/95 backdrop-blur-md rounded-xl shadow-xl py-2 ring-1 ring-primary-200 border border-white/50">
+                  <div className="absolute right-0 mt-3 w-52 bg-white/95 backdrop-blur-md rounded-xl shadow-xl py-2 ring-1 ring-primary-200 border border-white/50 z-50">
                     <div className="px-4 py-3 border-b border-primary-100">
                       <p className="text-sm font-medium text-primary-800">Signed in as</p>
                       <p className="text-sm text-primary-600 truncate">{user?.email}</p>
                     </div>
+                    <a
+                      href="/profile"
+                      className="block w-full text-left px-4 py-3 text-sm text-primary-700 hover:bg-gradient-to-r hover:from-primary-50 hover:to-purple-50 transition-all duration-200 font-medium"
+                    >
+                      <svg className="inline h-4 w-4 mr-3 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                      </svg>
+                      Profile
+                    </a>
                     <button
                       onClick={handleLogout}
                       className="block w-full text-left px-4 py-3 text-sm text-primary-700 hover:bg-gradient-to-r hover:from-primary-50 hover:to-purple-50 transition-all duration-200 font-medium"
