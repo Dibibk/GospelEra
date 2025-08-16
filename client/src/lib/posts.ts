@@ -129,6 +129,22 @@ export async function softDeletePost(id: number) {
       throw new Error('User must be authenticated to delete posts')
     }
 
+    // Debug: log the deletion attempt
+    console.log('Deleting post - User ID:', user.id, 'Post ID:', id)
+    
+    // First check what post we're trying to delete
+    const { data: postCheck, error: checkError } = await supabase
+      .from('posts')
+      .select('id, author, is_deleted')
+      .eq('id', id)
+      .single()
+    
+    console.log('Post check result:', postCheck, 'Error:', checkError)
+    
+    if (postCheck) {
+      console.log('Post author:', postCheck.author, 'Current user:', user.id, 'Match:', postCheck.author === user.id)
+    }
+
     // Perform the soft delete directly with author check in the query
     // This approach works better with RLS policies
     const { data, error } = await supabase
