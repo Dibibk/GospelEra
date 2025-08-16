@@ -103,9 +103,6 @@ export async function listComments({ postId, limit = 20, fromId }: ListCommentsO
       throw new Error(`Failed to fetch comments: ${error.message}`)
     }
 
-    // Debug: log the comment data to see what we're getting
-    console.log('Comments data:', data)
-
     return { data, error: null }
   } catch (err) {
     return { data: null, error: err }
@@ -129,22 +126,6 @@ export async function softDeleteComment(id: number) {
     
     if (!user) {
       throw new Error('User must be authenticated to delete comments')
-    }
-
-    // Debug: log user ID to console
-    console.log('Deleting comment - User ID:', user.id, 'Comment ID:', id)
-    
-    // First, let's check what comment we're trying to delete
-    const { data: commentCheck, error: checkError } = await supabase
-      .from('comments')
-      .select('id, author, is_deleted')
-      .eq('id', id)
-      .single()
-    
-    console.log('Comment check result:', commentCheck, 'Error:', checkError)
-    
-    if (commentCheck) {
-      console.log('Comment author:', commentCheck.author, 'Current user:', user.id, 'Match:', commentCheck.author === user.id)
     }
 
     // Perform the soft delete directly with author check in the query
