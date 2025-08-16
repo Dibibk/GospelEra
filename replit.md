@@ -4,6 +4,25 @@
 
 This is a full-stack web application built with React (frontend) and Express.js (backend), utilizing modern TypeScript development practices. The application is a social platform for Gospel Community engagement, featuring Instagram-like media upload functionality, user authentication, and community interaction features. It includes a clean, responsive UI built with shadcn/ui components and Tailwind CSS. The backend uses PostgreSQL with Drizzle ORM for database operations and Replit Object Storage for media files.
 
+## Completed Features
+
+**Core Platform Features:**
+✅ User authentication with Supabase
+✅ Post creation with Instagram-style media upload (images & videos)
+✅ Comment system with soft-delete functionality
+✅ Report system for posts and comments
+✅ User engagement (Amen reactions, bookmarks)
+✅ Search with debouncing, pagination, and tag filtering
+✅ Profile management with avatar upload
+✅ Settings page (dedicated profile management)
+
+**Polish Features (Completed August 2025):**
+✅ Comments + Reports polish: Soft-delete system with RPC security, modal interfaces, admin stub implemented
+✅ Search polish: 400ms debouncing, cursor-based pagination (20 items/page), popular topics filtering with toggle functionality
+✅ Profiles polish: Separate Settings page for profile management, view-only Profile page, avatar upload with ObjectUploader component
+
+The web application is now feature-complete and ready for mobile app development.
+
 # User Preferences
 
 Preferred communication style: Simple, everyday language.
