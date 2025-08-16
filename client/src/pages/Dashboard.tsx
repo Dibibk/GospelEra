@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '../hooks/useAuth'
-import { createPost, listPosts, softDeletePost } from '../lib/posts'
+import { createPost, listPosts, softDeletePost, searchPosts, getTopTags } from '../lib/posts'
 import { createComment, listComments, softDeleteComment } from '../lib/comments'
 import { createReport } from '../lib/reports'
 import { getDailyVerse } from '../lib/scripture'
@@ -20,6 +20,18 @@ export default function Dashboard() {
   const [posts, setPosts] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [feedError, setFeedError] = useState('')
+  const [nextCursor, setNextCursor] = useState<any>(null)
+  const [loadingMore, setLoadingMore] = useState(false)
+  
+  // Search state
+  const [searchQuery, setSearchQuery] = useState('')
+  const [selectedTags, setSelectedTags] = useState<string[]>([])
+  const [debouncedQuery, setDebouncedQuery] = useState('')
+  const [isSearchMode, setIsSearchMode] = useState(false)
+  
+  // Top tags state
+  const [topTags, setTopTags] = useState<any[]>([])
+  const [tagsLoading, setTagsLoading] = useState(true)
   
   // Daily verse state
   const [dailyVerse, setDailyVerse] = useState<{reference: string, text: string} | null>(null)
@@ -58,11 +70,36 @@ export default function Dashboard() {
     })
   }
 
-  // Load posts and daily verse on component mount
+  // Load posts, daily verse, and top tags on component mount
   useEffect(() => {
     loadPosts()
     loadDailyVerse()
+    loadTopTags()
   }, [])
+
+  // Debounce search query
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedQuery(searchQuery)
+    }, 400) // 400ms debounce
+    
+    return () => clearTimeout(timer)
+  }, [searchQuery])
+
+  // Handle search when query or tags change
+  useEffect(() => {
+    const hasQuery = debouncedQuery.trim().length > 0
+    const hasTags = selectedTags.length > 0
+    const newIsSearchMode = hasQuery || hasTags
+    
+    setIsSearchMode(newIsSearchMode)
+    
+    if (newIsSearchMode) {
+      handleSearch()
+    } else {
+      loadPosts()
+    }
+  }, [debouncedQuery, selectedTags])
 
   const loadDailyVerse = async () => {
     try {
@@ -76,17 +113,100 @@ export default function Dashboard() {
     }
   }
 
-  const loadPosts = async () => {
-    setIsLoading(true)
-    const { data, error } = await listPosts({ limit: 20 })
+  const loadPosts = async (cursor?: any) => {
+    const isLoadingMore = Boolean(cursor)
+    
+    if (isLoadingMore) {
+      setLoadingMore(true)
+    } else {
+      setIsLoading(true)
+      setPosts([])
+      setNextCursor(null)
+    }
+    
+    const fromId = cursor?.id
+    const { data, error } = await listPosts({ limit: 20, fromId })
     
     if (error) {
-      setFeedError(error.message)
+      setFeedError((error as any).message || 'Failed to load posts')
     } else {
-      setPosts(data || [])
+      const newPosts = data || []
+      setPosts(prev => isLoadingMore ? [...prev, ...newPosts] : newPosts)
+      
+      // Set cursor for next page if we got a full page
+      if (newPosts.length === 20) {
+        setNextCursor({ 
+          created_at: newPosts[newPosts.length - 1].created_at,
+          id: newPosts[newPosts.length - 1].id 
+        })
+      } else {
+        setNextCursor(null)
+      }
     }
     
     setIsLoading(false)
+    setLoadingMore(false)
+  }
+
+  const handleSearch = async (cursor?: any) => {
+    const isLoadingMore = Boolean(cursor)
+    
+    if (isLoadingMore) {
+      setLoadingMore(true)
+    } else {
+      setIsLoading(true)
+      setPosts([])
+      setNextCursor(null)
+    }
+    
+    const { data, error } = await searchPosts({
+      q: debouncedQuery,
+      tags: selectedTags,
+      limit: 20,
+      cursor
+    })
+    
+    if (error) {
+      setFeedError((error as any).message || 'Failed to search posts')
+    } else {
+      const result = data || { items: [], nextCursor: null }
+      setPosts(prev => isLoadingMore ? [...prev, ...result.items] : result.items)
+      setNextCursor(result.nextCursor)
+    }
+    
+    setIsLoading(false)
+    setLoadingMore(false)
+  }
+
+  const loadTopTags = async () => {
+    setTagsLoading(true)
+    const { data, error } = await getTopTags({ limit: 12 })
+    
+    if (error) {
+      console.error('Failed to load top tags:', error)
+    } else if (data) {
+      setTopTags(data)
+    }
+    
+    setTagsLoading(false)
+  }
+
+  const toggleTag = (tag: string) => {
+    setSelectedTags(prev => 
+      prev.includes(tag) 
+        ? prev.filter(t => t !== tag)
+        : [...prev, tag]
+    )
+  }
+
+  const loadMorePosts = () => {
+    if (!nextCursor || loadingMore) return
+    
+    if (isSearchMode) {
+      handleSearch(nextCursor)
+    } else {
+      loadPosts(nextCursor)
+    }
   }
 
   const handleCreatePost = async (e: React.FormEvent) => {
@@ -103,13 +223,19 @@ export default function Dashboard() {
     })
 
     if (error) {
-      setCreateError(error.message)
+      setCreateError((error as any).message || 'Failed to create post')
     } else {
       // Clear form and reload posts
       setTitle('')
       setContent('')
       setTags('')
-      loadPosts()
+      
+      // Reload appropriate feed
+      if (isSearchMode) {
+        handleSearch()
+      } else {
+        loadPosts()
+      }
     }
 
     setIsCreating(false)
@@ -124,7 +250,7 @@ export default function Dashboard() {
     const { error } = await softDeletePost(postId)
     
     if (error) {
-      alert(`Failed to delete post: ${error.message}`)
+      alert(`Failed to delete post: ${(error as any).message || 'Unknown error'}`)
     } else {
       // Remove the deleted post from the current posts array
       setPosts(posts.filter(post => post.id !== postId))
@@ -484,16 +610,133 @@ export default function Dashboard() {
           </form>
         </div>
 
+        {/* Search Section */}
+        <div className="bg-gradient-to-br from-white via-primary-50/20 to-purple-50/20 shadow-xl rounded-2xl border border-primary-200/50 backdrop-blur-sm mb-8">
+          <div className="px-8 py-6 border-b border-gradient-to-r from-primary-200/40 via-purple-200/40 to-primary-200/40">
+            <div className="flex items-center space-x-3 mb-6">
+              <div className="h-10 w-10 bg-gradient-to-br from-purple-500 to-primary-600 rounded-xl flex items-center justify-center shadow-lg">
+                <svg className="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
+              <h2 className="text-xl font-bold bg-gradient-to-r from-primary-800 to-purple-700 bg-clip-text text-transparent">Search & Discover</h2>
+            </div>
+            
+            {/* Search Input */}
+            <div className="relative mb-6">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search posts by title or content..."
+                className="w-full px-4 py-3 pl-12 border-2 border-primary-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-gold-500 bg-white/80 backdrop-blur-sm transition-all duration-200 font-medium text-primary-900 placeholder-primary-400"
+              />
+              <svg className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+            
+            {/* Tags Filter */}
+            <div>
+              <h3 className="text-sm font-bold text-primary-800 mb-3 flex items-center">
+                <svg className="h-4 w-4 text-gold-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                </svg>
+                Popular Topics
+              </h3>
+              
+              {tagsLoading ? (
+                <div className="flex items-center space-x-3">
+                  <div className="animate-spin rounded-full h-5 w-5 border-2 border-primary-300 border-t-gold-600"></div>
+                  <span className="text-primary-600 font-medium text-sm">Loading topics...</span>
+                </div>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  {topTags.map((tagData) => {
+                    const isSelected = selectedTags.includes(tagData.tag)
+                    return (
+                      <button
+                        key={tagData.tag}
+                        onClick={() => toggleTag(tagData.tag)}
+                        className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-bold transition-all duration-200 transform hover:scale-105 border shadow-sm ${
+                          isSelected
+                            ? 'bg-gradient-to-r from-gold-500 to-gold-600 text-white border-gold-600 shadow-lg'
+                            : 'bg-gradient-to-r from-gold-100 via-gold-50 to-gold-100 text-gold-800 border-gold-300/60 hover:from-gold-200 hover:to-gold-200'
+                        }`}
+                      >
+                        <svg className="h-3 w-3 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                        </svg>
+                        {tagData.tag}
+                        <span className={`ml-2 px-2 py-0.5 rounded-full text-xs font-bold ${
+                          isSelected ? 'bg-white/20 text-white' : 'bg-gold-200 text-gold-700'
+                        }`}>
+                          {tagData.count}
+                        </span>
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+            
+            {/* Active Filters Display */}
+            {(searchQuery.trim() || selectedTags.length > 0) && (
+              <div className="mt-6 pt-6 border-t border-primary-200/40">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <span className="text-sm font-bold text-primary-800">Active Filters:</span>
+                    {searchQuery.trim() && (
+                      <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-purple-100 text-purple-800 border border-purple-200">
+                        Search: "{searchQuery.trim()}"
+                      </span>
+                    )}
+                    {selectedTags.map(tag => (
+                      <span key={tag} className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-gold-100 text-gold-800 border border-gold-200">
+                        {tag}
+                        <button
+                          onClick={() => toggleTag(tag)}
+                          className="ml-2 hover:text-gold-600 transition-colors duration-200"
+                        >
+                          ×
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                  <button
+                    onClick={() => {
+                      setSearchQuery('')
+                      setSelectedTags([])
+                    }}
+                    className="text-sm text-primary-600 hover:text-primary-700 transition-colors duration-200 font-medium"
+                  >
+                    Clear All
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
         {/* Posts Feed */}
         <div className="bg-gradient-to-br from-white via-primary-50/20 to-purple-50/20 shadow-xl rounded-2xl border border-primary-200/50 backdrop-blur-sm">
           <div className="px-8 py-6 border-b border-gradient-to-r from-primary-200/40 via-purple-200/40 to-primary-200/40">
-            <div className="flex items-center space-x-3">
-              <div className="h-10 w-10 bg-gradient-to-br from-gold-500 to-gold-600 rounded-xl flex items-center justify-center shadow-lg">
-                <svg className="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                </svg>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="h-10 w-10 bg-gradient-to-br from-gold-500 to-gold-600 rounded-xl flex items-center justify-center shadow-lg">
+                  <svg className="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                  </svg>
+                </div>
+                <h2 className="text-xl font-bold bg-gradient-to-r from-primary-800 to-purple-700 bg-clip-text text-transparent">
+                  {isSearchMode ? 'Search Results' : 'Community Voices'}
+                </h2>
               </div>
-              <h2 className="text-xl font-bold bg-gradient-to-r from-primary-800 to-purple-700 bg-clip-text text-transparent">Community Voices</h2>
+              {isSearchMode && (
+                <span className="text-sm text-primary-600 font-medium">
+                  {posts.length} post{posts.length !== 1 ? 's' : ''} found
+                </span>
+              )}
             </div>
           </div>
           
@@ -513,19 +756,45 @@ export default function Dashboard() {
               </div>
             ) : posts.length === 0 ? (
               <div className="p-12 text-center">
-                <div className="h-20 w-20 bg-gradient-to-br from-primary-400 to-purple-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl">
-                  <svg className="h-10 w-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                  </svg>
-                </div>
-                <h3 className="text-xl font-bold text-primary-800 mb-2">Begin Your Journey</h3>
-                <p className="text-primary-600 mb-4">Share your first testimony, prayer, or encouragement with our faithful community.</p>
-                <div className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-gold-100 to-gold-200 text-gold-800 rounded-full text-sm font-medium">
-                  <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
-                  </svg>
-                  Create your first post above
-                </div>
+                {isSearchMode ? (
+                  <div>
+                    <div className="h-20 w-20 bg-gradient-to-br from-purple-400 to-primary-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl">
+                      <svg className="h-10 w-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                      </svg>
+                    </div>
+                    <h3 className="text-xl font-bold text-primary-800 mb-2">No Posts Found</h3>
+                    <p className="text-primary-600 mb-4">No posts match your search criteria. Try adjusting your search terms or tags.</p>
+                    <button
+                      onClick={() => {
+                        setSearchQuery('')
+                        setSelectedTags([])
+                      }}
+                      className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-primary-100 to-purple-100 text-primary-800 rounded-full text-sm font-medium hover:from-primary-200 hover:to-purple-200 transition-all duration-200"
+                    >
+                      <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      </svg>
+                      Clear search and view all posts
+                    </button>
+                  </div>
+                ) : (
+                  <div>
+                    <div className="h-20 w-20 bg-gradient-to-br from-primary-400 to-purple-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl">
+                      <svg className="h-10 w-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                      </svg>
+                    </div>
+                    <h3 className="text-xl font-bold text-primary-800 mb-2">Begin Your Journey</h3>
+                    <p className="text-primary-600 mb-4">Share your first testimony, prayer, or encouragement with our faithful community.</p>
+                    <div className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-gold-100 to-gold-200 text-gold-800 rounded-full text-sm font-medium">
+                      <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                      </svg>
+                      Create your first post above
+                    </div>
+                  </div>
+                )}
               </div>
             ) : (
               posts.map((post) => (
@@ -771,6 +1040,31 @@ export default function Dashboard() {
                   )}
                 </div>
               ))
+            )}
+            
+            {/* Load More Button */}
+            {nextCursor && (
+              <div className="p-6 text-center border-t border-primary-200/40">
+                <button
+                  onClick={loadMorePosts}
+                  disabled={loadingMore}
+                  className="inline-flex items-center px-6 py-3 text-sm font-bold text-primary-700 bg-gradient-to-r from-primary-100 to-purple-100 hover:from-primary-200 hover:to-purple-200 rounded-xl transition-all duration-200 transform hover:scale-105 border border-primary-200/60 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {loadingMore ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary-400 border-t-primary-700 mr-2"></div>
+                      Loading more...
+                    </>
+                  ) : (
+                    <>
+                      <svg className="h-4 w-4 mr-2 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                      Load more posts
+                    </>
+                  )}
+                </button>
+              </div>
             )}
           </div>
         </div>
