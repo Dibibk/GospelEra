@@ -9,6 +9,7 @@ interface CreatePostData {
 interface ListPostsOptions {
   limit?: number
   fromId?: number
+  authorId?: string
 }
 
 interface SearchPostsOptions {
@@ -70,9 +71,10 @@ export async function createPost({ title, content, tags = [] }: CreatePostData) 
  * @param {Object} options - Query options
  * @param {number} options.limit - Number of posts to return (default: 20)
  * @param {number} options.fromId - ID to start pagination from (optional)
+ * @param {string} options.authorId - Filter posts by specific author ID (optional)
  * @returns {Promise<{data: Array|null, error: Error|null}>}
  */
-export async function listPosts({ limit = 20, fromId }: ListPostsOptions = {}) {
+export async function listPosts({ limit = 20, fromId, authorId }: ListPostsOptions = {}) {
   try {
     let query = supabase
       .from('posts')
@@ -91,6 +93,11 @@ export async function listPosts({ limit = 20, fromId }: ListPostsOptions = {}) {
       .eq('is_deleted', false)
       .order('created_at', { ascending: false })
       .limit(limit)
+
+    // Add author filter if provided
+    if (authorId) {
+      query = query.eq('author', authorId)
+    }
 
     // Add keyset pagination if fromId is provided
     if (fromId) {

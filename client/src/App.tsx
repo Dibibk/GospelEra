@@ -8,6 +8,7 @@ import { ProtectedRoute } from "./components/ProtectedRoute";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Profile from "./pages/Profile";
+import PublicProfile from "./pages/PublicProfile";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 
@@ -34,6 +35,14 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <Profile />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/profile/:id" 
+                element={
+                  <ProtectedRoute>
+                    <PublicProfile />
                   </ProtectedRoute>
                 } 
               />

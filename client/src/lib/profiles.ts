@@ -140,6 +140,34 @@ export async function getProfilesByIds(ids: string[]) {
 }
 
 /**
+ * Gets a profile by user ID (public, for viewing other users)
+ * @param {string} userId - The user ID to fetch profile for
+ * @returns {Promise<{data: Profile|null, error: Error|null}>}
+ */
+export async function getProfileById(userId: string) {
+  try {
+    if (!userId) {
+      throw new Error('User ID is required')
+    }
+
+    // Fetch profile by ID
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('id, display_name, bio, avatar_url, created_at')
+      .eq('id', userId)
+      .maybeSingle()
+
+    if (error) {
+      throw new Error(`Failed to fetch profile: ${error.message}`)
+    }
+
+    return { data, error: null }
+  } catch (err) {
+    return { data: null, error: err }
+  }
+}
+
+/**
  * Ensures the current user has a profile, creating one if missing
  * Creates a basic profile with display_name set to user's email
  * @returns {Promise<{data: Profile|null, error: Error|null}>}
