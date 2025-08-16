@@ -69,11 +69,7 @@ export async function listComments({ postId, limit = 20, fromId }: ListCommentsO
         post_id,
         content,
         created_at,
-        author,
-        profiles:profiles!author (
-          display_name,
-          avatar_url
-        )
+        author
       `)
       .eq('post_id', postId)
       .eq('is_deleted', false)

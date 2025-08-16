@@ -1,9 +1,11 @@
 import { useState, useEffect, useCallback } from 'react'
+import { Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { createPost, listPosts, softDeletePost, searchPosts, getTopTags } from '../lib/posts'
 import { createComment, listComments, softDeleteComment } from '../lib/comments'
 import { createReport } from '../lib/reports'
 import { getDailyVerse } from '../lib/scripture'
+import { getProfilesByIds } from '../lib/profiles'
 import { supabase } from '../lib/supabaseClient'
 
 export default function Dashboard() {
@@ -59,6 +61,9 @@ export default function Dashboard() {
   
   // User profile state
   const [userProfile, setUserProfile] = useState<{display_name?: string, avatar_url?: string} | null>(null)
+  
+  // Profile cache for author information
+  const [profileCache, setProfileCache] = useState<Map<string, any>>(new Map())
 
   const handleLogout = async () => {
     await signOut()
@@ -99,6 +104,17 @@ export default function Dashboard() {
     loadDailyVerse()
     loadTopTags()
     loadUserProfile()
+    
+    // Load cached profiles from session storage
+    const cachedProfiles = sessionStorage.getItem('profileCache')
+    if (cachedProfiles) {
+      try {
+        const parsedCache = JSON.parse(cachedProfiles)
+        setProfileCache(new Map(Object.entries(parsedCache)))
+      } catch (e) {
+        console.error('Failed to parse cached profiles:', e)
+      }
+    }
   }, [])
 
   // Debounce search query
@@ -161,6 +177,12 @@ export default function Dashboard() {
       const newPosts = data || []
       setPosts(prev => isLoadingMore ? [...prev, ...newPosts] : newPosts)
       
+      // Batch load author profiles
+      if (newPosts.length > 0) {
+        const authorIds = newPosts.map((post: any) => post.author)
+        loadProfiles(authorIds)
+      }
+      
       // Set cursor for next page if we got a full page
       if (newPosts.length === 20) {
         setNextCursor({ 
@@ -200,6 +222,12 @@ export default function Dashboard() {
       const result = data || { items: [], nextCursor: null }
       setPosts(prev => isLoadingMore ? [...prev, ...result.items] : result.items)
       setNextCursor(result.nextCursor)
+      
+      // Batch load author profiles
+      if (result.items.length > 0) {
+        const authorIds = result.items.map((post: any) => post.author)
+        loadProfiles(authorIds)
+      }
     }
     
     setIsLoading(false)
@@ -289,11 +317,17 @@ export default function Dashboard() {
       setTags('')
       
       // Check if new post matches current filters
-      const newPost = { ...data, profiles: { display_name: user?.email?.split('@')[0] || 'You' } }
+      const newPost = { ...data }
       
       if (postMatchesFilters(newPost)) {
         // Post matches filters, prepend to current list
         setPosts(prev => [newPost, ...prev])
+        
+        // Load profile for the new post author
+        if (data.author) {
+          loadProfiles([data.author])
+        }
+        
         showToast('Post created and added to current view!', 'success')
       } else {
         // Post doesn't match filters, show toast
@@ -350,10 +384,17 @@ export default function Dashboard() {
     if (error) {
       showToast(`Failed to load comments: ${(error as any).message}`, 'error')
     } else {
+      const comments = data || []
       setPostComments(prev => ({
         ...prev, 
-        [postId]: fromId ? [...(prev[postId] || []), ...(data || [])] : (data || [])
+        [postId]: fromId ? [...(prev[postId] || []), ...comments] : comments
       }))
+      
+      // Batch load comment author profiles
+      if (comments.length > 0) {
+        const authorIds = comments.map((comment: any) => comment.author)
+        loadProfiles(authorIds)
+      }
     }
     
     if (fromId) {
@@ -380,6 +421,11 @@ export default function Dashboard() {
         ...prev,
         [postId]: [data, ...(prev[postId] || [])]
       }))
+      
+      // Load profile for the new comment author
+      if (data.author) {
+        loadProfiles([data.author])
+      }
     }
     
     setSubmittingComment(prev => ({...prev, [postId]: false}))
@@ -457,6 +503,82 @@ export default function Dashboard() {
     } catch (error) {
       console.error('Error loading user profile:', error)
     }
+  }
+  
+  // Batch load profiles and cache them
+  const loadProfiles = async (userIds: string[]) => {
+    if (userIds.length === 0) return
+    
+    // Filter out IDs that are already cached
+    const uncachedIds = userIds.filter(id => !profileCache.has(id))
+    
+    if (uncachedIds.length === 0) return
+    
+    try {
+      const { data, error } = await getProfilesByIds(uncachedIds)
+      
+      if (error) {
+        console.error('Failed to batch load profiles:', error)
+        return
+      }
+      
+      if (data) {
+        // Update cache with new profiles
+        const newCache = new Map(profileCache)
+        data.forEach((profile, id) => {
+          newCache.set(id, profile)
+        })
+        setProfileCache(newCache)
+        
+        // Save to session storage
+        const cacheObj = Object.fromEntries(newCache.entries())
+        sessionStorage.setItem('profileCache', JSON.stringify(cacheObj))
+      }
+    } catch (error) {
+      console.error('Error batch loading profiles:', error)
+    }
+  }
+  
+  // Get profile from cache with fallbacks
+  const getAuthorProfile = (authorId: string, fallbackEmail?: string) => {
+    const profile = profileCache.get(authorId)
+    return {
+      display_name: profile?.display_name || fallbackEmail?.split('@')[0] || 'Anonymous',
+      avatar_url: profile?.avatar_url || null,
+      id: authorId
+    }
+  }
+  
+  // Render clickable author info
+  const renderAuthorInfo = (authorId: string, fallbackEmail?: string, size: 'sm' | 'md' = 'md') => {
+    const author = getAuthorProfile(authorId, fallbackEmail)
+    const avatarSize = size === 'sm' ? 'h-9 w-9' : 'h-12 w-12'
+    const textSize = size === 'sm' ? 'text-sm' : 'text-base'
+    const iconSize = size === 'sm' ? 'text-sm' : 'text-base'
+    
+    return (
+      <Link to={`/profile/${authorId}`} className="flex items-center space-x-3 hover:opacity-80 transition-opacity duration-200">
+        <div className={`${avatarSize} rounded-full bg-gradient-to-br from-primary-500 via-purple-500 to-primary-600 flex items-center justify-center shadow-md ring-2 ring-white overflow-hidden`}>
+          {author.avatar_url ? (
+            <img 
+              src={author.avatar_url} 
+              alt={author.display_name} 
+              className={`${avatarSize} rounded-full object-cover`}
+              onError={(e) => {
+                (e.target as HTMLImageElement).style.display = 'none'
+              }}
+            />
+          ) : (
+            <span className={`text-white font-bold ${iconSize}`}>
+              {author.display_name.charAt(0).toUpperCase()}
+            </span>
+          )}
+        </div>
+        <span className={`font-bold text-primary-900 ${textSize} hover:text-primary-700 transition-colors duration-200`}>
+          {author.display_name}
+        </span>
+      </Link>
+    )
   }
 
   return (
@@ -920,29 +1042,9 @@ export default function Dashboard() {
                   <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 hover:opacity-100 transition-opacity duration-300"></div>
                   <div className="relative p-8">
                     <div className="flex items-start space-x-5 mb-6">
-                      <div className="flex-shrink-0">
-                        <div className="h-12 w-12 rounded-full bg-gradient-to-br from-primary-500 via-purple-500 to-primary-600 flex items-center justify-center shadow-lg ring-2 ring-white overflow-hidden">
-                          {post.profiles?.avatar_url ? (
-                            <img 
-                              src={post.profiles.avatar_url} 
-                              alt={post.profiles.display_name || 'User'} 
-                              className="h-12 w-12 rounded-full object-cover"
-                              onError={(e) => {
-                                (e.target as HTMLImageElement).style.display = 'none'
-                              }}
-                            />
-                          ) : (
-                            <span className="text-white font-bold text-base">
-                              {(post.profiles?.display_name || 'U').charAt(0).toUpperCase()}
-                            </span>
-                          )}
-                        </div>
-                      </div>
+                      {renderAuthorInfo(post.author, user?.email, 'md')}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center space-x-3 mb-3">
-                          <h4 className="text-base font-bold text-primary-900">
-                            {post.profiles?.display_name || user?.email?.split('@')[0] || 'Anonymous User'}
-                          </h4>
                           <div className="h-1 w-1 bg-gold-500 rounded-full"></div>
                           <time className="text-sm text-primary-600 font-medium">
                             {formatDate(post.created_at)}
@@ -1094,29 +1196,9 @@ export default function Dashboard() {
                           {(postComments[post.id] || []).map((comment) => (
                             <div key={comment.id} className="bg-gradient-to-br from-white to-primary-50/20 rounded-xl border border-primary-200/50 p-5 shadow-sm hover:shadow-lg transition-all duration-300 transform hover:scale-[1.01]">
                               <div className="flex items-start space-x-4">
-                                <div className="flex-shrink-0">
-                                  <div className="h-9 w-9 rounded-full bg-gradient-to-br from-purple-500 to-primary-600 flex items-center justify-center shadow-md ring-2 ring-white overflow-hidden">
-                                    {comment.profiles?.avatar_url ? (
-                                      <img 
-                                        src={comment.profiles.avatar_url} 
-                                        alt={comment.profiles.display_name || 'User'} 
-                                        className="h-9 w-9 rounded-full object-cover"
-                                        onError={(e) => {
-                                          (e.target as HTMLImageElement).style.display = 'none'
-                                        }}
-                                      />
-                                    ) : (
-                                      <span className="text-white font-bold text-sm">
-                                        {(comment.profiles?.display_name || 'A').charAt(0).toUpperCase()}
-                                      </span>
-                                    )}
-                                  </div>
-                                </div>
+                                {renderAuthorInfo(comment.author, user?.email, 'sm')}
                                 <div className="flex-1 min-w-0">
                                   <div className="flex items-center space-x-3 mb-3">
-                                    <h5 className="text-sm font-bold text-primary-900">
-                                      {comment.profiles?.display_name || user?.email?.split('@')[0] || 'Anonymous User'}
-                                    </h5>
                                     <div className="h-1 w-1 bg-gold-500 rounded-full"></div>
                                     <time className="text-xs text-primary-600 font-medium">
                                       {formatDate(comment.created_at)}

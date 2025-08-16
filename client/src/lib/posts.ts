@@ -84,11 +84,7 @@ export async function listPosts({ limit = 20, fromId, authorId }: ListPostsOptio
         content,
         tags,
         created_at,
-        author,
-        profiles:profiles!author (
-          display_name,
-          avatar_url
-        )
+        author
       `)
       .eq('is_deleted', false)
       .order('created_at', { ascending: false })
@@ -189,11 +185,7 @@ export async function searchPosts({ q = '', tags = [], limit = 20, cursor }: Sea
         content,
         tags,
         created_at,
-        author,
-        profiles:profiles!author (
-          display_name,
-          avatar_url
-        )
+        author
       `)
       .eq('is_deleted', false)
       .order('created_at', { ascending: false })
