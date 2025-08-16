@@ -61,11 +61,11 @@ export function validateMediaFile(file) {
   }
   
   if (isImage) {
-    const maxImageSize = 10 * 1024 * 1024; // 10MB
+    const maxImageSize = 5 * 1024 * 1024; // 5MB
     const allowedImageTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'];
     
     if (file.size > maxImageSize) {
-      return { valid: false, error: 'Image must be less than 10MB' };
+      return { valid: false, error: 'Image must be less than 5MB' };
     }
     
     if (!allowedImageTypes.includes(file.type)) {
@@ -74,11 +74,11 @@ export function validateMediaFile(file) {
   }
   
   if (isVideo) {
-    const maxVideoSize = 100 * 1024 * 1024; // 100MB
+    const maxVideoSize = 20 * 1024 * 1024; // 20MB
     const allowedVideoTypes = ['video/mp4', 'video/mov', 'video/avi', 'video/quicktime'];
     
     if (file.size > maxVideoSize) {
-      return { valid: false, error: 'Video must be less than 100MB' };
+      return { valid: false, error: 'Video must be less than 20MB' };
     }
     
     if (!allowedVideoTypes.includes(file.type)) {

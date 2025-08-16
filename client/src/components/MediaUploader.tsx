@@ -51,8 +51,8 @@ interface MediaUploaderProps {
  */
 export function MediaUploader({
   maxNumberOfFiles = 10,
-  maxImageSize = 10485760, // 10MB for images
-  maxVideoSize = 104857600, // 100MB for videos
+  maxImageSize = 5242880, // 5MB for images (dev-friendly)
+  maxVideoSize = 20971520, // 20MB for videos (dev-friendly)
   allowImages = true,
   allowVideos = true,
   onGetUploadParameters,

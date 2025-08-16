@@ -992,9 +992,9 @@ export default function Dashboard() {
                 
                 <div className="space-y-4">
                   <MediaUploader
-                    maxNumberOfFiles={10}
-                    maxImageSize={10485760} // 10MB
-                    maxVideoSize={104857600} // 100MB
+                    maxNumberOfFiles={5} // Reduced for dev
+                    maxImageSize={5242880} // 5MB (dev-friendly)
+                    maxVideoSize={20971520} // 20MB (dev-friendly)
                     allowImages={true}
                     allowVideos={true}
                     onGetUploadParameters={handleMediaUpload}
@@ -1005,7 +1005,7 @@ export default function Dashboard() {
                     <svg className="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                     </svg>
-                    {isUploadingMedia ? 'Processing...' : 'Upload Images & Videos'}
+                    {isUploadingMedia ? 'Processing...' : 'Upload Images & Videos (5MB/20MB)'}
                   </MediaUploader>
 
                   {/* Media Preview */}
