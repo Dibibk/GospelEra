@@ -668,13 +668,13 @@ export default function Dashboard() {
   // Render clickable author info
   const renderAuthorInfo = (authorId: string, fallbackEmail?: string, size: 'sm' | 'md' = 'md') => {
     const author = getAuthorProfile(authorId, fallbackEmail)
-    const avatarSize = size === 'sm' ? 'h-9 w-9' : 'h-12 w-12'
+    const avatarSize = size === 'sm' ? 'h-8 w-8' : 'h-10 w-10'
     const textSize = size === 'sm' ? 'text-sm' : 'text-base'
     const iconSize = size === 'sm' ? 'text-sm' : 'text-base'
     
     return (
-      <Link to={`/profile/${authorId}`} className="flex items-center space-x-3 hover:opacity-80 transition-opacity duration-200">
-        <div className={`${avatarSize} rounded-full bg-gradient-to-br from-primary-500 via-purple-500 to-primary-600 flex items-center justify-center shadow-md ring-2 ring-white overflow-hidden`}>
+      <Link to={`/profile/${authorId}`} className="flex items-center space-x-3 hover:text-blue-600 transition-colors duration-150">
+        <div className={`${avatarSize} rounded-full bg-gray-100 flex items-center justify-center border border-gray-200 overflow-hidden`}>
           {author.avatar_url ? (
             <img 
               src={author.avatar_url} 
@@ -685,12 +685,12 @@ export default function Dashboard() {
               }}
             />
           ) : (
-            <span className={`text-white font-bold ${iconSize}`}>
+            <span className={`text-gray-600 font-medium ${iconSize}`}>
               {author.display_name.charAt(0).toUpperCase()}
             </span>
           )}
         </div>
-        <span className={`font-bold text-primary-900 ${textSize} hover:text-primary-700 transition-colors duration-200`}>
+        <span className={`font-medium text-gray-900 ${textSize}`}>
           {author.display_name}
         </span>
       </Link>
@@ -1154,38 +1154,29 @@ export default function Dashboard() {
               </div>
             ) : (
               posts.map((post) => (
-                <div key={post.id} className="relative bg-gradient-to-br from-white via-primary-50/30 to-purple-50/30 rounded-2xl shadow-lg border border-primary-200/60 hover:shadow-xl transition-all duration-300 transform hover:scale-[1.01] mb-8 overflow-hidden">
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 hover:opacity-100 transition-opacity duration-300"></div>
-                  <div className="relative p-8">
-                    <div className="flex items-start space-x-5 mb-6">
+                <div key={post.id} className="bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-200 mb-6">
+                  <div className="p-6">
+                    <div className="flex items-start space-x-4 mb-4">
                       {renderAuthorInfo(post.author, user?.email, 'md')}
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center space-x-3 mb-3">
-                          <div className="h-1 w-1 bg-gold-500 rounded-full"></div>
-                          <time className="text-sm text-primary-600 font-medium">
+                        <div className="flex items-center justify-between mb-2">
+                          <time className="text-sm text-gray-500">
                             {formatDate(post.created_at)}
                           </time>
-                          <div className="flex items-center ml-auto">
-                            <div className="h-2 w-2 bg-green-400 rounded-full animate-pulse mr-2"></div>
-                            <span className="text-xs text-primary-500 font-medium">Active</span>
-                          </div>
                         </div>
-                        <h3 className="text-2xl font-bold text-primary-900 mb-4 leading-tight">{post.title}</h3>
-                        <div className="bg-gradient-to-r from-primary-50/50 to-purple-50/50 rounded-xl p-5 mb-5 border border-primary-200/40">
-                          <p className="text-primary-800 leading-relaxed font-medium">{post.content}</p>
+                        <h3 className="text-xl font-semibold text-gray-900 mb-3 leading-tight">{post.title}</h3>
+                        <div className="bg-gray-50 rounded-lg p-4 mb-4 border border-gray-100">
+                          <p className="text-gray-700 leading-relaxed">{post.content}</p>
                         </div>
                         
                         {post.tags && post.tags.length > 0 && (
-                          <div className="flex flex-wrap gap-3 mb-5">
+                          <div className="flex flex-wrap gap-2 mb-4">
                             {post.tags.map((tag: string, index: number) => (
                               <span
                                 key={index}
-                                className="inline-flex items-center px-4 py-2 rounded-full text-sm font-bold bg-gradient-to-r from-gold-100 via-gold-50 to-gold-100 text-gold-800 border border-gold-300/60 hover:from-gold-200 hover:to-gold-200 transition-all duration-200 shadow-sm"
+                                className="inline-flex items-center px-3 py-1 rounded-md text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200"
                               >
-                                <svg className="h-3 w-3 mr-2 text-gold-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-                                </svg>
-                                {tag}
+                                #{tag}
                               </span>
                             ))}
                           </div>
@@ -1194,16 +1185,16 @@ export default function Dashboard() {
                     </div>
 
                     {/* Action buttons */}
-                    <div className="flex items-center justify-between pt-6 border-t border-gradient-to-r from-primary-200/40 via-purple-200/40 to-primary-200/40">
-                      <div className="flex items-center space-x-4">
+                    <div className="flex items-center justify-between pt-4 border-t border-gray-200">
+                      <div className="flex items-center space-x-3">
                         <button
                           onClick={() => toggleCommentForm(post.id)}
-                          className="inline-flex items-center px-4 py-2 text-sm font-bold text-primary-700 bg-gradient-to-r from-primary-100 to-purple-100 hover:from-primary-200 hover:to-purple-200 rounded-xl transition-all duration-200 transform hover:scale-105 border border-primary-200/60 shadow-sm"
+                          className="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 rounded-md border border-gray-300 transition-colors duration-150"
                         >
-                          <svg className="h-4 w-4 mr-2 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <svg className="h-4 w-4 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                           </svg>
-                          Respond
+                          Reply
                         </button>
                         
                         {/* Save (Bookmark) Button */}
@@ -1211,17 +1202,17 @@ export default function Dashboard() {
                           onClick={() => handleToggleBookmark(post.id)}
                           disabled={bookmarkLoading[post.id]}
                           title={postBookmarks[post.id] ? "Saved" : "Save"}
-                          className={`inline-flex items-center px-4 py-2 text-sm font-bold rounded-xl transition-all duration-200 transform hover:scale-105 border shadow-sm disabled:opacity-50 disabled:cursor-not-allowed ${
+                          className={`inline-flex items-center px-3 py-2 text-sm font-medium rounded-md border transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed ${
                             postBookmarks[post.id] 
-                              ? 'text-gold-700 bg-gradient-to-r from-gold-100 to-gold-50 hover:from-gold-200 hover:to-gold-100 border-gold-200/60' 
-                              : 'text-primary-700 bg-gradient-to-r from-primary-100 to-purple-100 hover:from-primary-200 hover:to-purple-200 border-primary-200/60'
+                              ? 'text-blue-700 bg-blue-50 hover:bg-blue-100 border-blue-200' 
+                              : 'text-gray-700 bg-white hover:bg-gray-50 border-gray-300'
                           }`}
                         >
                           {bookmarkLoading[post.id] ? (
-                            <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary-400 border-t-primary-700 mr-2"></div>
+                            <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-300 border-t-gray-600 mr-2"></div>
                           ) : (
                             <svg className={`h-4 w-4 mr-2 ${
-                              postBookmarks[post.id] ? 'text-gold-600 fill-current' : 'text-primary-600'
+                              postBookmarks[post.id] ? 'text-blue-600 fill-current' : 'text-gray-500'
                             }`} fill={postBookmarks[post.id] ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
                             </svg>
@@ -1234,24 +1225,24 @@ export default function Dashboard() {
                           onClick={() => handleToggleAmen(post.id)}
                           disabled={amenLoading[post.id]}
                           title={postAmenInfo[post.id]?.mine ? "Amen'd" : "Amen"}
-                          className={`inline-flex items-center px-4 py-2 text-sm font-bold rounded-xl transition-all duration-200 transform hover:scale-105 border shadow-sm disabled:opacity-50 disabled:cursor-not-allowed ${
+                          className={`inline-flex items-center px-3 py-2 text-sm font-medium rounded-md border transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed ${
                             postAmenInfo[post.id]?.mine 
-                              ? 'text-blue-700 bg-gradient-to-r from-blue-100 to-blue-50 hover:from-blue-200 hover:to-blue-100 border-blue-200/60' 
-                              : 'text-primary-700 bg-gradient-to-r from-primary-100 to-purple-100 hover:from-primary-200 hover:to-purple-200 border-primary-200/60'
+                              ? 'text-red-700 bg-red-50 hover:bg-red-100 border-red-200' 
+                              : 'text-gray-700 bg-white hover:bg-gray-50 border-gray-300'
                           }`}
                         >
                           {amenLoading[post.id] ? (
-                            <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary-400 border-t-primary-700 mr-2"></div>
+                            <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-300 border-t-gray-600 mr-2"></div>
                           ) : (
                             <svg className={`h-4 w-4 mr-2 ${
-                              postAmenInfo[post.id]?.mine ? 'text-blue-600' : 'text-primary-600'
+                              postAmenInfo[post.id]?.mine ? 'text-red-600' : 'text-gray-500'
                             }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                             </svg>
                           )}
                           Amen
                           {(postAmenInfo[post.id]?.count || 0) > 0 && (
-                            <span className="ml-2 px-2 py-1 bg-white/60 rounded-full text-xs font-bold">
+                            <span className="ml-2 px-1.5 py-0.5 bg-gray-100 rounded text-xs font-medium">
                               {postAmenInfo[post.id]?.count}
                             </span>
                           )}
@@ -1259,9 +1250,9 @@ export default function Dashboard() {
                         
                         <button
                           onClick={() => openReportModal('post', post.id.toString())}
-                          className="inline-flex items-center px-4 py-2 text-sm font-bold text-sage-700 bg-gradient-to-r from-sage-100 to-sage-50 hover:from-sage-200 hover:to-sage-100 rounded-xl transition-all duration-200 transform hover:scale-105 border border-sage-200/60 shadow-sm"
+                          className="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-500 bg-white hover:bg-gray-50 rounded-md border border-gray-300 transition-colors duration-150"
                         >
-                          <svg className="h-4 w-4 mr-2 text-sage-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <svg className="h-4 w-4 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.35 16.5c-.77.833.192 2.5 1.732 2.5z" />
                           </svg>
                           Report
@@ -1272,19 +1263,19 @@ export default function Dashboard() {
                         <button
                           onClick={() => handleDeletePost(post.id)}
                           disabled={deletingPostId === post.id}
-                          className="inline-flex items-center px-4 py-2 text-sm font-bold text-red-700 bg-gradient-to-r from-red-100 to-pink-100 hover:from-red-200 hover:to-pink-200 rounded-xl transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed border border-red-200/60 shadow-sm"
+                          className="inline-flex items-center px-3 py-2 text-sm font-medium text-red-700 bg-red-50 hover:bg-red-100 rounded-md border border-red-200 transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           {deletingPostId === post.id ? (
                             <>
-                              <div className="animate-spin rounded-full h-4 w-4 border-2 border-red-400 border-t-red-700 mr-2"></div>
-                              Removing...
+                              <div className="animate-spin rounded-full h-4 w-4 border-2 border-red-300 border-t-red-600 mr-2"></div>
+                              Deleting...
                             </>
                           ) : (
                             <>
                               <svg className="h-4 w-4 mr-2 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                               </svg>
-                              Remove
+                              Delete
                             </>
                           )}
                         </button>
@@ -1295,11 +1286,11 @@ export default function Dashboard() {
 
                   {/* Comment form */}
                   {commentForms[post.id] && (
-                    <div className="border-t border-gradient-to-r from-primary-200/40 via-purple-200/40 to-primary-200/40 pt-6 mt-6 bg-gradient-to-br from-primary-50/30 to-purple-50/30 -mx-8 px-8 pb-6 rounded-b-2xl">
-                      <div className="flex space-x-4">
+                    <div className="border-t border-gray-200 pt-4 mt-4 bg-gray-50 -mx-6 px-6 pb-6 rounded-b-lg">
+                      <div className="flex space-x-3">
                         <div className="flex-shrink-0">
-                          <div className="h-10 w-10 rounded-full bg-gradient-to-br from-gold-500 to-gold-600 flex items-center justify-center shadow-md ring-2 ring-white">
-                            <span className="text-white font-bold text-sm">
+                          <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center border border-gray-300">
+                            <span className="text-gray-600 font-medium text-sm">
                               {(user?.email?.charAt(0) || 'Y').toUpperCase()}
                             </span>
                           </div>
@@ -1308,27 +1299,27 @@ export default function Dashboard() {
                           <textarea
                             value={commentTexts[post.id] || ''}
                             onChange={(e) => setCommentTexts(prev => ({...prev, [post.id]: e.target.value}))}
-                            placeholder="Share your thoughts, encouragement, or prayers..."
-                            rows={4}
-                            className="w-full px-4 py-3 border-2 border-primary-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-gold-500 resize-none shadow-sm bg-white/90 backdrop-blur-sm transition-all duration-200 font-medium text-primary-900 placeholder-primary-400"
+                            placeholder="Write a comment..."
+                            rows={3}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none bg-white text-gray-900 placeholder-gray-500"
                           />
-                          <div className="flex justify-end mt-4">
+                          <div className="flex justify-end mt-3">
                             <button
                               onClick={() => handleCreateComment(post.id)}
                               disabled={submittingComment[post.id] || !commentTexts[post.id]?.trim()}
-                              className="px-6 py-3 bg-gradient-to-r from-primary-600 via-purple-600 to-primary-600 text-white rounded-xl hover:from-primary-700 hover:via-purple-700 hover:to-primary-700 focus:outline-none focus:ring-4 focus:ring-gold-500/50 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 font-bold shadow-lg hover:shadow-xl transform hover:scale-105"
+                              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150 font-medium"
                             >
                               {submittingComment[post.id] ? (
                                 <>
                                   <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2 inline-block"></div>
-                                  Sharing...
+                                  Posting...
                                 </>
                               ) : (
                                 <>
                                   <svg className="h-4 w-4 mr-2 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
                                   </svg>
-                                  Share Response
+                                  Post Comment
                                 </>
                               )}
                             </button>
@@ -1340,46 +1331,45 @@ export default function Dashboard() {
 
                   {/* Comments section */}
                   {commentForms[post.id] && (
-                    <div className="border-t border-gradient-to-r from-primary-200/40 via-purple-200/40 to-primary-200/40 pt-6 -mx-8 px-8">
+                    <div className="border-t border-gray-200 pt-4 -mx-6 px-6">
                       {commentLoading[post.id] ? (
-                        <div className="flex items-center justify-center py-8">
-                          <div className="flex items-center space-x-3">
-                            <div className="animate-spin rounded-full h-6 w-6 border-3 border-primary-300 border-t-gold-600"></div>
-                            <span className="text-primary-700 font-medium">Loading responses...</span>
+                        <div className="flex items-center justify-center py-6">
+                          <div className="flex items-center space-x-2">
+                            <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-300 border-t-blue-600"></div>
+                            <span className="text-gray-600">Loading comments...</span>
                           </div>
                         </div>
                       ) : postComments[post.id]?.length === 0 ? (
-                        <div className="text-center py-8">
-                          <div className="h-16 w-16 bg-gradient-to-br from-primary-400 to-purple-500 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
-                            <svg className="h-8 w-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div className="text-center py-6">
+                          <div className="h-12 w-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                            <svg className="h-6 w-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                             </svg>
                           </div>
-                          <h4 className="text-lg font-bold text-primary-800 mb-2">Start the Conversation</h4>
-                          <p className="text-primary-600">Be the first to share your thoughts and encouragement!</p>
+                          <h4 className="text-sm font-medium text-gray-900 mb-1">No comments yet</h4>
+                          <p className="text-sm text-gray-500">Be the first to comment</p>
                         </div>
                       ) : (
-                        <div className="space-y-4">
+                        <div className="space-y-3">
                           {(postComments[post.id] || []).map((comment) => (
-                            <div key={comment.id} className="bg-gradient-to-br from-white to-primary-50/20 rounded-xl border border-primary-200/50 p-5 shadow-sm hover:shadow-lg transition-all duration-300 transform hover:scale-[1.01]">
-                              <div className="flex items-start space-x-4">
+                            <div key={comment.id} className="bg-white rounded-lg border border-gray-200 p-4">
+                              <div className="flex items-start space-x-3">
                                 {renderAuthorInfo(comment.author, user?.email, 'sm')}
                                 <div className="flex-1 min-w-0">
-                                  <div className="flex items-center space-x-3 mb-3">
-                                    <div className="h-1 w-1 bg-gold-500 rounded-full"></div>
-                                    <time className="text-xs text-primary-600 font-medium">
+                                  <div className="flex items-center space-x-2 mb-2">
+                                    <time className="text-xs text-gray-500">
                                       {formatDate(comment.created_at)}
                                     </time>
                                   </div>
-                                  <div className="bg-gradient-to-r from-primary-50/40 to-purple-50/40 rounded-lg p-4 mb-4 border border-primary-200/30">
-                                    <p className="text-primary-800 leading-relaxed font-medium">{comment.content}</p>
+                                  <div className="bg-gray-50 rounded-md p-3 mb-3">
+                                    <p className="text-gray-700 leading-relaxed text-sm">{comment.content}</p>
                                   </div>
-                                  <div className="flex items-center space-x-3">
+                                  <div className="flex items-center space-x-2">
                                     <button
                                       onClick={() => openReportModal('comment', comment.id.toString())}
-                                      className="inline-flex items-center px-3 py-1.5 text-xs font-bold text-sage-700 bg-gradient-to-r from-sage-100 to-sage-50 hover:from-sage-200 hover:to-sage-100 rounded-lg transition-all duration-200 transform hover:scale-105 border border-sage-200/60 shadow-sm"
+                                      className="inline-flex items-center px-2 py-1 text-xs font-medium text-gray-500 bg-white hover:bg-gray-50 rounded border border-gray-300 transition-colors duration-150"
                                     >
-                                      <svg className="h-3 w-3 mr-2 text-sage-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <svg className="h-3 w-3 mr-1 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.35 16.5c-.77.833.192 2.5 1.732 2.5z" />
                                       </svg>
                                       Report
@@ -1388,19 +1378,19 @@ export default function Dashboard() {
                                       <button
                                         onClick={() => handleDeleteComment(comment.id, post.id)}
                                         disabled={deletingCommentId === comment.id}
-                                        className="inline-flex items-center px-3 py-1.5 text-xs font-bold text-red-700 bg-gradient-to-r from-red-100 to-pink-100 hover:from-red-200 hover:to-pink-200 rounded-lg transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed border border-red-200/60 shadow-sm"
+                                        className="inline-flex items-center px-2 py-1 text-xs font-medium text-red-700 bg-red-50 hover:bg-red-100 rounded border border-red-200 transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
                                       >
                                         {deletingCommentId === comment.id ? (
                                           <>
-                                            <div className="animate-spin rounded-full h-3 w-3 border border-red-300 border-t-red-600 mr-2"></div>
-                                            Removing...
+                                            <div className="animate-spin rounded-full h-3 w-3 border border-red-300 border-t-red-600 mr-1"></div>
+                                            Deleting...
                                           </>
                                         ) : (
                                           <>
-                                            <svg className="h-3 w-3 mr-2 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <svg className="h-3 w-3 mr-1 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                             </svg>
-                                            Remove
+                                            Delete
                                           </>
                                         )}
                                       </button>
@@ -1417,7 +1407,7 @@ export default function Dashboard() {
                               <button
                                 onClick={() => loadComments(post.id, postComments[post.id][postComments[post.id].length - 1].id)}
                                 disabled={loadingMoreComments[post.id]}
-                                className="text-sm text-primary-600 hover:text-primary-700 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="text-sm text-blue-600 hover:text-blue-700 transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
                               >
                                 {loadingMoreComments[post.id] ? 'Loading...' : 'Load more comments'}
                               </button>
