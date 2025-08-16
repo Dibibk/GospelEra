@@ -198,19 +198,42 @@ export default function Profile() {
             {profile && (
               <div className="px-8 py-6 border-b border-gradient-to-r from-primary-200/40 via-purple-200/40 to-primary-200/40">
                 <div className="flex items-center space-x-6">
-                  <div className="h-20 w-20 rounded-full bg-gradient-to-br from-primary-500 to-purple-600 flex items-center justify-center shadow-lg ring-4 ring-white">
+                  <button
+                    type="button"
+                    onClick={() => document.getElementById('avatar-uploader-button')?.click()}
+                    className="group relative h-20 w-20 rounded-full bg-gradient-to-br from-primary-500 to-purple-600 flex items-center justify-center shadow-lg ring-4 ring-white hover:ring-gold-300 transition-all duration-300 cursor-pointer"
+                  >
                     {profile.avatar_url ? (
-                      <img 
-                        src={profile.avatar_url} 
-                        alt="Profile" 
-                        className="h-20 w-20 rounded-full object-cover"
-                      />
+                      <>
+                        <img 
+                          src={profile.avatar_url} 
+                          alt="Profile" 
+                          className="h-20 w-20 rounded-full object-cover"
+                          onError={(e) => {
+                            console.log('Image failed to load:', profile.avatar_url)
+                            ;(e.target as HTMLImageElement).style.display = 'none'
+                          }}
+                        />
+                        <div className="absolute inset-0 bg-black bg-opacity-50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                          <svg className="h-8 w-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                          </svg>
+                        </div>
+                      </>
                     ) : (
-                      <svg className="h-10 w-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                      </svg>
+                      <>
+                        <svg className="h-10 w-10 text-white group-hover:scale-110 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                        </svg>
+                        <div className="absolute inset-0 bg-black bg-opacity-30 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                          <svg className="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                          </svg>
+                        </div>
+                      </>
                     )}
-                  </div>
+                  </button>
                   <div>
                     <h2 className="text-2xl font-bold text-primary-900 mb-1">
                       {profile.display_name || 'No name set'}
@@ -218,6 +241,9 @@ export default function Profile() {
                     <p className="text-primary-600 font-medium mb-2">{user?.email}</p>
                     <p className="text-sm text-primary-500">
                       Member since {formatDate(profile.created_at)}
+                    </p>
+                    <p className="text-xs text-primary-400 mt-1 italic">
+                      Click avatar to upload new image
                     </p>
                   </div>
                 </div>
@@ -283,12 +309,12 @@ export default function Profile() {
                       <div className="flex items-center space-x-4">
                         <div className="h-16 w-16 rounded-full overflow-hidden bg-gradient-to-br from-primary-500 to-purple-600 flex items-center justify-center shadow-lg ring-2 ring-white">
                           <img 
-                            src={avatarUrl} 
+                            src={avatarUrl.startsWith('/') ? avatarUrl : avatarUrl} 
                             alt="Current avatar" 
                             className="h-16 w-16 rounded-full object-cover"
                             onError={(e) => {
-                              // Hide broken images
-                              (e.target as HTMLImageElement).style.display = 'none'
+                              console.log('Preview image failed to load:', avatarUrl)
+                              ;(e.target as HTMLImageElement).style.display = 'none'
                             }}
                           />
                         </div>
@@ -301,18 +327,20 @@ export default function Profile() {
                     
                     {/* Upload Button */}
                     <div className="flex items-center space-x-4">
-                      <ObjectUploader
-                        maxNumberOfFiles={1}
-                        maxFileSize={5242880} // 5MB limit for images
-                        onGetUploadParameters={handleGetUploadParameters}
-                        onComplete={handleUploadComplete}
-                        buttonClassName="flex items-center px-4 py-2 text-sm font-bold text-white bg-gradient-to-r from-gold-500 to-gold-600 hover:from-gold-600 hover:to-gold-700 rounded-xl transition-all duration-200 transform hover:scale-105 shadow-md"
-                      >
-                        <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                        </svg>
-                        Upload Image
-                      </ObjectUploader>
+                      <div id="avatar-uploader-button">
+                        <ObjectUploader
+                          maxNumberOfFiles={1}
+                          maxFileSize={5242880} // 5MB limit for images
+                          onGetUploadParameters={handleGetUploadParameters}
+                          onComplete={handleUploadComplete}
+                          buttonClassName="flex items-center px-4 py-2 text-sm font-bold text-white bg-gradient-to-r from-gold-500 to-gold-600 hover:from-gold-600 hover:to-gold-700 rounded-xl transition-all duration-200 transform hover:scale-105 shadow-md"
+                        >
+                          <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                          </svg>
+                          Upload Image
+                        </ObjectUploader>
+                      </div>
                       
                       <span className="text-sm text-primary-600">or</span>
                       
