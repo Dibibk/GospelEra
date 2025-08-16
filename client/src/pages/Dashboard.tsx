@@ -6,7 +6,7 @@ import { createComment, listComments, softDeleteComment } from '../lib/comments'
 import { createReport } from '../lib/reports'
 import { getDailyVerse } from '../lib/scripture'
 import { getProfilesByIds } from '../lib/profiles'
-import { toggleBookmark, isBookmarked, toggleAmen, getAmenInfo } from '../lib/engagement'
+import { toggleBookmark, isBookmarked, toggleAmen, getAmenInfo, listBookmarks } from '../lib/engagement'
 import { supabase } from '../lib/supabaseClient'
 
 export default function Dashboard() {
