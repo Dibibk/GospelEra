@@ -125,36 +125,27 @@ export async function softDeleteComment(id: number) {
       throw new Error('User must be authenticated to delete comments')
     }
 
-    // First check if the comment exists and the user is the author
-    const { data: comment, error: fetchError } = await supabase
-      .from('comments')
-      .select('id, author')
-      .eq('id', id)
-      .eq('is_deleted', false)
-      .single()
-
-    if (fetchError) {
-      throw new Error(`Failed to find comment: ${fetchError.message}`)
-    }
-
-    if (!comment) {
-      throw new Error('Comment not found or already deleted')
-    }
-
-    if (comment.author !== user.id) {
-      throw new Error('Only the author can delete this comment')
-    }
-
-    // Perform the soft delete
+    // Perform the soft delete directly with author check in the query
+    // This approach works better with RLS policies
     const { data, error } = await supabase
       .from('comments')
       .update({ is_deleted: true })
       .eq('id', id)
+      .eq('author', user.id)  // Only update if user is the author
+      .eq('is_deleted', false)  // Only update if not already deleted
       .select()
       .single()
 
     if (error) {
+      // If it's an RLS error, provide a more user-friendly message
+      if (error.message.includes('row-level security') || error.message.includes('new row violates')) {
+        throw new Error('You can only delete your own comments')
+      }
       throw new Error(`Failed to delete comment: ${error.message}`)
+    }
+
+    if (!data) {
+      throw new Error('Comment not found, already deleted, or you do not have permission to delete it')
     }
 
     return { data, error: null }
