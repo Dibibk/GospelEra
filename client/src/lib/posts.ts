@@ -104,6 +104,9 @@ export async function listPosts({ limit = 20, fromId }: ListPostsOptions = {}) {
       throw new Error(`Failed to fetch posts: ${error.message}`)
     }
 
+    // Debug: log the post data to see what we're getting
+    console.log('Posts data:', data)
+
     return { data, error: null }
   } catch (err) {
     return { data: null, error: err }

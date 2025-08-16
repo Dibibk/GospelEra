@@ -103,6 +103,9 @@ export async function listComments({ postId, limit = 20, fromId }: ListCommentsO
       throw new Error(`Failed to fetch comments: ${error.message}`)
     }
 
+    // Debug: log the comment data to see what we're getting
+    console.log('Comments data:', data)
+
     return { data, error: null }
   } catch (err) {
     return { data: null, error: err }

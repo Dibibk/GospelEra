@@ -460,7 +460,7 @@ export default function Dashboard() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center space-x-2 mb-2">
                           <h4 className="text-sm font-medium text-gray-900">
-                            {post.profiles?.display_name || 'Anonymous User'}
+                            {post.profiles?.display_name || user?.email?.split('@')[0] || 'Anonymous User'}
                           </h4>
                           <span className="text-gray-400">•</span>
                           <time className="text-sm text-gray-500">
@@ -601,7 +601,7 @@ export default function Dashboard() {
                                 <div className="flex-1 min-w-0">
                                   <div className="flex items-center space-x-2 mb-2">
                                     <h5 className="text-sm font-medium text-gray-900">
-                                      {comment.profiles?.display_name || 'Anonymous User'}
+                                      {comment.profiles?.display_name || user?.email?.split('@')[0] || 'Anonymous User'}
                                     </h5>
                                     <span className="text-gray-400">•</span>
                                     <time className="text-xs text-gray-500">
