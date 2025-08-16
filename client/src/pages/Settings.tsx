@@ -189,19 +189,15 @@ export default function Settings() {
           </Alert>
         )}
 
-        <Tabs defaultValue="profile" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="profile" className="flex items-center gap-2">
-              <User className="h-4 w-4" />
-              Profile
-            </TabsTrigger>
+        <Tabs defaultValue="notifications" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="notifications" className="flex items-center gap-2">
               <Bell className="h-4 w-4" />
               Notifications
             </TabsTrigger>
             <TabsTrigger value="privacy" className="flex items-center gap-2">
               <Shield className="h-4 w-4" />
-              Privacy
+              Privacy & Security
             </TabsTrigger>
             <TabsTrigger value="account" className="flex items-center gap-2">
               <Trash2 className="h-4 w-4" />
@@ -209,219 +205,275 @@ export default function Settings() {
             </TabsTrigger>
           </TabsList>
 
-          {/* Profile Settings */}
-          <TabsContent value="profile">
-            <Card>
-              <CardHeader>
-                <CardTitle>Profile Information</CardTitle>
-                <CardDescription>
-                  Update your profile details and avatar
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {/* Avatar Upload */}
-                <div className="flex items-center gap-6">
-                  <div className="flex-shrink-0">
-                    {avatarUrl ? (
-                      <img
-                        src={avatarUrl}
-                        alt="Avatar"
-                        className="w-20 h-20 rounded-full object-cover border-2 border-gray-200 dark:border-gray-700"
-                      />
-                    ) : (
-                      <div className="w-20 h-20 rounded-full bg-gradient-to-br from-purple-500 to-blue-600 flex items-center justify-center text-white text-2xl font-bold">
-                        {displayName.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || 'U'}
-                      </div>
-                    )}
-                  </div>
-                  <div>
-                    <ObjectUploader
-                      maxNumberOfFiles={1}
-                      maxFileSize={5242880} // 5MB
-                      onGetUploadParameters={handleGetUploadParameters}
-                      onComplete={handleUploadComplete}
-                      buttonClassName="mb-2"
-                    >
-                      Change Avatar
-                    </ObjectUploader>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                      JPG, PNG or GIF. Max size 5MB.
-                    </p>
-                  </div>
-                </div>
-
-                <Separator />
-
-                {/* Display Name */}
-                <div className="space-y-2">
-                  <Label htmlFor="displayName">Display Name</Label>
-                  <Input
-                    id="displayName"
-                    type="text"
-                    value={displayName}
-                    onChange={(e) => setDisplayName(e.target.value)}
-                    placeholder="Enter your display name"
-                    maxLength={40}
-                  />
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    {displayName.length}/40 characters
-                  </p>
-                </div>
-
-                {/* Bio */}
-                <div className="space-y-2">
-                  <Label htmlFor="bio">Bio</Label>
-                  <Textarea
-                    id="bio"
-                    value={bio}
-                    onChange={(e) => setBio(e.target.value)}
-                    placeholder="Tell us about yourself..."
-                    rows={4}
-                    maxLength={200}
-                  />
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    {bio.length}/200 characters
-                  </p>
-                </div>
-
-                {/* Email (Read-only) */}
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={user?.email || ''}
-                    disabled
-                    className="bg-gray-50 dark:bg-gray-800"
-                  />
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    Your email cannot be changed
-                  </p>
-                </div>
-
-                <Button 
-                  onClick={handleSaveProfile} 
-                  disabled={saving || !displayName.trim()}
-                  className="w-full sm:w-auto"
-                >
-                  {saving ? 'Saving...' : 'Save Changes'}
+          {/* Quick Profile Link */}
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <User className="h-5 w-5" />
+                Profile Information
+              </CardTitle>
+              <CardDescription>
+                Manage your display name, bio, and avatar
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Link to="/profile">
+                <Button variant="outline" className="w-full sm:w-auto">
+                  <User className="h-4 w-4 mr-2" />
+                  Edit Profile
                 </Button>
-              </CardContent>
-            </Card>
-          </TabsContent>
+              </Link>
+            </CardContent>
+          </Card>
 
           {/* Notification Settings */}
           <TabsContent value="notifications">
-            <Card>
-              <CardHeader>
-                <CardTitle>Notification Preferences</CardTitle>
-                <CardDescription>
-                  Choose how you want to be notified
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label htmlFor="email-notifications">Email Notifications</Label>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                      Receive notifications via email
-                    </p>
+            <div className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Email Notifications</CardTitle>
+                  <CardDescription>
+                    Choose what you want to receive via email
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label htmlFor="email-notifications">Email Notifications</Label>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        Receive notifications via email
+                      </p>
+                    </div>
+                    <Switch
+                      id="email-notifications"
+                      checked={emailNotifications}
+                      onCheckedChange={setEmailNotifications}
+                    />
                   </div>
-                  <Switch
-                    id="email-notifications"
-                    checked={emailNotifications}
-                    onCheckedChange={setEmailNotifications}
-                  />
-                </div>
 
-                <Separator />
+                  <Separator />
 
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label htmlFor="push-notifications">Push Notifications</Label>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                      Receive push notifications in your browser
-                    </p>
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label htmlFor="comment-notifications">Comment Notifications</Label>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        Get notified when someone comments on your posts
+                      </p>
+                    </div>
+                    <Switch
+                      id="comment-notifications"
+                      checked={commentNotifications}
+                      onCheckedChange={setCommentNotifications}
+                    />
                   </div>
-                  <Switch
-                    id="push-notifications"
-                    checked={pushNotifications}
-                    onCheckedChange={setPushNotifications}
-                  />
-                </div>
 
-                <Separator />
+                  <Separator />
 
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label htmlFor="comment-notifications">Comment Notifications</Label>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                      Get notified when someone comments on your posts
-                    </p>
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label>Weekly Digest</Label>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        Get a summary of community activity each week
+                      </p>
+                    </div>
+                    <Switch defaultChecked />
                   </div>
-                  <Switch
-                    id="comment-notifications"
-                    checked={commentNotifications}
-                    onCheckedChange={setCommentNotifications}
-                  />
-                </div>
 
-                <Button className="w-full sm:w-auto">
-                  Save Notification Settings
-                </Button>
-              </CardContent>
-            </Card>
+                  <Separator />
+
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label>New Features</Label>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        Be notified about new platform features and updates
+                      </p>
+                    </div>
+                    <Switch defaultChecked />
+                  </div>
+
+                  <Button className="w-full sm:w-auto">
+                    Save Email Preferences
+                  </Button>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Push Notifications</CardTitle>
+                  <CardDescription>
+                    Control browser and mobile notifications
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label htmlFor="push-notifications">Push Notifications</Label>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        Receive push notifications in your browser
+                      </p>
+                    </div>
+                    <Switch
+                      id="push-notifications"
+                      checked={pushNotifications}
+                      onCheckedChange={setPushNotifications}
+                    />
+                  </div>
+
+                  <Separator />
+
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label>Real-time Updates</Label>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        Get instant notifications for comments and reactions
+                      </p>
+                    </div>
+                    <Switch defaultChecked />
+                  </div>
+
+                  <Separator />
+
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label>Daily Verse Reminders</Label>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        Get notified when the daily verse is updated
+                      </p>
+                    </div>
+                    <Switch defaultChecked />
+                  </div>
+
+                  <Button className="w-full sm:w-auto">
+                    Save Push Preferences
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
 
-          {/* Privacy Settings */}
+          {/* Privacy & Security Settings */}
           <TabsContent value="privacy">
-            <Card>
-              <CardHeader>
-                <CardTitle>Privacy Settings</CardTitle>
-                <CardDescription>
-                  Control your privacy and data settings
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Profile Visibility</Label>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                      Make your profile visible to other users
-                    </p>
+            <div className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Privacy Settings</CardTitle>
+                  <CardDescription>
+                    Control who can see your content and activity
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label>Profile Visibility</Label>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        Make your profile visible to other users
+                      </p>
+                    </div>
+                    <Switch defaultChecked />
                   </div>
-                  <Switch defaultChecked />
-                </div>
 
-                <Separator />
+                  <Separator />
 
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Show Activity Status</Label>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                      Let others see when you're active
-                    </p>
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label>Show Activity Status</Label>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        Let others see when you're active
+                      </p>
+                    </div>
+                    <Switch defaultChecked />
                   </div>
-                  <Switch defaultChecked />
-                </div>
 
-                <Separator />
+                  <Separator />
 
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Data Analytics</Label>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                      Help improve our service by sharing usage data
-                    </p>
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label>Allow Comments on Posts</Label>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        Let other users comment on your posts
+                      </p>
+                    </div>
+                    <Switch defaultChecked />
                   </div>
-                  <Switch defaultChecked />
-                </div>
 
-                <Button className="w-full sm:w-auto">
-                  Save Privacy Settings
-                </Button>
-              </CardContent>
-            </Card>
+                  <Button className="w-full sm:w-auto">
+                    Save Privacy Settings
+                  </Button>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Content & Safety</CardTitle>
+                  <CardDescription>
+                    Manage content filtering and safety features
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label>Content Filtering</Label>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        Filter potentially sensitive content
+                      </p>
+                    </div>
+                    <Switch defaultChecked />
+                  </div>
+
+                  <Separator />
+
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label>Auto-hide Reported Content</Label>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        Hide content that has been reported by the community
+                      </p>
+                    </div>
+                    <Switch defaultChecked />
+                  </div>
+
+                  <Button className="w-full sm:w-auto">
+                    Save Safety Settings
+                  </Button>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Data & Analytics</CardTitle>
+                  <CardDescription>
+                    Control how your data is used to improve the platform
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label>Usage Analytics</Label>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        Help improve our service by sharing anonymous usage data
+                      </p>
+                    </div>
+                    <Switch defaultChecked />
+                  </div>
+
+                  <Separator />
+
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label>Personalized Recommendations</Label>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        Use your activity to suggest relevant content
+                      </p>
+                    </div>
+                    <Switch defaultChecked />
+                  </div>
+
+                  <Button className="w-full sm:w-auto">
+                    Save Data Preferences
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
 
           {/* Account Settings */}
