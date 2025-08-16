@@ -72,6 +72,25 @@ export default function Dashboard() {
 
   // Load posts, daily verse, and top tags on component mount
   useEffect(() => {
+    // Restore search state from sessionStorage
+    const savedQuery = sessionStorage.getItem('searchQuery')
+    const savedTags = sessionStorage.getItem('selectedTags')
+    
+    if (savedQuery) {
+      setSearchQuery(savedQuery)
+    }
+    
+    if (savedTags) {
+      try {
+        const parsedTags = JSON.parse(savedTags)
+        if (Array.isArray(parsedTags)) {
+          setSelectedTags(parsedTags)
+        }
+      } catch (e) {
+        console.error('Failed to parse saved tags:', e)
+      }
+    }
+    
     loadPosts()
     loadDailyVerse()
     loadTopTags()
@@ -93,6 +112,10 @@ export default function Dashboard() {
     const newIsSearchMode = hasQuery || hasTags
     
     setIsSearchMode(newIsSearchMode)
+    
+    // Persist to sessionStorage
+    sessionStorage.setItem('searchQuery', searchQuery)
+    sessionStorage.setItem('selectedTags', JSON.stringify(selectedTags))
     
     if (newIsSearchMode) {
       handleSearch()
@@ -199,6 +222,36 @@ export default function Dashboard() {
     )
   }
 
+  const clearSearch = () => {
+    setSearchQuery('')
+    setSelectedTags([])
+    sessionStorage.removeItem('searchQuery')
+    sessionStorage.removeItem('selectedTags')
+  }
+
+  // Check if a post matches current search filters
+  const postMatchesFilters = (post: any) => {
+    const hasQuery = debouncedQuery.trim().length > 0
+    const hasTags = selectedTags.length > 0
+    
+    if (!hasQuery && !hasTags) return true
+    
+    let matchesQuery = true
+    let matchesTags = true
+    
+    if (hasQuery) {
+      const query = debouncedQuery.toLowerCase()
+      matchesQuery = post.title.toLowerCase().includes(query) || 
+                    post.content.toLowerCase().includes(query)
+    }
+    
+    if (hasTags) {
+      matchesTags = selectedTags.some(tag => post.tags && post.tags.includes(tag))
+    }
+    
+    return matchesQuery && matchesTags
+  }
+
   const loadMorePosts = () => {
     if (!nextCursor || loadingMore) return
     
@@ -225,16 +278,26 @@ export default function Dashboard() {
     if (error) {
       setCreateError((error as any).message || 'Failed to create post')
     } else {
-      // Clear form and reload posts
+      // Clear form
       setTitle('')
       setContent('')
       setTags('')
       
-      // Reload appropriate feed
-      if (isSearchMode) {
-        handleSearch()
+      // Check if new post matches current filters
+      const newPost = { ...data, profiles: { display_name: user?.email?.split('@')[0] || 'You' } }
+      
+      if (postMatchesFilters(newPost)) {
+        // Post matches filters, prepend to current list
+        setPosts(prev => [newPost, ...prev])
+        showToast('Post created and added to current view!', 'success')
       } else {
-        loadPosts()
+        // Post doesn't match filters, show toast
+        showToast('Post created (outside current filter)', 'success')
+        
+        // If not in search mode, reload to include the new post
+        if (!isSearchMode) {
+          loadPosts()
+        }
       }
     }
 
@@ -629,11 +692,22 @@ export default function Dashboard() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search posts by title or content..."
-                className="w-full px-4 py-3 pl-12 border-2 border-primary-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-gold-500 bg-white/80 backdrop-blur-sm transition-all duration-200 font-medium text-primary-900 placeholder-primary-400"
+                className="w-full px-4 py-3 pl-12 pr-12 border-2 border-primary-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-gold-500 bg-white/80 backdrop-blur-sm transition-all duration-200 font-medium text-primary-900 placeholder-primary-400"
               />
               <svg className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-primary-400 hover:text-primary-600 transition-colors duration-200"
+                  title="Clear search"
+                >
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              )}
             </div>
             
             {/* Tags Filter */}
@@ -660,7 +734,7 @@ export default function Dashboard() {
                         onClick={() => toggleTag(tagData.tag)}
                         className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-bold transition-all duration-200 transform hover:scale-105 border shadow-sm ${
                           isSelected
-                            ? 'bg-gradient-to-r from-gold-500 to-gold-600 text-white border-gold-600 shadow-lg'
+                            ? 'bg-gradient-to-r from-gold-500 to-gold-600 text-white border-gold-600 shadow-lg ring-2 ring-gold-300 ring-offset-2'
                             : 'bg-gradient-to-r from-gold-100 via-gold-50 to-gold-100 text-gold-800 border-gold-300/60 hover:from-gold-200 hover:to-gold-200'
                         }`}
                       >
@@ -704,10 +778,7 @@ export default function Dashboard() {
                     ))}
                   </div>
                   <button
-                    onClick={() => {
-                      setSearchQuery('')
-                      setSelectedTags([])
-                    }}
+                    onClick={clearSearch}
                     className="text-sm text-primary-600 hover:text-primary-700 transition-colors duration-200 font-medium"
                   >
                     Clear All
@@ -766,10 +837,7 @@ export default function Dashboard() {
                     <h3 className="text-xl font-bold text-primary-800 mb-2">No Posts Found</h3>
                     <p className="text-primary-600 mb-4">No posts match your search criteria. Try adjusting your search terms or tags.</p>
                     <button
-                      onClick={() => {
-                        setSearchQuery('')
-                        setSelectedTags([])
-                      }}
+                      onClick={clearSearch}
                       className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-primary-100 to-purple-100 text-primary-800 rounded-full text-sm font-medium hover:from-primary-200 hover:to-purple-200 transition-all duration-200"
                     >
                       <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
