@@ -126,36 +126,27 @@ export async function softDeletePost(id: number) {
       throw new Error('User must be authenticated to delete posts')
     }
 
-    // First check if the post exists and the user is the author
-    const { data: post, error: fetchError } = await supabase
-      .from('posts')
-      .select('id, author')
-      .eq('id', id)
-      .eq('is_deleted', false)
-      .single()
-
-    if (fetchError) {
-      throw new Error(`Failed to find post: ${fetchError.message}`)
-    }
-
-    if (!post) {
-      throw new Error('Post not found or already deleted')
-    }
-
-    if (post.author !== user.id) {
-      throw new Error('Only the author can delete this post')
-    }
-
-    // Perform the soft delete
+    // Perform the soft delete directly with author check in the query
+    // This approach works better with RLS policies
     const { data, error } = await supabase
       .from('posts')
       .update({ is_deleted: true })
       .eq('id', id)
+      .eq('author', user.id)  // Only update if user is the author
+      .eq('is_deleted', false)  // Only update if not already deleted
       .select()
       .single()
 
     if (error) {
+      // If it's an RLS error, provide a more user-friendly message
+      if (error.message.includes('row-level security') || error.message.includes('new row violates')) {
+        throw new Error('You can only delete your own posts')
+      }
       throw new Error(`Failed to delete post: ${error.message}`)
+    }
+
+    if (!data) {
+      throw new Error('Post not found, already deleted, or you do not have permission to delete it')
     }
 
     return { data, error: null }
