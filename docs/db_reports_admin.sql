@@ -142,18 +142,25 @@ CREATE POLICY "users_can_update_own_comments" ON comments
 -- =============================================================================
 
 -- How to make a user an admin:
--- Replace <YOUR_USER_UUID> with the actual user's UUID from the profiles table
 -- 
--- UPDATE profiles SET role = 'admin' WHERE id = '<YOUR_USER_UUID>';
+-- Step 1: Find your user ID by running this query in Supabase SQL Editor:
+-- SELECT id, email, display_name FROM profiles WHERE email = 'your-email@example.com';
 --
--- Example:
--- UPDATE profiles SET role = 'admin' WHERE id = '123e4567-e89b-12d3-a456-426614174000';
+-- Step 2: Copy your user ID and run:
+-- UPDATE profiles SET role = 'admin' WHERE id = 'your-actual-user-id-here';
+--
+-- Quick way to make yourself admin (replace with your email):
+-- UPDATE profiles SET role = 'admin' WHERE email = 'your-email@example.com';
 
--- How to ban a user:
--- UPDATE profiles SET role = 'banned' WHERE id = '<USER_UUID_TO_BAN>';
+-- How to ban a user (replace with their email or user ID):
+-- UPDATE profiles SET role = 'banned' WHERE email = 'user-to-ban@example.com';
+-- -- OR --
+-- UPDATE profiles SET role = 'banned' WHERE id = 'user-uuid-to-ban';
 
 -- How to restore a banned user to regular user:
--- UPDATE profiles SET role = 'user' WHERE id = '<BANNED_USER_UUID>';
+-- UPDATE profiles SET role = 'user' WHERE email = 'banned-user@example.com';
+-- -- OR --
+-- UPDATE profiles SET role = 'user' WHERE id = 'banned-user-uuid';
 
 -- =============================================================================
 -- VERIFICATION QUERIES
