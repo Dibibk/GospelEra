@@ -144,13 +144,9 @@ export async function softDeleteComment(id: number) {
       console.log('Comment author:', commentCheck.author, 'Current user:', user.id, 'Match:', commentCheck.author === user.id)
     }
 
-    // Use a simpler approach that works better with current RLS setup
+    // Use RPC function to bypass RLS issues
     const { data, error } = await supabase
-      .from('comments')
-      .update({ is_deleted: true })
-      .eq('id', id)
-      .select()
-      .single()
+      .rpc('soft_delete_comment', { comment_id: id })
 
     if (error) {
       // If it's an RLS error, provide a more user-friendly message

@@ -145,13 +145,9 @@ export async function softDeletePost(id: number) {
       console.log('Post author:', postCheck.author, 'Current user:', user.id, 'Match:', postCheck.author === user.id)
     }
 
-    // Use a simpler approach that works better with current RLS setup
+    // Use RPC function to bypass RLS issues
     const { data, error } = await supabase
-      .from('posts')
-      .update({ is_deleted: true })
-      .eq('id', id)
-      .select()
-      .single()
+      .rpc('soft_delete_post', { post_id: id })
 
     if (error) {
       // If it's an RLS error, provide a more user-friendly message
