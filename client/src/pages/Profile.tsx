@@ -83,8 +83,21 @@ export default function Profile() {
           const { objectPath } = await response.json()
           // Set the avatar URL to the object path
           setAvatarUrl(objectPath)
-          setSuccess('Image uploaded successfully!')
-          setTimeout(() => setSuccess(''), 3000)
+          
+          // Auto-save the profile with the new avatar
+          const { data, error } = await upsertMyProfile({
+            display_name: displayName.trim(),
+            bio: bio.trim(),
+            avatar_url: objectPath.trim()
+          })
+
+          if (error) {
+            setError((error as any).message || 'Failed to save avatar')
+          } else {
+            setProfile(data)
+            setSuccess('Avatar uploaded and saved successfully!')
+            setTimeout(() => setSuccess(''), 3000)
+          }
         } else {
           setError('Failed to process uploaded image')
         }
