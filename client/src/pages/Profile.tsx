@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { getMyProfile, upsertMyProfile, ensureMyProfile } from '../lib/profiles'
+import { ObjectUploader } from '../components/ObjectUploader'
+import type { UploadResult } from '@uppy/core'
 
 export default function Profile() {
   const { user, signOut } = useAuth()
@@ -40,6 +42,54 @@ export default function Profile() {
     }
     
     setLoading(false)
+  }
+
+  const handleGetUploadParameters = async () => {
+    const response = await fetch('/api/objects/upload', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+    
+    if (!response.ok) {
+      throw new Error('Failed to get upload URL')
+    }
+    
+    const { uploadURL } = await response.json()
+    
+    return {
+      method: 'PUT' as const,
+      url: uploadURL,
+    }
+  }
+
+  const handleUploadComplete = async (result: UploadResult<Record<string, unknown>, Record<string, unknown>>) => {
+    if (result.successful && result.successful.length > 0) {
+      const uploadedFile = result.successful[0]
+      const uploadURL = uploadedFile.uploadURL
+      
+      if (uploadURL) {
+        // Convert the upload URL to an object path that can be served
+        const response = await fetch('/api/avatar', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ avatarURL: uploadURL }),
+        })
+        
+        if (response.ok) {
+          const { objectPath } = await response.json()
+          // Set the avatar URL to the object path
+          setAvatarUrl(objectPath)
+          setSuccess('Image uploaded successfully!')
+          setTimeout(() => setSuccess(''), 3000)
+        } else {
+          setError('Failed to process uploaded image')
+        }
+      }
+    }
   }
 
   const handleSaveProfile = async (e: React.FormEvent) => {
@@ -218,25 +268,82 @@ export default function Profile() {
                   />
                 </div>
 
-                {/* Avatar URL */}
+                {/* Avatar Section */}
                 <div>
-                  <label htmlFor="avatarUrl" className="block text-sm font-bold text-primary-800 mb-2 flex items-center">
+                  <label className="block text-sm font-bold text-primary-800 mb-2 flex items-center">
                     <svg className="h-4 w-4 text-gold-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
-                    Avatar URL
+                    Profile Picture
                   </label>
-                  <input
-                    id="avatarUrl"
-                    type="url"
-                    value={avatarUrl}
-                    onChange={(e) => setAvatarUrl(e.target.value)}
-                    className="w-full px-4 py-3 border-2 border-primary-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-gold-500 bg-white/80 backdrop-blur-sm transition-all duration-200 font-medium text-primary-900 placeholder-primary-400"
-                    placeholder="https://example.com/your-avatar.jpg"
-                  />
-                  <p className="text-xs text-primary-600 mt-1">
-                    Enter a URL to your profile picture. You can upload images to a service like Imgur or use a Gravatar.
-                  </p>
+                  
+                  <div className="space-y-4">
+                    {/* Current Avatar Preview */}
+                    {avatarUrl && (
+                      <div className="flex items-center space-x-4">
+                        <div className="h-16 w-16 rounded-full overflow-hidden bg-gradient-to-br from-primary-500 to-purple-600 flex items-center justify-center shadow-lg ring-2 ring-white">
+                          <img 
+                            src={avatarUrl} 
+                            alt="Current avatar" 
+                            className="h-16 w-16 rounded-full object-cover"
+                            onError={(e) => {
+                              // Hide broken images
+                              (e.target as HTMLImageElement).style.display = 'none'
+                            }}
+                          />
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-primary-800">Current avatar</p>
+                          <p className="text-xs text-primary-600">This will be displayed on your posts and comments</p>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Upload Button */}
+                    <div className="flex items-center space-x-4">
+                      <ObjectUploader
+                        maxNumberOfFiles={1}
+                        maxFileSize={5242880} // 5MB limit for images
+                        onGetUploadParameters={handleGetUploadParameters}
+                        onComplete={handleUploadComplete}
+                        buttonClassName="flex items-center px-4 py-2 text-sm font-bold text-white bg-gradient-to-r from-gold-500 to-gold-600 hover:from-gold-600 hover:to-gold-700 rounded-xl transition-all duration-200 transform hover:scale-105 shadow-md"
+                      >
+                        <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                        </svg>
+                        Upload Image
+                      </ObjectUploader>
+                      
+                      <span className="text-sm text-primary-600">or</span>
+                      
+                      <button
+                        type="button"
+                        onClick={() => setAvatarUrl('')}
+                        className="text-sm text-red-600 hover:text-red-700 font-medium"
+                      >
+                        Remove avatar
+                      </button>
+                    </div>
+                    
+                    {/* Manual URL Input */}
+                    <div>
+                      <label htmlFor="avatarUrl" className="block text-xs font-medium text-primary-700 mb-1">
+                        Or enter image URL manually:
+                      </label>
+                      <input
+                        id="avatarUrl"
+                        type="url"
+                        value={avatarUrl}
+                        onChange={(e) => setAvatarUrl(e.target.value)}
+                        className="w-full px-3 py-2 text-sm border-2 border-primary-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-gold-500 bg-white/80 backdrop-blur-sm transition-all duration-200 font-medium text-primary-900 placeholder-primary-400"
+                        placeholder="https://example.com/your-avatar.jpg"
+                      />
+                    </div>
+                    
+                    <p className="text-xs text-primary-600">
+                      Upload an image from your computer or enter a URL. Recommended size: 256x256 pixels. Max file size: 5MB.
+                    </p>
+                  </div>
                 </div>
               </div>
 
