@@ -1,6 +1,8 @@
 # Overview
 
-This is a full-stack web application built with React (frontend) and Express.js (backend), utilizing modern TypeScript development practices. The application appears to be a starter template with authentication capabilities, featuring a clean, responsive UI built with shadcn/ui components and Tailwind CSS. The backend is configured to use PostgreSQL with Drizzle ORM for database operations, though it currently includes a memory storage implementation as a fallback.
+**Project Name: Gospel Community Web**
+
+This is a full-stack web application built with React (frontend) and Express.js (backend), utilizing modern TypeScript development practices. The application is a social platform for Gospel Community engagement, featuring Instagram-like media upload functionality, user authentication, and community interaction features. It includes a clean, responsive UI built with shadcn/ui components and Tailwind CSS. The backend uses PostgreSQL with Drizzle ORM for database operations and Replit Object Storage for media files.
 
 # User Preferences
 
