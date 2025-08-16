@@ -88,7 +88,7 @@ export default function Profile() {
           const { data, error } = await upsertMyProfile({
             display_name: displayName.trim(),
             bio: bio.trim(),
-            avatar_url: objectPath.trim()
+            avatar_url: objectPath
           })
 
           if (error) {
@@ -111,11 +111,17 @@ export default function Profile() {
     setError('')
     setSuccess('')
 
-    const { data, error } = await upsertMyProfile({
+    // Only include avatar_url if it has a value
+    const profileData: any = {
       display_name: displayName.trim(),
       bio: bio.trim(),
-      avatar_url: avatarUrl.trim()
-    })
+    }
+    
+    if (avatarUrl.trim()) {
+      profileData.avatar_url = avatarUrl.trim()
+    }
+
+    const { data, error } = await upsertMyProfile(profileData)
 
     if (error) {
       setError((error as any).message || 'Failed to save profile')
