@@ -71,7 +71,8 @@ export async function listComments({ postId, limit = 20, fromId }: ListCommentsO
         created_at,
         author,
         profiles:profiles!author (
-          display_name
+          display_name,
+          avatar_url
         )
       `)
       .eq('post_id', postId)

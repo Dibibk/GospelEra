@@ -84,7 +84,8 @@ export async function listPosts({ limit = 20, fromId }: ListPostsOptions = {}) {
         created_at,
         author,
         profiles:profiles!author (
-          display_name
+          display_name,
+          avatar_url
         )
       `)
       .eq('is_deleted', false)
@@ -183,7 +184,8 @@ export async function searchPosts({ q = '', tags = [], limit = 20, cursor }: Sea
         created_at,
         author,
         profiles:profiles!author (
-          display_name
+          display_name,
+          avatar_url
         )
       `)
       .eq('is_deleted', false)
