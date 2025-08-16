@@ -14,7 +14,7 @@ CREATE POLICY "Users can upload avatar to own folder" ON storage.objects
 FOR INSERT WITH CHECK (
   bucket_id = 'avatars' 
   AND auth.role() = 'authenticated'
-  AND storage.foldername(name) = auth.uid()::text
+  AND (storage.foldername(name))[1] = auth.uid()::text
 );
 
 -- Policy: Allow authenticated users to update avatars in their own folder
@@ -22,7 +22,7 @@ CREATE POLICY "Users can update avatar in own folder" ON storage.objects
 FOR UPDATE USING (
   bucket_id = 'avatars' 
   AND auth.role() = 'authenticated'
-  AND storage.foldername(name) = auth.uid()::text
+  AND (storage.foldername(name))[1] = auth.uid()::text
 );
 
 -- Policy: Allow authenticated users to delete avatars from their own folder
@@ -30,7 +30,7 @@ CREATE POLICY "Users can delete avatar from own folder" ON storage.objects
 FOR DELETE USING (
   bucket_id = 'avatars' 
   AND auth.role() = 'authenticated'
-  AND storage.foldername(name) = auth.uid()::text
+  AND (storage.foldername(name))[1] = auth.uid()::text
 );
 
 -- Example upload path convention:
