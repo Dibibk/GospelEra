@@ -6,6 +6,7 @@ import { createComment, listComments, softDeleteComment } from '../lib/comments'
 import { createReport } from '../lib/reports'
 import { getDailyVerse } from '../lib/scripture'
 import { getProfilesByIds } from '../lib/profiles'
+import { toggleBookmark, isBookmarked, toggleAmen, getAmenInfo } from '../lib/engagement'
 import { supabase } from '../lib/supabaseClient'
 
 export default function Dashboard() {
@@ -64,6 +65,12 @@ export default function Dashboard() {
   
   // Profile cache for author information
   const [profileCache, setProfileCache] = useState<Map<string, any>>(new Map())
+  
+  // Engagement state
+  const [postBookmarks, setPostBookmarks] = useState<{[postId: number]: boolean}>({})
+  const [postAmenInfo, setPostAmenInfo] = useState<{[postId: number]: {count: number, mine: boolean}}>({})
+  const [bookmarkLoading, setBookmarkLoading] = useState<{[postId: number]: boolean}>({})
+  const [amenLoading, setAmenLoading] = useState<{[postId: number]: boolean}>({})
 
   const handleLogout = async () => {
     await signOut()
@@ -177,10 +184,12 @@ export default function Dashboard() {
       const newPosts = data || []
       setPosts(prev => isLoadingMore ? [...prev, ...newPosts] : newPosts)
       
-      // Batch load author profiles
+      // Batch load author profiles and engagement data
       if (newPosts.length > 0) {
         const authorIds = newPosts.map((post: any) => post.author)
+        const postIds = newPosts.map((post: any) => post.id)
         loadProfiles(authorIds)
+        loadEngagementData(postIds)
       }
       
       // Set cursor for next page if we got a full page
@@ -223,10 +232,12 @@ export default function Dashboard() {
       setPosts(prev => isLoadingMore ? [...prev, ...result.items] : result.items)
       setNextCursor(result.nextCursor)
       
-      // Batch load author profiles
+      // Batch load author profiles and engagement data
       if (result.items.length > 0) {
         const authorIds = result.items.map((post: any) => post.author)
+        const postIds = result.items.map((post: any) => post.id)
         loadProfiles(authorIds)
+        loadEngagementData(postIds)
       }
     }
     
@@ -323,9 +334,10 @@ export default function Dashboard() {
         // Post matches filters, prepend to current list
         setPosts(prev => [newPost, ...prev])
         
-        // Load profile for the new post author
+        // Load profile and engagement data for the new post
         if (data.author) {
           loadProfiles([data.author])
+          loadEngagementData([data.id])
         }
         
         showToast('Post created and added to current view!', 'success')
@@ -536,6 +548,110 @@ export default function Dashboard() {
       }
     } catch (error) {
       console.error('Error batch loading profiles:', error)
+    }
+  }
+  
+  // Load engagement data (bookmarks and amen reactions) for posts
+  const loadEngagementData = async (postIds: number[]) => {
+    if (postIds.length === 0) return
+    
+    try {
+      // Load amen info for all posts
+      const { data: amenData, error: amenError } = await getAmenInfo(postIds)
+      if (amenError) {
+        console.error('Failed to load amen info:', amenError)
+      } else if (amenData) {
+        setPostAmenInfo(prev => ({ ...prev, ...amenData }))
+      }
+      
+      // Load bookmark status for each post
+      const bookmarkPromises = postIds.map(async (postId) => {
+        const { isBookmarked: bookmarked, error } = await isBookmarked(postId)
+        if (error) {
+          console.error('Failed to check bookmark status:', error)
+          return { postId, bookmarked: false }
+        }
+        return { postId, bookmarked }
+      })
+      
+      const bookmarkResults = await Promise.all(bookmarkPromises)
+      const bookmarkMap: {[postId: number]: boolean} = {}
+      bookmarkResults.forEach(({ postId, bookmarked }) => {
+        bookmarkMap[postId] = bookmarked
+      })
+      
+      setPostBookmarks(prev => ({ ...prev, ...bookmarkMap }))
+    } catch (error) {
+      console.error('Error loading engagement data:', error)
+    }
+  }
+  
+  // Handle bookmark toggle with optimistic updates
+  const handleToggleBookmark = async (postId: number) => {
+    const currentBookmarked = postBookmarks[postId] || false
+    
+    // Optimistic update
+    setPostBookmarks(prev => ({ ...prev, [postId]: !currentBookmarked }))
+    setBookmarkLoading(prev => ({ ...prev, [postId]: true }))
+    
+    try {
+      const { success, isBookmarked: newBookmarked, error } = await toggleBookmark(postId)
+      
+      if (error) {
+        // Revert optimistic update on error
+        setPostBookmarks(prev => ({ ...prev, [postId]: currentBookmarked }))
+        console.error('Failed to toggle bookmark:', error)
+        showToast(`Failed to ${currentBookmarked ? 'remove' : 'save'} post`, 'error')
+      } else if (success) {
+        // Update to actual state
+        setPostBookmarks(prev => ({ ...prev, [postId]: newBookmarked }))
+        showToast(newBookmarked ? 'Post saved!' : 'Post unsaved', 'success')
+      }
+    } catch (error) {
+      // Revert optimistic update on error
+      setPostBookmarks(prev => ({ ...prev, [postId]: currentBookmarked }))
+      console.error('Error toggling bookmark:', error)
+      showToast('Failed to update bookmark', 'error')
+    } finally {
+      setBookmarkLoading(prev => ({ ...prev, [postId]: false }))
+    }
+  }
+  
+  // Handle amen toggle with optimistic updates
+  const handleToggleAmen = async (postId: number) => {
+    const currentAmen = postAmenInfo[postId] || { count: 0, mine: false }
+    
+    // Optimistic update
+    const optimisticCount = currentAmen.mine ? currentAmen.count - 1 : currentAmen.count + 1
+    setPostAmenInfo(prev => ({
+      ...prev,
+      [postId]: { count: optimisticCount, mine: !currentAmen.mine }
+    }))
+    setAmenLoading(prev => ({ ...prev, [postId]: true }))
+    
+    try {
+      const { success, hasReacted, error } = await toggleAmen(postId)
+      
+      if (error) {
+        // Revert optimistic update on error
+        setPostAmenInfo(prev => ({ ...prev, [postId]: currentAmen }))
+        console.error('Failed to toggle amen:', error)
+        showToast('Failed to update reaction', 'error')
+      } else if (success) {
+        // Update to actual state
+        const actualCount = hasReacted ? currentAmen.count + 1 : currentAmen.count - 1
+        setPostAmenInfo(prev => ({
+          ...prev,
+          [postId]: { count: Math.max(0, actualCount), mine: hasReacted }
+        }))
+      }
+    } catch (error) {
+      // Revert optimistic update on error
+      setPostAmenInfo(prev => ({ ...prev, [postId]: currentAmen }))
+      console.error('Error toggling amen:', error)
+      showToast('Failed to update reaction', 'error')
+    } finally {
+      setAmenLoading(prev => ({ ...prev, [postId]: false }))
     }
   }
   
@@ -1088,6 +1204,57 @@ export default function Dashboard() {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                           </svg>
                           Respond
+                        </button>
+                        
+                        {/* Save (Bookmark) Button */}
+                        <button
+                          onClick={() => handleToggleBookmark(post.id)}
+                          disabled={bookmarkLoading[post.id]}
+                          title={postBookmarks[post.id] ? "Saved" : "Save"}
+                          className={`inline-flex items-center px-4 py-2 text-sm font-bold rounded-xl transition-all duration-200 transform hover:scale-105 border shadow-sm disabled:opacity-50 disabled:cursor-not-allowed ${
+                            postBookmarks[post.id] 
+                              ? 'text-gold-700 bg-gradient-to-r from-gold-100 to-gold-50 hover:from-gold-200 hover:to-gold-100 border-gold-200/60' 
+                              : 'text-primary-700 bg-gradient-to-r from-primary-100 to-purple-100 hover:from-primary-200 hover:to-purple-200 border-primary-200/60'
+                          }`}
+                        >
+                          {bookmarkLoading[post.id] ? (
+                            <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary-400 border-t-primary-700 mr-2"></div>
+                          ) : (
+                            <svg className={`h-4 w-4 mr-2 ${
+                              postBookmarks[post.id] ? 'text-gold-600 fill-current' : 'text-primary-600'
+                            }`} fill={postBookmarks[post.id] ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                            </svg>
+                          )}
+                          {postBookmarks[post.id] ? 'Saved' : 'Save'}
+                        </button>
+                        
+                        {/* Amen Button */}
+                        <button
+                          onClick={() => handleToggleAmen(post.id)}
+                          disabled={amenLoading[post.id]}
+                          title={postAmenInfo[post.id]?.mine ? "Amen'd" : "Amen"}
+                          className={`inline-flex items-center px-4 py-2 text-sm font-bold rounded-xl transition-all duration-200 transform hover:scale-105 border shadow-sm disabled:opacity-50 disabled:cursor-not-allowed ${
+                            postAmenInfo[post.id]?.mine 
+                              ? 'text-blue-700 bg-gradient-to-r from-blue-100 to-blue-50 hover:from-blue-200 hover:to-blue-100 border-blue-200/60' 
+                              : 'text-primary-700 bg-gradient-to-r from-primary-100 to-purple-100 hover:from-primary-200 hover:to-purple-200 border-primary-200/60'
+                          }`}
+                        >
+                          {amenLoading[post.id] ? (
+                            <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary-400 border-t-primary-700 mr-2"></div>
+                          ) : (
+                            <svg className={`h-4 w-4 mr-2 ${
+                              postAmenInfo[post.id]?.mine ? 'text-blue-600' : 'text-primary-600'
+                            }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                            </svg>
+                          )}
+                          Amen
+                          {(postAmenInfo[post.id]?.count || 0) > 0 && (
+                            <span className="ml-2 px-2 py-1 bg-white/60 rounded-full text-xs font-bold">
+                              {postAmenInfo[post.id]?.count}
+                            </span>
+                          )}
                         </button>
                         
                         <button
