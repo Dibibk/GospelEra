@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { ArrowLeft, Eye, Ban, UserCheck, MoreVertical, Search, Filter } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
-import { listReports, updateReportStatus, banUser, unbanUser, getUserProfile } from '../lib/admin.js'
+import { listReports, updateReportStatus, banUser, unbanUser, getUserProfile, getBannedUsers } from '../lib/admin.js'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
@@ -20,6 +20,7 @@ export default function AdminReports() {
 
   const [loading, setLoading] = useState(true)
   const [reports, setReports] = useState<any[]>([])
+  const [bannedUsers, setBannedUsers] = useState<any[]>([])
   const [selectedReports, setSelectedReports] = useState<Set<string>>(new Set())
   const [searchQuery, setSearchQuery] = useState('')
   const [currentFilter, setCurrentFilter] = useState('open')
@@ -42,6 +43,7 @@ export default function AdminReports() {
         }
         setLoading(false)
         loadReports()
+        loadBannedUsers()
       } catch (err) {
         console.error('Admin access check failed:', err)
         navigate('/')
@@ -56,6 +58,16 @@ export default function AdminReports() {
       setError('')
       const { items } = await listReports({ status, limit: 100 })
       setReports(items)
+    } catch (err: any) {
+      setError(err.message)
+    }
+  }
+
+  const loadBannedUsers = async () => {
+    try {
+      setError('')
+      const users = await getBannedUsers()
+      setBannedUsers(users)
     } catch (err: any) {
       setError(err.message)
     }
@@ -119,12 +131,14 @@ export default function AdminReports() {
           title: 'Success',
           description: 'User banned successfully'
         })
+        await loadBannedUsers()
       } else if (action === 'unban') {
         await unbanUser(userId)
         toast({
           title: 'Success',
           description: 'User unbanned successfully'
         })
+        await loadBannedUsers()
       }
     } catch (err: any) {
       toast({
@@ -136,6 +150,38 @@ export default function AdminReports() {
       setActionLoading(prev => {
         const newSet = new Set(prev)
         newSet.delete(`user-${userId}`)
+        return newSet
+      })
+    }
+  }
+
+  const handleUnbanUser = async (userId: string, displayName: string) => {
+    if (actionLoading.has(userId)) return
+
+    const confirmed = window.confirm(`Are you sure you want to unban "${displayName}"? They will be able to post and comment again.`)
+    if (!confirmed) return
+
+    setActionLoading(prev => new Set(prev).add(userId))
+
+    try {
+      await unbanUser(userId)
+      
+      toast({
+        title: "User unbanned",
+        description: `${displayName} has been unbanned successfully.`,
+      })
+
+      await loadBannedUsers()
+    } catch (err: any) {
+      toast({
+        title: "Unban failed",
+        description: err.message,
+        variant: "destructive",
+      })
+    } finally {
+      setActionLoading(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(userId)
         return newSet
       })
     }
@@ -191,12 +237,12 @@ export default function AdminReports() {
   }
 
   const getStatusBadge = (status: string) => {
-    const variants = {
+    const variants: Record<string, 'destructive' | 'default' | 'secondary'> = {
       open: 'destructive',
       resolved: 'default',
       dismissed: 'secondary'
     }
-    return <Badge variant={variants[status] as any}>{status}</Badge>
+    return <Badge variant={variants[status] || 'default'}>{status}</Badge>
   }
 
   if (loading) {
@@ -218,7 +264,7 @@ export default function AdminReports() {
               Back
             </Button>
           </Link>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Admin Reports</h1>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Admin Panel</h1>
         </div>
       </div>
 
@@ -229,66 +275,75 @@ export default function AdminReports() {
         </Alert>
       )}
 
-      {/* Search and Filters */}
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Filter className="h-5 w-5" />
-            Filters & Search
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {/* Search */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <Input
-              placeholder="Search by target ID, reporter email, or author name..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
-            />
-          </div>
+      {/* Main Tabs */}
+      <Tabs defaultValue="reports" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="reports">Reports</TabsTrigger>
+          <TabsTrigger value="banned-users">Banned Users</TabsTrigger>
+        </TabsList>
 
-          {/* Status Filters */}
-          <Tabs value={currentFilter} onValueChange={setCurrentFilter}>
-            <TabsList>
-              <TabsTrigger value="open" onClick={() => loadReports('open')}>
-                Open
-              </TabsTrigger>
-              <TabsTrigger value="resolved" onClick={() => loadReports('resolved')}>
-                Resolved
-              </TabsTrigger>
-              <TabsTrigger value="dismissed" onClick={() => loadReports('dismissed')}>
-                Dismissed
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
+        {/* Reports Tab */}
+        <TabsContent value="reports" className="space-y-6">
+          {/* Search and Filters for Reports */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Filter className="h-5 w-5" />
+                Filters & Search
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Search */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                  placeholder="Search by target ID, reporter email, or author name..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
 
-          {/* Bulk Actions */}
-          {selectedReports.size > 0 && (
-            <div className="flex items-center gap-2 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-              <span className="text-sm font-medium">
-                {selectedReports.size} selected
-              </span>
-              <Button 
-                size="sm" 
-                onClick={() => handleBulkAction('resolved')}
-                disabled={currentFilter === 'resolved'}
-              >
-                Resolve Selected
-              </Button>
-              <Button 
-                size="sm" 
-                variant="outline"
-                onClick={() => handleBulkAction('dismissed')}
-                disabled={currentFilter === 'dismissed'}
-              >
-                Dismiss Selected
-              </Button>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+              {/* Status Filters */}
+              <Tabs value={currentFilter} onValueChange={setCurrentFilter}>
+                <TabsList>
+                  <TabsTrigger value="open" onClick={() => loadReports('open')}>
+                    Open
+                  </TabsTrigger>
+                  <TabsTrigger value="resolved" onClick={() => loadReports('resolved')}>
+                    Resolved
+                  </TabsTrigger>
+                  <TabsTrigger value="dismissed" onClick={() => loadReports('dismissed')}>
+                    Dismissed
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
+
+              {/* Bulk Actions */}
+              {selectedReports.size > 0 && (
+                <div className="flex items-center gap-2 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                  <span className="text-sm font-medium">
+                    {selectedReports.size} selected
+                  </span>
+                  <Button 
+                    size="sm" 
+                    onClick={() => handleBulkAction('resolved')}
+                    disabled={currentFilter === 'resolved'}
+                  >
+                    Resolve Selected
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    onClick={() => handleBulkAction('dismissed')}
+                    disabled={currentFilter === 'dismissed'}
+                  >
+                    Dismiss Selected
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
       {/* Reports Table */}
       <Card>
@@ -447,6 +502,77 @@ export default function AdminReports() {
           </div>
         </CardContent>
       </Card>
+        </TabsContent>
+
+        {/* Banned Users Tab */}
+        <TabsContent value="banned-users" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Ban className="h-5 w-5" />
+                Banned Users ({bannedUsers.length})
+              </CardTitle>
+              <CardDescription>
+                Manage banned users and restore their access when appropriate
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {bannedUsers.length === 0 ? (
+                <div className="text-center py-8">
+                  <UserCheck className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No banned users</h3>
+                  <p className="text-gray-500">All users currently have access to the platform.</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {bannedUsers.map((user) => (
+                    <div key={user.id} className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
+                      <div className="flex items-center space-x-4">
+                        <div className="h-10 w-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                          <span className="text-sm font-medium text-gray-600 dark:text-gray-300">
+                            {(user.display_name || user.email)?.charAt(0)?.toUpperCase() || 'U'}
+                          </span>
+                        </div>
+                        <div>
+                          <p className="font-medium text-gray-900 dark:text-white">
+                            {user.display_name || 'Unknown User'}
+                          </p>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                            {user.email}
+                          </p>
+                          <p className="text-xs text-gray-400 dark:text-gray-500">
+                            Banned: {formatDate(user.updated_at || user.created_at)}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Button
+                          size="sm"
+                          onClick={() => handleUnbanUser(user.id, user.display_name || user.email)}
+                          disabled={actionLoading.has(user.id)}
+                          className="bg-green-600 hover:bg-green-700 text-white"
+                        >
+                          {actionLoading.has(user.id) ? (
+                            <>
+                              <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
+                              Unbanning...
+                            </>
+                          ) : (
+                            <>
+                              <UserCheck className="h-4 w-4 mr-2" />
+                              Unban User
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   )
 }

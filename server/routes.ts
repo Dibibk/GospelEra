@@ -115,6 +115,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin endpoint to update user roles (ban/unban)
+  app.patch("/api/admin/users/:userId/role", async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const { role } = req.body;
+
+      // Validate role
+      if (!['user', 'banned', 'admin'].includes(role)) {
+        return res.status(400).json({ error: "Invalid role" });
+      }
+
+      const updatedUser = await storage.updateUserRole(userId, role);
+      res.json(updatedUser);
+    } catch (error) {
+      console.error("Error updating user role:", error);
+      res.status(500).json({ error: "Failed to update user role" });
+    }
+  });
+
+  // Admin endpoint to get banned users
+  app.get("/api/admin/banned-users", async (req, res) => {
+    try {
+      const bannedUsers = await storage.getBannedUsers();
+      res.json(bannedUsers);
+    } catch (error) {
+      console.error("Error fetching banned users:", error);
+      res.status(500).json({ error: "Failed to fetch banned users" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;

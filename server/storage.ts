@@ -8,6 +8,8 @@ export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  updateUserRole(id: string, role: string): Promise<User>;
+  getBannedUsers(): Promise<User[]>;
 }
 
 export class MemStorage implements IStorage {
@@ -32,6 +34,20 @@ export class MemStorage implements IStorage {
     const user: User = { ...insertUser, id };
     this.users.set(id, user);
     return user;
+  }
+
+  async updateUserRole(id: string, role: string): Promise<User> {
+    const user = this.users.get(id);
+    if (!user) {
+      throw new Error("User not found");
+    }
+    const updatedUser = { ...user, role };
+    this.users.set(id, updatedUser);
+    return updatedUser;
+  }
+
+  async getBannedUsers(): Promise<User[]> {
+    return Array.from(this.users.values()).filter(user => user.role === 'banned');
   }
 }
 

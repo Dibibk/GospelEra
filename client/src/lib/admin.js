@@ -342,6 +342,30 @@ export async function getUserProfile(userId) {
 }
 
 /**
+ * Get all banned users
+ * @returns {Promise<Array>} List of banned users
+ */
+export async function getBannedUsers() {
+  await requireAdmin()
+
+  try {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('role', 'banned')
+      .order('updated_at', { ascending: false })
+
+    if (error) {
+      throw new Error(`Failed to get banned users: ${error.message}`)
+    }
+
+    return data || []
+  } catch (err) {
+    throw new Error(`Admin operation failed: ${err.message}`)
+  }
+}
+
+/**
  * Get reports statistics (admin dashboard utility)
  * @returns {Promise<Object>} Reports statistics
  */
