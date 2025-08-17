@@ -48,14 +48,10 @@ export async function listReports({ status = 'open', limit = 50, cursor } = {}) 
   await requireAdmin()
 
   try {
+    // First, get the reports without joins
     let query = supabase
       .from('reports')
-      .select(`
-        *,
-        reporter_profile:profiles!reports_reporter_fkey(id, display_name, email),
-        target_post:posts!reports_target_id_fkey(id, content, author, created_at, author_profile:profiles!posts_author_fkey(display_name)),
-        target_comment:comments!reports_target_id_fkey(id, content, author, created_at, author_profile:profiles!comments_author_fkey(display_name))
-      `)
+      .select('*')
       .eq('status', status)
       .order('created_at', { ascending: false })
       .limit(limit)
@@ -74,6 +70,70 @@ export async function listReports({ status = 'open', limit = 50, cursor } = {}) 
     // Determine next cursor (created_at of last item)
     const nextCursor = reports.length === limit ? reports[reports.length - 1].created_at : null
 
+    // Get unique reporter IDs to fetch profiles
+    const reporterIds = [...new Set(reports.map(r => r.reporter).filter(Boolean))]
+    
+    // Fetch reporter profiles
+    const { data: reporterProfiles } = await supabase
+      .from('profiles')
+      .select('id, display_name, email')
+      .in('id', reporterIds)
+
+    const reporterProfileMap = new Map()
+    if (reporterProfiles) {
+      reporterProfiles.forEach(profile => {
+        reporterProfileMap.set(profile.id, profile)
+      })
+    }
+
+    // Get unique target IDs by type
+    const postIds = reports.filter(r => r.target_type === 'post').map(r => r.target_id)
+    const commentIds = reports.filter(r => r.target_type === 'comment').map(r => r.target_id)
+
+    // Fetch posts and comments separately
+    const postsPromise = postIds.length > 0 
+      ? supabase.from('posts').select('id, content, author, created_at').in('id', postIds)
+      : Promise.resolve({ data: [] })
+      
+    const commentsPromise = commentIds.length > 0
+      ? supabase.from('comments').select('id, content, author, created_at').in('id', commentIds)
+      : Promise.resolve({ data: [] })
+
+    const [postsResult, commentsResult] = await Promise.all([postsPromise, commentsPromise])
+
+    // Create maps for quick lookup
+    const postsMap = new Map()
+    const commentsMap = new Map()
+    
+    if (postsResult.data) {
+      postsResult.data.forEach(post => postsMap.set(post.id, post))
+    }
+    
+    if (commentsResult.data) {
+      commentsResult.data.forEach(comment => commentsMap.set(comment.id, comment))
+    }
+
+    // Get author IDs from posts and comments to fetch author profiles
+    const authorIds = [
+      ...new Set([
+        ...(postsResult.data || []).map(p => p.author),
+        ...(commentsResult.data || []).map(c => c.author)
+      ].filter(Boolean))
+    ]
+
+    // Fetch author profiles
+    const { data: authorProfiles } = await supabase
+      .from('profiles')
+      .select('id, display_name')
+      .in('id', authorIds)
+
+    const authorProfileMap = new Map()
+    if (authorProfiles) {
+      authorProfiles.forEach(profile => {
+        authorProfileMap.set(profile.id, profile)
+      })
+    }
+
     // Process reports to include target information
     const items = reports.map(report => {
       const baseReport = {
@@ -83,38 +143,58 @@ export async function listReports({ status = 'open', limit = 50, cursor } = {}) 
         target_type: report.target_type,
         target_id: report.target_id,
         created_at: report.created_at,
-        reporter: {
-          id: report.reporter_profile?.id,
-          display_name: report.reporter_profile?.display_name,
-          email: report.reporter_profile?.email
+        reporter: reporterProfileMap.get(report.reporter) || {
+          id: report.reporter,
+          display_name: 'Unknown User',
+          email: 'unknown@example.com'
         }
       }
 
       // Add target information based on type
-      if (report.target_type === 'post' && report.target_post) {
-        baseReport.target = {
-          type: 'post',
-          id: report.target_post.id,
-          content: report.target_post.content,
-          created_at: report.target_post.created_at,
-          author: {
-            id: report.target_post.author,
-            display_name: report.target_post.author_profile?.display_name
+      if (report.target_type === 'post') {
+        const post = postsMap.get(report.target_id)
+        if (post) {
+          const authorProfile = authorProfileMap.get(post.author)
+          baseReport.target = {
+            type: 'post',
+            id: post.id,
+            content: post.content,
+            created_at: post.created_at,
+            author: {
+              id: post.author,
+              display_name: authorProfile?.display_name || 'Unknown User'
+            }
+          }
+        } else {
+          baseReport.target = {
+            type: 'post',
+            id: report.target_id,
+            deleted: true
           }
         }
-      } else if (report.target_type === 'comment' && report.target_comment) {
-        baseReport.target = {
-          type: 'comment',
-          id: report.target_comment.id,
-          content: report.target_comment.content,
-          created_at: report.target_comment.created_at,
-          author: {
-            id: report.target_comment.author,
-            display_name: report.target_comment.author_profile?.display_name
+      } else if (report.target_type === 'comment') {
+        const comment = commentsMap.get(report.target_id)
+        if (comment) {
+          const authorProfile = authorProfileMap.get(comment.author)
+          baseReport.target = {
+            type: 'comment',
+            id: comment.id,
+            content: comment.content,
+            created_at: comment.created_at,
+            author: {
+              id: comment.author,
+              display_name: authorProfile?.display_name || 'Unknown User'
+            }
+          }
+        } else {
+          baseReport.target = {
+            type: 'comment',
+            id: report.target_id,
+            deleted: true
           }
         }
       } else {
-        // Target might be deleted
+        // Unknown target type
         baseReport.target = {
           type: report.target_type,
           id: report.target_id,
