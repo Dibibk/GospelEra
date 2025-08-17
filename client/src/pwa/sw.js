@@ -1,12 +1,14 @@
 // Gospel Era Web Service Worker
-const CACHE_NAME = 'gospel-era-v1';
-const STATIC_CACHE_NAME = 'gospel-era-static-v1';
-const DYNAMIC_CACHE_NAME = 'gospel-era-dynamic-v1';
+const APP_VERSION = 'v1';
+const CACHE_NAME = `app-${APP_VERSION}`;
+const STATIC_CACHE_NAME = `static-${APP_VERSION}`;
+const DYNAMIC_CACHE_NAME = `dynamic-${APP_VERSION}`;
 
 // Files to cache immediately (critical app shell)
 const STATIC_FILES = [
   '/',
   '/index.html',
+  '/offline.html',
   '/manifest.webmanifest',
   '/icon-192.png',
   '/icon-512.png',
@@ -42,10 +44,8 @@ self.addEventListener('activate', (event) => {
       .then((cacheNames) => {
         return Promise.all(
           cacheNames.map((cacheName) => {
-            // Delete old versions of caches
-            if (cacheName !== STATIC_CACHE_NAME && 
-                cacheName !== DYNAMIC_CACHE_NAME && 
-                cacheName !== CACHE_NAME) {
+            // Delete caches that don't match current version
+            if (!cacheName.includes(APP_VERSION)) {
               console.log('[SW] Deleting old cache:', cacheName);
               return caches.delete(cacheName);
             }
@@ -75,30 +75,26 @@ self.addEventListener('fetch', (event) => {
   }
   
   // Handle different types of requests
-  if (isAppShellRequest(request)) {
-    // App shell - cache first strategy
-    event.respondWith(cacheFirst(request));
+  if (isNavigationRequest(request)) {
+    // HTML navigation - network first with offline fallback
+    event.respondWith(networkFirstWithOfflineFallback(request));
   } else if (isAPIRequest(request)) {
     // API calls - network first strategy
     event.respondWith(networkFirst(request));
   } else if (isStaticAsset(request)) {
-    // Static assets - stale while revalidate
+    // Static assets (JS/CSS/images) - stale while revalidate
     event.respondWith(staleWhileRevalidate(request));
   } else {
-    // Default - network first with fallback
-    event.respondWith(networkFirst(request));
+    // Default - stale while revalidate for other resources
+    event.respondWith(staleWhileRevalidate(request));
   }
 });
 
-// Check if request is for app shell
-function isAppShellRequest(request) {
-  const url = new URL(request.url);
-  return url.pathname === '/' || 
-         url.pathname === '/index.html' ||
-         url.pathname.startsWith('/dashboard') ||
-         url.pathname.startsWith('/profile') ||
-         url.pathname.startsWith('/settings') ||
-         url.pathname.startsWith('/saved');
+// Check if request is for HTML navigation
+function isNavigationRequest(request) {
+  return request.mode === 'navigate' || 
+         request.destination === 'document' ||
+         (request.method === 'GET' && request.headers.get('accept')?.includes('text/html'));
 }
 
 // Check if request is for API
@@ -107,33 +103,41 @@ function isAPIRequest(request) {
   return url.pathname.startsWith('/api/');
 }
 
-// Check if request is for static assets
+// Check if request is for static assets (JS/CSS/images)
 function isStaticAsset(request) {
   const url = new URL(request.url);
-  return url.pathname.match(/\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot)$/);
+  return url.pathname.match(/\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot|webp|avif)$/);
 }
 
-// Cache first strategy - for app shell
-async function cacheFirst(request) {
+// Network first with offline fallback - for HTML navigation
+async function networkFirstWithOfflineFallback(request) {
   try {
-    const cache = await caches.open(STATIC_CACHE_NAME);
+    console.log('[SW] Trying network for navigation:', request.url);
+    const networkResponse = await fetch(request);
+    
+    // Cache successful HTML responses
+    if (networkResponse.status === 200) {
+      const cache = await caches.open(DYNAMIC_CACHE_NAME);
+      cache.put(request, networkResponse.clone());
+    }
+    
+    return networkResponse;
+  } catch (error) {
+    console.log('[SW] Network failed for navigation, trying cache:', request.url);
+    
+    // Try cache first
+    const cache = await caches.open(DYNAMIC_CACHE_NAME);
     const cachedResponse = await cache.match(request);
     
     if (cachedResponse) {
-      console.log('[SW] Serving from cache:', request.url);
+      console.log('[SW] Serving cached navigation:', request.url);
       return cachedResponse;
     }
     
-    // If not in cache, fetch from network and cache
-    const networkResponse = await fetch(request);
-    if (networkResponse.status === 200) {
-      cache.put(request, networkResponse.clone());
-    }
-    return networkResponse;
-  } catch (error) {
-    console.error('[SW] Cache first failed:', error);
-    // Fallback to offline page if available
-    return await caches.match('/index.html');
+    // Fallback to offline page
+    console.log('[SW] Serving offline page');
+    const offlineResponse = await caches.match('/offline.html');
+    return offlineResponse || new Response('Offline', { status: 503 });
   }
 }
 
@@ -169,27 +173,30 @@ async function networkFirst(request) {
   }
 }
 
-// Stale while revalidate strategy - for static assets
+// Stale while revalidate strategy - for static assets (JS/CSS/images)
 async function staleWhileRevalidate(request) {
   const cache = await caches.open(STATIC_CACHE_NAME);
   const cachedResponse = await cache.match(request);
   
-  // Fetch in background to update cache
+  // Fetch in background to update cache (don't await)
   const fetchPromise = fetch(request).then((networkResponse) => {
     if (networkResponse.status === 200) {
+      console.log('[SW] Updating cache for static asset:', request.url);
       cache.put(request, networkResponse.clone());
     }
     return networkResponse;
-  }).catch(() => {
-    // Ignore network errors for background updates
+  }).catch((error) => {
+    console.log('[SW] Background fetch failed for:', request.url, error.message);
   });
   
   // Return cached version immediately if available
   if (cachedResponse) {
+    console.log('[SW] Serving stale static asset:', request.url);
     return cachedResponse;
   }
   
   // If no cached version, wait for network
+  console.log('[SW] No cache, waiting for network:', request.url);
   return await fetchPromise;
 }
 

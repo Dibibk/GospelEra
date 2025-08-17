@@ -36,6 +36,11 @@ This is a full-stack web application built with React (frontend) and Express.js 
 ✅ Apple touch icon and mobile web app configuration
 ✅ SEO meta tags including Open Graph and Twitter cards
 ✅ Proper PWA installability with standalone display mode
+✅ Service Worker with smart caching strategies:
+  - Static files (JS/CSS/images): Stale-While-Revalidate
+  - HTML navigation: Network-First with offline.html fallback
+  - Cache versioning (app-v1) with automatic cleanup of old caches
+  - Production-only registration for optimal development experience
 
 The web application is now feature-complete with PWA capabilities and ready for mobile app development.
 
