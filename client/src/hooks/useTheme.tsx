@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 
-export type Theme = 'light' | 'dark';
+export type Theme = 'light' | 'heavenly';
 
 interface ThemeContextType {
   theme: Theme;
@@ -31,13 +31,13 @@ export const themes = [
     }
   },
   {
-    id: 'dark' as Theme,
-    name: 'Dark',
-    description: 'Easy on the eyes',
+    id: 'heavenly' as Theme,
+    name: 'Heavenly Light',
+    description: 'Divine and uplifting',
     colors: {
-      primary: '#a855f7',
-      secondary: '#c084fc',
-      background: '#1f2937'
+      primary: '#A7C7E7',
+      secondary: '#F6E6B4',
+      background: '#DCEBFA'
     }
   }
 ];
@@ -52,7 +52,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     const root = document.documentElement;
     
     // Remove all theme classes
-    root.classList.remove('theme-light', 'theme-dark');
+    root.classList.remove('theme-light', 'theme-heavenly');
     
     // Add current theme class
     root.classList.add(`theme-${theme}`);
