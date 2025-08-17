@@ -15,6 +15,7 @@ import { toggleBookmark, isBookmarked, toggleAmen, getAmenInfo, listBookmarks } 
 import { getMediaUploadURL, processUploadedMedia } from '../lib/media'
 import { MediaUploader } from '../components/MediaUploader'
 import { MediaDisplay } from '../components/MediaDisplay'
+import { ThemeSelector } from '../components/ThemeSelector'
 import { supabase } from '../lib/supabaseClient'
 
 export default function Dashboard() {
@@ -824,6 +825,9 @@ export default function Dashboard() {
                   Offline
                 </div>
               )}
+
+              {/* Theme Selector */}
+              <ThemeSelector />
               
               {/* User Menu */}
               <div className="relative">
