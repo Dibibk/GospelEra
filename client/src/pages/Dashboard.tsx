@@ -875,6 +875,15 @@ export default function Dashboard() {
                       </svg>
                       Settings
                     </a>
+                    <a
+                      href="/saved"
+                      className="block w-full text-left px-4 py-3 text-sm text-primary-700 hover:bg-gradient-to-r hover:from-primary-50 hover:to-purple-50 transition-all duration-200 font-medium"
+                    >
+                      <svg className="inline h-4 w-4 mr-3 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                      </svg>
+                      Saved Posts
+                    </a>
                     {/* Admin Link - only show for admin users */}
                     {userProfile?.role === 'admin' && (
                       <a
