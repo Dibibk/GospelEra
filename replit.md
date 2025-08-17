@@ -20,6 +20,14 @@ This is a full-stack web application built with React (frontend) and Express.js 
 ✅ Comments + Reports polish: Soft-delete system with RPC security, modal interfaces, admin stub implemented
 ✅ Search polish: 400ms debouncing, cursor-based pagination (20 items/page), popular topics filtering with toggle functionality
 ✅ Profiles polish: Separate Settings page for profile management, view-only Profile page, avatar upload with ObjectUploader component
+✅ Admin flagged indicators: Red "Flagged" badges on posts/comments with open reports (admin-only view)
+✅ Role-based restrictions: useRole() hook with banned user restrictions - non-blocking banner, disabled forms with tooltips
+
+**Banned User Features:**
+✅ Non-blocking orange banner: "Account limited. You can read but cannot post or comment."
+✅ Disabled post creation form (title, content, tags, media upload) with tooltips
+✅ Disabled comment forms with tooltips showing restriction message
+✅ All read actions remain fully functional (viewing posts, comments, profiles)
 
 The web application is now feature-complete and ready for mobile app development.
 

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
+import { useRole } from '../hooks/useRole'
 import { createPost, listPosts, softDeletePost, searchPosts, getTopTags } from '../lib/posts'
 import { createComment, listComments, softDeleteComment } from '../lib/comments'
 import { createReport } from '../lib/reports'
@@ -17,6 +18,7 @@ import { supabase } from '../lib/supabaseClient'
 
 export default function Dashboard() {
   const { user, signOut } = useAuth()
+  const { isBanned } = useRole()
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   
   // Post creation form state
@@ -975,6 +977,24 @@ export default function Dashboard() {
             )}
           </div>
         </div>
+        
+        {/* Banned User Banner */}
+        {isBanned && (
+          <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 mb-8 shadow-sm">
+            <div className="flex items-center space-x-3">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.35 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-sm font-medium text-orange-800">Account limited</h3>
+                <p className="text-sm text-orange-700">You can read posts and comments but cannot post or comment.</p>
+              </div>
+            </div>
+          </div>
+        )}
+        
         {/* Create Post Form */}
         <div className="bg-gradient-to-br from-white via-primary-50/30 to-purple-50/30 shadow-xl rounded-2xl mb-8 border border-primary-200/50 backdrop-blur-sm">
           <div className="px-8 py-6 border-b border-gradient-to-r from-primary-200/40 via-purple-200/40 to-primary-200/40">
@@ -996,15 +1016,23 @@ export default function Dashboard() {
                   </svg>
                   Post Title
                 </label>
-                <input
-                  id="title"
-                  type="text"
-                  required
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  className="w-full px-4 py-3 border-2 border-primary-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-gold-500 bg-white/80 backdrop-blur-sm transition-all duration-200 font-medium text-primary-900 placeholder-primary-400"
-                  placeholder="Share your inspiration..."
-                />
+                <div className="relative">
+                  <input
+                    id="title"
+                    type="text"
+                    required
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    disabled={isBanned}
+                    className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none transition-all duration-200 font-medium ${
+                      isBanned 
+                        ? 'border-gray-300 bg-gray-100 text-gray-500 cursor-not-allowed placeholder-gray-400' 
+                        : 'border-primary-200 bg-white/80 backdrop-blur-sm focus:ring-2 focus:ring-gold-500 focus:border-gold-500 text-primary-900 placeholder-primary-400'
+                    }`}
+                    placeholder={isBanned ? "Account limited - cannot create posts" : "Share your inspiration..."}
+                    title={isBanned ? "Account limited - you cannot create posts or comments" : ""}
+                  />
+                </div>
               </div>
 
               <div>
@@ -1014,15 +1042,23 @@ export default function Dashboard() {
                   </svg>
                   Your Message
                 </label>
-                <textarea
-                  id="content"
-                  required
-                  rows={5}
-                  value={content}
-                  onChange={(e) => setContent(e.target.value)}
-                  className="w-full px-4 py-3 border-2 border-primary-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-gold-500 bg-white/80 backdrop-blur-sm transition-all duration-200 font-medium text-primary-900 placeholder-primary-400 resize-none"
-                  placeholder="Write your heart... Share testimonies, prayers, reflections, or encouragement for our community."
-                />
+                <div className="relative">
+                  <textarea
+                    id="content"
+                    required
+                    rows={5}
+                    value={content}
+                    onChange={(e) => setContent(e.target.value)}
+                    disabled={isBanned}
+                    className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none transition-all duration-200 font-medium resize-none ${
+                      isBanned 
+                        ? 'border-gray-300 bg-gray-100 text-gray-500 cursor-not-allowed placeholder-gray-400' 
+                        : 'border-primary-200 bg-white/80 backdrop-blur-sm focus:ring-2 focus:ring-gold-500 focus:border-gold-500 text-primary-900 placeholder-primary-400'
+                    }`}
+                    placeholder={isBanned ? "Account limited - cannot create posts" : "Write your heart... Share testimonies, prayers, reflections, or encouragement for our community."}
+                    title={isBanned ? "Account limited - you cannot create posts or comments" : ""}
+                  />
+                </div>
               </div>
 
               <div>
@@ -1032,14 +1068,22 @@ export default function Dashboard() {
                   </svg>
                   Tags (optional)
                 </label>
-                <input
-                  id="tags"
-                  type="text"
-                  value={tags}
-                  onChange={(e) => setTags(e.target.value)}
-                  className="w-full px-4 py-3 border-2 border-primary-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-gold-500 bg-white/80 backdrop-blur-sm transition-all duration-200 font-medium text-primary-900 placeholder-primary-400"
-                  placeholder="prayer, testimony, encouragement, worship"
-                />
+                <div className="relative">
+                  <input
+                    id="tags"
+                    type="text"
+                    value={tags}
+                    onChange={(e) => setTags(e.target.value)}
+                    disabled={isBanned}
+                    className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none transition-all duration-200 font-medium ${
+                      isBanned 
+                        ? 'border-gray-300 bg-gray-100 text-gray-500 cursor-not-allowed placeholder-gray-400' 
+                        : 'border-primary-200 bg-white/80 backdrop-blur-sm focus:ring-2 focus:ring-gold-500 focus:border-gold-500 text-primary-900 placeholder-primary-400'
+                    }`}
+                    placeholder={isBanned ? "Account limited - cannot create posts" : "prayer, testimony, encouragement, worship"}
+                    title={isBanned ? "Account limited - you cannot create posts or comments" : ""}
+                  />
+                </div>
               </div>
 
               {/* Media Upload Section */}
@@ -1052,22 +1096,31 @@ export default function Dashboard() {
                 </label>
                 
                 <div className="space-y-4">
-                  <MediaUploader
-                    maxNumberOfFiles={5} // Reduced for dev
-                    maxImageSize={5242880} // 5MB (dev-friendly)
-                    maxVideoSize={20971520} // 20MB (dev-friendly)
-                    allowImages={true}
-                    allowVideos={true}
-                    onGetUploadParameters={handleMediaUpload}
-                    onComplete={handleMediaUploadComplete}
-                    disabled={isCreating || isUploadingMedia}
-                    buttonClassName="w-full flex justify-center items-center py-3 px-4 border-2 border-dashed border-primary-300 rounded-xl bg-primary-50/50 hover:bg-primary-100/50 hover:border-primary-400 transition-all duration-200 text-primary-700 font-medium"
-                  >
+                  <div className="relative">
+                    <MediaUploader
+                      maxNumberOfFiles={5} // Reduced for dev
+                      maxImageSize={5242880} // 5MB (dev-friendly)
+                      maxVideoSize={20971520} // 20MB (dev-friendly)
+                      allowImages={true}
+                      allowVideos={true}
+                      onGetUploadParameters={handleMediaUpload}
+                      onComplete={handleMediaUploadComplete}
+                      disabled={isCreating || isUploadingMedia || isBanned}
+                      buttonClassName={`w-full flex justify-center items-center py-3 px-4 border-2 border-dashed rounded-xl transition-all duration-200 font-medium ${
+                        isBanned 
+                          ? 'border-gray-300 bg-gray-100 text-gray-500 cursor-not-allowed' 
+                          : 'border-primary-300 bg-primary-50/50 hover:bg-primary-100/50 hover:border-primary-400 text-primary-700'
+                      }`}
+                    >
                     <svg className="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                     </svg>
-                    {isUploadingMedia ? 'Processing...' : 'Upload Images & Videos (5MB/20MB)'}
+                    {isBanned ? 'Account limited - cannot upload media' : isUploadingMedia ? 'Processing...' : 'Upload Images & Videos (5MB/20MB)'}
                   </MediaUploader>
+                    {isBanned && (
+                      <div className="absolute inset-0 bg-transparent cursor-not-allowed" title="Account limited - you cannot create posts or comments"></div>
+                    )}
+                  </div>
 
                   {/* Media Preview */}
                   {uploadedMedia.length > 0 && (
@@ -1113,8 +1166,9 @@ export default function Dashboard() {
               <div>
                 <button
                   type="submit"
-                  disabled={isCreating || !title.trim() || !content.trim()}
+                  disabled={isCreating || !title.trim() || !content.trim() || isBanned}
                   className="w-full flex justify-center items-center py-4 px-6 border border-transparent rounded-xl shadow-lg text-base font-bold text-white bg-gradient-to-r from-primary-600 via-purple-600 to-primary-600 hover:from-primary-700 hover:via-purple-700 hover:to-primary-700 focus:outline-none focus:ring-4 focus:ring-gold-500/50 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 transform hover:scale-[1.02] hover:shadow-xl"
+                  title={isBanned ? "Account limited - you cannot create posts or comments" : ""}
                 >
                   {isCreating ? (
                     <>
@@ -1126,7 +1180,7 @@ export default function Dashboard() {
                       <svg className="h-5 w-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                       </svg>
-                      Share with Community
+                      {isBanned ? 'Account Limited' : 'Share with Community'}
                     </>
                   )}
                 </button>
@@ -1495,15 +1549,22 @@ export default function Dashboard() {
                           <textarea
                             value={commentTexts[post.id] || ''}
                             onChange={(e) => setCommentTexts(prev => ({...prev, [post.id]: e.target.value}))}
-                            placeholder="Write a comment..."
+                            placeholder={isBanned ? "Account limited - cannot comment" : "Write a comment..."}
                             rows={3}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none bg-white text-gray-900 placeholder-gray-500"
+                            disabled={isBanned}
+                            className={`w-full px-3 py-2 border rounded-md focus:outline-none resize-none ${
+                              isBanned 
+                                ? 'border-gray-300 bg-gray-100 text-gray-500 cursor-not-allowed placeholder-gray-400' 
+                                : 'border-gray-300 bg-white text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
+                            }`}
+                            title={isBanned ? "Account limited - you cannot create posts or comments" : ""}
                           />
                           <div className="flex justify-end mt-3">
                             <button
                               onClick={() => handleCreateComment(post.id)}
-                              disabled={submittingComment[post.id] || !commentTexts[post.id]?.trim()}
+                              disabled={submittingComment[post.id] || !commentTexts[post.id]?.trim() || isBanned}
                               className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150 font-medium"
+                              title={isBanned ? "Account limited - you cannot create posts or comments" : ""}
                             >
                               {submittingComment[post.id] ? (
                                 <>
@@ -1515,7 +1576,7 @@ export default function Dashboard() {
                                   <svg className="h-4 w-4 mr-2 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
                                   </svg>
-                                  Post Comment
+                                  {isBanned ? 'Account Limited' : 'Post Comment'}
                                 </>
                               )}
                             </button>
