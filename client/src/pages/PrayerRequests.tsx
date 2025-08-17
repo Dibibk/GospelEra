@@ -80,11 +80,16 @@ export default function PrayerRequests() {
         .from('prayer_requests')
         .select(`
           *,
-          profiles!prayer_requests_user_id_fkey (
+          profiles!prayer_requests_requester_fkey (
             display_name,
             avatar_url
+          ),
+          prayer_commitments!inner (
+            status,
+            prayed_at
           )
         `)
+        .eq('status', 'open')
         .order('created_at', { ascending: false })
         .limit(50)
       
@@ -117,13 +122,15 @@ export default function PrayerRequests() {
       const { data, error } = await supabase
         .from('prayer_requests')
         .insert({
-          user_id: user?.id,
-          name: prayerName.trim(),
-          request: prayerRequest.trim()
+          requester: user?.id,
+          title: prayerName.trim(),
+          details: prayerRequest.trim(),
+          is_anonymous: prayerName.toLowerCase().includes('anonymous'),
+          status: 'open'
         })
         .select(`
           *,
-          profiles!prayer_requests_user_id_fkey (
+          profiles!prayer_requests_requester_fkey (
             display_name,
             avatar_url
           )
@@ -150,37 +157,50 @@ export default function PrayerRequests() {
     }
   }
 
-  // Handle prayer support
-  const handlePrayerSupport = async (requestId: number) => {
+  // Handle prayer commitment
+  const handlePrayerCommitment = async (requestId: number) => {
     try {
-      const currentRequest = prayerRequests.find(req => req.id === requestId)
-      if (!currentRequest) return
+      // Check if already committed
+      const { data: existingCommitment } = await supabase
+        .from('prayer_commitments')
+        .select('*')
+        .eq('request_id', requestId)
+        .eq('warrior', user?.id)
+        .single()
       
-      const newCount = (currentRequest.prayer_count || 0) + 1
-      
-      const { error } = await supabase
-        .from('prayer_requests')
-        .update({ prayer_count: newCount })
-        .eq('id', requestId)
-      
-      if (error) {
-        throw error
+      if (existingCommitment) {
+        // Update to prayed
+        const { error } = await supabase
+          .from('prayer_commitments')
+          .update({ 
+            status: 'prayed',
+            prayed_at: new Date().toISOString()
+          })
+          .eq('request_id', requestId)
+          .eq('warrior', user?.id)
+        
+        if (error) throw error
+        showToast('Marked as prayed! Thank you for lifting them up 🙏', 'success')
+      } else {
+        // Create new commitment
+        const { error } = await supabase
+          .from('prayer_commitments')
+          .insert({
+            request_id: requestId,
+            warrior: user?.id,
+            status: 'committed'
+          })
+        
+        if (error) throw error
+        showToast('You committed to pray! 🙏', 'success')
       }
       
-      // Update local state
-      setPrayerRequests(prev => 
-        prev.map(req => 
-          req.id === requestId 
-            ? { ...req, prayer_count: newCount }
-            : req
-        )
-      )
-      
-      showToast('Your prayer has been added 🙏', 'success')
+      // Reload prayer requests to update counts
+      loadPrayerRequests()
       
     } catch (error) {
-      console.error('Failed to add prayer:', error)
-      showToast('Failed to add prayer', 'error')
+      console.error('Failed to handle prayer commitment:', error)
+      showToast('Failed to process prayer commitment', 'error')
     }
   }
 
@@ -449,19 +469,19 @@ export default function PrayerRequests() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between mb-3">
                     <div>
-                      <h4 className="font-medium text-purple-800">{request.name}</h4>
+                      <h4 className="font-medium text-purple-800">{request.is_anonymous ? 'Anonymous' : request.title}</h4>
                       <p className="text-sm text-purple-500">{formatDate(request.created_at)}</p>
                     </div>
                     <button
-                      onClick={() => handlePrayerSupport(request.id)}
+                      onClick={() => handlePrayerCommitment(request.id)}
                       className="flex items-center space-x-2 bg-purple-50 hover:bg-purple-100 text-purple-700 px-3 py-2 rounded-full transition-colors text-sm"
                     >
                       <Heart className="w-4 h-4" />
-                      <span>Pray ({request.prayer_count || 0})</span>
+                      <span>Pray ({request.prayer_commitments?.filter((c: any) => c.status === 'prayed').length || 0})</span>
                     </button>
                   </div>
                   
-                  <p className="text-gray-700 leading-relaxed">{request.request}</p>
+                  <p className="text-gray-700 leading-relaxed">{request.details}</p>
                 </div>
               </div>
             </div>

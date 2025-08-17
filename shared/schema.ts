@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, timestamp, integer, boolean } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, timestamp, integer, boolean, bigserial, bigint, primaryKey } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -48,11 +48,11 @@ export const posts = pgTable("posts", {
   updated_at: timestamp("updated_at").defaultNow().notNull(),
 });
 
-export const insertPostSchema = createInsertSchema(posts).omit({
-  id: true,
-  author_id: true,
-  created_at: true,
-  updated_at: true,
+export const insertPostSchema = createInsertSchema(posts).pick({
+  title: true,
+  content: true,
+  tags: true,
+  media_urls: true,
 });
 
 export type InsertPost = z.infer<typeof insertPostSchema>;
@@ -68,12 +68,9 @@ export const comments = pgTable("comments", {
   updated_at: timestamp("updated_at").defaultNow().notNull(),
 });
 
-export const insertCommentSchema = createInsertSchema(comments).omit({
-  id: true,
-  author_id: true,
-  deleted: true,
-  created_at: true,
-  updated_at: true,
+export const insertCommentSchema = createInsertSchema(comments).pick({
+  content: true,
+  post_id: true,
 });
 
 export type InsertComment = z.infer<typeof insertCommentSchema>;
@@ -87,9 +84,10 @@ export const engagements = pgTable("engagements", {
   created_at: timestamp("created_at").defaultNow().notNull(),
 });
 
-export const insertEngagementSchema = createInsertSchema(engagements).omit({
-  id: true,
-  created_at: true,
+export const insertEngagementSchema = createInsertSchema(engagements).pick({
+  user_id: true,
+  post_id: true,
+  type: true,
 });
 
 export type InsertEngagement = z.infer<typeof insertEngagementSchema>;
@@ -117,34 +115,57 @@ export const insertReportSchema = createInsertSchema(reports).omit({
 export type InsertReport = z.infer<typeof insertReportSchema>;
 export type Report = typeof reports.$inferSelect;
 
+// Enhanced Prayer Request System with comprehensive workflow
 export const prayerRequests = pgTable("prayer_requests", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  name: varchar("name", { length: 100 }).notNull(),
-  request: text("request").notNull(),
-  prayed_count: integer("prayed_count").default(0).notNull(),
+  id: bigserial("id", { mode: "number" }).primaryKey(),
+  requester: varchar("requester").references(() => profiles.id, { onDelete: 'set null' }),
+  title: text("title").notNull(),
+  details: text("details").notNull(),
+  tags: text("tags").array().notNull().default([]),
+  is_anonymous: boolean("is_anonymous").default(false).notNull(),
+  status: text("status").default('open').notNull(),
   created_at: timestamp("created_at").defaultNow().notNull(),
 });
 
 export const insertPrayerRequestSchema = createInsertSchema(prayerRequests).omit({
   id: true,
-  prayed_count: true,
   created_at: true,
 });
 
 export type InsertPrayerRequest = z.infer<typeof insertPrayerRequestSchema>;
 export type PrayerRequest = typeof prayerRequests.$inferSelect;
 
-export const prayerResponses = pgTable("prayer_responses", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  prayer_request_id: varchar("prayer_request_id").notNull().references(() => prayerRequests.id, { onDelete: 'cascade' }),
-  user_id: varchar("user_id").notNull(),
-  prayed_at: timestamp("prayed_at").defaultNow().notNull(),
+export const prayerCommitments = pgTable("prayer_commitments", {
+  request_id: bigint("request_id", { mode: "number" }).notNull().references(() => prayerRequests.id, { onDelete: 'cascade' }),
+  warrior: varchar("warrior").notNull().references(() => profiles.id, { onDelete: 'cascade' }),
+  committed_at: timestamp("committed_at").defaultNow().notNull(),
+  status: text("status").default('committed').notNull(),
+  prayed_at: timestamp("prayed_at"),
+  note: text("note"),
+}, (table) => ({
+  pk: primaryKey({ columns: [table.request_id, table.warrior] })
+}));
+
+export const insertPrayerCommitmentSchema = createInsertSchema(prayerCommitments).omit({
+  committed_at: true,
 });
 
-export const insertPrayerResponseSchema = createInsertSchema(prayerResponses).omit({
+export type InsertPrayerCommitment = z.infer<typeof insertPrayerCommitmentSchema>;
+export type PrayerCommitment = typeof prayerCommitments.$inferSelect;
+
+export const prayerActivity = pgTable("prayer_activity", {
+  id: bigserial("id", { mode: "number" }).primaryKey(),
+  request_id: bigint("request_id", { mode: "number" }).notNull().references(() => prayerRequests.id, { onDelete: 'cascade' }),
+  actor: varchar("actor").references(() => profiles.id, { onDelete: 'set null' }),
+  kind: text("kind").notNull(),
+  message: text("message"),
+  created_at: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertPrayerActivitySchema = createInsertSchema(prayerActivity).omit({
   id: true,
-  prayed_at: true,
+  created_at: true,
 });
 
-export type InsertPrayerResponse = z.infer<typeof insertPrayerResponseSchema>;
-export type PrayerResponse = typeof prayerResponses.$inferSelect;
+export type InsertPrayerActivity = z.infer<typeof insertPrayerActivitySchema>;
+export type PrayerActivity = typeof prayerActivity.$inferSelect;
