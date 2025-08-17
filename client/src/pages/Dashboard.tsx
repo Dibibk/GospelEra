@@ -16,7 +16,7 @@ import { getMediaUploadURL, processUploadedMedia } from '../lib/media'
 import { MediaUploader } from '../components/MediaUploader'
 import { MediaDisplay } from '../components/MediaDisplay'
 import { ThemeSwitcher } from '../components/ThemeSwitcher'
-import { SpiritualDecorations, FloatingSpiritual, SidebarSpiritual } from '../components/SpiritualDecorations'
+import { GospelBranding, PrayerSection, BlessingFooter, CreationInspiration } from '../components/SpiritualDecorations'
 import { supabase } from '../lib/supabaseClient'
 
 export default function Dashboard() {
@@ -800,28 +800,12 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen relative">
-      {/* Spiritual Decorations */}
-      <FloatingSpiritual />
-      <SidebarSpiritual />
       {/* Navigation */}
       <nav className="bg-gradient-to-r from-white via-purple-50 to-gold-50 shadow-lg border-b border-purple-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-20">
             <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <div className="h-12 w-12 bg-gradient-to-br from-primary-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
-                  <svg className="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                  </svg>
-                </div>
-              </div>
-              <div className="ml-6 flex items-center space-x-6">
-                <div>
-                  <h1 className="text-2xl font-bold bg-gradient-to-r from-primary-800 to-purple-700 bg-clip-text text-transparent">Gospel Community</h1>
-                  <p className="text-sm text-primary-600 font-medium">Share your faith, grow together</p>
-                </div>
-                <SpiritualDecorations />
-              </div>
+              <GospelBranding />
             </div>
 
             <div className="flex items-center space-x-4">
@@ -1035,6 +1019,7 @@ export default function Dashboard() {
               </div>
               <h2 className="text-xl font-bold bg-gradient-to-r from-primary-800 to-purple-700 bg-clip-text text-transparent">Share Your Heart</h2>
             </div>
+            <CreationInspiration />
           </div>
           <form onSubmit={handleCreatePost} className="p-8">
             <div className="space-y-6">
@@ -1801,6 +1786,7 @@ export default function Dashboard() {
           </div>
         </div>
       )}
+      <BlessingFooter />
     </div>
   )
 }
