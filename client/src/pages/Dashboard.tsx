@@ -6,6 +6,7 @@ import { createComment, listComments, softDeleteComment } from '../lib/comments'
 import { createReport } from '../lib/reports'
 import { getDailyVerse } from '../lib/scripture'
 import { getProfilesByIds } from '../lib/profiles'
+import { checkFlaggedStatus } from '../lib/flagged'
 // @ts-ignore
 import { toggleBookmark, isBookmarked, toggleAmen, getAmenInfo, listBookmarks } from '../lib/engagement'
 // @ts-ignore
@@ -72,6 +73,10 @@ export default function Dashboard() {
   
   // Profile cache for author information
   const [profileCache, setProfileCache] = useState<Map<string, any>>(new Map())
+  
+  // Flagged status cache for admin indicators
+  const [flaggedPosts, setFlaggedPosts] = useState<Map<number, boolean>>(new Map())
+  const [flaggedComments, setFlaggedComments] = useState<Map<number, boolean>>(new Map())
   
   // Engagement state
   const [postBookmarks, setPostBookmarks] = useState<{[postId: number]: boolean}>({})
@@ -197,6 +202,11 @@ export default function Dashboard() {
         const postIds = newPosts.map((post: any) => post.id)
         loadProfiles(authorIds)
         loadEngagementData(postIds)
+        
+        // Load flagged status for admin users
+        if (userProfile?.role === 'admin') {
+          loadFlaggedStatus(postIds, [])
+        }
       }
       
       // Set cursor for next page if we got a full page
@@ -245,6 +255,11 @@ export default function Dashboard() {
         const postIds = result.items.map((post: any) => post.id)
         loadProfiles(authorIds)
         loadEngagementData(postIds)
+        
+        // Load flagged status for admin users
+        if (userProfile?.role === 'admin') {
+          loadFlaggedStatus(postIds, [])
+        }
       }
     }
     
@@ -462,6 +477,12 @@ export default function Dashboard() {
       if (comments.length > 0) {
         const authorIds = comments.map((comment: any) => comment.author)
         loadProfiles(authorIds)
+        
+        // Load flagged status for admin users
+        if (userProfile?.role === 'admin') {
+          const commentIds = comments.map((comment: any) => comment.id)
+          loadFlaggedStatus([], commentIds)
+        }
       }
     }
     
@@ -607,6 +628,24 @@ export default function Dashboard() {
     }
   }
   
+  // Load flagged status for admin indicators
+  const loadFlaggedStatus = async (postIds: number[], commentIds: number[]) => {
+    if (userProfile?.role !== 'admin') return // Only load for admin users
+    
+    try {
+      // Load flagged status for posts and comments
+      const [flaggedPostsResult, flaggedCommentsResult] = await Promise.all([
+        postIds.length > 0 ? checkFlaggedStatus(postIds, 'post') : Promise.resolve(new Map()),
+        commentIds.length > 0 ? checkFlaggedStatus(commentIds, 'comment') : Promise.resolve(new Map())
+      ])
+      
+      setFlaggedPosts(flaggedPostsResult)
+      setFlaggedComments(flaggedCommentsResult)
+    } catch (error) {
+      console.error('Failed to load flagged status:', error)
+    }
+  }
+
   // Load engagement data (bookmarks and amen reactions) for posts
   const loadEngagementData = async (postIds: number[]) => {
     if (postIds.length === 0) return
@@ -1295,9 +1334,20 @@ export default function Dashboard() {
                       {renderAuthorInfo(post.author, user?.email, 'md')}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between mb-2">
-                          <time className="text-sm text-gray-500">
-                            {formatDate(post.created_at)}
-                          </time>
+                          <div className="flex items-center space-x-2">
+                            <time className="text-sm text-gray-500">
+                              {formatDate(post.created_at)}
+                            </time>
+                            {/* Flagged indicator for admins */}
+                            {userProfile?.role === 'admin' && flaggedPosts.get(post.id) && (
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-bold bg-red-100 text-red-800 border border-red-200">
+                                <svg className="h-3 w-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.35 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                                </svg>
+                                Flagged
+                              </span>
+                            )}
+                          </div>
                         </div>
                         <h3 className="text-xl font-semibold text-gray-900 mb-3 leading-tight">{post.title}</h3>
                         <div className="bg-gray-50 rounded-lg p-4 mb-4 border border-gray-100">
@@ -1506,6 +1556,15 @@ export default function Dashboard() {
                                     <time className="text-xs text-gray-500">
                                       {formatDate(comment.created_at)}
                                     </time>
+                                    {/* Flagged indicator for admins */}
+                                    {userProfile?.role === 'admin' && flaggedComments.get(comment.id) && (
+                                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-bold bg-red-100 text-red-800 border border-red-200">
+                                        <svg className="h-3 w-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.35 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                                        </svg>
+                                        Flagged
+                                      </span>
+                                    )}
                                   </div>
                                   <div className="bg-gray-50 rounded-md p-3 mb-3">
                                     <p className="text-gray-700 leading-relaxed text-sm">{comment.content}</p>
