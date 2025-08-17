@@ -46,14 +46,13 @@ export async function createPost({ title, content, tags = [], media_urls = [] }:
       throw new Error('User must be authenticated to create posts')
     }
 
-    // Insert the post
+    // Insert the post (temporarily without media_urls until schema is fixed)
     const { data, error } = await supabase
       .from('posts')
       .insert({
         title,
         content,
         tags,
-        media_urls,
         author: user.id
       })
       .select()
