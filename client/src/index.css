@@ -1,44 +1,46 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&family=Lato:wght@300;400;700&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  --background: hsl(220 100% 98%);
-  --foreground: hsl(220 83% 19%);
-  --card: hsl(220 100% 97%);
-  --card-foreground: hsl(220 83% 19%);
-  --popover: hsl(220 100% 98%);
-  --popover-foreground: hsl(220 83% 19%);
-  --primary: hsl(220 83% 43%);
+  /* Faith-centered color palette */
+  --background: hsl(35 30% 97%); /* Warm light ivory */
+  --foreground: hsl(235 45% 20%); /* Dark navy */
+  --card: hsl(0 0% 100%); /* Clean white */
+  --card-foreground: hsl(235 45% 20%);
+  --popover: hsl(0 0% 100%);
+  --popover-foreground: hsl(235 45% 20%);
+  --primary: hsl(253 77% 58%); /* Deep royal purple */
   --primary-foreground: hsl(0 0% 100%);
-  --secondary: hsl(45 83% 47%);
-  --secondary-foreground: hsl(220 83% 19%);
-  --muted: hsl(220 100% 94%);
-  --muted-foreground: hsl(220 83% 35%);
-  --accent: hsl(270 79% 89%);
-  --accent-foreground: hsl(270 75% 39%);
-  --destructive: hsl(356.3033 90.5579% 54.3137%);
-  --destructive-foreground: hsl(0 0% 100%);
-  --border: hsl(201.4286 30.4348% 90.9804%);
-  --input: hsl(200 23.0769% 97.4510%);
-  --ring: hsl(217.2 91.2% 59.8%);
-  --chart-1: hsl(203.8863 88.2845% 53.1373%);
-  --chart-2: hsl(159.7826 100% 36.0784%);
-  --chart-3: hsl(42.0290 92.8251% 56.2745%);
-  --chart-4: hsl(147.1429 78.5047% 41.9608%);
-  --chart-5: hsl(341.4894 75.2000% 50.9804%);
-  --sidebar: hsl(180 6.6667% 97.0588%);
-  --sidebar-foreground: hsl(210 25% 7.8431%);
-  --sidebar-primary: hsl(203.8863 88.2845% 53.1373%);
+  --secondary: hsl(45 100% 75%); /* Soft gold */
+  --secondary-foreground: hsl(235 45% 20%);
+  --muted: hsl(35 20% 94%);
+  --muted-foreground: hsl(235 25% 45%);
+  --accent: hsl(45 100% 75%);
+  --accent-foreground: hsl(235 45% 20%);
+  --destructive: hsl(0 84.2% 60.2%);
+  --destructive-foreground: hsl(210 40% 98%);
+  --border: hsl(35 25% 88%);
+  --input: hsl(35 25% 92%);
+  --ring: hsl(253 77% 58%);
+  --chart-1: hsl(253 77% 58%);
+  --chart-2: hsl(45 100% 75%);
+  --chart-3: hsl(35 30% 85%);
+  --chart-4: hsl(235 45% 30%);
+  --chart-5: hsl(253 50% 70%);
+  --sidebar: hsl(35 30% 97%);
+  --sidebar-foreground: hsl(235 45% 20%);
+  --sidebar-primary: hsl(253 77% 58%);
   --sidebar-primary-foreground: hsl(0 0% 100%);
-  --sidebar-accent: hsl(211.5789 51.3514% 92.7451%);
-  --sidebar-accent-foreground: hsl(203.8863 88.2845% 53.1373%);
-  --sidebar-border: hsl(205.0000 25.0000% 90.5882%);
-  --sidebar-ring: hsl(202.8169 89.1213% 53.1373%);
-  --font-sans: Inter, ui-sans-serif, system-ui, sans-serif;
-  --font-serif: Georgia, serif;
+  --sidebar-accent: hsl(253 77% 95%);
+  --sidebar-accent-foreground: hsl(253 77% 58%);
+  --sidebar-border: hsl(35 25% 88%);
+  --sidebar-ring: hsl(253 77% 58%);
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-serif: 'Playfair Display', Georgia, serif;
   --font-mono: Menlo, monospace;
-  --radius: 1.3rem;
+  --radius: 1rem;
   --shadow-2xs: 0px 2px 0px 0px hsl(202.8169 89.1213% 53.1373% / 0.00);
   --shadow-xs: 0px 2px 0px 0px hsl(202.8169 89.1213% 53.1373% / 0.00);
   --shadow-sm: 0px 2px 0px 0px hsl(202.8169 89.1213% 53.1373% / 0.00), 0px 1px 2px -1px hsl(202.8169 89.1213% 53.1373% / 0.00);
@@ -50,9 +52,18 @@
   --tracking-normal: 0em;
   --spacing: 0.25rem;
   
+  /* Faith-centered custom variables */
+  --faith-beige: hsl(35 25% 92%);
+  --faith-ivory: hsl(35 30% 97%);
+  --faith-purple: hsl(253 77% 58%);
+  --faith-gold: hsl(45 100% 75%);
+  --faith-navy: hsl(235 45% 20%);
+  --faith-light-purple: hsl(253 77% 95%);
+  --faith-gradient-start: hsl(35 25% 92%);
+  --faith-gradient-end: hsl(35 30% 97%);
+  
   /* Primary color variants for matching design */
-  /* Gospel Theme - "Heavenly Grace" Colors */
-  --primary-50: hsl(220 100% 97%);
+  --primary-50: hsl(253 77% 95%);
   --primary-100: hsl(220 100% 94%);
   --primary-200: hsl(220 100% 87%);
   --primary-300: hsl(220 100% 78%);
@@ -187,7 +198,7 @@
 
   body {
     @apply font-sans antialiased text-foreground;
-    background: linear-gradient(135deg, hsl(220 100% 98%) 0%, hsl(45 100% 96%) 100%);
+    background: linear-gradient(135deg, hsl(35 25% 92%) 0%, hsl(35 30% 97%) 100%);
     background-attachment: fixed;
     min-height: 100vh;
   }
@@ -220,6 +231,125 @@
 
 .hover\:bg-primary-700:hover {
   background-color: var(--primary-700);
+}
+
+/* Faith-centered typography and styles */
+.font-serif {
+  font-family: 'Playfair Display', Georgia, serif;
+}
+
+.font-sans {
+  font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Faith-inspired animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes glow {
+  0%, 100% {
+    box-shadow: 0 0 10px rgba(90, 49, 244, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(90, 49, 244, 0.4), 0 0 30px rgba(90, 49, 244, 0.2);
+  }
+}
+
+@keyframes lightRays {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.animate-fadeInUp {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+.animate-glow {
+  animation: glow 2s infinite;
+}
+
+.light-rays {
+  background: linear-gradient(
+    45deg,
+    transparent 30%,
+    rgba(255, 217, 125, 0.1) 50%,
+    transparent 70%
+  );
+  background-size: 200% 200%;
+  animation: lightRays 4s ease-in-out infinite;
+}
+
+/* Scripture quote styling */
+.scripture-quote {
+  position: relative;
+  font-style: italic;
+  text-align: center;
+  color: hsl(var(--faith-navy));
+}
+
+.scripture-quote::before,
+.scripture-quote::after {
+  content: '"';
+  font-size: 1.5em;
+  color: hsl(var(--faith-gold));
+  opacity: 0.7;
+}
+
+/* Faith-inspired gradient backgrounds */
+.faith-gradient-bg {
+  background: linear-gradient(135deg, hsl(var(--faith-gradient-start)), hsl(var(--faith-gradient-end)));
+}
+
+.faith-card-gradient {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7));
+  backdrop-filter: blur(10px);
+}
+
+/* Modern button with faith styling */
+.faith-button {
+  background: linear-gradient(135deg, hsl(var(--faith-purple)), hsl(253, 77%, 68%));
+  border: none;
+  border-radius: 1rem;
+  padding: 0.75rem 2rem;
+  color: white;
+  font-weight: 600;
+  font-family: 'Inter', sans-serif;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(90, 49, 244, 0.2);
+}
+
+.faith-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(90, 49, 244, 0.3);
+  animation: glow 1s ease-in-out;
+}
+
+/* Bible silhouette watermark for scripture cards */
+.scripture-watermark {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  opacity: 0.05;
+  z-index: 0;
+  font-size: 8rem;
+  color: hsl(var(--faith-purple));
+  pointer-events: none;
 }
 
 .hover\:text-primary-500:hover {

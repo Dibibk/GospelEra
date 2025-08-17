@@ -799,21 +799,23 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen relative">
-      {/* Navigation */}
-      <nav className="bg-gradient-to-r from-white via-purple-50 to-gold-50 shadow-lg border-b border-purple-200">
+      {/* Faith-centered Navigation */}
+      <nav className="faith-gradient-bg light-rays shadow-lg border-b border-purple-200/30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-20">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <div className="h-12 w-12 bg-gradient-to-br from-primary-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
-                  <svg className="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                <div className="h-12 w-12 bg-gradient-to-br from-purple-600 to-indigo-700 rounded-xl flex items-center justify-center shadow-lg animate-glow">
+                  {/* Glowing Cross/Book Icon */}
+                  <svg className="h-7 w-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 3v18m9-9H3" />
+                    <circle cx="12" cy="12" r="2" fill="currentColor" opacity="0.6" />
                   </svg>
                 </div>
               </div>
               <div className="ml-6">
-                <h1 className="text-2xl font-bold bg-gradient-to-r from-primary-800 to-purple-700 bg-clip-text text-transparent">Gospel Era</h1>
-                <p className="text-sm text-primary-600 font-medium">Share your faith, grow together</p>
+                <h1 className="text-2xl font-serif font-bold bg-gradient-to-r from-purple-800 to-indigo-700 bg-clip-text text-transparent">Gospel Era</h1>
+                <p className="text-sm text-purple-600 font-medium">Share your faith, grow together</p>
               </div>
             </div>
 
@@ -1794,6 +1796,28 @@ export default function Dashboard() {
           </div>
         </div>
       )}
+
+      {/* Faith-centered Footer */}
+      <footer className="mt-16 py-12 px-4">
+        <div className="max-w-4xl mx-auto text-center">
+          <div className="faith-card-gradient rounded-xl p-8 border border-purple-200/30 shadow-lg">
+            <div className="mb-4">
+              <svg className="h-8 w-8 text-yellow-500 mx-auto mb-3" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 2L15.09 8.26L22 9L17 14L18.18 21L12 17.77L5.82 21L7 14L2 9L8.91 8.26L12 2Z"/>
+              </svg>
+            </div>
+            <blockquote className="scripture-quote text-lg font-serif mb-4">
+              Let your light shine before others, that they may see your good deeds and glorify your Father in heaven
+            </blockquote>
+            <cite className="text-sm text-purple-600 font-medium">— Matthew 5:16</cite>
+            <div className="mt-6 pt-4 border-t border-purple-200/30">
+              <p className="text-sm text-purple-700 font-medium">
+                May your words bring comfort, your testimony inspire faith, and your presence reflect His love
+              </p>
+            </div>
+          </div>
+        </div>
+      </footer>
     </div>
   )
 }
