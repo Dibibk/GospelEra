@@ -43,15 +43,11 @@ This is a full-stack web application built with React (frontend) and Express.js 
   - Production-only registration for optimal development experience
 
 **Theme System (Added August 2025):**
-✅ Multiple theme support with 6 predefined themes:
+✅ Simple theme switching with 2 clean themes:
   - Light: Clean and bright default theme
   - Dark: Easy on the eyes night mode
-  - Gospel Gold: Purple and gold elegance (default)
-  - Ocean Blue: Calm and peaceful blue tones
-  - Forest Green: Natural and grounding green palette
-  - Sunset Orange: Warm and energetic orange theme
 ✅ ThemeProvider with React Context API
-✅ Theme selector component in header with color previews
+✅ Theme switcher in user dropdown menu with toggle functionality
 ✅ CSS variables system for seamless theme switching
 ✅ LocalStorage persistence for user preferences
 ✅ Smooth transitions and responsive design

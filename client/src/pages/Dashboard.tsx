@@ -15,7 +15,7 @@ import { toggleBookmark, isBookmarked, toggleAmen, getAmenInfo, listBookmarks } 
 import { getMediaUploadURL, processUploadedMedia } from '../lib/media'
 import { MediaUploader } from '../components/MediaUploader'
 import { MediaDisplay } from '../components/MediaDisplay'
-import { ThemeSelector } from '../components/ThemeSelector'
+import { ThemeSwitcher } from '../components/ThemeSwitcher'
 import { supabase } from '../lib/supabaseClient'
 
 export default function Dashboard() {
@@ -826,8 +826,6 @@ export default function Dashboard() {
                 </div>
               )}
 
-              {/* Theme Selector */}
-              <ThemeSelector />
               
               {/* User Menu */}
               <div className="relative">
@@ -889,6 +887,7 @@ export default function Dashboard() {
                       </svg>
                       Settings
                     </a>
+                    <ThemeSwitcher />
                     <a
                       href="/saved"
                       className="block w-full text-left px-4 py-3 text-sm text-primary-700 hover:bg-gradient-to-r hover:from-primary-50 hover:to-purple-50 transition-all duration-200 font-medium"
