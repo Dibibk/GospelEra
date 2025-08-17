@@ -116,3 +116,35 @@ export const insertReportSchema = createInsertSchema(reports).omit({
 
 export type InsertReport = z.infer<typeof insertReportSchema>;
 export type Report = typeof reports.$inferSelect;
+
+export const prayerRequests = pgTable("prayer_requests", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: varchar("name", { length: 100 }).notNull(),
+  request: text("request").notNull(),
+  prayed_count: integer("prayed_count").default(0).notNull(),
+  created_at: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertPrayerRequestSchema = createInsertSchema(prayerRequests).omit({
+  id: true,
+  prayed_count: true,
+  created_at: true,
+});
+
+export type InsertPrayerRequest = z.infer<typeof insertPrayerRequestSchema>;
+export type PrayerRequest = typeof prayerRequests.$inferSelect;
+
+export const prayerResponses = pgTable("prayer_responses", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  prayer_request_id: varchar("prayer_request_id").notNull().references(() => prayerRequests.id, { onDelete: 'cascade' }),
+  user_id: varchar("user_id").notNull(),
+  prayed_at: timestamp("prayed_at").defaultNow().notNull(),
+});
+
+export const insertPrayerResponseSchema = createInsertSchema(prayerResponses).omit({
+  id: true,
+  prayed_at: true,
+});
+
+export type InsertPrayerResponse = z.infer<typeof insertPrayerResponseSchema>;
+export type PrayerResponse = typeof prayerResponses.$inferSelect;

@@ -145,6 +145,71 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Prayer Request Routes
+  app.get("/api/prayer-requests", async (req, res) => {
+    try {
+      const { db } = await import("@/lib/db");
+      const { prayerRequests } = await import("@shared/schema");
+      const { desc } = await import("drizzle-orm");
+      
+      const requests = await db.select().from(prayerRequests).orderBy(desc(prayerRequests.created_at));
+      res.json(requests);
+    } catch (error) {
+      console.error("Error fetching prayer requests:", error);
+      res.status(500).json({ error: "Failed to fetch prayer requests" });
+    }
+  });
+
+  app.post("/api/prayer-requests", async (req, res) => {
+    try {
+      const { db } = await import("@/lib/db");
+      const { prayerRequests, insertPrayerRequestSchema } = await import("@shared/schema");
+      
+      const result = insertPrayerRequestSchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ error: "Invalid request data", issues: result.error.issues });
+      }
+
+      const [newRequest] = await db.insert(prayerRequests).values(result.data).returning();
+      res.status(201).json(newRequest);
+    } catch (error) {
+      console.error("Error creating prayer request:", error);
+      res.status(500).json({ error: "Failed to create prayer request" });
+    }
+  });
+
+  app.post("/api/prayer-requests/:id/pray", async (req, res) => {
+    try {
+      const { db } = await import("@/lib/db");
+      const { prayerRequests, prayerResponses } = await import("@shared/schema");
+      const { eq, sql } = await import("drizzle-orm");
+      
+      const requestId = req.params.id;
+      const userId = req.body.userId || 'anonymous'; // Allow anonymous prayers
+      
+      // Insert prayer response
+      await db.insert(prayerResponses).values({
+        prayer_request_id: requestId,
+        user_id: userId
+      });
+
+      // Increment prayed count
+      await db.update(prayerRequests)
+        .set({ prayed_count: sql`${prayerRequests.prayed_count} + 1` })
+        .where(eq(prayerRequests.id, requestId));
+
+      // Get updated request
+      const [updatedRequest] = await db.select()
+        .from(prayerRequests)
+        .where(eq(prayerRequests.id, requestId));
+
+      res.json(updatedRequest);
+    } catch (error) {
+      console.error("Error recording prayer:", error);
+      res.status(500).json({ error: "Failed to record prayer" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;

@@ -17,6 +17,7 @@ import { MediaUploader } from '../components/MediaUploader'
 import { MediaDisplay } from '../components/MediaDisplay'
 import { ThemeSwitcher } from '../components/ThemeSwitcher'
 import { supabase } from '../lib/supabaseClient'
+import { PrayerRequestCard } from '../components/PrayerRequestCard'
 
 export default function Dashboard() {
   const { user, signOut } = useAuth()
@@ -1000,6 +1001,11 @@ export default function Dashboard() {
               </div>
             )}
           </div>
+        </div>
+
+        {/* Prayer Request Card */}
+        <div className="mb-8">
+          <PrayerRequestCard />
         </div>
         
         {/* Banned User Banner */}
