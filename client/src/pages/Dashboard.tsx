@@ -16,6 +16,7 @@ import { getMediaUploadURL, processUploadedMedia } from '../lib/media'
 import { MediaUploader } from '../components/MediaUploader'
 import { MediaDisplay } from '../components/MediaDisplay'
 import { ThemeSwitcher } from '../components/ThemeSwitcher'
+import { SpiritualDecorations, FloatingSpiritual, SidebarSpiritual } from '../components/SpiritualDecorations'
 import { supabase } from '../lib/supabaseClient'
 
 export default function Dashboard() {
@@ -798,7 +799,10 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen relative">
+      {/* Spiritual Decorations */}
+      <FloatingSpiritual />
+      <SidebarSpiritual />
       {/* Navigation */}
       <nav className="bg-gradient-to-r from-white via-purple-50 to-gold-50 shadow-lg border-b border-purple-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -811,9 +815,12 @@ export default function Dashboard() {
                   </svg>
                 </div>
               </div>
-              <div className="ml-6">
-                <h1 className="text-2xl font-bold bg-gradient-to-r from-primary-800 to-purple-700 bg-clip-text text-transparent">Gospel Community</h1>
-                <p className="text-sm text-primary-600 font-medium">Share your faith, grow together</p>
+              <div className="ml-6 flex items-center space-x-6">
+                <div>
+                  <h1 className="text-2xl font-bold bg-gradient-to-r from-primary-800 to-purple-700 bg-clip-text text-transparent">Gospel Community</h1>
+                  <p className="text-sm text-primary-600 font-medium">Share your faith, grow together</p>
+                </div>
+                <SpiritualDecorations />
               </div>
             </div>
 
