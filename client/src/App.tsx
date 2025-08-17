@@ -13,6 +13,7 @@ import PublicProfile from "./pages/PublicProfile";
 import Settings from "./pages/Settings";
 import SavedPosts from "./pages/SavedPosts";
 import AdminReports from "./pages/AdminReports";
+import PrayerRequests from "./pages/PrayerRequests";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 
@@ -80,6 +81,14 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <AdminReports />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/prayer-requests" 
+                element={
+                  <ProtectedRoute>
+                    <PrayerRequests />
                   </ProtectedRoute>
                 } 
               />

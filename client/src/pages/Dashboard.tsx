@@ -17,7 +17,7 @@ import { MediaUploader } from '../components/MediaUploader'
 import { MediaDisplay } from '../components/MediaDisplay'
 import { ThemeSwitcher } from '../components/ThemeSwitcher'
 import { supabase } from '../lib/supabaseClient'
-import { PrayerRequestCard } from '../components/PrayerRequestCard'
+import { HandHeart, ArrowRight } from 'lucide-react'
 
 export default function Dashboard() {
   const { user, signOut } = useAuth()
@@ -1003,9 +1003,41 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Prayer Request Card */}
+        {/* Prayer Request Call-to-Action Card */}
         <div className="mb-8">
-          <PrayerRequestCard />
+          <Link to="/prayer-requests" className="block">
+            <div className="bg-gradient-to-br from-purple-600 to-blue-600 rounded-xl p-6 text-white hover:from-purple-700 hover:to-blue-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-[1.02]">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                  <div className="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
+                    <HandHeart className="w-8 h-8 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold mb-1">Prayer Requests</h3>
+                    <p className="text-white/90 text-sm">Share your heart with our community and receive prayer support</p>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-2 text-white/80">
+                  <span className="text-sm font-medium hidden sm:block">View & Share</span>
+                  <ArrowRight className="w-5 h-5" />
+                </div>
+              </div>
+              <div className="mt-4 flex items-center space-x-6 text-white/80 text-sm">
+                <div className="flex items-center space-x-2">
+                  <div className="w-2 h-2 bg-white/60 rounded-full"></div>
+                  <span>Submit prayer requests</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="w-2 h-2 bg-white/60 rounded-full"></div>
+                  <span>Pray for others</span>
+                </div>
+                <div className="flex items-center space-x-2 hidden sm:flex">
+                  <div className="w-2 h-2 bg-white/60 rounded-full"></div>
+                  <span>Build community support</span>
+                </div>
+              </div>
+            </div>
+          </Link>
         </div>
         
         {/* Banned User Banner */}
