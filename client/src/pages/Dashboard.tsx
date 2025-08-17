@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useRole } from '../hooks/useRole'
+import { useOnlineStatus } from '../hooks/useOnlineStatus'
 import { createPost, listPosts, softDeletePost, searchPosts, getTopTags } from '../lib/posts'
 import { createComment, listComments, softDeleteComment } from '../lib/comments'
 import { createReport } from '../lib/reports'
@@ -19,6 +20,7 @@ import { supabase } from '../lib/supabaseClient'
 export default function Dashboard() {
   const { user, signOut } = useAuth()
   const { isBanned } = useRole()
+  const isOnline = useOnlineStatus()
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   
   // Post creation form state
@@ -815,6 +817,14 @@ export default function Dashboard() {
             </div>
 
             <div className="flex items-center space-x-4">
+              {/* Offline Badge */}
+              {!isOnline && (
+                <div className="flex items-center px-2 py-1 bg-red-100 border border-red-200 rounded-full text-red-700 text-xs font-medium animate-pulse">
+                  <div className="w-2 h-2 bg-red-500 rounded-full mr-1.5"></div>
+                  Offline
+                </div>
+              )}
+              
               {/* User Menu */}
               <div className="relative">
                 <button
