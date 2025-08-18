@@ -19,6 +19,7 @@ import PrayerBrowse from "./pages/PrayerBrowse";
 import PrayerDetail from "./pages/PrayerDetail";
 import PrayerMy from "./pages/PrayerMy";
 import PrayerLeaderboard from "./pages/PrayerLeaderboard";
+import Guidelines from "./pages/Guidelines";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 
@@ -86,6 +87,14 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <AdminReports />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/guidelines" 
+                element={
+                  <ProtectedRoute>
+                    <Guidelines />
                   </ProtectedRoute>
                 } 
               />

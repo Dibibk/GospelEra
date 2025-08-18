@@ -1497,16 +1497,16 @@ export default function Dashboard() {
                     </div>
 
                     {/* Action buttons */}
-                    <div className="flex items-center justify-between pt-4 border-t border-gray-200">
-                      <div className="flex items-center space-x-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between pt-4 border-t border-gray-200 space-y-3 sm:space-y-0">
+                      <div className="flex items-center space-x-2 overflow-x-auto scrollbar-hide">
                         <button
                           onClick={() => toggleCommentForm(post.id)}
-                          className="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 rounded-md border border-gray-300 transition-colors duration-150"
+                          className="inline-flex items-center px-2 sm:px-3 py-2 text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 rounded-md border border-gray-300 transition-colors duration-150 flex-shrink-0"
                         >
-                          <svg className="h-4 w-4 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <svg className="h-4 w-4 sm:mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                           </svg>
-                          Reply
+                          <span className="hidden sm:inline">Reply</span>
                         </button>
                         
                         {/* Save (Bookmark) Button */}
@@ -1514,22 +1514,22 @@ export default function Dashboard() {
                           onClick={() => handleToggleBookmark(post.id)}
                           disabled={bookmarkLoading[post.id]}
                           title={postBookmarks[post.id] ? "Saved" : "Save"}
-                          className={`inline-flex items-center px-3 py-2 text-sm font-medium rounded-md border transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed ${
+                          className={`inline-flex items-center px-2 sm:px-3 py-2 text-sm font-medium rounded-md border transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 ${
                             postBookmarks[post.id] 
                               ? 'text-blue-700 bg-blue-50 hover:bg-blue-100 border-blue-200' 
                               : 'text-gray-700 bg-white hover:bg-gray-50 border-gray-300'
                           }`}
                         >
                           {bookmarkLoading[post.id] ? (
-                            <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-300 border-t-gray-600 mr-2"></div>
+                            <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-300 border-t-gray-600 sm:mr-2"></div>
                           ) : (
-                            <svg className={`h-4 w-4 mr-2 ${
+                            <svg className={`h-4 w-4 sm:mr-2 ${
                               postBookmarks[post.id] ? 'text-blue-600 fill-current' : 'text-gray-500'
                             }`} fill={postBookmarks[post.id] ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
                             </svg>
                           )}
-                          {postBookmarks[post.id] ? 'Saved' : 'Save'}
+                          <span className="hidden sm:inline">{postBookmarks[post.id] ? 'Saved' : 'Save'}</span>
                         </button>
                         
                         {/* Amen Button */}
@@ -1537,24 +1537,24 @@ export default function Dashboard() {
                           onClick={() => handleToggleAmen(post.id)}
                           disabled={amenLoading[post.id]}
                           title={postAmenInfo[post.id]?.mine ? "Amen'd" : "Amen"}
-                          className={`inline-flex items-center px-3 py-2 text-sm font-medium rounded-md border transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed ${
+                          className={`inline-flex items-center px-2 sm:px-3 py-2 text-sm font-medium rounded-md border transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 ${
                             postAmenInfo[post.id]?.mine 
                               ? 'text-red-700 bg-red-50 hover:bg-red-100 border-red-200' 
                               : 'text-gray-700 bg-white hover:bg-gray-50 border-gray-300'
                           }`}
                         >
                           {amenLoading[post.id] ? (
-                            <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-300 border-t-gray-600 mr-2"></div>
+                            <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-300 border-t-gray-600 sm:mr-2"></div>
                           ) : (
-                            <svg className={`h-4 w-4 mr-2 ${
+                            <svg className={`h-4 w-4 sm:mr-2 ${
                               postAmenInfo[post.id]?.mine ? 'text-red-600' : 'text-gray-500'
                             }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                             </svg>
                           )}
-                          Amen
+                          <span className="hidden sm:inline">Amen</span>
                           {(postAmenInfo[post.id]?.count || 0) > 0 && (
-                            <span className="ml-2 px-1.5 py-0.5 bg-gray-100 rounded text-xs font-medium">
+                            <span className="ml-1 sm:ml-2 px-1.5 py-0.5 bg-gray-100 rounded text-xs font-medium">
                               {postAmenInfo[post.id]?.count}
                             </span>
                           )}
@@ -1562,12 +1562,12 @@ export default function Dashboard() {
                         
                         <button
                           onClick={() => openReportModal('post', post.id.toString())}
-                          className="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-500 bg-white hover:bg-gray-50 rounded-md border border-gray-300 transition-colors duration-150"
+                          className="inline-flex items-center px-2 sm:px-3 py-2 text-sm font-medium text-gray-500 bg-white hover:bg-gray-50 rounded-md border border-gray-300 transition-colors duration-150 flex-shrink-0"
                         >
-                          <svg className="h-4 w-4 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <svg className="h-4 w-4 sm:mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.35 16.5c-.77.833.192 2.5 1.732 2.5z" />
                           </svg>
-                          Report
+                          <span className="hidden sm:inline">Report</span>
                         </button>
                       </div>
                       
@@ -1575,19 +1575,19 @@ export default function Dashboard() {
                         <button
                           onClick={() => handleDeletePost(post.id)}
                           disabled={deletingPostId === post.id}
-                          className="inline-flex items-center px-3 py-2 text-sm font-medium text-red-700 bg-red-50 hover:bg-red-100 rounded-md border border-red-200 transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="inline-flex items-center px-2 sm:px-3 py-2 text-sm font-medium text-red-700 bg-red-50 hover:bg-red-100 rounded-md border border-red-200 transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 self-start sm:self-auto"
                         >
                           {deletingPostId === post.id ? (
                             <>
-                              <div className="animate-spin rounded-full h-4 w-4 border-2 border-red-300 border-t-red-600 mr-2"></div>
-                              Deleting...
+                              <div className="animate-spin rounded-full h-4 w-4 border-2 border-red-300 border-t-red-600 sm:mr-2"></div>
+                              <span className="hidden sm:inline">Deleting...</span>
                             </>
                           ) : (
                             <>
-                              <svg className="h-4 w-4 mr-2 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <svg className="h-4 w-4 sm:mr-2 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                               </svg>
-                              Delete
+                              <span className="hidden sm:inline">Delete</span>
                             </>
                           )}
                         </button>
