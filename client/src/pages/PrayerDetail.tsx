@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { ArrowLeft, Heart, Check, Users, Clock, MessageSquare, AlertCircle } from 'lucide-react'
 import { getPrayerRequest, commitToPray, confirmPrayed, uncommitToPray } from '../lib/prayer'
+import { supabase } from '../lib/supabaseClient'
 
 interface PrayerRequest {
   id: number
@@ -62,6 +63,84 @@ export default function PrayerDetail() {
       loadRequest()
     }
   }, [id])
+
+  // Set up realtime subscription for this specific prayer request
+  useEffect(() => {
+    if (!id || !request) return
+
+    const subscription = supabase
+      .channel(`prayer_request_${id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'prayer_commitments',
+          filter: `request_id=eq.${id}`
+        },
+        (payload) => {
+          console.log('Prayer commitment change for request:', payload)
+          handleCommitmentChange(payload)
+        }
+      )
+      .subscribe()
+
+    return () => {
+      subscription.unsubscribe()
+    }
+  }, [id, request])
+
+  const handleCommitmentChange = async (payload: any) => {
+    if (!request) return
+
+    try {
+      // Fetch updated request data with fresh commitments
+      const { data, error } = await supabase
+        .from('prayer_requests')
+        .select(`
+          *,
+          profiles!prayer_requests_requester_fkey (
+            display_name,
+            avatar_url,
+            role
+          ),
+          prayer_commitments (
+            status,
+            prayed_at,
+            committed_at,
+            note,
+            warrior,
+            profiles!prayer_commitments_warrior_fkey (
+              display_name,
+              avatar_url
+            )
+          )
+        `)
+        .eq('id', request.id)
+        .single()
+
+      if (error) {
+        console.error('Failed to refresh request data:', error)
+        return
+      }
+
+      // Calculate updated stats
+      const commitments = data.prayer_commitments || []
+      const updatedStats = {
+        committed_count: commitments.filter((c: any) => c.status === 'committed').length,
+        prayed_count: commitments.filter((c: any) => c.status === 'prayed').length,
+        total_warriors: commitments.length
+      }
+
+      // Update the request with fresh data
+      setRequest({
+        ...data,
+        prayer_stats: updatedStats
+      })
+    } catch (err) {
+      console.error('Error updating request data:', err)
+    }
+  }
 
   const loadRequest = async () => {
     if (!id) return

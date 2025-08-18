@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { ArrowLeft, Heart, Check, Clock, Plus, Users } from 'lucide-react'
 import { getMyRequests, getMyCommitments } from '../lib/prayer'
+import { supabase } from '../lib/supabaseClient'
 
 interface MyRequest {
   id: number
@@ -47,6 +48,73 @@ export default function PrayerMy() {
   useEffect(() => {
     loadData()
   }, [])
+
+  // Set up realtime subscription for user's prayer commitments
+  useEffect(() => {
+    if (!user?.id) return
+
+    const subscription = supabase
+      .channel(`user_prayer_activity_${user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'prayer_commitments',
+          filter: `warrior=eq.${user.id}`
+        },
+        (payload) => {
+          console.log('User prayer commitment change:', payload)
+          handleUserCommitmentChange(payload)
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'prayer_requests',
+          filter: `requester=eq.${user.id}`
+        },
+        (payload) => {
+          console.log('User prayer request change:', payload)
+          handleUserRequestChange(payload)
+        }
+      )
+      .subscribe()
+
+    return () => {
+      subscription.unsubscribe()
+    }
+  }, [user?.id])
+
+  const handleUserCommitmentChange = async (payload: any) => {
+    // Reload commitments when user's commitments change
+    try {
+      const { data, error } = await getMyCommitments({ limit: 50 })
+      if (error) {
+        console.error('Failed to refresh commitments:', error)
+        return
+      }
+      setMyCommitments(data || [])
+    } catch (err) {
+      console.error('Error refreshing commitments:', err)
+    }
+  }
+
+  const handleUserRequestChange = async (payload: any) => {
+    // Reload requests when user's requests change
+    try {
+      const { data, error } = await getMyRequests({ limit: 50 })
+      if (error) {
+        console.error('Failed to refresh requests:', error)
+        return
+      }
+      setMyRequests(data || [])
+    } catch (err) {
+      console.error('Error refreshing requests:', err)
+    }
+  }
 
   const loadData = async () => {
     setIsLoading(true)
