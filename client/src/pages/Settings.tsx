@@ -28,6 +28,10 @@ export default function Settings() {
   const [bio, setBio] = useState('')
   const [avatarUrl, setAvatarUrl] = useState('')
   
+  // Privacy settings
+  const [showNameOnPrayers, setShowNameOnPrayers] = useState(true)
+  const [privateProfile, setPrivateProfile] = useState(false)
+  
   // Notification settings
   const [emailNotifications, setEmailNotifications] = useState(true)
   const [pushNotifications, setPushNotifications] = useState(true)
@@ -50,6 +54,8 @@ export default function Settings() {
       setDisplayName(data.display_name || '')
       setBio(data.bio || '')
       setAvatarUrl(data.avatar_url || '')
+      setShowNameOnPrayers(data.show_name_on_prayers ?? true)
+      setPrivateProfile(data.private_profile ?? false)
     }
     
     setLoading(false)
@@ -127,7 +133,9 @@ export default function Settings() {
     const { data, error } = await upsertMyProfile({
       display_name: displayName.trim(),
       bio: bio.trim(),
-      avatar_url: avatarUrl
+      avatar_url: avatarUrl,
+      show_name_on_prayers: showNameOnPrayers,
+      private_profile: privateProfile
     })
 
     if (error) {
@@ -189,7 +197,7 @@ export default function Settings() {
           </Alert>
         )}
 
-        <Tabs defaultValue="notifications" className="space-y-6">
+        <Tabs defaultValue="privacy" className="space-y-6">
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="notifications" className="flex items-center gap-2">
               <Bell className="h-4 w-4" />
@@ -364,40 +372,40 @@ export default function Settings() {
                 <CardContent className="space-y-6">
                   <div className="flex items-center justify-between">
                     <div className="space-y-0.5">
-                      <Label>Profile Visibility</Label>
+                      <Label htmlFor="show-name-prayers">Show my display name on prayer requests</Label>
                       <p className="text-sm text-gray-500 dark:text-gray-400">
-                        Make your profile visible to other users
+                        When enabled, your display name will appear on your prayer requests. When disabled, they will appear as "Anonymous".
                       </p>
                     </div>
-                    <Switch defaultChecked />
+                    <Switch
+                      id="show-name-prayers"
+                      checked={showNameOnPrayers}
+                      onCheckedChange={setShowNameOnPrayers}
+                    />
                   </div>
 
                   <Separator />
 
                   <div className="flex items-center justify-between">
                     <div className="space-y-0.5">
-                      <Label>Show Activity Status</Label>
+                      <Label htmlFor="private-profile">Private profile (appear as 'Anonymous' on leaderboards)</Label>
                       <p className="text-sm text-gray-500 dark:text-gray-400">
-                        Let others see when you're active
+                        When enabled, you will appear as "Anonymous" on prayer leaderboards instead of your display name.
                       </p>
                     </div>
-                    <Switch defaultChecked />
+                    <Switch
+                      id="private-profile"
+                      checked={privateProfile}
+                      onCheckedChange={setPrivateProfile}
+                    />
                   </div>
 
-                  <Separator />
-
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>Allow Comments on Posts</Label>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">
-                        Let other users comment on your posts
-                      </p>
-                    </div>
-                    <Switch defaultChecked />
-                  </div>
-
-                  <Button className="w-full sm:w-auto">
-                    Save Privacy Settings
+                  <Button 
+                    onClick={handleSaveProfile}
+                    disabled={saving}
+                    className="w-full sm:w-auto"
+                  >
+                    {saving ? 'Saving...' : 'Save Privacy Settings'}
                   </Button>
                 </CardContent>
               </Card>

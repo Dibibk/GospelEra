@@ -4,6 +4,8 @@ interface UpsertProfileData {
   display_name?: string
   bio?: string
   avatar_url?: string
+  show_name_on_prayers?: boolean
+  private_profile?: boolean
 }
 
 interface Profile {
@@ -57,7 +59,7 @@ export async function getMyProfile() {
  * @param {string} profileData.avatar_url - Avatar URL (optional)
  * @returns {Promise<{data: Profile|null, error: Error|null}>}
  */
-export async function upsertMyProfile({ display_name, bio, avatar_url }: UpsertProfileData) {
+export async function upsertMyProfile({ display_name, bio, avatar_url, show_name_on_prayers, private_profile }: UpsertProfileData) {
   try {
     // Get current user
     const { data: { user }, error: userError } = await supabase.auth.getUser()
@@ -83,6 +85,8 @@ export async function upsertMyProfile({ display_name, bio, avatar_url }: UpsertP
     if (display_name !== undefined) updateData.display_name = display_name
     if (bio !== undefined) updateData.bio = bio
     if (avatar_url !== undefined) updateData.avatar_url = avatar_url
+    if (show_name_on_prayers !== undefined) updateData.show_name_on_prayers = show_name_on_prayers
+    if (private_profile !== undefined) updateData.private_profile = private_profile
 
     // Upsert profile
     const { data, error } = await supabase
