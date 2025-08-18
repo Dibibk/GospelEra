@@ -81,7 +81,7 @@ export async function listPrayerRequests({
   q = '', 
   tags = [], 
   limit = 20, 
-  cursor = null 
+  cursor = null as number | null
 }: PrayerRequestListParams): Promise<ApiResponse<any[]>> {
   try {
     let query = supabase
@@ -132,11 +132,11 @@ export async function listPrayerRequests({
     }
 
     // Calculate prayer statistics for each request
-    const enhancedData = data.map(request => ({
+    const enhancedData = data.map((request: any) => ({
       ...request,
       prayer_stats: {
-        committed_count: request.prayer_commitments?.filter(c => c.status === 'committed').length || 0,
-        prayed_count: request.prayer_commitments?.filter(c => c.status === 'prayed').length || 0,
+        committed_count: request.prayer_commitments?.filter((c: any) => c.status === 'committed').length || 0,
+        prayed_count: request.prayer_commitments?.filter((c: any) => c.status === 'prayed').length || 0,
         total_warriors: request.prayer_commitments?.length || 0
       }
     }))

@@ -14,6 +14,10 @@ import Settings from "./pages/Settings";
 import SavedPosts from "./pages/SavedPosts";
 import AdminReports from "./pages/AdminReports";
 import PrayerRequests from "./pages/PrayerRequests";
+import PrayerNew from "./pages/PrayerNew";
+import PrayerBrowse from "./pages/PrayerBrowse";
+import PrayerDetail from "./pages/PrayerDetail";
+import PrayerMy from "./pages/PrayerMy";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 
@@ -89,6 +93,38 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <PrayerRequests />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/prayer/new" 
+                element={
+                  <ProtectedRoute>
+                    <PrayerNew />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/prayer/browse" 
+                element={
+                  <ProtectedRoute>
+                    <PrayerBrowse />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/prayer/:id" 
+                element={
+                  <ProtectedRoute>
+                    <PrayerDetail />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/prayer/my" 
+                element={
+                  <ProtectedRoute>
+                    <PrayerMy />
                   </ProtectedRoute>
                 } 
               />
