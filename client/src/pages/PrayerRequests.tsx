@@ -442,15 +442,15 @@ export default function PrayerRequests() {
 
           {/* Prayer Requests */}
           {!isLoading && !loadError && prayerRequests.length === 0 && (
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-8 text-center">
-              <Heart className="w-16 h-16 text-blue-300 mx-auto mb-4" />
-              <h4 className="text-lg font-medium text-blue-700 mb-2">No Prayer Requests Yet</h4>
-              <p className="text-blue-600">Be the first to share a prayer request with the community.</p>
+            <div className="bg-purple-50 border border-purple-200 rounded-lg p-8 text-center">
+              <Heart className="w-16 h-16 text-purple-300 mx-auto mb-4" />
+              <h4 className="text-lg font-medium text-purple-700 mb-2">No Prayer Requests Yet</h4>
+              <p className="text-purple-600">Be the first to share a prayer request with the community.</p>
             </div>
           )}
 
           {!isLoading && !loadError && prayerRequests.map((request) => (
-            <div key={request.id} className="bg-white rounded-xl shadow-md border border-blue-100 p-6 hover:shadow-lg transition-shadow">
+            <div key={request.id} className="bg-white rounded-xl shadow-md border border-purple-100 p-6 hover:shadow-lg transition-shadow">
               <div className="flex items-start space-x-4">
                 <div className="flex-shrink-0">
                   {request.profiles?.avatar_url ? (
@@ -460,8 +460,8 @@ export default function PrayerRequests() {
                       className="w-12 h-12 rounded-full object-cover"
                     />
                   ) : (
-                    <div className="w-12 h-12 bg-blue-200 rounded-full flex items-center justify-center">
-                      <HandHeart className="w-6 h-6 text-blue-600" />
+                    <div className="w-12 h-12 bg-purple-200 rounded-full flex items-center justify-center">
+                      <HandHeart className="w-6 h-6 text-purple-600" />
                     </div>
                   )}
                 </div>
@@ -469,12 +469,12 @@ export default function PrayerRequests() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between mb-3">
                     <div>
-                      <h4 className="font-medium text-blue-800">{request.is_anonymous ? 'Anonymous' : request.title}</h4>
-                      <p className="text-sm text-blue-500">{formatDate(request.created_at)}</p>
+                      <h4 className="font-medium text-purple-800">{request.is_anonymous ? 'Anonymous' : request.title}</h4>
+                      <p className="text-sm text-purple-500">{formatDate(request.created_at)}</p>
                     </div>
                     <button
                       onClick={() => handlePrayerCommitment(request.id)}
-                      className="flex items-center space-x-2 bg-blue-50 hover:bg-blue-100 text-blue-700 px-3 py-2 rounded-full transition-colors text-sm"
+                      className="flex items-center space-x-2 bg-purple-50 hover:bg-purple-100 text-purple-700 px-3 py-2 rounded-full transition-colors text-sm"
                     >
                       <Heart className="w-4 h-4" />
                       <span>Pray ({request.prayer_commitments?.filter((c: any) => c.status === 'prayed').length || 0})</span>

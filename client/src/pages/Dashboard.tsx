@@ -16,14 +16,12 @@ import { getMediaUploadURL, processUploadedMedia } from '../lib/media'
 import { MediaUploader } from '../components/MediaUploader'
 import { MediaDisplay } from '../components/MediaDisplay'
 import { ThemeSwitcher } from '../components/ThemeSwitcher'
-import { useTheme } from '../hooks/useTheme'
 import { supabase } from '../lib/supabaseClient'
 import { HandHeart, ArrowRight } from 'lucide-react'
 
 export default function Dashboard() {
   const { user, signOut } = useAuth()
   const { isBanned } = useRole()
-  const { theme } = useTheme()
   const isOnline = useOnlineStatus()
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   
@@ -803,20 +801,12 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen relative">
       {/* Faith-centered Navigation */}
-      <nav className={`shadow-lg border-b border-blue-200/30 ${
-        theme === 'light' 
-          ? 'bg-gradient-to-r from-purple-600 via-purple-700 to-purple-600 light-rays' 
-          : 'faith-gradient-bg light-rays'
-      }`}>
+      <nav className="faith-gradient-bg light-rays shadow-lg border-b border-purple-200/30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-20">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <div className={`h-12 w-12 rounded-xl flex items-center justify-center shadow-lg animate-glow ${
-                  theme === 'light'
-                    ? 'bg-gradient-to-br from-purple-700 to-purple-800'
-                    : 'bg-gradient-to-br from-blue-600 to-indigo-700'
-                }`}>
+                <div className="h-12 w-12 bg-gradient-to-br from-purple-600 to-indigo-700 rounded-xl flex items-center justify-center shadow-lg animate-glow">
                   {/* Glowing Cross/Book Icon */}
                   <svg className="h-7 w-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 3v18m9-9H3" />
@@ -825,14 +815,8 @@ export default function Dashboard() {
                 </div>
               </div>
               <div className="ml-6">
-                <h1 className={`text-2xl font-serif font-bold bg-clip-text text-transparent ${
-                  theme === 'light'
-                    ? 'bg-gradient-to-r from-white to-purple-100'
-                    : 'bg-gradient-to-r from-blue-800 to-indigo-700'
-                }`}>Gospel Era</h1>
-                <p className={`text-sm font-medium ${
-                  theme === 'light' ? 'text-purple-100' : 'text-blue-600'
-                }`}>Share your faith, grow together</p>
+                <h1 className="text-2xl font-serif font-bold bg-gradient-to-r from-purple-800 to-indigo-700 bg-clip-text text-transparent">Gospel Era</h1>
+                <p className="text-sm text-purple-600 font-medium">Share your faith, grow together</p>
               </div>
             </div>
 
@@ -851,9 +835,9 @@ export default function Dashboard() {
                 <button
                   type="button"
                   onClick={() => setUserMenuOpen(!userMenuOpen)}
-                  className="flex items-center text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gold-500 p-3 hover:bg-gradient-to-r hover:from-primary-50 hover:to-blue-50 transition-all duration-300 border border-primary-200 bg-white/80 backdrop-blur-sm shadow-sm"
+                  className="flex items-center text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gold-500 p-3 hover:bg-gradient-to-r hover:from-primary-50 hover:to-purple-50 transition-all duration-300 border border-primary-200 bg-white/80 backdrop-blur-sm shadow-sm"
                 >
-                  <div className="h-9 w-9 rounded-full bg-gradient-to-br from-primary-500 to-blue-600 flex items-center justify-center shadow-md ring-2 ring-white overflow-hidden">
+                  <div className="h-9 w-9 rounded-full bg-gradient-to-br from-primary-500 to-purple-600 flex items-center justify-center shadow-md ring-2 ring-white overflow-hidden">
                     {userProfile?.avatar_url ? (
                       <img 
                         src={userProfile.avatar_url} 
@@ -874,7 +858,7 @@ export default function Dashboard() {
                       </svg>
                     )}
                   </div>
-                  <span className="ml-3 text-primary-800 hidden sm:block font-medium">{userProfile?.display_name || user?.email}</span>
+                  <span className="ml-3 text-primary-800 hidden sm:block font-medium">{user?.email}</span>
                   <svg className="ml-2 h-4 w-4 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                   </svg>
@@ -885,11 +869,11 @@ export default function Dashboard() {
                   <div className="absolute right-0 mt-3 w-52 bg-white/95 backdrop-blur-md rounded-xl shadow-xl py-2 ring-1 ring-primary-200 border border-white/50 z-50">
                     <div className="px-4 py-3 border-b border-primary-100">
                       <p className="text-sm font-medium text-primary-800">Signed in as</p>
-                      <p className="text-sm text-primary-600 truncate">{userProfile?.display_name || user?.email}</p>
+                      <p className="text-sm text-primary-600 truncate">{user?.email}</p>
                     </div>
                     <a
                       href="/profile"
-                      className="block w-full text-left px-4 py-3 text-sm text-primary-700 hover:bg-gradient-to-r hover:from-primary-50 hover:to-blue-50 transition-all duration-200 font-medium"
+                      className="block w-full text-left px-4 py-3 text-sm text-primary-700 hover:bg-gradient-to-r hover:from-primary-50 hover:to-purple-50 transition-all duration-200 font-medium"
                     >
                       <svg className="inline h-4 w-4 mr-3 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
@@ -898,7 +882,7 @@ export default function Dashboard() {
                     </a>
                     <a
                       href="/settings"
-                      className="block w-full text-left px-4 py-3 text-sm text-primary-700 hover:bg-gradient-to-r hover:from-primary-50 hover:to-blue-50 transition-all duration-200 font-medium"
+                      className="block w-full text-left px-4 py-3 text-sm text-primary-700 hover:bg-gradient-to-r hover:from-primary-50 hover:to-purple-50 transition-all duration-200 font-medium"
                     >
                       <svg className="inline h-4 w-4 mr-3 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.50 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
@@ -909,7 +893,7 @@ export default function Dashboard() {
                     <ThemeSwitcher />
                     <a
                       href="/saved"
-                      className="block w-full text-left px-4 py-3 text-sm text-primary-700 hover:bg-gradient-to-r hover:from-primary-50 hover:to-blue-50 transition-all duration-200 font-medium"
+                      className="block w-full text-left px-4 py-3 text-sm text-primary-700 hover:bg-gradient-to-r hover:from-primary-50 hover:to-purple-50 transition-all duration-200 font-medium"
                     >
                       <svg className="inline h-4 w-4 mr-3 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
@@ -930,7 +914,7 @@ export default function Dashboard() {
                     )}
                     <button
                       onClick={handleLogout}
-                      className="block w-full text-left px-4 py-3 text-sm text-primary-700 hover:bg-gradient-to-r hover:from-primary-50 hover:to-blue-50 transition-all duration-200 font-medium"
+                      className="block w-full text-left px-4 py-3 text-sm text-primary-700 hover:bg-gradient-to-r hover:from-primary-50 hover:to-purple-50 transition-all duration-200 font-medium"
                     >
                       <svg className="inline h-4 w-4 mr-3 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
@@ -948,19 +932,11 @@ export default function Dashboard() {
       {/* Main Content */}
       <main className="max-w-4xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
         {/* Verse of the Day */}
-        <div className={`relative overflow-hidden border shadow-xl rounded-2xl mb-10 backdrop-blur-sm ${
-          theme === 'light'
-            ? 'bg-gradient-to-br from-purple-100 via-purple-50 to-purple-100 border-purple-200/60'
-            : 'bg-gradient-to-br from-white via-primary-50/50 to-blue-50/50 border-primary-200/60'
-        }`}>
+        <div className="relative overflow-hidden bg-gradient-to-br from-white via-primary-50/50 to-purple-50/50 border border-primary-200/60 shadow-xl rounded-2xl mb-10 backdrop-blur-sm">
           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-pulse"></div>
-          <div className="relative px-8 py-6 border-b border-gradient-to-r from-primary-200/40 via-blue-200/40 to-primary-200/40">
+          <div className="relative px-8 py-6 border-b border-gradient-to-r from-primary-200/40 via-purple-200/40 to-primary-200/40">
             <div className="flex items-center justify-between">
-              <h2 className={`text-xl font-bold bg-clip-text text-transparent flex items-center ${
-                theme === 'light'
-                  ? 'bg-gradient-to-r from-purple-800 via-purple-700 to-purple-800'
-                  : 'bg-gradient-to-r from-primary-800 via-blue-700 to-primary-800'
-              }`}>
+              <h2 className="text-xl font-bold bg-gradient-to-r from-primary-800 via-purple-700 to-primary-800 bg-clip-text text-transparent flex items-center">
                 <div className="h-8 w-8 bg-gradient-to-br from-gold-500 to-gold-600 rounded-lg flex items-center justify-center mr-3 shadow-md">
                   <svg className="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
@@ -992,7 +968,7 @@ export default function Dashboard() {
             ) : dailyVerse ? (
               <div className="space-y-6">
                 <blockquote className="relative">
-                  <div className="absolute -left-2 top-0 h-full w-1 bg-gradient-to-b from-gold-500 via-primary-500 to-blue-600 rounded-full"></div>
+                  <div className="absolute -left-2 top-0 h-full w-1 bg-gradient-to-b from-gold-500 via-primary-500 to-purple-600 rounded-full"></div>
                   <div className="pl-8">
                     <svg className="h-8 w-8 text-gold-500/40 mb-3" fill="currentColor" viewBox="0 0 24 24">
                       <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h4v10h-10z"/>
@@ -1003,7 +979,7 @@ export default function Dashboard() {
                   </div>
                 </blockquote>
                 <div className="flex justify-end">
-                  <div className="flex items-center space-x-2 bg-gradient-to-r from-primary-100/60 to-blue-100/60 px-4 py-2 rounded-full border border-primary-200/40">
+                  <div className="flex items-center space-x-2 bg-gradient-to-r from-primary-100/60 to-purple-100/60 px-4 py-2 rounded-full border border-primary-200/40">
                     <svg className="h-4 w-4 text-gold-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
                     </svg>
@@ -1015,7 +991,7 @@ export default function Dashboard() {
               </div>
             ) : (
               <div className="text-center py-10">
-                <div className="h-16 w-16 bg-gradient-to-br from-primary-400 to-blue-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                <div className="h-16 w-16 bg-gradient-to-br from-primary-400 to-purple-500 rounded-full flex items-center justify-center mx-auto mb-4">
                   <svg className="h-8 w-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.35 16.5c-.77.833.192 2.5 1.732 2.5z" />
                   </svg>
@@ -1030,11 +1006,7 @@ export default function Dashboard() {
         {/* Prayer Request Call-to-Action Card */}
         <div className="mb-8">
           <Link to="/prayer-requests" className="block">
-            <div className={`rounded-xl p-6 text-white transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-[1.02] ${
-              theme === 'light'
-                ? 'bg-gradient-to-br from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800'
-                : 'bg-gradient-to-br from-blue-600 to-blue-600 hover:from-blue-700 hover:to-blue-700'
-            }`}>
+            <div className="bg-gradient-to-br from-purple-600 to-blue-600 rounded-xl p-6 text-white hover:from-purple-700 hover:to-blue-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-[1.02]">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-4">
                   <div className="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
@@ -1086,15 +1058,15 @@ export default function Dashboard() {
         )}
         
         {/* Create Post Form */}
-        <div className="bg-gradient-to-br from-white via-primary-50/30 to-blue-50/30 shadow-xl rounded-2xl mb-8 border border-primary-200/50 backdrop-blur-sm">
-          <div className="px-8 py-6 border-b border-gradient-to-r from-primary-200/40 via-blue-200/40 to-primary-200/40">
+        <div className="bg-gradient-to-br from-white via-primary-50/30 to-purple-50/30 shadow-xl rounded-2xl mb-8 border border-primary-200/50 backdrop-blur-sm">
+          <div className="px-8 py-6 border-b border-gradient-to-r from-primary-200/40 via-purple-200/40 to-primary-200/40">
             <div className="flex items-center space-x-3">
-              <div className="h-10 w-10 bg-gradient-to-br from-blue-500 to-primary-600 rounded-xl flex items-center justify-center shadow-lg">
+              <div className="h-10 w-10 bg-gradient-to-br from-purple-500 to-primary-600 rounded-xl flex items-center justify-center shadow-lg">
                 <svg className="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                 </svg>
               </div>
-              <h2 className="text-xl font-bold bg-gradient-to-r from-primary-800 to-blue-700 bg-clip-text text-transparent">Share Your Heart</h2>
+              <h2 className="text-xl font-bold bg-gradient-to-r from-primary-800 to-purple-700 bg-clip-text text-transparent">Share Your Heart</h2>
             </div>
           </div>
           <form onSubmit={handleCreatePost} className="p-8">
@@ -1257,7 +1229,7 @@ export default function Dashboard() {
                 <button
                   type="submit"
                   disabled={isCreating || !title.trim() || !content.trim() || isBanned}
-                  className="w-full flex justify-center items-center py-4 px-6 border border-transparent rounded-xl shadow-lg text-base font-bold text-white bg-gradient-to-r from-primary-600 via-blue-600 to-primary-600 hover:from-primary-700 hover:via-blue-700 hover:to-primary-700 focus:outline-none focus:ring-4 focus:ring-gold-500/50 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 transform hover:scale-[1.02] hover:shadow-xl"
+                  className="w-full flex justify-center items-center py-4 px-6 border border-transparent rounded-xl shadow-lg text-base font-bold text-white bg-gradient-to-r from-primary-600 via-purple-600 to-primary-600 hover:from-primary-700 hover:via-purple-700 hover:to-primary-700 focus:outline-none focus:ring-4 focus:ring-gold-500/50 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 transform hover:scale-[1.02] hover:shadow-xl"
                   title={isBanned ? "Account limited - you cannot create posts or comments" : ""}
                 >
                   {isCreating ? (
@@ -1280,15 +1252,15 @@ export default function Dashboard() {
         </div>
 
         {/* Search Section */}
-        <div className="bg-gradient-to-br from-white via-primary-50/20 to-blue-50/20 shadow-xl rounded-2xl border border-primary-200/50 backdrop-blur-sm mb-8">
-          <div className="px-8 py-6 border-b border-gradient-to-r from-primary-200/40 via-blue-200/40 to-primary-200/40">
+        <div className="bg-gradient-to-br from-white via-primary-50/20 to-purple-50/20 shadow-xl rounded-2xl border border-primary-200/50 backdrop-blur-sm mb-8">
+          <div className="px-8 py-6 border-b border-gradient-to-r from-primary-200/40 via-purple-200/40 to-primary-200/40">
             <div className="flex items-center space-x-3 mb-6">
-              <div className="h-10 w-10 bg-gradient-to-br from-blue-500 to-primary-600 rounded-xl flex items-center justify-center shadow-lg">
+              <div className="h-10 w-10 bg-gradient-to-br from-purple-500 to-primary-600 rounded-xl flex items-center justify-center shadow-lg">
                 <svg className="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
               </div>
-              <h2 className="text-xl font-bold bg-gradient-to-r from-primary-800 to-blue-700 bg-clip-text text-transparent">Search & Discover</h2>
+              <h2 className="text-xl font-bold bg-gradient-to-r from-primary-800 to-purple-700 bg-clip-text text-transparent">Search & Discover</h2>
             </div>
             
             {/* Search Input */}
@@ -1367,7 +1339,7 @@ export default function Dashboard() {
                   <div className="flex items-center space-x-3">
                     <span className="text-sm font-bold text-primary-800">Active Filters:</span>
                     {searchQuery.trim() && (
-                      <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-800 border border-blue-200">
+                      <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-purple-100 text-purple-800 border border-purple-200">
                         Search: "{searchQuery.trim()}"
                       </span>
                     )}
@@ -1396,8 +1368,8 @@ export default function Dashboard() {
         </div>
 
         {/* Posts Feed */}
-        <div className="bg-gradient-to-br from-white via-primary-50/20 to-blue-50/20 shadow-xl rounded-2xl border border-primary-200/50 backdrop-blur-sm">
-          <div className="px-8 py-6 border-b border-gradient-to-r from-primary-200/40 via-blue-200/40 to-primary-200/40">
+        <div className="bg-gradient-to-br from-white via-primary-50/20 to-purple-50/20 shadow-xl rounded-2xl border border-primary-200/50 backdrop-blur-sm">
+          <div className="px-8 py-6 border-b border-gradient-to-r from-primary-200/40 via-purple-200/40 to-primary-200/40">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
                 <div className="h-10 w-10 bg-gradient-to-br from-gold-500 to-gold-600 rounded-xl flex items-center justify-center shadow-lg">
@@ -1405,7 +1377,7 @@ export default function Dashboard() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                   </svg>
                 </div>
-                <h2 className="text-xl font-bold bg-gradient-to-r from-primary-800 to-blue-700 bg-clip-text text-transparent">
+                <h2 className="text-xl font-bold bg-gradient-to-r from-primary-800 to-purple-700 bg-clip-text text-transparent">
                   {isSearchMode ? 'Search Results' : 'Community Voices'}
                 </h2>
               </div>
@@ -1435,7 +1407,7 @@ export default function Dashboard() {
               <div className="p-12 text-center">
                 {isSearchMode ? (
                   <div>
-                    <div className="h-20 w-20 bg-gradient-to-br from-blue-400 to-primary-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl">
+                    <div className="h-20 w-20 bg-gradient-to-br from-purple-400 to-primary-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl">
                       <svg className="h-10 w-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                       </svg>
@@ -1444,7 +1416,7 @@ export default function Dashboard() {
                     <p className="text-primary-600 mb-4">No posts match your search criteria. Try adjusting your search terms or tags.</p>
                     <button
                       onClick={clearSearch}
-                      className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-primary-100 to-blue-100 text-primary-800 rounded-full text-sm font-medium hover:from-primary-200 hover:to-blue-200 transition-all duration-200"
+                      className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-primary-100 to-purple-100 text-primary-800 rounded-full text-sm font-medium hover:from-primary-200 hover:to-purple-200 transition-all duration-200"
                     >
                       <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -1866,7 +1838,7 @@ export default function Dashboard() {
       {/* Faith-centered Footer */}
       <footer className="mt-16 py-12 px-4">
         <div className="max-w-4xl mx-auto text-center">
-          <div className="faith-card-gradient rounded-xl p-8 border border-blue-200/30 shadow-lg">
+          <div className="faith-card-gradient rounded-xl p-8 border border-purple-200/30 shadow-lg">
             <div className="mb-4">
               <svg className="h-8 w-8 text-yellow-500 mx-auto mb-3" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M12 2L15.09 8.26L22 9L17 14L18.18 21L12 17.77L5.82 21L7 14L2 9L8.91 8.26L12 2Z"/>
@@ -1875,9 +1847,9 @@ export default function Dashboard() {
             <blockquote className="scripture-quote text-lg font-serif mb-4">
               Let your light shine before others, that they may see your good deeds and glorify your Father in heaven
             </blockquote>
-            <cite className="text-sm text-blue-600 font-medium">— Matthew 5:16</cite>
-            <div className="mt-6 pt-4 border-t border-blue-200/30">
-              <p className="text-sm text-blue-700 font-medium">
+            <cite className="text-sm text-purple-600 font-medium">— Matthew 5:16</cite>
+            <div className="mt-6 pt-4 border-t border-purple-200/30">
+              <p className="text-sm text-purple-700 font-medium">
                 May your words bring comfort, your testimony inspire faith, and your presence reflect His love
               </p>
             </div>
