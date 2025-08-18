@@ -213,7 +213,7 @@ export default function Dashboard() {
       
       // Batch load author profiles and engagement data
       if (newPosts.length > 0) {
-        const authorIds = newPosts.map((post: any) => post.author)
+        const authorIds = newPosts.map((post: any) => post.author_id)
         const postIds = newPosts.map((post: any) => post.id)
         loadProfiles(authorIds)
         loadEngagementData(postIds)
@@ -266,7 +266,7 @@ export default function Dashboard() {
       
       // Batch load author profiles and engagement data
       if (result.items.length > 0) {
-        const authorIds = result.items.map((post: any) => post.author)
+        const authorIds = result.items.map((post: any) => post.author_id)
         const postIds = result.items.map((post: any) => post.id)
         loadProfiles(authorIds)
         loadEngagementData(postIds)
@@ -513,7 +513,7 @@ export default function Dashboard() {
       
       // Batch load comment author profiles
       if (comments.length > 0) {
-        const authorIds = comments.map((comment: any) => comment.author)
+        const authorIds = comments.map((comment: any) => comment.author_id)
         loadProfiles(authorIds)
         
         // Load flagged status for admin users
@@ -1617,7 +1617,7 @@ export default function Dashboard() {
                 <div key={post.id} className="bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-200 mb-6">
                   <div className="p-6">
                     <div className="flex items-start space-x-4 mb-4">
-                      {renderAuthorInfo(post.author, user?.email, 'md')}
+                      {renderAuthorInfo(post.author_id, user?.email, 'md')}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between mb-2">
                           <div className="flex items-center space-x-2">
@@ -1741,7 +1741,7 @@ export default function Dashboard() {
                         </button>
                       </div>
                       
-                      {post.author === user?.id && (
+                      {post.author_id === user?.id && (
                         <button
                           onClick={() => handleDeletePost(post.id)}
                           disabled={deletingPostId === post.id}
@@ -1843,7 +1843,7 @@ export default function Dashboard() {
                           {(postComments[post.id] || []).map((comment) => (
                             <div key={comment.id} className="bg-white rounded-lg border border-gray-200 p-4">
                               <div className="flex items-start space-x-3">
-                                {renderAuthorInfo(comment.author, user?.email, 'sm')}
+                                {renderAuthorInfo(comment.author_id, user?.email, 'sm')}
                                 <div className="flex-1 min-w-0">
                                   <div className="flex items-center space-x-2 mb-2">
                                     <time className="text-xs text-gray-500">
@@ -1872,7 +1872,7 @@ export default function Dashboard() {
                                       </svg>
                                       Report
                                     </button>
-                                    {comment.author === user?.id && (
+                                    {comment.author_id === user?.id && (
                                       <button
                                         onClick={() => handleDeleteComment(comment.id, post.id)}
                                         disabled={deletingCommentId === comment.id}

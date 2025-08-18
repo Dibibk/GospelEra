@@ -37,7 +37,7 @@ export async function createComment({ postId, content }: CreateCommentData) {
       .insert({
         post_id: postId,
         content,
-        author: user.id
+        author_id: user.id
       })
       .select()
       .single()
@@ -69,7 +69,7 @@ export async function listComments({ postId, limit = 20, fromId }: ListCommentsO
         post_id,
         content,
         created_at,
-        author
+        author_id
       `)
       .eq('post_id', postId)
       .eq('is_deleted', false)

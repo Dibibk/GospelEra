@@ -46,14 +46,15 @@ export async function createPost({ title, content, tags = [], media_urls = [] }:
       throw new Error('User must be authenticated to create posts')
     }
 
-    // Insert the post (temporarily without media_urls until schema is fixed)
+    // Insert the post
     const { data, error } = await supabase
       .from('posts')
       .insert({
         title,
         content,
         tags,
-        author: user.id
+        media_urls,
+        author_id: user.id
       })
       .select()
       .single()
@@ -86,23 +87,16 @@ export async function listPosts({ limit = 20, fromId, authorId }: ListPostsOptio
         content,
         tags,
         created_at,
-        author
+        updated_at,
+        author_id,
+        media_urls
       `)
-      .eq('is_deleted', false)
       .order('created_at', { ascending: false })
       .limit(limit)
 
-    // Filter out hidden posts (handles both old and new schema)
-    try {
-      query = query.eq('hidden', false)
-    } catch (error) {
-      // Ignore if hidden column doesn't exist yet
-      console.warn('Hidden column not available, showing all posts')
-    }
-
     // Add author filter if provided
     if (authorId) {
-      query = query.eq('author', authorId)
+      query = query.eq('author_id', authorId)
     }
 
     // Add keyset pagination if fromId is provided
@@ -114,11 +108,7 @@ export async function listPosts({ limit = 20, fromId, authorId }: ListPostsOptio
         .eq('id', fromId)
         .single()
 
-      if (fromError) {
-        throw new Error(`Failed to get pagination reference: ${fromError.message}`)
-      }
-
-      if (fromPost) {
+      if (!fromError && fromPost) {
         query = query.lt('created_at', fromPost.created_at)
       }
     }
@@ -195,20 +185,13 @@ export async function searchPosts({ q = '', tags = [], limit = 20, cursor }: Sea
         content,
         tags,
         created_at,
-        author
+        updated_at,
+        author_id,
+        media_urls
       `)
-      .eq('is_deleted', false)
       .order('created_at', { ascending: false })
       .order('id', { ascending: false })
       .limit(limit + 1) // Get one extra to determine if there's a next page
-
-    // Filter out hidden posts (handles both old and new schema)
-    try {
-      query = query.eq('hidden', false)
-    } catch (error) {
-      // Ignore if hidden column doesn't exist yet
-      console.warn('Hidden column not available for search, showing all posts')
-    }
 
     // Add text search if query is provided
     if (q.trim()) {
