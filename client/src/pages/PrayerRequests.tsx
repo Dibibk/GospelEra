@@ -6,6 +6,12 @@ import { useOnlineStatus } from '../hooks/useOnlineStatus'
 import { ThemeSwitcher } from '../components/ThemeSwitcher'
 import { supabase } from '../lib/supabaseClient'
 import { ArrowLeft, Send, Heart, Users, HandHeart } from 'lucide-react'
+import { 
+  createPrayerRequest, 
+  listPrayerRequests, 
+  commitToPray, 
+  confirmPrayed 
+} from '../lib/prayer'
 
 export default function PrayerRequests() {
   const { user, signOut } = useAuth()
@@ -70,31 +76,20 @@ export default function PrayerRequests() {
     }
   }
 
-  // Load prayer requests
+  // Load prayer requests using the new API
   const loadPrayerRequests = async () => {
     setIsLoading(true)
     setLoadError('')
     
     try {
-      const { data, error } = await supabase
-        .from('prayer_requests')
-        .select(`
-          *,
-          profiles!prayer_requests_requester_fkey (
-            display_name,
-            avatar_url
-          ),
-          prayer_commitments!inner (
-            status,
-            prayed_at
-          )
-        `)
-        .eq('status', 'open')
-        .order('created_at', { ascending: false })
-        .limit(50)
+      const { data, error } = await listPrayerRequests({ 
+        status: 'open',
+        limit: 50 
+      })
       
       if (error) {
-        throw error
+        setLoadError(error)
+        return
       }
       
       setPrayerRequests(data || [])
@@ -106,7 +101,7 @@ export default function PrayerRequests() {
     }
   }
 
-  // Submit prayer request
+  // Submit prayer request using the new API
   const handleSubmitPrayerRequest = async (e: React.FormEvent) => {
     e.preventDefault()
     
@@ -119,34 +114,23 @@ export default function PrayerRequests() {
     setSubmitError('')
     
     try {
-      const { data, error } = await supabase
-        .from('prayer_requests')
-        .insert({
-          requester: user?.id,
-          title: prayerName.trim(),
-          details: prayerRequest.trim(),
-          is_anonymous: prayerName.toLowerCase().includes('anonymous'),
-          status: 'open'
-        })
-        .select(`
-          *,
-          profiles!prayer_requests_requester_fkey (
-            display_name,
-            avatar_url
-          )
-        `)
-        .single()
+      const { data, error } = await createPrayerRequest({
+        title: prayerName.trim(),
+        details: prayerRequest.trim(),
+        is_anonymous: prayerName.toLowerCase().includes('anonymous')
+      })
       
       if (error) {
-        throw error
+        setSubmitError(error)
+        return
       }
       
       // Clear form
       setPrayerName('')
       setPrayerRequest('')
       
-      // Add new request to the top of the list
-      setPrayerRequests(prev => [data, ...prev])
+      // Reload prayer requests to get updated list
+      loadPrayerRequests()
       showToast('Your prayer request has been shared with the community', 'success')
       
     } catch (error) {
@@ -157,43 +141,18 @@ export default function PrayerRequests() {
     }
   }
 
-  // Handle prayer commitment
+  // Handle prayer commitment using the new API
   const handlePrayerCommitment = async (requestId: number) => {
     try {
-      // Check if already committed
-      const { data: existingCommitment } = await supabase
-        .from('prayer_commitments')
-        .select('*')
-        .eq('request_id', requestId)
-        .eq('warrior', user?.id)
-        .single()
+      // Try to commit to pray first
+      const { data, error } = await commitToPray(requestId)
       
-      if (existingCommitment) {
-        // Update to prayed
-        const { error } = await supabase
-          .from('prayer_commitments')
-          .update({ 
-            status: 'prayed',
-            prayed_at: new Date().toISOString()
-          })
-          .eq('request_id', requestId)
-          .eq('warrior', user?.id)
-        
-        if (error) throw error
-        showToast('Marked as prayed! Thank you for lifting them up 🙏', 'success')
-      } else {
-        // Create new commitment
-        const { error } = await supabase
-          .from('prayer_commitments')
-          .insert({
-            request_id: requestId,
-            warrior: user?.id,
-            status: 'committed'
-          })
-        
-        if (error) throw error
-        showToast('You committed to pray! 🙏', 'success')
+      if (error) {
+        showToast(error, 'error')
+        return
       }
+      
+      showToast('You committed to pray!', 'success')
       
       // Reload prayer requests to update counts
       loadPrayerRequests()
@@ -201,6 +160,27 @@ export default function PrayerRequests() {
     } catch (error) {
       console.error('Failed to handle prayer commitment:', error)
       showToast('Failed to process prayer commitment', 'error')
+    }
+  }
+
+  // Handle marking prayer as completed
+  const handleMarkPrayed = async (requestId: number) => {
+    try {
+      const { data, error } = await confirmPrayed(requestId)
+      
+      if (error) {
+        showToast(error, 'error')
+        return
+      }
+      
+      showToast('Marked as prayed! Thank you for lifting them up', 'success')
+      
+      // Reload prayer requests to update counts
+      loadPrayerRequests()
+      
+    } catch (error) {
+      console.error('Failed to mark as prayed:', error)
+      showToast('Failed to mark as prayed', 'error')
     }
   }
 
@@ -477,7 +457,7 @@ export default function PrayerRequests() {
                       className="flex items-center space-x-2 bg-purple-50 hover:bg-purple-100 text-purple-700 px-3 py-2 rounded-full transition-colors text-sm"
                     >
                       <Heart className="w-4 h-4" />
-                      <span>Pray ({request.prayer_commitments?.filter((c: any) => c.status === 'prayed').length || 0})</span>
+                      <span>Pray ({request.prayer_stats?.prayed_count || 0})</span>
                     </button>
                   </div>
                   
