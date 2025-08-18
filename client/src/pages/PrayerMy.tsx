@@ -4,6 +4,7 @@ import { useAuth } from '../hooks/useAuth'
 import { ArrowLeft, Heart, Check, Clock, Plus, Users } from 'lucide-react'
 import { getMyRequests, getMyCommitments } from '../lib/prayer'
 import { supabase } from '../lib/supabaseClient'
+import { Leaderboard } from '../components/Leaderboard'
 
 interface MyRequest {
   id: number
@@ -437,6 +438,11 @@ export default function PrayerMy() {
               )}
             </div>
           )}
+
+          {/* Leaderboard */}
+          <div className="mt-8">
+            <Leaderboard limit={6} />
+          </div>
         </div>
       </div>
     </div>
