@@ -50,7 +50,7 @@ WHERE status = 'prayed'
 GROUP BY warrior
 ORDER BY count_prayed DESC, first_prayed_at ASC;
 
--- Prayer streaks calculation (consecutive days)
+-- Prayer streaks calculation (consecutive days) - Simplified version
 CREATE OR REPLACE VIEW vw_prayer_streaks AS
 WITH daily_prayers AS (
     -- Get distinct days each warrior prayed
@@ -60,89 +60,63 @@ WITH daily_prayers AS (
     FROM prayer_commitments 
     WHERE status = 'prayed'
 ),
-date_gaps AS (
-    -- Calculate gaps between consecutive prayer days
+warrior_latest AS (
+    -- Get most recent prayer date for each warrior
     SELECT 
         warrior,
-        prayer_date,
-        prayer_date - LAG(prayer_date, 1) OVER (
-            PARTITION BY warrior 
-            ORDER BY prayer_date
-        ) as gap_days,
-        ROW_NUMBER() OVER (
-            PARTITION BY warrior 
-            ORDER BY prayer_date DESC
-        ) as reverse_order
+        MAX(prayer_date) as last_prayer_date
     FROM daily_prayers
+    GROUP BY warrior
 ),
-streak_groups AS (
-    -- Group consecutive days (gap = 1 day or NULL for first record)
+streak_calc AS (
+    -- Calculate current streak for each warrior
     SELECT 
-        warrior,
-        prayer_date,
-        reverse_order,
-        SUM(CASE WHEN gap_days IS NULL OR gap_days = 1 THEN 0 ELSE 1 END) 
-        OVER (
-            PARTITION BY warrior 
-            ORDER BY prayer_date DESC 
-            ROWS UNBOUNDED PRECEDING
-        ) as streak_group
-    FROM date_gaps
+        dp.warrior,
+        dp.prayer_date,
+        wl.last_prayer_date,
+        -- Create a running count of consecutive days from the end
+        ROW_NUMBER() OVER (
+            PARTITION BY dp.warrior 
+            ORDER BY dp.prayer_date DESC
+        ) as days_from_end,
+        -- Check if this date is consecutive with the previous one
+        CASE 
+            WHEN dp.prayer_date = wl.last_prayer_date - (ROW_NUMBER() OVER (
+                PARTITION BY dp.warrior 
+                ORDER BY dp.prayer_date DESC
+            ) - 1) * INTERVAL '1 day'
+            THEN 1 
+            ELSE 0 
+        END as is_consecutive
+    FROM daily_prayers dp
+    JOIN warrior_latest wl ON dp.warrior = wl.warrior
 ),
 current_streaks AS (
-    -- Get current streak (from most recent prayer date)
+    -- Count consecutive days from most recent prayer
     SELECT 
         warrior,
+        last_prayer_date,
         COUNT(*) as current_streak,
-        MIN(prayer_date) as streak_start_date,
-        MAX(prayer_date) as streak_end_date
-    FROM streak_groups
-    WHERE streak_group = 0
-        AND prayer_date <= CURRENT_DATE
-        AND (
-            -- Must include today or yesterday to be considered "current"
-            MAX(prayer_date) OVER (PARTITION BY warrior) >= CURRENT_DATE - INTERVAL '1 day'
-        )
-    GROUP BY warrior
+        MIN(prayer_date) as streak_start_date
+    FROM streak_calc
+    WHERE is_consecutive = 1
+    GROUP BY warrior, last_prayer_date
 )
 SELECT 
-    warrior,
-    COALESCE(current_streak, 0) as current_streak,
-    streak_start_date,
-    streak_end_date,
+    COALESCE(dp.warrior, cs.warrior) as warrior,
+    COALESCE(cs.current_streak, 0) as current_streak,
+    cs.streak_start_date,
+    cs.last_prayer_date as streak_end_date,
     CASE 
-        WHEN streak_end_date = CURRENT_DATE THEN true
-        WHEN streak_end_date = CURRENT_DATE - INTERVAL '1 day' THEN true
+        WHEN cs.last_prayer_date >= CURRENT_DATE - INTERVAL '1 day' THEN true
         ELSE false
     END as is_active_streak
-FROM (
-    SELECT DISTINCT warrior FROM daily_prayers
-) all_warriors
-LEFT JOIN current_streaks USING (warrior)
+FROM (SELECT DISTINCT warrior FROM daily_prayers) dp
+LEFT JOIN current_streaks cs ON dp.warrior = cs.warrior
 ORDER BY current_streak DESC, streak_end_date DESC;
 
--- Enable Row Level Security (RLS) for authenticated users on all views
-ALTER VIEW vw_prayer_confirmed ENABLE ROW LEVEL SECURITY;
-ALTER VIEW vw_prayer_leaderboard_week ENABLE ROW LEVEL SECURITY;
-ALTER VIEW vw_prayer_leaderboard_month ENABLE ROW LEVEL SECURITY;
-ALTER VIEW vw_prayer_leaderboard_alltime ENABLE ROW LEVEL SECURITY;
-ALTER VIEW vw_prayer_streaks ENABLE ROW LEVEL SECURITY;
-
--- Create RLS policies to allow authenticated users to select from views
-CREATE POLICY "Authenticated users can view prayer confirmed" ON vw_prayer_confirmed
-    FOR SELECT TO authenticated USING (true);
-
-CREATE POLICY "Authenticated users can view weekly leaderboard" ON vw_prayer_leaderboard_week
-    FOR SELECT TO authenticated USING (true);
-
-CREATE POLICY "Authenticated users can view monthly leaderboard" ON vw_prayer_leaderboard_month
-    FOR SELECT TO authenticated USING (true);
-
-CREATE POLICY "Authenticated users can view alltime leaderboard" ON vw_prayer_leaderboard_alltime
-    FOR SELECT TO authenticated USING (true);
-
-CREATE POLICY "Authenticated users can view prayer streaks" ON vw_prayer_streaks
-    FOR SELECT TO authenticated USING (true);
+-- Note: Views inherit RLS from their underlying tables (prayer_commitments)
+-- No need to enable RLS on views directly - they will respect the base table policies
 
 -- Create indexes for better performance
 CREATE INDEX IF NOT EXISTS idx_prayer_commitments_prayed_status_date 
