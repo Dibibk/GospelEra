@@ -4,6 +4,7 @@ import { useAuth } from '../hooks/useAuth'
 import { useRole } from '../hooks/useRole'
 import { ArrowLeft, Send, Plus, X } from 'lucide-react'
 import { createPrayerRequest } from '../lib/prayer'
+import { moderateContent } from '../lib/moderation'
 
 export default function PrayerNew() {
   const { user } = useAuth()
@@ -17,6 +18,7 @@ export default function PrayerNew() {
   const [isAnonymous, setIsAnonymous] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState('')
+  const [moderationError, setModerationError] = useState('')
 
   const handleAddTag = () => {
     if (newTag.trim() && !tags.includes(newTag.trim()) && tags.length < 5) {
@@ -37,13 +39,32 @@ export default function PrayerNew() {
       return
     }
 
+    const titleText = title.trim()
+    const detailsText = details.trim()
+
+    // Check moderation for title and details
+    const titleModeration = moderateContent(titleText)
+    const detailsModeration = moderateContent(detailsText)
+
+    setModerationError('')
+
+    if (!titleModeration.allowed) {
+      setModerationError(titleModeration.reason || 'Content moderation failed')
+      return
+    }
+
+    if (!detailsModeration.allowed) {
+      setModerationError(detailsModeration.reason || 'Content moderation failed')
+      return
+    }
+
     setIsSubmitting(true)
     setError('')
 
     try {
       const { data, error } = await createPrayerRequest({
-        title: title.trim(),
-        details: details.trim(),
+        title: titleText,
+        details: detailsText,
         tags,
         is_anonymous: isAnonymous
       })
@@ -203,10 +224,23 @@ export default function PrayerNew() {
                 </label>
               </div>
 
-              {/* Error */}
-              {error && (
+              {/* Error messages */}
+              {(error || moderationError) && (
                 <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                  <p className="text-red-800 text-sm">{error}</p>
+                  {error && <p className="text-red-800 text-sm">{error}</p>}
+                  {moderationError && (
+                    <div className="text-red-800 text-sm">
+                      <p className="flex items-center">
+                        <svg className="h-4 w-4 mr-1 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14L21 3M7 7l-3 3 3 3" />
+                        </svg>
+                        {moderationError}
+                      </p>
+                      <p className="text-xs text-blue-600 mt-1">
+                        We welcome all, but this space is specifically for Christian prayer to Jesus.
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
 

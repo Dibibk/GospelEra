@@ -9,6 +9,7 @@ import { createReport } from '../lib/reports'
 import { getDailyVerse } from '../lib/scripture'
 import { getProfilesByIds } from '../lib/profiles'
 import { checkFlaggedStatus } from '../lib/flagged'
+import { moderateContent } from '../lib/moderation'
 // @ts-ignore
 import { toggleBookmark, isBookmarked, toggleAmen, getAmenInfo, listBookmarks } from '../lib/engagement'
 // @ts-ignore
@@ -93,6 +94,10 @@ export default function Dashboard() {
   const [postAmenInfo, setPostAmenInfo] = useState<{[postId: number]: {count: number, mine: boolean}}>({})
   const [bookmarkLoading, setBookmarkLoading] = useState<{[postId: number]: boolean}>({})
   const [amenLoading, setAmenLoading] = useState<{[postId: number]: boolean}>({})
+
+  // Moderation state
+  const [moderationError, setModerationError] = useState<string>('')
+  const [draftContent, setDraftContent] = useState({ title: '', content: '' })
 
   const handleLogout = async () => {
     await signOut()
@@ -389,12 +394,35 @@ export default function Dashboard() {
     e.preventDefault()
     setIsCreating(true)
     setCreateError('')
+    setModerationError('')
+
+    const titleText = title.trim()
+    const contentText = content.trim()
+    
+    // Store draft in case of moderation rejection
+    setDraftContent({ title: titleText, content: contentText })
+    
+    // Check moderation for title and content
+    const titleModeration = moderateContent(titleText)
+    const contentModeration = moderateContent(contentText)
+    
+    if (!titleModeration.allowed) {
+      setModerationError(titleModeration.reason || 'Content moderation failed')
+      setIsCreating(false)
+      return
+    }
+    
+    if (!contentModeration.allowed) {
+      setModerationError(contentModeration.reason || 'Content moderation failed') 
+      setIsCreating(false)
+      return
+    }
 
     const tagsArray = tags.trim() ? tags.split(',').map(tag => tag.trim()) : []
     
     const { data, error } = await createPost({
-      title: title.trim(),
-      content: content.trim(),
+      title: titleText,
+      content: contentText,
       tags: tagsArray,
       media_urls: uploadedMedia
     })
@@ -506,6 +534,14 @@ export default function Dashboard() {
   const handleCreateComment = async (postId: number) => {
     const content = commentTexts[postId]?.trim()
     if (!content) return
+    
+    // Check moderation for comment content
+    const moderation = moderateContent(content)
+    
+    if (!moderation.allowed) {
+      showToast(moderation.reason || 'We welcome all, but this space is specifically for Christian prayer to Jesus.', 'error')
+      return
+    }
     
     setSubmittingComment(prev => ({...prev, [postId]: true}))
     
@@ -1284,13 +1320,28 @@ export default function Dashboard() {
                 </div>
               </div>
 
-              {createError && (
+              {(createError || moderationError) && (
                 <div className="bg-gradient-to-r from-red-50 to-pink-50 border-2 border-red-200 rounded-xl p-4 shadow-sm" role="alert">
                   <div className="flex items-center">
                     <svg className="h-5 w-5 text-red-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.35 16.5c-.77.833.192 2.5 1.732 2.5z" />
                     </svg>
-                    <p className="text-sm font-medium text-red-700">{createError}</p>
+                    <div>
+                      {createError && <p className="text-sm font-medium text-red-700">{createError}</p>}
+                      {moderationError && (
+                        <div className="text-sm font-medium text-red-700">
+                          <p className="flex items-center">
+                            <svg className="h-4 w-4 mr-1 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14L21 3M7 7l-3 3 3 3" />
+                            </svg>
+                            {moderationError}
+                          </p>
+                          <p className="text-xs text-blue-600 mt-1">
+                            We welcome all, but this space is specifically for Christian prayer to Jesus.
+                          </p>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               )}
