@@ -1005,7 +1005,7 @@ export default function Dashboard() {
 
         {/* Prayer Request Call-to-Action Card */}
         <div className="mb-8">
-          <Link to="/prayer-requests" className="block">
+          <Link to="/prayer/browse" className="block">
             <div className="bg-gradient-to-br from-purple-600 to-blue-600 rounded-xl p-6 text-white hover:from-purple-700 hover:to-blue-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-[1.02]">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-4">

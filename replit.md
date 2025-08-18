@@ -42,6 +42,19 @@ This is a full-stack web application built with React (frontend) and Express.js 
   - Cache versioning (app-v1) with automatic cleanup of old caches
   - Production-only registration for optimal development experience
 
+**Prayer Request System (Completed August 2025):**
+✅ Comprehensive prayer API library with 8 functions (TypeScript)
+✅ Three-table database schema with RLS policies
+✅ Complete routing system with 4 protected routes:
+  - /prayer/new - Prayer request creation form
+  - /prayer/browse - Browse and search open requests
+  - /prayer/:id - Detailed view with commitment tracking
+  - /prayer/my - Personal dashboard for requests and commitments
+✅ Prayer commitment workflow (commit → confirm prayed)
+✅ Anonymous requests and tagging system
+✅ Role-based restrictions for banned users
+✅ Removed old /prayer-requests page, updated navigation
+
 **Theme System (Added August 2025):**
 ✅ Simple theme switching with 2 clean themes:
   - Light: Clean and bright default theme

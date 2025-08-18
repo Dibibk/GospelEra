@@ -13,7 +13,7 @@ import PublicProfile from "./pages/PublicProfile";
 import Settings from "./pages/Settings";
 import SavedPosts from "./pages/SavedPosts";
 import AdminReports from "./pages/AdminReports";
-import PrayerRequests from "./pages/PrayerRequests";
+
 import PrayerNew from "./pages/PrayerNew";
 import PrayerBrowse from "./pages/PrayerBrowse";
 import PrayerDetail from "./pages/PrayerDetail";
@@ -88,14 +88,7 @@ function App() {
                   </ProtectedRoute>
                 } 
               />
-              <Route 
-                path="/prayer-requests" 
-                element={
-                  <ProtectedRoute>
-                    <PrayerRequests />
-                  </ProtectedRoute>
-                } 
-              />
+
               <Route 
                 path="/prayer/new" 
                 element={
