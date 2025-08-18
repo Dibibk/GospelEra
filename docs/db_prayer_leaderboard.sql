@@ -119,12 +119,12 @@ ORDER BY current_streak DESC, streak_end_date DESC;
 -- No need to enable RLS on views directly - they will respect the base table policies
 
 -- Create indexes for better performance
-CREATE INDEX IF NOT EXISTS idx_prayer_commitments_prayed_status_date 
-    ON prayer_commitments (status, prayed_at::date) 
+CREATE INDEX IF NOT EXISTS idx_prayer_commitments_prayed_status 
+    ON prayer_commitments (status, prayed_at) 
     WHERE status = 'prayed';
 
 CREATE INDEX IF NOT EXISTS idx_prayer_commitments_warrior_prayed 
-    ON prayer_commitments (warrior, prayed_at::date) 
+    ON prayer_commitments (warrior, prayed_at) 
     WHERE status = 'prayed';
 
 -- Comments and usage examples:
