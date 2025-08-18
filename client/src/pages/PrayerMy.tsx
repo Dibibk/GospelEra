@@ -50,6 +50,7 @@ export default function PrayerMy() {
   const [streakLoading, setStreakLoading] = useState(true)
   const [animatedStreak, setAnimatedStreak] = useState(0)
   const [error, setError] = useState('')
+  const [leaderboardRefresh, setLeaderboardRefresh] = useState(0)
 
   useEffect(() => {
     loadData()
@@ -86,6 +87,37 @@ export default function PrayerMy() {
         (payload) => {
           console.log('User prayer request change:', payload)
           handleUserRequestChange(payload)
+        }
+      )
+      .subscribe()
+
+    return () => {
+      subscription.unsubscribe()
+    }
+  }, [user?.id])
+
+  // Set up global realtime subscription for leaderboard updates  
+  useEffect(() => {
+    const subscription = supabase
+      .channel('leaderboard_updates_my')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'prayer_commitments',
+          filter: 'status=eq.prayed'
+        },
+        (payload) => {
+          console.log('Prayer confirmed, refreshing leaderboard:', payload)
+          // Only refresh if status changed to 'prayed'
+          if (payload.new?.status === 'prayed' && payload.old?.status !== 'prayed') {
+            setLeaderboardRefresh(prev => prev + 1)
+            // Also refresh streak when user confirms a prayer
+            if (payload.new?.warrior === user?.id) {
+              loadStreak()
+            }
+          }
         }
       )
       .subscribe()
@@ -544,7 +576,7 @@ export default function PrayerMy() {
 
           {/* Leaderboard */}
           <div className="mt-8">
-            <Leaderboard limit={6} />
+            <Leaderboard limit={6} refreshTrigger={leaderboardRefresh} />
           </div>
         </div>
       </div>

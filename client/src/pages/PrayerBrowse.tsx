@@ -37,6 +37,7 @@ export default function PrayerBrowse() {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedTags, setSelectedTags] = useState<string[]>([])
   const [availableTags, setAvailableTags] = useState<string[]>([])
+  const [leaderboardRefresh, setLeaderboardRefresh] = useState(0)
 
   useEffect(() => {
     loadRequests()
@@ -69,6 +70,33 @@ export default function PrayerBrowse() {
       subscription.unsubscribe()
     }
   }, [requests])
+
+  // Set up global realtime subscription for leaderboard updates
+  useEffect(() => {
+    const subscription = supabase
+      .channel('leaderboard_updates')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'prayer_commitments',
+          filter: 'status=eq.prayed'
+        },
+        (payload) => {
+          console.log('Prayer confirmed, refreshing leaderboard:', payload)
+          // Only refresh if status changed to 'prayed'
+          if (payload.new?.status === 'prayed' && payload.old?.status !== 'prayed') {
+            setLeaderboardRefresh(prev => prev + 1)
+          }
+        }
+      )
+      .subscribe()
+
+    return () => {
+      subscription.unsubscribe()
+    }
+  }, [])
 
   const handleCommitmentChange = async (payload: any) => {
     const requestId = payload.new?.request_id || payload.old?.request_id
@@ -388,7 +416,7 @@ export default function PrayerBrowse() {
 
           {/* Leaderboard */}
           <div className="mt-8">
-            <Leaderboard limit={8} />
+            <Leaderboard limit={8} refreshTrigger={leaderboardRefresh} />
           </div>
         </div>
       </main>

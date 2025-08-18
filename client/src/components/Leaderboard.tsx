@@ -3,11 +3,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+// @ts-ignore
 import { getTopPrayerWarriors } from '../lib/leaderboard.js'
 
 interface LeaderboardProps {
   limit?: number
   className?: string
+  refreshTrigger?: number // Add this to trigger refresh from parent
 }
 
 interface WarriorData {
@@ -25,7 +27,7 @@ const rankEmojis = {
   3: '🙏'
 }
 
-export function Leaderboard({ limit = 10, className = '' }: LeaderboardProps) {
+export function Leaderboard({ limit = 10, className = '', refreshTrigger = 0 }: LeaderboardProps) {
   const [weekData, setWeekData] = useState<WarriorData[]>([])
   const [monthData, setMonthData] = useState<WarriorData[]>([])
   const [allTimeData, setAllTimeData] = useState<WarriorData[]>([])
@@ -35,7 +37,7 @@ export function Leaderboard({ limit = 10, className = '' }: LeaderboardProps) {
 
   useEffect(() => {
     loadLeaderboards()
-  }, [limit])
+  }, [limit, refreshTrigger]) // Refresh when refreshTrigger changes
 
   const loadLeaderboards = async () => {
     setLoading(true)
@@ -63,6 +65,34 @@ export function Leaderboard({ limit = 10, className = '' }: LeaderboardProps) {
       setLoading(false)
     }
   }
+
+  // Method to refresh only the active tab
+  const refreshActiveTab = async () => {
+    if (loading) return // Avoid multiple simultaneous requests
+    
+    try {
+      let result
+      if (activeTab === 'week') {
+        result = await getTopPrayerWarriors({ timeframe: 'week', limit })
+        if (result.data) setWeekData(result.data)
+      } else if (activeTab === 'month') {
+        result = await getTopPrayerWarriors({ timeframe: 'month', limit })
+        if (result.data) setMonthData(result.data)
+      } else if (activeTab === 'alltime') {
+        result = await getTopPrayerWarriors({ timeframe: 'alltime', limit })
+        if (result.data) setAllTimeData(result.data)
+      }
+    } catch (err) {
+      console.error('Failed to refresh active tab:', err)
+    }
+  }
+
+  // Expose refresh method via useEffect for parent components
+  useEffect(() => {
+    if (refreshTrigger > 0) {
+      refreshActiveTab()
+    }
+  }, [refreshTrigger, activeTab])
 
   const renderWarriorList = (data: WarriorData[]) => {
     if (loading) {
