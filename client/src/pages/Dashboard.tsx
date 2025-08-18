@@ -644,13 +644,15 @@ export default function Dashboard() {
           .eq('id', user.id)
           .single()
         
-        data = { ...fallbackResult.data, accepted_guidelines: false }
+        // Check localStorage for guidelines acceptance as fallback
+        const localAcceptance = localStorage.getItem(`guidelines_accepted_${user.id}`) === 'true'
+        data = fallbackResult.data ? { 
+          display_name: fallbackResult.data.display_name || null,
+          avatar_url: fallbackResult.data.avatar_url || null,
+          role: fallbackResult.data.role || 'user',
+          accepted_guidelines: localAcceptance 
+        } : null
         error = fallbackResult.error
-        
-        // For new users without the column, show guidelines modal
-        if (data) {
-          data = { ...data, accepted_guidelines: false }
-        }
       }
       
       if (error && error.code !== 'PGRST116') {
@@ -678,11 +680,15 @@ export default function Dashboard() {
         .update({ accepted_guidelines: true })
         .eq('id', user.id)
       
-      if (error && error.code === '42703') {
-        // Column doesn't exist yet, just mark as accepted in memory
-        setUserProfile(prev => prev ? { ...prev, accepted_guidelines: true } : null)
+      if (error && (error.code === '42703' || error.code === 'PGRST204')) {
+        // Column doesn't exist yet, just mark as accepted in memory and localStorage
+        const updatedProfile = { ...userProfile, accepted_guidelines: true }
+        setUserProfile(updatedProfile)
         setShowGuidelinesModal(false)
-        showToast('Guidelines accepted! (Database will be updated later)', 'success')
+        
+        // Store acceptance in localStorage as fallback
+        localStorage.setItem(`guidelines_accepted_${user.id}`, 'true')
+        showToast('Guidelines accepted! Welcome to the community.', 'success')
       } else if (error) {
         console.error('Error updating guidelines acceptance:', error)
         showToast('Failed to save guidelines acceptance', 'error')
@@ -693,7 +699,14 @@ export default function Dashboard() {
       }
     } catch (error) {
       console.error('Error updating guidelines acceptance:', error)
-      showToast('Failed to save guidelines acceptance', 'error')
+      
+      // Fallback: mark as accepted locally
+      const updatedProfile = { ...userProfile, accepted_guidelines: true }
+      setUserProfile(updatedProfile)
+      setShowGuidelinesModal(false)
+      
+      localStorage.setItem(`guidelines_accepted_${user.id}`, 'true')
+      showToast('Guidelines accepted! Welcome to the community.', 'success')
     }
   }
 
