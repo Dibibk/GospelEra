@@ -1,8 +1,11 @@
 import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Button } from '@/components/ui/button'
+import { ExternalLink } from 'lucide-react'
 // @ts-ignore
 import { getTopPrayerWarriors } from '../lib/leaderboard.js'
 
@@ -236,7 +239,15 @@ export function Leaderboard({ limit = 10, className = '', refreshTrigger = 0 }: 
         </Tabs>
 
         {/* Footer */}
-        <div className="mt-4 pt-3 border-t border-gray-100 dark:border-gray-700">
+        <div className="mt-4 pt-3 border-t border-gray-100 dark:border-gray-700 space-y-3">
+          <div className="text-center">
+            <Link to="/prayer/leaderboard">
+              <Button variant="outline" size="sm" className="text-purple-600 border-purple-200 hover:bg-purple-50 dark:text-purple-400 dark:border-purple-800 dark:hover:bg-purple-950">
+                <ExternalLink className="w-3 h-3 mr-1" />
+                View full leaderboard
+              </Button>
+            </Link>
+          </div>
           <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
             Counts reflect confirmed prayers
           </p>
