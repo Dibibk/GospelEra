@@ -16,12 +16,14 @@ import { getMediaUploadURL, processUploadedMedia } from '../lib/media'
 import { MediaUploader } from '../components/MediaUploader'
 import { MediaDisplay } from '../components/MediaDisplay'
 import { ThemeSwitcher } from '../components/ThemeSwitcher'
+import { useTheme } from '../hooks/useTheme'
 import { supabase } from '../lib/supabaseClient'
 import { HandHeart, ArrowRight } from 'lucide-react'
 
 export default function Dashboard() {
   const { user, signOut } = useAuth()
   const { isBanned } = useRole()
+  const { theme } = useTheme()
   const isOnline = useOnlineStatus()
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   
@@ -801,12 +803,20 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen relative">
       {/* Faith-centered Navigation */}
-      <nav className="faith-gradient-bg light-rays shadow-lg border-b border-blue-200/30">
+      <nav className={`shadow-lg border-b border-blue-200/30 ${
+        theme === 'light' 
+          ? 'bg-gradient-to-r from-purple-600 via-purple-700 to-purple-600 light-rays' 
+          : 'faith-gradient-bg light-rays'
+      }`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-20">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <div className="h-12 w-12 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-xl flex items-center justify-center shadow-lg animate-glow">
+                <div className={`h-12 w-12 rounded-xl flex items-center justify-center shadow-lg animate-glow ${
+                  theme === 'light'
+                    ? 'bg-gradient-to-br from-purple-700 to-purple-800'
+                    : 'bg-gradient-to-br from-blue-600 to-indigo-700'
+                }`}>
                   {/* Glowing Cross/Book Icon */}
                   <svg className="h-7 w-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 3v18m9-9H3" />
@@ -815,8 +825,14 @@ export default function Dashboard() {
                 </div>
               </div>
               <div className="ml-6">
-                <h1 className="text-2xl font-serif font-bold bg-gradient-to-r from-blue-800 to-indigo-700 bg-clip-text text-transparent">Gospel Era</h1>
-                <p className="text-sm text-blue-600 font-medium">Share your faith, grow together</p>
+                <h1 className={`text-2xl font-serif font-bold bg-clip-text text-transparent ${
+                  theme === 'light'
+                    ? 'bg-gradient-to-r from-white to-purple-100'
+                    : 'bg-gradient-to-r from-blue-800 to-indigo-700'
+                }`}>Gospel Era</h1>
+                <p className={`text-sm font-medium ${
+                  theme === 'light' ? 'text-purple-100' : 'text-blue-600'
+                }`}>Share your faith, grow together</p>
               </div>
             </div>
 
@@ -932,11 +948,19 @@ export default function Dashboard() {
       {/* Main Content */}
       <main className="max-w-4xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
         {/* Verse of the Day */}
-        <div className="relative overflow-hidden bg-gradient-to-br from-white via-primary-50/50 to-blue-50/50 border border-primary-200/60 shadow-xl rounded-2xl mb-10 backdrop-blur-sm">
+        <div className={`relative overflow-hidden border shadow-xl rounded-2xl mb-10 backdrop-blur-sm ${
+          theme === 'light'
+            ? 'bg-gradient-to-br from-purple-100 via-purple-50 to-purple-100 border-purple-200/60'
+            : 'bg-gradient-to-br from-white via-primary-50/50 to-blue-50/50 border-primary-200/60'
+        }`}>
           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-pulse"></div>
           <div className="relative px-8 py-6 border-b border-gradient-to-r from-primary-200/40 via-blue-200/40 to-primary-200/40">
             <div className="flex items-center justify-between">
-              <h2 className="text-xl font-bold bg-gradient-to-r from-primary-800 via-blue-700 to-primary-800 bg-clip-text text-transparent flex items-center">
+              <h2 className={`text-xl font-bold bg-clip-text text-transparent flex items-center ${
+                theme === 'light'
+                  ? 'bg-gradient-to-r from-purple-800 via-purple-700 to-purple-800'
+                  : 'bg-gradient-to-r from-primary-800 via-blue-700 to-primary-800'
+              }`}>
                 <div className="h-8 w-8 bg-gradient-to-br from-gold-500 to-gold-600 rounded-lg flex items-center justify-center mr-3 shadow-md">
                   <svg className="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
@@ -1006,7 +1030,11 @@ export default function Dashboard() {
         {/* Prayer Request Call-to-Action Card */}
         <div className="mb-8">
           <Link to="/prayer-requests" className="block">
-            <div className="bg-gradient-to-br from-blue-600 to-blue-600 rounded-xl p-6 text-white hover:from-blue-700 hover:to-blue-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-[1.02]">
+            <div className={`rounded-xl p-6 text-white transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-[1.02] ${
+              theme === 'light'
+                ? 'bg-gradient-to-br from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800'
+                : 'bg-gradient-to-br from-blue-600 to-blue-600 hover:from-blue-700 hover:to-blue-700'
+            }`}>
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-4">
                   <div className="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
