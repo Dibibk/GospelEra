@@ -16,6 +16,7 @@ import { getMediaUploadURL, processUploadedMedia } from '../lib/media'
 import { MediaUploader } from '../components/MediaUploader'
 import { MediaDisplay } from '../components/MediaDisplay'
 import { ThemeSwitcher } from '../components/ThemeSwitcher'
+import { GuidelinesModal } from '../components/GuidelinesModal'
 import { supabase } from '../lib/supabaseClient'
 import { HandHeart, ArrowRight } from 'lucide-react'
 
@@ -74,8 +75,11 @@ export default function Dashboard() {
   // Toast state
   const [toast, setToast] = useState<{show: boolean, message: string, type: 'success'|'error'}>({show: false, message: '', type: 'success'})
   
-  // User profile state
-  const [userProfile, setUserProfile] = useState<{display_name?: string, avatar_url?: string, role?: string} | null>(null)
+  // Guidelines modal state
+  const [showGuidelinesModal, setShowGuidelinesModal] = useState(false)
+  
+  // User profile state with guidelines
+  const [userProfile, setUserProfile] = useState<{display_name?: string, avatar_url?: string, role?: string, accepted_guidelines?: boolean} | null>(null)
   
   // Profile cache for author information
   const [profileCache, setProfileCache] = useState<Map<string, any>>(new Map())
@@ -586,7 +590,7 @@ export default function Dashboard() {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('display_name, avatar_url, role')
+        .select('display_name, avatar_url, role, accepted_guidelines')
         .eq('id', user.id)
         .single()
       
@@ -594,10 +598,43 @@ export default function Dashboard() {
         console.error('Error loading user profile:', error)
       } else if (data) {
         setUserProfile(data)
+        
+        // Show guidelines modal if user hasn't accepted them
+        if (!data.accepted_guidelines) {
+          setShowGuidelinesModal(true)
+        }
       }
     } catch (error) {
       console.error('Error loading user profile:', error)
     }
+  }
+
+  const handleAcceptGuidelines = async () => {
+    if (!user?.id) return
+    
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ accepted_guidelines: true })
+        .eq('id', user.id)
+      
+      if (error) {
+        console.error('Error updating guidelines acceptance:', error)
+        showToast('Failed to save guidelines acceptance', 'error')
+      } else {
+        setUserProfile(prev => prev ? { ...prev, accepted_guidelines: true } : null)
+        setShowGuidelinesModal(false)
+        showToast('Guidelines accepted! Welcome to the community.', 'success')
+      }
+    } catch (error) {
+      console.error('Error updating guidelines acceptance:', error)
+      showToast('Failed to save guidelines acceptance', 'error')
+    }
+  }
+
+  const handleViewFullGuidelines = () => {
+    setShowGuidelinesModal(false)
+    window.location.href = '/guidelines'
   }
   
   // Batch load profiles and cache them
@@ -891,6 +928,15 @@ export default function Dashboard() {
                       Settings
                     </a>
                     <ThemeSwitcher />
+                    <a
+                      href="/guidelines"
+                      className="block w-full text-left px-4 py-3 text-sm text-primary-700 hover:bg-gradient-to-r hover:from-primary-50 hover:to-purple-50 transition-all duration-200 font-medium"
+                    >
+                      <svg className="inline h-4 w-4 mr-3 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h.01M12 12h.01M15 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                      </svg>
+                      Community Guidelines
+                    </a>
                     <a
                       href="/saved"
                       className="block w-full text-left px-4 py-3 text-sm text-primary-700 hover:bg-gradient-to-r hover:from-primary-50 hover:to-purple-50 transition-all duration-200 font-medium"
@@ -1856,6 +1902,13 @@ export default function Dashboard() {
           </div>
         </div>
       </footer>
+
+      {/* Guidelines Modal */}
+      <GuidelinesModal
+        isOpen={showGuidelinesModal}
+        onAgree={handleAcceptGuidelines}
+        onViewFull={handleViewFullGuidelines}
+      />
     </div>
   )
 }

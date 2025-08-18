@@ -24,6 +24,8 @@ export const profiles = pgTable("profiles", {
   bio: text("bio"),
   avatar_url: text("avatar_url"),
   role: text("role").default('user').notNull(), // 'user', 'admin', 'banned'
+  accepted_guidelines: boolean("accepted_guidelines").default(false).notNull(),
+  affirmed_faith: boolean("affirmed_faith").default(false).notNull(),
   created_at: timestamp("created_at").defaultNow().notNull(),
   updated_at: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -32,6 +34,8 @@ export const insertProfileSchema = createInsertSchema(profiles).pick({
   display_name: true,
   bio: true,
   avatar_url: true,
+  accepted_guidelines: true,
+  affirmed_faith: true,
 });
 
 export type InsertProfile = z.infer<typeof insertProfileSchema>;

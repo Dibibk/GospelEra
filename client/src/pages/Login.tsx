@@ -12,6 +12,7 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false)
   const [rememberMe, setRememberMe] = useState(false)
   const [isSignUp, setIsSignUp] = useState(false)
+  const [faithAffirmed, setFaithAffirmed] = useState(false)
 
   // Redirect if already authenticated
   if (user) {
@@ -23,6 +24,13 @@ export default function Login() {
     setLoading(true)
     setError('')
     setSuccess('')
+
+    // Check faith affirmation for signup
+    if (isSignUp && !faithAffirmed) {
+      setError('Please affirm your faith to create an account.')
+      setLoading(false)
+      return
+    }
 
     const { error } = isSignUp 
       ? await signUp(email, password)
@@ -112,26 +120,54 @@ export default function Login() {
               </div>
             </div>
 
-            <div className="flex items-center justify-between pt-2">
-              <div className="flex items-center">
-                <input
-                  id="remember-me"
-                  name="remember-me"
-                  type="checkbox"
-                  checked={rememberMe}
-                  onChange={(e) => setRememberMe(e.target.checked)}
-                  className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-primary-300 rounded"
-                />
-                <label htmlFor="remember-me" className="ml-2 block text-sm text-primary-700 font-medium">
-                  Remember me
-                </label>
+            {/* Faith Affirmation for Signup */}
+            {isSignUp && (
+              <div className="border-t border-primary-200 pt-4">
+                <div className="flex items-start space-x-3">
+                  <input
+                    id="faith-affirmation"
+                    name="faith-affirmation"
+                    type="checkbox"
+                    checked={faithAffirmed}
+                    onChange={(e) => setFaithAffirmed(e.target.checked)}
+                    className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-primary-300 rounded mt-1"
+                  />
+                  <label htmlFor="faith-affirmation" className="block text-sm text-primary-700 font-medium">
+                    <span className="text-red-600">*</span> I affirm that I am a follower of Jesus Christ and I believe in His saving blood. I agree that prayers in this app are directed to Jesus.
+                  </label>
+                </div>
+                {isSignUp && !faithAffirmed && (
+                  <p className="text-xs text-red-600 mt-2 ml-7">
+                    This affirmation is required to join our Christian prayer community.
+                  </p>
+                )}
               </div>
+            )}
 
-              <div className="text-sm">
-                <Link to="/forgot-password" className="font-bold text-primary-600 hover:text-purple-600 transition-colors duration-200">
-                  Forgot password?
-                </Link>
-              </div>
+            <div className="flex items-center justify-between pt-2">
+              {!isSignUp && (
+                <div className="flex items-center">
+                  <input
+                    id="remember-me"
+                    name="remember-me"
+                    type="checkbox"
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
+                    className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-primary-300 rounded"
+                  />
+                  <label htmlFor="remember-me" className="ml-2 block text-sm text-primary-700 font-medium">
+                    Remember me
+                  </label>
+                </div>
+              )}
+
+              {!isSignUp && (
+                <div className="text-sm">
+                  <Link to="/forgot-password" className="font-bold text-primary-600 hover:text-purple-600 transition-colors duration-200">
+                    Forgot password?
+                  </Link>
+                </div>
+              )}
             </div>
           </div>
 
@@ -160,7 +196,7 @@ export default function Login() {
           <div>
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || (isSignUp && !faithAffirmed)}
               className="w-full flex justify-center items-center py-4 px-6 border border-transparent rounded-xl shadow-lg text-base font-bold text-white bg-gradient-to-r from-primary-600 via-purple-600 to-primary-600 hover:from-primary-700 hover:via-purple-700 hover:to-primary-700 focus:outline-none focus:ring-4 focus:ring-gold-500/50 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 transform hover:scale-[1.02] hover:shadow-xl"
             >
               {loading ? (
