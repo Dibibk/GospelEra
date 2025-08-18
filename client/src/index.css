@@ -11,7 +11,7 @@
   --card-foreground: hsl(235 45% 20%);
   --popover: hsl(0 0% 100%);
   --popover-foreground: hsl(235 45% 20%);
-  --primary: hsl(253 77% 58%); /* Deep royal purple */
+  --primary: hsl(217 91% 60%); /* Royal Blue */
   --primary-foreground: hsl(0 0% 100%);
   --secondary: hsl(45 100% 75%); /* Soft gold */
   --secondary-foreground: hsl(235 45% 20%);
@@ -23,20 +23,20 @@
   --destructive-foreground: hsl(210 40% 98%);
   --border: hsl(35 25% 88%);
   --input: hsl(35 25% 92%);
-  --ring: hsl(253 77% 58%);
-  --chart-1: hsl(253 77% 58%);
+  --ring: hsl(217 91% 60%);
+  --chart-1: hsl(217 91% 60%);
   --chart-2: hsl(45 100% 75%);
   --chart-3: hsl(35 30% 85%);
   --chart-4: hsl(235 45% 30%);
-  --chart-5: hsl(253 50% 70%);
+  --chart-5: hsl(217 70% 70%);
   --sidebar: hsl(35 30% 97%);
   --sidebar-foreground: hsl(235 45% 20%);
-  --sidebar-primary: hsl(253 77% 58%);
+  --sidebar-primary: hsl(217 91% 60%);
   --sidebar-primary-foreground: hsl(0 0% 100%);
-  --sidebar-accent: hsl(253 77% 95%);
-  --sidebar-accent-foreground: hsl(253 77% 58%);
+  --sidebar-accent: hsl(217 91% 95%);
+  --sidebar-accent-foreground: hsl(217 91% 60%);
   --sidebar-border: hsl(35 25% 88%);
-  --sidebar-ring: hsl(253 77% 58%);
+  --sidebar-ring: hsl(217 91% 60%);
   --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
   --font-serif: 'Playfair Display', Georgia, serif;
   --font-mono: Menlo, monospace;
@@ -55,24 +55,24 @@
   /* Faith-centered custom variables */
   --faith-beige: hsl(35 25% 92%);
   --faith-ivory: hsl(35 30% 97%);
-  --faith-purple: hsl(253 77% 58%);
+  --faith-blue: hsl(217 91% 60%);
   --faith-gold: hsl(45 100% 75%);
   --faith-navy: hsl(235 45% 20%);
-  --faith-light-purple: hsl(253 77% 95%);
+  --faith-light-blue: hsl(217 91% 95%);
   --faith-gradient-start: hsl(35 25% 92%);
   --faith-gradient-end: hsl(35 30% 97%);
   
-  /* Primary color variants for matching design */
-  --primary-50: hsl(253 77% 95%);
-  --primary-100: hsl(220 100% 94%);
-  --primary-200: hsl(220 100% 87%);
-  --primary-300: hsl(220 100% 78%);
-  --primary-400: hsl(220 91% 69%);
-  --primary-500: hsl(220 83% 53%);
-  --primary-600: hsl(220 83% 43%);
-  --primary-700: hsl(220 83% 35%);
-  --primary-800: hsl(220 83% 27%);
-  --primary-900: hsl(220 83% 19%);
+  /* Royal Blue color variants for matching design */
+  --primary-50: hsl(217 91% 95%);
+  --primary-100: hsl(217 91% 90%);
+  --primary-200: hsl(217 91% 80%);
+  --primary-300: hsl(217 91% 70%);
+  --primary-400: hsl(217 91% 60%);
+  --primary-500: hsl(217 91% 50%);
+  --primary-600: hsl(217 91% 40%);
+  --primary-700: hsl(217 91% 30%);
+  --primary-800: hsl(217 91% 20%);
+  --primary-900: hsl(217 91% 10%);
   
   /* Divine Gold */
   --gold-50: hsl(45 100% 96%);
@@ -115,7 +115,7 @@
   --card-foreground: #1A1A1A;
   --popover: #FFFFFF;
   --popover-foreground: #1A1A1A;
-  --primary: #3B4CCA; /* Royal Blue */
+  --primary: #3B82F6; /* Royal Blue */
   --primary-foreground: #FFFFFF;
   --secondary: #FFD662; /* Golden Amber */
   --secondary-foreground: #1A1A1A;
