@@ -6,7 +6,7 @@ CREATE OR REPLACE VIEW vw_prayer_confirmed AS
 SELECT 
     warrior,
     prayed_at::date as day,
-    created_at,
+    committed_at,
     request_id,
     prayed_at
 FROM prayer_commitments 
