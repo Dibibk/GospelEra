@@ -719,4 +719,35 @@
   --purple-600: hsl(270 80% 80%);
   --purple-700: hsl(270 85% 85%);
 }
+
+/* Custom scrollbar styles for Guidelines modal */
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: #a855f7 #e9d5ff;
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: #e9d5ff;
+  border-radius: 4px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: #a855f7;
+  border-radius: 4px;
+  min-height: 30px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: #9333ea;
+}
+
+/* Force scrollbar visibility */
+.scrollbar-thin {
+  overflow-y: scroll !important;
+}
 }
