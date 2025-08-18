@@ -858,7 +858,7 @@ export default function Dashboard() {
                       </svg>
                     )}
                   </div>
-                  <span className="ml-3 text-primary-800 hidden sm:block font-medium">{user?.email}</span>
+                  <span className="ml-3 text-primary-800 hidden sm:block font-medium">{userProfile?.display_name || user?.email}</span>
                   <svg className="ml-2 h-4 w-4 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                   </svg>
@@ -869,7 +869,7 @@ export default function Dashboard() {
                   <div className="absolute right-0 mt-3 w-52 bg-white/95 backdrop-blur-md rounded-xl shadow-xl py-2 ring-1 ring-primary-200 border border-white/50 z-50">
                     <div className="px-4 py-3 border-b border-primary-100">
                       <p className="text-sm font-medium text-primary-800">Signed in as</p>
-                      <p className="text-sm text-primary-600 truncate">{user?.email}</p>
+                      <p className="text-sm text-primary-600 truncate">{userProfile?.display_name || user?.email}</p>
                     </div>
                     <a
                       href="/profile"
