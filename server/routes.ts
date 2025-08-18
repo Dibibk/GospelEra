@@ -5,57 +5,48 @@ import {
   ObjectStorageService,
   ObjectNotFoundError,
 } from "./objectStorage";
+import { HybridStorageService } from "./hybridStorage";
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // put application routes here
-  // prefix all routes with /api
-
-  // use storage to perform CRUD operations on the storage interface
-  // e.g. storage.insertUser(user) or storage.getUserByUsername(username)
-
-  // Object storage routes for avatar uploads
+  // Initialize hybrid storage service (S3 or Replit Object Storage)
+  const hybridStorage = new HybridStorageService();
   
+  // Log storage configuration
+  console.log("Storage Configuration:", hybridStorage.getStorageInfo());
+
+  // Storage status endpoint for debugging
+  app.get("/api/storage/status", (req, res) => {
+    res.json(hybridStorage.getStorageInfo());
+  });
+
   // The endpoint for serving public objects
   app.get("/public-objects/:filePath(*)", async (req, res) => {
     const filePath = req.params.filePath;
-    const objectStorageService = new ObjectStorageService();
     try {
-      const file = await objectStorageService.searchPublicObject(filePath);
-      if (!file) {
-        return res.status(404).json({ error: "File not found" });
-      }
-      objectStorageService.downloadObject(file, res);
+      await hybridStorage.servePublicObject(filePath, res);
     } catch (error) {
-      console.error("Error searching for public object:", error);
+      console.error("Error serving public object:", error);
       return res.status(500).json({ error: "Internal server error" });
     }
   });
 
-  // The endpoint for serving private objects (avatars)
+  // The endpoint for serving private objects (avatars and media)
   app.get("/objects/:objectPath(*)", async (req, res) => {
-    const objectStorageService = new ObjectStorageService();
     try {
-      const objectFile = await objectStorageService.getObjectEntityFile(
-        req.path,
-      );
-      objectStorageService.downloadObject(objectFile, res);
+      await hybridStorage.servePrivateObject(req.path, res);
     } catch (error) {
-      console.error("Error checking object access:", error);
-      if (error instanceof ObjectNotFoundError) {
-        return res.sendStatus(404);
-      }
+      console.error("Error serving private object:", error);
       return res.sendStatus(500);
     }
   });
 
-  // The endpoint for getting the upload URL for an object entity (avatars)
+  // The endpoint for getting the upload URL for avatars
   app.post("/api/objects/upload", async (req, res) => {
-    const objectStorageService = new ObjectStorageService();
     try {
-      const uploadURL = await objectStorageService.getObjectEntityUploadURL();
+      const uploadURL = await hybridStorage.getAvatarUploadURL();
       res.json({ uploadURL });
     } catch (error) {
-      console.error("Error getting upload URL:", error);
+      console.error("Error getting avatar upload URL:", error);
       res.status(500).json({ error: "Failed to get upload URL" });
     }
   });
@@ -67,8 +58,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
 
     try {
-      const objectStorageService = new ObjectStorageService();
-      const objectPath = objectStorageService.normalizeObjectEntityPath(
+      const objectPath = hybridStorage.normalizeUploadUrlToObjectPath(
         req.body.avatarURL,
       );
 
@@ -83,9 +73,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Endpoint for media upload for posts (images and videos)
   app.post("/api/media/upload", async (req, res) => {
-    const objectStorageService = new ObjectStorageService();
     try {
-      const uploadURL = await objectStorageService.getObjectEntityUploadURL();
+      const uploadURL = await hybridStorage.getMediaUploadURL();
       res.json({ uploadURL });
     } catch (error) {
       console.error("Error getting media upload URL:", error);
@@ -100,8 +89,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
 
     try {
-      const objectStorageService = new ObjectStorageService();
-      const objectPath = objectStorageService.normalizeObjectEntityPath(
+      const objectPath = hybridStorage.normalizeUploadUrlToObjectPath(
         req.body.mediaURL,
       );
 
