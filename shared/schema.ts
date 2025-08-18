@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, timestamp, integer, boolean, bigserial, bigint, primaryKey } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, timestamp, integer, boolean, bigserial, bigint, primaryKey, uuid } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -179,3 +179,24 @@ export const insertPrayerActivitySchema = createInsertSchema(prayerActivity).omi
 
 export type InsertPrayerActivity = z.infer<typeof insertPrayerActivitySchema>;
 export type PrayerActivity = typeof prayerActivity.$inferSelect;
+
+// Donations table for supporting the platform
+export const donations = pgTable("donations", {
+  id: bigserial("id", { mode: "number" }).primaryKey(),
+  user_id: varchar("user_id").references(() => profiles.id, { onDelete: 'set null' }),
+  amount_cents: integer("amount_cents").notNull(),
+  currency: text("currency").default('USD').notNull(),
+  message: text("message"),
+  provider: text("provider").default('pending').notNull(), // 'stripe' | 'paypal' | 'manual' | 'pending'
+  provider_ref: text("provider_ref"), // session id / txn id (nullable)
+  status: text("status").default('initiated').notNull(), // 'initiated' | 'paid' | 'failed' | 'refunded'
+  created_at: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertDonationSchema = createInsertSchema(donations).omit({
+  id: true,
+  created_at: true,
+});
+
+export type InsertDonation = z.infer<typeof insertDonationSchema>;
+export type Donation = typeof donations.$inferSelect;

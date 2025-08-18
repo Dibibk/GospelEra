@@ -20,6 +20,7 @@ import PrayerDetail from "./pages/PrayerDetail";
 import PrayerMy from "./pages/PrayerMy";
 import PrayerLeaderboard from "./pages/PrayerLeaderboard";
 import Guidelines from "./pages/Guidelines";
+import Donate from "./pages/Donate";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 
@@ -95,6 +96,14 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <Guidelines />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/donate" 
+                element={
+                  <ProtectedRoute>
+                    <Donate />
                   </ProtectedRoute>
                 } 
               />
