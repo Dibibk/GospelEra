@@ -14,9 +14,9 @@ export function GuidelinesModal({ isOpen, onAgree, onViewFull }: GuidelinesModal
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white/95 backdrop-blur-md rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-purple-200 shadow-2xl">
-        <Card className="border-0 shadow-none bg-transparent">
-          <CardHeader className="text-center pb-4">
+      <div className="bg-white/95 backdrop-blur-md rounded-2xl max-w-2xl w-full max-h-[90vh] border border-purple-200 shadow-2xl flex flex-col">
+        <Card className="border-0 shadow-none bg-transparent flex-1 flex flex-col">
+          <CardHeader className="text-center pb-4 flex-shrink-0">
             <CardTitle className="text-2xl font-bold text-purple-800">
               Gospel Community Guidelines
             </CardTitle>
@@ -24,38 +24,44 @@ export function GuidelinesModal({ isOpen, onAgree, onViewFull }: GuidelinesModal
               Welcome to our faith community! Please review these important guidelines.
             </p>
           </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Pray, Encourage, Respect */}
-            <div className="bg-purple-50 rounded-lg p-4 border border-purple-200">
-              <h3 className="text-lg font-semibold text-purple-700 mb-2">
-                Pray, Encourage, Respect
-              </h3>
-              <p className="text-gray-700 text-sm">
-                Share prayer requests and encouragement in love. Respect all users across denominations and cultures.
-              </p>
-            </div>
+          
+          {/* Scrollable Content */}
+          <div className="flex-1 overflow-y-auto px-6">
+            <div className="space-y-4">
+              {/* Pray, Encourage, Respect */}
+              <div className="bg-purple-50 rounded-lg p-4 border border-purple-200">
+                <h3 className="text-lg font-semibold text-purple-700 mb-2">
+                  Pray, Encourage, Respect
+                </h3>
+                <p className="text-gray-700 text-sm">
+                  Share prayer requests and encouragement in love. Respect all users across denominations and cultures.
+                </p>
+              </div>
 
-            {/* Christ-Centered */}
-            <div className="bg-purple-50 rounded-lg p-4 border border-purple-200">
-              <h3 className="text-lg font-semibold text-purple-700 mb-2">
-                Christ-Centered
-              </h3>
-              <p className="text-gray-700 text-sm">
-                This is a Christian prayer community. Prayers are to Jesus Christ and in line with Scripture.
-              </p>
-            </div>
+              {/* Christ-Centered */}
+              <div className="bg-purple-50 rounded-lg p-4 border border-purple-200">
+                <h3 className="text-lg font-semibold text-purple-700 mb-2">
+                  Christ-Centered
+                </h3>
+                <p className="text-gray-700 text-sm">
+                  This is a Christian prayer community. Prayers are to Jesus Christ and in line with Scripture.
+                </p>
+              </div>
 
-            {/* No Abuse or Harm */}
-            <div className="bg-purple-50 rounded-lg p-4 border border-purple-200">
-              <h3 className="text-lg font-semibold text-purple-700 mb-2">
-                No Abuse or Harm
-              </h3>
-              <p className="text-gray-700 text-sm">
-                No hateful, obscene, violent, or mocking content. No harassment or bullying.
-              </p>
+              {/* No Abuse or Harm */}
+              <div className="bg-purple-50 rounded-lg p-4 border border-purple-200">
+                <h3 className="text-lg font-semibold text-purple-700 mb-2">
+                  No Abuse or Harm
+                </h3>
+                <p className="text-gray-700 text-sm">
+                  No hateful, obscene, violent, or mocking content. No harassment or bullying.
+                </p>
+              </div>
             </div>
+          </div>
 
-            {/* Action Buttons */}
+          {/* Fixed Footer with Buttons */}
+          <CardContent className="flex-shrink-0 pt-4">
             <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-gray-200">
               <Button 
                 onClick={onViewFull}

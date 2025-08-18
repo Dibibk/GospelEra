@@ -608,7 +608,7 @@ export default function Dashboard() {
         
         // For new users without the column, show guidelines modal
         if (data) {
-          data.accepted_guidelines = false
+          data = { ...data, accepted_guidelines: false }
         }
       }
       
