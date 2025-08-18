@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
-import { ArrowLeft, Heart, Check, Clock, Plus, Users } from 'lucide-react'
+import { ArrowLeft, Heart, Check, Clock, Plus, Users, Flame } from 'lucide-react'
 import { getMyRequests, getMyCommitments } from '../lib/prayer'
 import { supabase } from '../lib/supabaseClient'
 import { Leaderboard } from '../components/Leaderboard'
+// @ts-ignore
+import { getMyStreak } from '../lib/leaderboard'
 
 interface MyRequest {
   id: number
@@ -44,10 +46,14 @@ export default function PrayerMy() {
   const [myRequests, setMyRequests] = useState<MyRequest[]>([])
   const [myCommitments, setMyCommitments] = useState<MyCommitment[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [streakData, setStreakData] = useState<any>(null)
+  const [streakLoading, setStreakLoading] = useState(true)
+  const [animatedStreak, setAnimatedStreak] = useState(0)
   const [error, setError] = useState('')
 
   useEffect(() => {
     loadData()
+    loadStreak()
   }, [])
 
   // Set up realtime subscription for user's prayer commitments
@@ -92,7 +98,7 @@ export default function PrayerMy() {
   const handleUserCommitmentChange = async (payload: any) => {
     // Reload commitments when user's commitments change
     try {
-      const { data, error } = await getMyCommitments({ limit: 50 })
+      const { data, error } = await getMyCommitments()
       if (error) {
         console.error('Failed to refresh commitments:', error)
         return
@@ -106,7 +112,7 @@ export default function PrayerMy() {
   const handleUserRequestChange = async (payload: any) => {
     // Reload requests when user's requests change
     try {
-      const { data, error } = await getMyRequests({ limit: 50 })
+      const { data, error } = await getMyRequests()
       if (error) {
         console.error('Failed to refresh requests:', error)
         return
@@ -123,8 +129,8 @@ export default function PrayerMy() {
 
     try {
       const [requestsResult, commitmentsResult] = await Promise.all([
-        getMyRequests({ limit: 50 }),
-        getMyCommitments({ limit: 50 })
+        getMyRequests(),
+        getMyCommitments()
       ])
 
       if (requestsResult.error) {
@@ -146,6 +152,70 @@ export default function PrayerMy() {
       setIsLoading(false)
     }
   }
+
+  const loadStreak = async () => {
+    setStreakLoading(true)
+    try {
+      const { data, error } = await getMyStreak()
+      if (error) {
+        console.error('Failed to load streak:', error)
+        return
+      }
+      
+      setStreakData(data)
+      
+      // Initialize animated streak
+      if (data?.current_streak > 0) {
+        // Animate from 0 to current streak
+        setTimeout(() => {
+          setAnimatedStreak(data.current_streak)
+        }, 100)
+      }
+    } catch (err) {
+      console.error('Error loading streak:', err)
+    } finally {
+      setStreakLoading(false)
+    }
+  }
+
+  // Effect to animate streak updates
+  useEffect(() => {
+    if (streakData?.current_streak > 0 && animatedStreak !== streakData.current_streak) {
+      const duration = 800 // Animation duration in ms
+      const steps = 20 // Number of animation steps
+      const stepValue = (streakData.current_streak - animatedStreak) / steps
+      let currentStep = 0
+
+      const timer = setInterval(() => {
+        currentStep++
+        if (currentStep >= steps) {
+          setAnimatedStreak(streakData.current_streak)
+          clearInterval(timer)
+        } else {
+          setAnimatedStreak(prev => Math.round(prev + stepValue))
+        }
+      }, duration / steps)
+
+      return () => clearInterval(timer)
+    }
+  }, [streakData?.current_streak, animatedStreak])
+
+  // Update streak when commitments change to 'prayed'
+  useEffect(() => {
+    const handleCommitmentToPrayed = async () => {
+      const today = new Date().toISOString().split('T')[0]
+      const prayedToday = myCommitments.some(
+        c => c.status === 'prayed' && c.prayed_at?.startsWith(today)
+      )
+      
+      if (prayedToday && streakData) {
+        // Check if this increases the streak
+        await loadStreak()
+      }
+    }
+
+    handleCommitmentToPrayed()
+  }, [myCommitments])
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
@@ -187,9 +257,42 @@ export default function PrayerMy() {
         </div>
       </header>
 
-      {/* Tabs */}
+      {/* Content */}
       <div className="container mx-auto px-4 py-6">
         <div className="max-w-4xl mx-auto">
+          {/* Streak Display */}
+          <div className="mb-6">
+            <div className="flex items-center justify-center space-x-3 py-4 px-6 bg-gradient-to-r from-orange-100 to-amber-100 rounded-lg border border-orange-200 shadow-sm">
+              <div className="flex items-center space-x-3">
+                <Flame className={`w-7 h-7 ${animatedStreak > 0 ? 'text-orange-500' : 'text-gray-400'}`} />
+                <div className="text-center">
+                  <div className="text-lg font-bold text-purple-800">
+                    {streakLoading ? (
+                      <div className="w-24 h-6 bg-gray-200 rounded animate-pulse mx-auto"></div>
+                    ) : (
+                      <span 
+                        className={`transition-all duration-300 ${animatedStreak > 0 ? 'text-orange-600' : 'text-gray-600'}`}
+                        title="Streak counts days you confirmed at least one prayer"
+                      >
+                        {animatedStreak > 0 ? (
+                          <>
+                            Current streak: <span className="text-2xl font-extrabold text-orange-600">{animatedStreak}</span> days
+                          </>
+                        ) : (
+                          'Start your streak today'
+                        )}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-gray-600 mt-1">
+                    Streak counts days you confirmed at least one prayer
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Tabs */}
           <div className="flex space-x-1 bg-white rounded-lg p-1 mb-6">
             <button
               onClick={() => setActiveTab('requests')}
