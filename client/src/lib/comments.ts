@@ -73,6 +73,16 @@ export async function listComments({ postId, limit = 20, fromId }: ListCommentsO
       `)
       .eq('post_id', postId)
       .eq('is_deleted', false)
+
+    // Filter out hidden comments (handles both old and new schema)
+    try {
+      query = query.eq('hidden', false)
+    } catch (error) {
+      // Ignore if hidden column doesn't exist yet
+      console.warn('Hidden column not available for comments, showing all comments')
+    }
+
+    query = query
       .order('created_at', { ascending: false })
       .limit(limit)
 

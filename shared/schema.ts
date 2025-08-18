@@ -48,6 +48,7 @@ export const posts = pgTable("posts", {
   author_id: varchar("author_id").notNull(),
   tags: text("tags").array().notNull().default([]),
   media_urls: text("media_urls").array().notNull().default([]),
+  hidden: boolean("hidden").default(false).notNull(),
   created_at: timestamp("created_at").defaultNow().notNull(),
   updated_at: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -68,6 +69,7 @@ export const comments = pgTable("comments", {
   author_id: varchar("author_id").notNull(),
   post_id: integer("post_id").notNull(),
   deleted: boolean("deleted").default(false).notNull(),
+  hidden: boolean("hidden").default(false).notNull(),
   created_at: timestamp("created_at").defaultNow().notNull(),
   updated_at: timestamp("updated_at").defaultNow().notNull(),
 });

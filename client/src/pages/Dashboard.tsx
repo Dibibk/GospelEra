@@ -70,7 +70,7 @@ export default function Dashboard() {
   const [deletingCommentId, setDeletingCommentId] = useState<number | null>(null)
   
   // Report modal states
-  const [reportModal, setReportModal] = useState<{isOpen: boolean, targetType: 'post'|'comment', targetId: string, reason: string}>({isOpen: false, targetType: 'post', targetId: '', reason: ''})
+  const [reportModal, setReportModal] = useState<{isOpen: boolean, targetType: 'post'|'comment', targetId: string, reason: string, selectedReason: string}>({isOpen: false, targetType: 'post', targetId: '', reason: '', selectedReason: ''})
   const [submittingReport, setSubmittingReport] = useState(false)
   
   // Toast state
@@ -589,20 +589,25 @@ export default function Dashboard() {
   }
 
   const openReportModal = (targetType: 'post'|'comment', targetId: string) => {
-    setReportModal({isOpen: true, targetType, targetId, reason: ''})
+    setReportModal({isOpen: true, targetType, targetId, reason: '', selectedReason: ''})
   }
 
   const closeReportModal = () => {
-    setReportModal({isOpen: false, targetType: 'post', targetId: '', reason: ''})
+    setReportModal({isOpen: false, targetType: 'post', targetId: '', reason: '', selectedReason: ''})
   }
 
   const handleSubmitReport = async () => {
     setSubmittingReport(true)
     
+    // Combine selected reason with custom reason
+    const finalReason = reportModal.selectedReason ? 
+      (reportModal.reason ? `${reportModal.selectedReason}: ${reportModal.reason}` : reportModal.selectedReason) : 
+      reportModal.reason
+    
     const { error } = await createReport({
       targetType: reportModal.targetType,
       targetId: reportModal.targetId,
-      reason: reportModal.reason
+      reason: finalReason
     })
     
     if (error) {
@@ -639,7 +644,7 @@ export default function Dashboard() {
           .eq('id', user.id)
           .single()
         
-        data = fallbackResult.data
+        data = { ...fallbackResult.data, accepted_guidelines: false }
         error = fallbackResult.error
         
         // For new users without the column, show guidelines modal
@@ -1901,34 +1906,75 @@ export default function Dashboard() {
       {/* Report Modal */}
       {reportModal.isOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">
+          <div className="bg-white dark:bg-gray-900 rounded-lg p-6 w-full max-w-md">
+            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
               Report {reportModal.targetType === 'post' ? 'Post' : 'Comment'}
             </h3>
+            
+            {/* Preset Reasons */}
             <div className="mb-4">
-              <label htmlFor="report-reason" className="block text-sm font-medium text-gray-700 mb-2">
-                Reason for reporting (optional)
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                Select a reason for reporting:
+              </label>
+              <div className="space-y-2">
+                {[
+                  'Spam or misleading content',
+                  'Inappropriate or offensive language',
+                  'Harassment or bullying',
+                  'Not Christ-Centered (prayer not to Jesus)',
+                  'Violates community guidelines',
+                  'Other'
+                ].map((reason) => (
+                  <label key={reason} className="flex items-center">
+                    <input
+                      type="radio"
+                      name="reportReason"
+                      value={reason}
+                      checked={reportModal.selectedReason === reason}
+                      onChange={(e) => setReportModal(prev => ({...prev, selectedReason: e.target.value}))}
+                      className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300"
+                    />
+                    <span className="ml-2 text-sm text-gray-900 dark:text-white">{reason}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            {/* Custom Reason */}
+            <div className="mb-4">
+              <label htmlFor="report-reason" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Additional details (optional)
               </label>
               <textarea
                 id="report-reason"
                 value={reportModal.reason}
                 onChange={(e) => setReportModal(prev => ({...prev, reason: e.target.value}))}
                 rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                placeholder="Please describe why you're reporting this content..."
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                placeholder="Please provide additional details if needed..."
               />
             </div>
+
+            {/* Special Notice for Christ-Centered Reports */}
+            {reportModal.selectedReason === 'Not Christ-Centered (prayer not to Jesus)' && (
+              <div className="mb-4 p-3 bg-purple-50 dark:bg-purple-900/30 border border-purple-200 dark:border-purple-700 rounded-md">
+                <p className="text-xs text-purple-700 dark:text-purple-300">
+                  ℹ️ This content will be temporarily hidden from the public feed while our moderation team reviews it with our faith-alignment guidelines.
+                </p>
+              </div>
+            )}
+
             <div className="flex justify-end space-x-3">
               <button
                 onClick={closeReportModal}
                 disabled={submittingReport}
-                className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+                className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
               >
                 Cancel
               </button>
               <button
                 onClick={handleSubmitReport}
-                disabled={submittingReport}
+                disabled={submittingReport || !reportModal.selectedReason}
                 className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
               >
                 {submittingReport ? 'Submitting...' : 'Submit Report'}
