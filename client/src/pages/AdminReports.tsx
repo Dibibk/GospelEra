@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { ArrowLeft, Eye, Ban, UserCheck, MoreVertical, Search, Filter } from 'lucide-react'
+import { ArrowLeft, Eye, Ban, UserCheck, MoreVertical, Search, Filter, Heart, X, Users, CheckCircle } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
 import { listReports, updateReportStatus, banUser, unbanUser, getUserProfile, getBannedUsers } from '../lib/admin.js'
+import { supabase } from '../lib/supabaseClient'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
@@ -20,12 +21,16 @@ export default function AdminReports() {
 
   const [loading, setLoading] = useState(true)
   const [reports, setReports] = useState<any[]>([])
+  const [prayerRequests, setPrayerRequests] = useState<any[]>([])
   const [bannedUsers, setBannedUsers] = useState<any[]>([])
   const [selectedReports, setSelectedReports] = useState<Set<string>>(new Set())
   const [searchQuery, setSearchQuery] = useState('')
   const [currentFilter, setCurrentFilter] = useState('open')
+  const [activeTab, setActiveTab] = useState('reports')
   const [error, setError] = useState('')
   const [actionLoading, setActionLoading] = useState<Set<string>>(new Set())
+  const [selectedRequest, setSelectedRequest] = useState<any>(null)
+  const [showCommitments, setShowCommitments] = useState(false)
 
   // Check admin status on mount
   useEffect(() => {
@@ -43,6 +48,7 @@ export default function AdminReports() {
         }
         setLoading(false)
         loadReports()
+        loadPrayerRequests()
         loadBannedUsers()
       } catch (err) {
         console.error('Admin access check failed:', err)
@@ -58,6 +64,42 @@ export default function AdminReports() {
       setError('')
       const { items } = await listReports({ status, limit: 100 })
       setReports(items)
+    } catch (err: any) {
+      setError(err.message)
+    }
+  }
+
+  const loadPrayerRequests = async () => {
+    try {
+      setError('')
+      const { data, error } = await supabase
+        .from('prayer_requests')
+        .select(`
+          *,
+          profiles!prayer_requests_requester_fkey (
+            display_name,
+            avatar_url,
+            role
+          ),
+          prayer_commitments (
+            id,
+            status,
+            prayed_at,
+            committed_at,
+            note,
+            warrior,
+            profiles!prayer_commitments_warrior_fkey (
+              display_name,
+              avatar_url,
+              role
+            )
+          )
+        `)
+        .order('created_at', { ascending: false })
+        .limit(100)
+
+      if (error) throw error
+      setPrayerRequests(data || [])
     } catch (err: any) {
       setError(err.message)
     }
@@ -187,6 +229,78 @@ export default function AdminReports() {
     }
   }
 
+  const handlePrayerRequestAction = async (requestId: string, action: 'close' | 'answered') => {
+    setActionLoading(prev => new Set(prev).add(requestId))
+    
+    try {
+      const { error } = await supabase
+        .from('prayer_requests')
+        .update({ 
+          status: action === 'close' ? 'closed' : 'answered',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', requestId)
+
+      if (error) throw error
+
+      toast({
+        title: 'Success',
+        description: `Prayer request ${action === 'close' ? 'closed' : 'marked as answered'} successfully`
+      })
+
+      loadPrayerRequests()
+    } catch (err: any) {
+      toast({
+        title: 'Error',
+        description: err.message,
+        variant: 'destructive'
+      })
+    } finally {
+      setActionLoading(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(requestId)
+        return newSet
+      })
+    }
+  }
+
+  const handleDeleteCommitment = async (commitmentId: string, warriorId: string) => {
+    setActionLoading(prev => new Set(prev).add(commitmentId))
+    
+    try {
+      const { error } = await supabase
+        .from('prayer_commitments')
+        .delete()
+        .eq('id', commitmentId)
+
+      if (error) throw error
+
+      toast({
+        title: 'Success',
+        description: 'Commitment deleted successfully'
+      })
+
+      loadPrayerRequests()
+      if (selectedRequest) {
+        // Refresh the selected request data
+        const updated = prayerRequests.find(r => r.id === selectedRequest.id)
+        if (updated) setSelectedRequest(updated)
+      }
+    } catch (err: any) {
+      toast({
+        title: 'Error',
+        description: err.message,
+        variant: 'destructive'
+      })
+    } finally {
+      setActionLoading(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(commitmentId)
+        return newSet
+      })
+    }
+  }
+
   const handleBulkAction = async (action: string) => {
     if (selectedReports.size === 0) return
 
@@ -276,9 +390,10 @@ export default function AdminReports() {
       )}
 
       {/* Main Tabs */}
-      <Tabs defaultValue="reports" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="reports">Reports</TabsTrigger>
+          <TabsTrigger value="prayer">Prayer Requests</TabsTrigger>
           <TabsTrigger value="banned-users">Banned Users</TabsTrigger>
         </TabsList>
 
@@ -502,6 +617,194 @@ export default function AdminReports() {
           </div>
         </CardContent>
       </Card>
+        </TabsContent>
+
+        {/* Prayer Requests Tab */}
+        <TabsContent value="prayer" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Heart className="h-5 w-5" />
+                Prayer Requests ({prayerRequests.length})
+              </CardTitle>
+              <CardDescription>
+                Manage prayer requests and commitments. Close requests or mark as answered.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {prayerRequests.length === 0 ? (
+                <div className="text-center py-8">
+                  <Heart className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No prayer requests</h3>
+                  <p className="text-gray-500">No prayer requests have been submitted yet.</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {prayerRequests.map((request) => (
+                    <div key={request.id} className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <h3 className="font-medium text-gray-900 dark:text-white">
+                              {request.title}
+                            </h3>
+                            <Badge variant={request.status === 'open' ? 'destructive' : 
+                                          request.status === 'answered' ? 'default' : 'secondary'}>
+                              {request.status}
+                            </Badge>
+                            {request.is_anonymous && (
+                              <Badge variant="outline" className="text-xs">Anonymous</Badge>
+                            )}
+                          </div>
+                          <p className="text-sm text-gray-600 dark:text-gray-400 mb-2 line-clamp-2">
+                            {request.content}
+                          </p>
+                          <div className="flex items-center gap-4 text-xs text-gray-500">
+                            <span>By: {request.is_anonymous ? 'Anonymous' : request.profiles?.display_name || 'Unknown'}</span>
+                            <span>{formatDate(request.created_at)}</span>
+                            <span>{request.prayer_commitments?.length || 0} commitments</span>
+                            <span>{request.prayer_commitments?.filter((c: any) => c.status === 'prayed').length || 0} prayed</span>
+                          </div>
+                          {request.tags && request.tags.length > 0 && (
+                            <div className="flex gap-1 mt-2">
+                              {request.tags.map((tag: string, index: number) => (
+                                <Badge key={index} variant="outline" className="text-xs">
+                                  {tag}
+                                </Badge>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2 ml-4">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setSelectedRequest(request)
+                              setShowCommitments(true)
+                            }}
+                          >
+                            <Users className="h-4 w-4 mr-1" />
+                            View Commitments
+                          </Button>
+                          {request.status === 'open' && (
+                            <>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handlePrayerRequestAction(request.id, 'answered')}
+                                disabled={actionLoading.has(request.id)}
+                                className="text-green-600 hover:text-green-700"
+                              >
+                                <CheckCircle className="h-4 w-4 mr-1" />
+                                Mark Answered
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handlePrayerRequestAction(request.id, 'close')}
+                                disabled={actionLoading.has(request.id)}
+                                className="text-red-600 hover:text-red-700"
+                              >
+                                <X className="h-4 w-4 mr-1" />
+                                Close
+                              </Button>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Commitments Modal */}
+          {showCommitments && selectedRequest && (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+              <div className="bg-white dark:bg-gray-800 rounded-lg max-w-2xl w-full mx-4 max-h-[80vh] overflow-hidden">
+                <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                      Prayer Commitments for "{selectedRequest.title}"
+                    </h2>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowCommitments(false)}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+                <div className="p-6 overflow-y-auto max-h-[60vh]">
+                  {selectedRequest.prayer_commitments?.length === 0 ? (
+                    <div className="text-center py-8 text-gray-500">
+                      No commitments yet for this prayer request.
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {selectedRequest.prayer_commitments?.map((commitment: any) => (
+                        <div key={commitment.id} className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-2">
+                                <span className="font-medium text-gray-900 dark:text-white">
+                                  {commitment.profiles?.display_name || 'Unknown User'}
+                                </span>
+                                <Badge variant={commitment.status === 'prayed' ? 'default' : 'secondary'}>
+                                  {commitment.status}
+                                </Badge>
+                                {commitment.profiles?.role === 'banned' && (
+                                  <Badge variant="destructive" className="text-xs">Banned</Badge>
+                                )}
+                              </div>
+                              <div className="text-xs text-gray-500 space-y-1">
+                                <div>Committed: {formatDate(commitment.committed_at)}</div>
+                                {commitment.prayed_at && (
+                                  <div>Prayed: {formatDate(commitment.prayed_at)}</div>
+                                )}
+                              </div>
+                              {commitment.note && (
+                                <p className="text-sm text-gray-600 dark:text-gray-400 mt-2 italic">
+                                  "{commitment.note}"
+                                </p>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2 ml-4">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleDeleteCommitment(commitment.id, commitment.warrior)}
+                                disabled={actionLoading.has(commitment.id)}
+                                className="text-red-600 hover:text-red-700"
+                              >
+                                <X className="h-4 w-4 mr-1" />
+                                Delete
+                              </Button>
+                              {commitment.profiles?.role !== 'banned' && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleUserAction(commitment.warrior, 'ban')}
+                                  disabled={actionLoading.has(`user-${commitment.warrior}`)}
+                                  className="text-red-600 hover:text-red-700"
+                                >
+                                  <Ban className="h-4 w-4 mr-1" />
+                                  Ban User
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
         </TabsContent>
 
         {/* Banned Users Tab */}
