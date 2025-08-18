@@ -21,6 +21,8 @@ import PrayerMy from "./pages/PrayerMy";
 import PrayerLeaderboard from "./pages/PrayerLeaderboard";
 import Guidelines from "./pages/Guidelines";
 import Donate from "./pages/Donate";
+import DonateThanks from "./pages/DonateThanks";
+import AdminDonations from "./pages/AdminDonations";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 
@@ -104,6 +106,22 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <Donate />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/donate/thanks" 
+                element={
+                  <ProtectedRoute>
+                    <DonateThanks />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/admin/donations" 
+                element={
+                  <ProtectedRoute>
+                    <AdminDonations />
                   </ProtectedRoute>
                 } 
               />

@@ -1,51 +1,85 @@
 import { useState } from 'react'
 import { useAuth } from '../hooks/useAuth'
 import { DonateNotice } from '../components/DonateNotice'
+import { createDonationPledge, validateDonationAmount, formatCurrency } from '../lib/donations'
+import { PAYMENTS } from '../config/payments'
+import { useNavigate } from 'react-router-dom'
 
 export default function Donate() {
   const { user } = useAuth()
+  const navigate = useNavigate()
   const [selectedAmount, setSelectedAmount] = useState<number | null>(null)
   const [customAmount, setCustomAmount] = useState('')
   const [message, setMessage] = useState('')
   const [isProcessing, setIsProcessing] = useState(false)
+  const [error, setError] = useState('')
 
   const predefinedAmounts = [5, 10, 25, 50, 100]
+  const paymentsEnabled = PAYMENTS.ENABLE_STRIPE || PAYMENTS.ENABLE_PAYPAL
 
   const handleAmountSelect = (amount: number) => {
     setSelectedAmount(amount)
     setCustomAmount('')
+    setError('')
   }
 
   const handleCustomAmountChange = (value: string) => {
     setCustomAmount(value)
     setSelectedAmount(null)
+    setError('')
   }
 
   const getSelectedAmount = () => {
     return selectedAmount || (customAmount ? parseFloat(customAmount) : 0)
   }
 
-  const handleDonate = async () => {
+  const handlePledge = async () => {
     const amount = getSelectedAmount()
-    if (amount <= 0) return
+    
+    // Validate amount
+    const validation = validateDonationAmount(amount)
+    if (!validation.valid) {
+      setError(validation.error || 'Invalid amount')
+      return
+    }
 
     setIsProcessing(true)
+    setError('')
     
     try {
-      // TODO: Implement payment processing (Stripe, PayPal, etc.)
-      console.log('Processing donation:', {
-        amount: amount * 100, // Convert to cents
-        message,
-        userId: user?.id
+      const result = await createDonationPledge({
+        amount_cents: Math.round(amount * 100),
+        currency: PAYMENTS.CURRENCY,
+        message: message.trim() || undefined
       })
-      
-      // Placeholder for actual payment integration
-      alert('Payment integration coming soon!')
+
+      if ('error' in result) {
+        setError(result.error)
+      } else {
+        // Success - redirect to thanks page
+        navigate('/donate/thanks', { 
+          state: { 
+            amount: amount,
+            message: message.trim() 
+          }
+        })
+      }
     } catch (error) {
-      console.error('Donation error:', error)
+      console.error('Pledge error:', error)
+      setError('An unexpected error occurred. Please try again.')
     } finally {
       setIsProcessing(false)
     }
+  }
+
+  const handleStripePayment = async () => {
+    // TODO: Implement Stripe integration
+    console.log('Stripe payment not implemented yet')
+  }
+
+  const handlePayPalPayment = async () => {
+    // TODO: Implement PayPal integration
+    console.log('PayPal payment not implemented yet')
   }
 
   return (
@@ -63,6 +97,20 @@ export default function Donate() {
 
         {/* Donate Notice */}
         <DonateNotice className="mb-8" />
+
+        {/* Payment Processing Banner */}
+        {!paymentsEnabled && (
+          <div className="mb-8 bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-900/20 dark:to-yellow-900/20 border border-amber-200 dark:border-amber-700 rounded-xl p-4 text-center">
+            <div className="flex items-center justify-center space-x-2">
+              <svg className="h-5 w-5 text-amber-600 dark:text-amber-400" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+              </svg>
+              <p className="text-amber-800 dark:text-amber-200 font-medium">
+                Payment processing will be enabled soon; you can still pledge now.
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Donation Form */}
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-purple-200/60 dark:border-purple-700/60 overflow-hidden">
@@ -132,21 +180,112 @@ export default function Donate() {
               </p>
             </div>
 
-            {/* Donate Button */}
-            <button
-              onClick={handleDonate}
-              disabled={getSelectedAmount() <= 0 || isProcessing}
-              className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-semibold py-4 px-6 rounded-lg transition-all duration-200 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-            >
-              {isProcessing ? (
-                <div className="flex items-center justify-center">
-                  <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent mr-2"></div>
-                  Processing...
-                </div>
-              ) : (
-                `Donate $${getSelectedAmount().toFixed(2)}`
+            {/* Error Message */}
+            {error && (
+              <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-800 dark:text-red-200 text-sm">
+                {error}
+              </div>
+            )}
+
+            {/* Payment Buttons */}
+            <div className="space-y-4">
+              {paymentsEnabled && (
+                <>
+                  <div className="grid grid-cols-2 gap-4">
+                    {PAYMENTS.ENABLE_STRIPE && (
+                      <button
+                        type="button"
+                        onClick={handleStripePayment}
+                        disabled={getSelectedAmount() <= 0 || isProcessing}
+                        className="w-full bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 disabled:from-gray-400 disabled:to-gray-500 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200 transform hover:scale-105 disabled:transform-none disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                      >
+                        {isProcessing ? (
+                          <>
+                            <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                            <span>Processing...</span>
+                          </>
+                        ) : (
+                          <>
+                            <span>💳</span>
+                            <span>Donate with Stripe</span>
+                          </>
+                        )}
+                      </button>
+                    )}
+
+                    {PAYMENTS.ENABLE_PAYPAL && (
+                      <button
+                        type="button"
+                        onClick={handlePayPalPayment}
+                        disabled={getSelectedAmount() <= 0 || isProcessing}
+                        className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 disabled:from-gray-400 disabled:to-gray-500 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200 transform hover:scale-105 disabled:transform-none disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                      >
+                        {isProcessing ? (
+                          <>
+                            <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                            <span>Processing...</span>
+                          </>
+                        ) : (
+                          <>
+                            <span>🅿️</span>
+                            <span>Donate with PayPal</span>
+                          </>
+                        )}
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Or divider */}
+                  <div className="text-center">
+                    <span className="inline-block px-4 py-2 text-gray-500 dark:text-gray-400 font-medium">
+                      or
+                    </span>
+                  </div>
+                </>
               )}
-            </button>
+
+              {!paymentsEnabled && (
+                <div className="grid grid-cols-2 gap-4 mb-4">
+                  <button
+                    type="button"
+                    disabled={true}
+                    className="w-full bg-gray-400 text-gray-600 font-semibold py-3 px-6 rounded-lg cursor-not-allowed flex items-center justify-center space-x-2"
+                  >
+                    <span>💳</span>
+                    <span>Donate with Stripe</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    disabled={true}
+                    className="w-full bg-gray-400 text-gray-600 font-semibold py-3 px-6 rounded-lg cursor-not-allowed flex items-center justify-center space-x-2"
+                  >
+                    <span>🅿️</span>
+                    <span>Donate with PayPal</span>
+                  </button>
+                </div>
+              )}
+
+              {/* Pledge Button */}
+              <button
+                type="button"
+                onClick={handlePledge}
+                disabled={getSelectedAmount() <= 0 || isProcessing}
+                className="w-full bg-gradient-to-r from-gold-400 to-gold-500 hover:from-gold-500 hover:to-gold-600 disabled:from-gray-400 disabled:to-gray-500 text-white font-semibold py-4 px-6 rounded-lg transition-all duration-200 transform hover:scale-[1.02] disabled:transform-none disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+              >
+                {isProcessing ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                    <span>Creating Pledge...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>❤️</span>
+                    <span>{paymentsEnabled ? 'Make a Pledge' : `Pledge $${getSelectedAmount().toFixed(2)} Support`}</span>
+                  </>
+                )}
+              </button>
+            </div>
 
             {/* Security Notice */}
             <div className="mt-6 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">

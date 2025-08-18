@@ -198,6 +198,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Donations API Routes
+  app.post("/api/donations", async (req, res) => {
+    try {
+      const { db } = await import("@/lib/db");
+      const { donations, insertDonationSchema } = await import("@shared/schema");
+      
+      const result = insertDonationSchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ error: "Invalid donation data", issues: result.error.issues });
+      }
+
+      const [newDonation] = await db.insert(donations).values(result.data).returning();
+      res.status(201).json(newDonation);
+    } catch (error) {
+      console.error("Error creating donation:", error);
+      res.status(500).json({ error: "Failed to create donation" });
+    }
+  });
+
+  app.get("/api/donations", async (req, res) => {
+    try {
+      const { db } = await import("@/lib/db");
+      const { donations } = await import("@shared/schema");
+      const { desc, eq } = await import("drizzle-orm");
+      
+      const userId = req.query.userId as string;
+      
+      let query = db.select().from(donations).orderBy(desc(donations.created_at));
+      
+      // Filter by user if userId provided
+      if (userId) {
+        query = query.where(eq(donations.user_id, userId));
+      }
+
+      const userDonations = await query;
+      res.json(userDonations);
+    } catch (error) {
+      console.error("Error fetching donations:", error);
+      res.status(500).json({ error: "Failed to fetch donations" });
+    }
+  });
+
+  // Admin endpoint to get all donations
+  app.get("/api/admin/donations", async (req, res) => {
+    try {
+      const { db } = await import("@/lib/db");
+      const { donations } = await import("@shared/schema");
+      const { desc } = await import("drizzle-orm");
+      
+      const allDonations = await db.select().from(donations).orderBy(desc(donations.created_at));
+      res.json(allDonations);
+    } catch (error) {
+      console.error("Error fetching all donations:", error);
+      res.status(500).json({ error: "Failed to fetch donations" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;
