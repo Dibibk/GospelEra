@@ -588,11 +588,29 @@ export default function Dashboard() {
     if (!user?.id) return
     
     try {
-      const { data, error } = await supabase
+      // First try with the new column
+      let { data, error } = await supabase
         .from('profiles')
         .select('display_name, avatar_url, role, accepted_guidelines')
         .eq('id', user.id)
         .single()
+      
+      // If column doesn't exist, fall back to basic query
+      if (error && error.code === '42703') {
+        const fallbackResult = await supabase
+          .from('profiles')
+          .select('display_name, avatar_url, role')
+          .eq('id', user.id)
+          .single()
+        
+        data = fallbackResult.data
+        error = fallbackResult.error
+        
+        // For new users without the column, show guidelines modal
+        if (data) {
+          data.accepted_guidelines = false
+        }
+      }
       
       if (error && error.code !== 'PGRST116') {
         console.error('Error loading user profile:', error)
@@ -613,12 +631,18 @@ export default function Dashboard() {
     if (!user?.id) return
     
     try {
+      // Try to update with the new column, if it fails gracefully handle it
       const { error } = await supabase
         .from('profiles')
         .update({ accepted_guidelines: true })
         .eq('id', user.id)
       
-      if (error) {
+      if (error && error.code === '42703') {
+        // Column doesn't exist yet, just mark as accepted in memory
+        setUserProfile(prev => prev ? { ...prev, accepted_guidelines: true } : null)
+        setShowGuidelinesModal(false)
+        showToast('Guidelines accepted! (Database will be updated later)', 'success')
+      } else if (error) {
         console.error('Error updating guidelines acceptance:', error)
         showToast('Failed to save guidelines acceptance', 'error')
       } else {

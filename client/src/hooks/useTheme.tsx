@@ -32,7 +32,7 @@ export const themes = [
   },
   {
     id: 'heavenly' as Theme,
-    name: 'Heavenly Light Theme',
+    name: 'Heavenly Theme',
     description: 'Divine and uplifting',
     colors: {
       primary: '#A7C7E7',
