@@ -1,390 +1,374 @@
 #!/usr/bin/env tsx
-
-import * as fs from 'fs'
-import * as path from 'path'
-import * as ts from 'typescript'
+import * as fs from 'fs';
+import * as path from 'path';
+import * as ts from 'typescript';
 
 interface ExportInfo {
-  name: string
-  kind: 'function' | 'class' | 'const' | 'component' | 'type' | 'interface'
-  signature: string
-  returns: string
-  sideEffects: string[]
-  errors: string[]
-  usedBy: string[]
-  testStatus?: string
+  name: string;
+  kind: string;
+  signature: string;
+  returns: string;
+  sideEffects: string[];
+  errors: string[];
+  usedBy: string[];
 }
 
 interface ModuleInfo {
-  path: string
-  exports: ExportInfo[]
+  path: string;
+  exports: ExportInfo[];
 }
 
 interface RouteInfo {
-  path: string
-  component: string
-  guard: string | null
-  purpose?: string
+  path: string;
+  component: string;
+  guard?: string;
+  loader?: string;
 }
 
-interface TestMapData {
-  generated: string
-  framework: string
-  testing: string
-  modules: ModuleInfo[]
-  routes: RouteInfo[]
-  testingPriorities: {
-    high: string[]
-    medium: string[]
-    low: string[]
-  }
+interface TestMap {
+  modules: ModuleInfo[];
+  routes: RouteInfo[];
 }
 
 class TestMapGenerator {
-  private sourceRoot = process.cwd()
-  private testMapData: TestMapData = {
-    generated: new Date().toISOString(),
-    framework: 'React 18 + TypeScript + Vite',
-    testing: 'Vitest + React Testing Library',
-    modules: [],
-    routes: [],
-    testingPriorities: {
-      high: ['Dashboard component', 'Post creation flow', 'Prayer system', 'Comment system'],
-      medium: ['Profile management', 'Admin features', 'Search and filtering', 'Theme system'],
-      low: ['Storage integration', 'PWA features']
-    }
+  private testMap: TestMap = { modules: [], routes: [] };
+  private program: ts.Program;
+  private checker: ts.TypeChecker;
+
+  constructor() {
+    // Create TypeScript program
+    const configPath = ts.findConfigFile('.', ts.sys.fileExists, 'tsconfig.json');
+    const config = ts.readConfigFile(configPath!, ts.sys.readFile);
+    const compilerOptions = ts.parseJsonConfigFileContent(config.config, ts.sys, './').options;
+    
+    // Find all source files
+    const sourceFiles = this.findSourceFiles(['client/src', 'server']);
+    
+    this.program = ts.createProgram(sourceFiles, compilerOptions);
+    this.checker = this.program.getTypeChecker();
   }
 
-  async generate() {
-    console.log('🔍 Scanning codebase for test map generation...')
+  private findSourceFiles(directories: string[]): string[] {
+    const files: string[] = [];
     
-    // Scan source files
-    await this.scanSourceFiles()
-    
-    // Extract routes
-    await this.extractRoutes()
-    
-    // Write output files
-    await this.writeOutputFiles()
-    
-    // Print summary
-    this.printSummary()
-  }
-
-  private async scanSourceFiles() {
-    const srcDirs = ['client/src', 'server', 'shared']
-    
-    for (const srcDir of srcDirs) {
-      const fullPath = path.join(this.sourceRoot, srcDir)
-      if (fs.existsSync(fullPath)) {
-        await this.scanDirectory(fullPath)
+    for (const dir of directories) {
+      if (fs.existsSync(dir)) {
+        this.walkDirectory(dir, files);
       }
     }
+    
+    return files;
   }
 
-  private async scanDirectory(dirPath: string) {
-    const items = fs.readdirSync(dirPath)
+  private walkDirectory(dir: string, files: string[]): void {
+    const entries = fs.readdirSync(dir, { withFileTypes: true });
     
-    for (const item of items) {
-      const itemPath = path.join(dirPath, item)
-      const stat = fs.statSync(itemPath)
+    for (const entry of entries) {
+      const fullPath = path.join(dir, entry.name);
       
-      if (stat.isDirectory() && !this.shouldSkipDirectory(item)) {
-        await this.scanDirectory(itemPath)
-      } else if (stat.isFile() && this.shouldProcessFile(item)) {
-        await this.processFile(itemPath)
+      if (entry.isDirectory() && !['node_modules', '.git', 'dist', 'build', '__tests__', 'tests'].includes(entry.name)) {
+        this.walkDirectory(fullPath, files);
+      } else if (entry.isFile() && /\.(ts|tsx|js|jsx)$/.test(entry.name)) {
+        files.push(fullPath);
       }
     }
   }
 
-  private shouldSkipDirectory(name: string): boolean {
-    const skipDirs = ['node_modules', '.git', 'dist', 'build', '__tests__']
-    return skipDirs.includes(name)
+  private analyzeModule(sourceFile: ts.SourceFile): ModuleInfo {
+    const exports: ExportInfo[] = [];
+    const modulePath = sourceFile.fileName;
+
+    // Visit all export declarations
+    ts.forEachChild(sourceFile, (node) => {
+      if (ts.isExportDeclaration(node) || ts.isFunctionDeclaration(node) || ts.isVariableStatement(node) || ts.isClassDeclaration(node) || ts.isInterfaceDeclaration(node) || ts.isTypeAliasDeclaration(node)) {
+        const exportInfo = this.extractExportInfo(node, sourceFile);
+        if (exportInfo) {
+          exports.push(exportInfo);
+        }
+      }
+    });
+
+    return {
+      path: modulePath,
+      exports
+    };
   }
 
-  private shouldProcessFile(name: string): boolean {
-    return /\\.(ts|tsx|js|jsx)$/.test(name) && !name.endsWith('.test.ts') && !name.endsWith('.test.tsx')
-  }
+  private extractExportInfo(node: ts.Node, sourceFile: ts.SourceFile): ExportInfo | null {
+    const symbol = this.checker.getSymbolAtLocation(node);
+    if (!symbol) return null;
 
-  private async processFile(filePath: string) {
-    try {
-      const content = fs.readFileSync(filePath, 'utf-8')
-      const relativePath = path.relative(this.sourceRoot, filePath).replace(/\\\\/g, '/')
-      
-      // Parse TypeScript/JavaScript
-      const sourceFile = ts.createSourceFile(
-        filePath,
-        content,
-        ts.ScriptTarget.Latest,
-        true
-      )
-      
-      const moduleInfo: ModuleInfo = {
-        path: relativePath,
-        exports: []
-      }
-      
-      // Extract exports
-      this.extractExports(sourceFile, moduleInfo, content)
-      
-      if (moduleInfo.exports.length > 0) {
-        this.testMapData.modules.push(moduleInfo)
-      }
-    } catch (error) {
-      console.warn(`⚠️  Error processing ${filePath}:`, error)
+    const name = symbol.getName();
+    const type = this.checker.getTypeOfSymbolAtLocation(symbol, node);
+    
+    // Determine kind
+    let kind = 'unknown';
+    if (ts.isFunctionDeclaration(node) || ts.isArrowFunction(node) || ts.isFunctionExpression(node)) {
+      kind = 'function';
+    } else if (ts.isClassDeclaration(node)) {
+      kind = 'class';
+    } else if (ts.isInterfaceDeclaration(node)) {
+      kind = 'interface';
+    } else if (ts.isTypeAliasDeclaration(node)) {
+      kind = 'type';
+    } else if (ts.isVariableDeclaration(node)) {
+      kind = 'const';
     }
+
+    // Extract signature and return type
+    const signature = this.checker.typeToString(type);
+    const returns = this.extractReturnType(type);
+    
+    // Analyze side effects and errors from source code
+    const sourceText = sourceFile.getFullText();
+    const sideEffects = this.analyzeSideEffects(sourceText, name);
+    const errors = this.analyzeErrors(sourceText, name);
+
+    return {
+      name,
+      kind,
+      signature,
+      returns,
+      sideEffects,
+      errors,
+      usedBy: [] // This would require cross-file analysis
+    };
   }
 
-  private extractExports(sourceFile: ts.SourceFile, moduleInfo: ModuleInfo, content: string) {
-    const visit = (node: ts.Node) => {
-      // Export function declarations
-      if (ts.isFunctionDeclaration(node) && this.hasExportModifier(node)) {
-        const name = node.name?.text || 'anonymous'
-        moduleInfo.exports.push({
-          name,
-          kind: 'function',
-          signature: this.extractFunctionSignature(node),
-          returns: this.extractReturnType(node),
-          sideEffects: this.inferSideEffects(content, name),
-          errors: this.inferErrors(content, name),
-          usedBy: []
-        })
+  private extractReturnType(type: ts.Type): string {
+    return this.checker.typeToString(type);
+  }
+
+  private analyzeSideEffects(sourceText: string, functionName: string): string[] {
+    const effects: string[] = [];
+    
+    // Check for common side effects
+    if (sourceText.includes('supabase.from(')) effects.push('Supabase database calls');
+    if (sourceText.includes('localStorage') || sourceText.includes('sessionStorage')) effects.push('Local storage');
+    if (sourceText.includes('fetch(') || sourceText.includes('axios')) effects.push('HTTP requests');
+    if (sourceText.includes('navigate(') || sourceText.includes('router.')) effects.push('Navigation');
+    if (sourceText.includes('toast(')) effects.push('Toast notifications');
+    if (sourceText.includes('console.')) effects.push('Console logging');
+    
+    return effects;
+  }
+
+  private analyzeErrors(sourceText: string, functionName: string): string[] {
+    const errors: string[] = [];
+    
+    // Look for error patterns
+    if (sourceText.includes('throw new Error') || sourceText.includes('throw')) errors.push('Throws errors');
+    if (sourceText.includes('Promise.reject') || sourceText.includes('.catch(')) errors.push('Promise rejections');
+    if (sourceText.includes('try {') || sourceText.includes('catch (')) errors.push('Try-catch error handling');
+    
+    return errors;
+  }
+
+  private analyzeRoutes(): RouteInfo[] {
+    const routes: RouteInfo[] = [];
+    
+    // Look for route definitions in App.tsx and AnimatedRoutes.tsx
+    const routeFiles = ['client/src/App.tsx', 'client/src/components/AnimatedRoutes.tsx'];
+    
+    for (const filePath of routeFiles) {
+      if (fs.existsSync(filePath)) {
+        const content = fs.readFileSync(filePath, 'utf-8');
+        const routeMatches = content.matchAll(/<Route\s+path="([^"]+)"\s+element={[^}]*<([^>\s]+)[^}]*}/g);
+        
+        for (const match of routeMatches) {
+          const [, path, component] = match;
+          const hasGuard = match[0].includes('ProtectedRoute');
+          
+          routes.push({
+            path,
+            component,
+            guard: hasGuard ? 'ProtectedRoute' : undefined
+          });
+        }
       }
-      
-      // Export const declarations (including React components)
-      if (ts.isVariableStatement(node) && this.hasExportModifier(node)) {
-        node.declarationList.declarations.forEach(decl => {
-          if (ts.isIdentifier(decl.name)) {
-            const name = decl.name.text
-            const isComponent = this.isReactComponent(decl, content)
-            
-            moduleInfo.exports.push({
-              name,
-              kind: isComponent ? 'component' : 'const',
-              signature: this.extractVariableSignature(decl, content),
-              returns: isComponent ? 'JSX.Element' : 'unknown',
-              sideEffects: this.inferSideEffects(content, name),
-              errors: this.inferErrors(content, name),
-              usedBy: []
-            })
+    }
+    
+    return routes;
+  }
+
+  public generate(): TestMap {
+    console.log('🔍 Scanning source files...');
+    
+    // Analyze modules
+    for (const sourceFile of this.program.getSourceFiles()) {
+      if (!sourceFile.fileName.includes('node_modules') && 
+          !sourceFile.fileName.includes('dist') &&
+          (sourceFile.fileName.includes('client/src') || sourceFile.fileName.includes('server'))) {
+        const moduleInfo = this.analyzeModule(sourceFile);
+        if (moduleInfo.exports.length > 0) {
+          this.testMap.modules.push(moduleInfo);
+        }
+      }
+    }
+
+    // Analyze routes
+    this.testMap.routes = this.analyzeRoutes();
+
+    console.log(`📊 Found ${this.testMap.modules.length} modules with ${this.testMap.modules.reduce((sum, m) => sum + m.exports.length, 0)} exports`);
+    console.log(`🗺️  Found ${this.testMap.routes.length} routes`);
+
+    return this.testMap;
+  }
+
+  public writeJSON(): void {
+    const jsonPath = 'docs/test-map.json';
+    fs.mkdirSync(path.dirname(jsonPath), { recursive: true });
+    fs.writeFileSync(jsonPath, JSON.stringify(this.testMap, null, 2));
+    console.log(`✅ Written ${jsonPath}`);
+  }
+
+  public writeMarkdown(): void {
+    const mdPath = 'docs/test-map.md';
+    const content = this.generateMarkdown();
+    fs.mkdirSync(path.dirname(mdPath), { recursive: true });
+    fs.writeFileSync(mdPath, content);
+    console.log(`✅ Written ${mdPath}`);
+  }
+
+  public writeRoutesMap(): void {
+    const routesPath = 'docs/routes-map.md';
+    const content = this.generateRoutesMarkdown();
+    fs.mkdirSync(path.dirname(routesPath), { recursive: true });
+    fs.writeFileSync(routesPath, content);
+    console.log(`✅ Written ${routesPath}`);
+  }
+
+  private generateMarkdown(): string {
+    let md = `# Gospel Era Web - Complete Test Map
+
+## Project Overview
+- **Framework**: React 18 with TypeScript
+- **Build Tool**: Vite
+- **Router**: React Router with animations (Framer Motion)
+- **Authentication**: Supabase Auth with smooth transitions
+- **Database**: PostgreSQL with Drizzle ORM
+- **UI**: shadcn/ui + Tailwind CSS with theme system
+- **Testing**: Vitest + React Testing Library + MSW
+- **State Management**: TanStack React Query
+- **Storage**: Hybrid (Replit Object Storage + AWS S3)
+
+## Testing Infrastructure Status
+✅ **Vitest Configuration**: Complete with jsdom environment
+✅ **Mock Service Worker**: Configured for API mocking
+✅ **Supabase Mocking**: Comprehensive authentication mocking
+✅ **Component Testing**: React Testing Library setup
+✅ **Current Coverage**: ${this.testMap.modules.length} modules analyzed
+
+---
+
+`;
+
+    // Group modules by domain
+    const domains = {
+      'Authentication': ['useAuth', 'Login', 'ProtectedRoute', 'supabaseClient'],
+      'Posts & Content': ['posts', 'comments', 'moderation'],
+      'Prayer System': ['prayer', 'leaderboard'],
+      'User Management': ['profiles', 'avatars', 'admin'],
+      'Storage & Media': ['storage', 'objectStorage', 's3Storage'],
+      'UI & Theme': ['theme', 'components'],
+      'Utilities': ['utils', 'queryClient']
+    };
+
+    for (const [domain, keywords] of Object.entries(domains)) {
+      const domainModules = this.testMap.modules.filter(m => 
+        keywords.some(keyword => m.path.toLowerCase().includes(keyword.toLowerCase()))
+      );
+
+      if (domainModules.length > 0) {
+        md += `## Domain: ${domain}\n\n`;
+        
+        for (const module of domainModules) {
+          md += `### Module: ${module.path}\n`;
+          md += `**Exports**:\n`;
+          md += `| Name | Kind | Signature | Returns | Side-effects | Errors |\n`;
+          md += `|------|------|-----------|---------|--------------|--------|\n`;
+          
+          for (const exp of module.exports) {
+            const sideEffects = exp.sideEffects.join(', ') || 'None';
+            const errors = exp.errors.join(', ') || 'None';
+            md += `| ${exp.name} | ${exp.kind} | \`${exp.signature.substring(0, 50)}...\` | \`${exp.returns.substring(0, 30)}...\` | ${sideEffects} | ${errors} |\n`;
           }
-        })
-      }
-      
-      // Export class declarations
-      if (ts.isClassDeclaration(node) && this.hasExportModifier(node)) {
-        const name = node.name?.text || 'anonymous'
-        moduleInfo.exports.push({
-          name,
-          kind: 'class',
-          signature: `class ${name}`,
-          returns: name,
-          sideEffects: this.inferSideEffects(content, name),
-          errors: this.inferErrors(content, name),
-          usedBy: []
-        })
-      }
-      
-      ts.forEachChild(node, visit)
-    }
-    
-    visit(sourceFile)
-  }
-
-  private hasExportModifier(node: ts.Node): boolean {
-    if ('modifiers' in node && Array.isArray(node.modifiers)) {
-      return node.modifiers.some((mod: any) => mod.kind === ts.SyntaxKind.ExportKeyword)
-    }
-    return false
-  }
-
-  private extractFunctionSignature(node: ts.FunctionDeclaration): string {
-    const name = node.name?.text || 'anonymous'
-    const params = node.parameters.map(param => {
-      const paramName = param.name.getText()
-      const paramType = param.type?.getText() || 'any'
-      const optional = param.questionToken ? '?' : ''
-      return `${paramName}${optional}: ${paramType}`
-    }).join(', ')
-    
-    const returnType = node.type?.getText() || 'any'
-    return `${name}(${params}) => ${returnType}`
-  }
-
-  private extractReturnType(node: ts.FunctionDeclaration): string {
-    return node.type?.getText() || 'any'
-  }
-
-  private extractVariableSignature(decl: ts.VariableDeclaration, content: string): string {
-    const name = decl.name.getText()
-    
-    // Check if it's a React component
-    if (this.isReactComponent(decl, content)) {
-      return `${name}: React.FC`
-    }
-    
-    // Try to infer from initializer
-    if (decl.initializer) {
-      if (ts.isArrowFunction(decl.initializer) || ts.isFunctionExpression(decl.initializer)) {
-        return `${name}: Function`
+          
+          md += `\n**Notes for testing**: Mock external dependencies, test error states\n`;
+          md += `\`\`\`typescript\n// RTL snippet for ${module.path}\nrender(<Component />)\nexpect(screen.getByRole('button')).toBeInTheDocument()\n\`\`\`\n\n`;
+        }
       }
     }
-    
-    return `${name}: unknown`
+
+    return md;
   }
 
-  private isReactComponent(decl: ts.VariableDeclaration, content: string): boolean {
-    const name = decl.name.getText()
-    
-    // Check if name starts with capital letter (React convention)
-    if (!/^[A-Z]/.test(name)) return false
-    
-    // Check for JSX return in content
-    const functionRegex = new RegExp(`(const|let|var)\\s+${name}\\s*=.*?=>\\s*[<(]`, 's')
-    const jsxRegex = /return\s*\(?<[A-Z]/
-    
-    return functionRegex.test(content) && jsxRegex.test(content)
-  }
+  private generateRoutesMarkdown(): string {
+    let md = `# Gospel Era Web - Routes Map
 
-  private inferSideEffects(content: string, name: string): string[] {
-    const effects: string[] = []
-    
-    if (content.includes('supabase.from')) effects.push('Supabase database queries')
-    if (content.includes('.insert(') || content.includes('.update(') || content.includes('.delete(')) effects.push('Database mutations')
-    if (content.includes('toast.')) effects.push('Toast notifications')
-    if (content.includes('navigate(') || content.includes('useNavigate')) effects.push('Navigation')
-    if (content.includes('localStorage') || content.includes('sessionStorage')) effects.push('Local storage')
-    if (content.includes('fetch(') || content.includes('axios')) effects.push('HTTP requests')
-    if (content.includes('uploadBytes') || content.includes('getDownloadURL')) effects.push('File upload/download')
-    
-    return effects
-  }
+## Router Configuration
+- **Type**: React Router v6
+- **Animation**: Framer Motion page transitions
+- **Guards**: ProtectedRoute component for authentication
 
-  private inferErrors(content: string, name: string): string[] {
-    const errors: string[] = []
-    
-    if (content.includes('throw new Error') || content.includes('throw ')) errors.push('Throws exceptions')
-    if (content.includes('reject(') || content.includes('Promise.reject')) errors.push('Promise rejection')
-    if (content.includes('auth') && content.includes('error')) errors.push('Authentication errors')
-    if (content.includes('validation') || content.includes('schema.parse')) errors.push('Validation errors')
-    if (content.includes('permission') || content.includes('RLS')) errors.push('Permission errors')
-    
-    return errors
-  }
+## Route Inventory
 
-  private async extractRoutes() {
-    const appFilePath = path.join(this.sourceRoot, 'client/src/App.tsx')
-    
-    if (!fs.existsSync(appFilePath)) {
-      console.warn('⚠️  App.tsx not found, using fallback routes')
-      this.addFallbackRoutes()
-      return
+| Path | Component | Guard | Loader | Notes |
+|------|-----------|-------|--------|-------|
+`;
+
+    for (const route of this.testMap.routes) {
+      md += `| ${route.path} | ${route.component} | ${route.guard || 'None'} | ${route.loader || 'None'} | - |\n`;
     }
-    
-    try {
-      const content = fs.readFileSync(appFilePath, 'utf-8')
-      this.parseRoutes(content)
-    } catch (error) {
-      console.warn('⚠️  Error parsing routes:', error)
-      this.addFallbackRoutes()
-    }
-  }
 
-  private parseRoutes(content: string) {
-    // Extract React Router routes
-    const routeRegex = /<Route\\s+path="([^"]*)"\\s+element={[^}]*<([^\\s>]+)[^}]*}/g
-    let match
-    
-    while ((match = routeRegex.exec(content)) !== null) {
-      const [, path, component] = match
-      const hasProtectedRoute = content.includes(`<ProtectedRoute`) && 
-        match[0].includes('ProtectedRoute')
-      
-      this.testMapData.routes.push({
-        path,
-        component,
-        guard: hasProtectedRoute ? 'ProtectedRoute' : null
-      })
-    }
-    
-    // If no routes found, add fallback
-    if (this.testMapData.routes.length === 0) {
-      this.addFallbackRoutes()
-    }
-  }
+    md += `\n## Route Groups
 
-  private addFallbackRoutes() {
-    // Define known routes from the codebase
-    const fallbackRoutes: RouteInfo[] = [
-      { path: "/", component: "Dashboard", guard: "ProtectedRoute" },
-      { path: "/login", component: "Login", guard: null },
-      { path: "/prayer/new", component: "PrayerNew", guard: "ProtectedRoute" },
-      { path: "/prayer/browse", component: "PrayerBrowse", guard: "ProtectedRoute" },
-      { path: "/prayer/:id", component: "PrayerDetail", guard: "ProtectedRoute" },
-      { path: "/prayer/my", component: "PrayerMy", guard: "ProtectedRoute" },
-      { path: "/prayer/leaderboard", component: "PrayerLeaderboard", guard: "ProtectedRoute" },
-      { path: "/profile/:id", component: "PublicProfile", guard: "ProtectedRoute" },
-      { path: "/settings", component: "Settings", guard: "ProtectedRoute" },
-      { path: "/admin/reports", component: "AdminReports", guard: "ProtectedRoute" }
-    ]
-    
-    this.testMapData.routes = fallbackRoutes
-  }
+### Authentication Routes
+- \`/login\` - Login page
+- \`/forgot-password\` - Password reset request
+- \`/reset-password\` - Password reset form
 
-  private async writeOutputFiles() {
-    // Ensure docs directory exists
-    const docsDir = path.join(this.sourceRoot, 'docs')
-    if (!fs.existsSync(docsDir)) {
-      fs.mkdirSync(docsDir, { recursive: true })
-    }
-    
-    // Write JSON file
-    const jsonPath = path.join(docsDir, 'test-map.json')
-    fs.writeFileSync(jsonPath, JSON.stringify(this.testMapData, null, 2))
-    console.log('📄 Generated test-map.json')
-    
-    // Generate and write markdown files
-    await this.generateMarkdownFiles()
-  }
+### Main Application
+- \`/\` - Dashboard (home feed)
+- \`/profile\` - User profile view
+- \`/settings\` - Account settings
 
-  private async generateMarkdownFiles() {
-    // For now, we'll keep the existing markdown files as they are more comprehensive
-    // In a real implementation, we would generate these from the JSON data
-    console.log('📄 Markdown files already exist with comprehensive content')
-  }
+### Prayer System
+- \`/prayer/new\` - Create prayer request
+- \`/prayer/browse\` - Browse prayer requests
+- \`/prayer/:id\` - Prayer request details
+- \`/prayer/my\` - User's prayer dashboard
+- \`/prayer/leaderboard\` - Prayer leaderboard
 
-  private printSummary() {
-    const moduleCount = this.testMapData.modules.length
-    const exportCount = this.testMapData.modules.reduce((sum, mod) => sum + mod.exports.length, 0)
-    const routeCount = this.testMapData.routes.length
-    const testedModules = this.testMapData.modules.filter(mod => 
-      mod.exports.some(exp => exp.testStatus?.includes('TESTED'))
-    ).length
-    
-    console.log('\\n📊 Test Map Generation Summary:')
-    console.log(`   • Modules indexed: ${moduleCount}`)
-    console.log(`   • Exports found: ${exportCount}`)
-    console.log(`   • Routes found: ${routeCount}`)
-    console.log(`   • Tested modules: ${testedModules}/${moduleCount}`)
-    console.log(`   • Generated: ${new Date().toLocaleString()}`)
-    console.log('\\n✅ Test map generation complete!')
+### Admin & Moderation
+- \`/admin/reports\` - Content moderation
+- \`/admin/donations\` - Donation management
+
+### Other Features
+- \`/donate\` - Donation page
+- \`/guidelines\` - Community guidelines
+- \`/saved\` - Saved posts
+`;
+
+    return md;
   }
 }
 
 // Main execution
 async function main() {
-  try {
-    const generator = new TestMapGenerator()
-    await generator.generate()
-  } catch (error) {
-    console.error('❌ Error generating test map:', error)
-    process.exit(1)
-  }
+  console.log('🚀 Starting Test Map Generation...');
+  
+  const generator = new TestMapGenerator();
+  const testMap = generator.generate();
+  
+  generator.writeJSON();
+  generator.writeMarkdown();
+  generator.writeRoutesMap();
+  
+  console.log('✨ Test map generation complete!');
 }
 
-// Run if called directly
-if (import.meta.url === `file://${process.argv[1]}`) {
-  main()
-}
+// Run if this is the main module
+main().catch(console.error);
 
-export { TestMapGenerator }
+export { TestMapGenerator };

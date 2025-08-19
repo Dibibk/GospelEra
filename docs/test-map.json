@@ -1,350 +1,97 @@
 {
-  "generated": "2025-08-19T21:21:00Z",
-  "framework": "React 18 + TypeScript + Vite",
-  "testing": "Vitest + React Testing Library",
-  "modules": [
-    {
-      "path": "client/src/lib/supabaseClient.ts",
-      "exports": [
-        {
-          "name": "supabase",
-          "kind": "const",
-          "signature": "SupabaseClient",
-          "returns": "SupabaseClient",
-          "sideEffects": ["Network calls to Supabase"],
-          "errors": ["Auth errors", "Network errors"],
-          "usedBy": ["All auth flows", "Data fetching"]
-        }
-      ]
-    },
-    {
-      "path": "client/src/pages/Login.tsx",
-      "exports": [
-        {
-          "name": "Login",
-          "kind": "component",
-          "signature": "() => JSX.Element",
-          "returns": "JSX.Element",
-          "sideEffects": ["Navigation", "Auth calls", "Toast notifications"],
-          "errors": ["Form validation", "Auth errors"],
-          "usedBy": ["App router"],
-          "testStatus": "✅ TESTED - 5 passing tests"
-        }
-      ]
-    },
-    {
-      "path": "client/src/lib/posts.ts",
-      "exports": [
-        {
-          "name": "getPosts",
-          "kind": "function",
-          "signature": "(filters?: PostFilters) => Promise<{ items: Post[]; nextCursor?: string }>",
-          "returns": "Promise<{ items: Post[]; nextCursor?: string }>",
-          "sideEffects": ["supabase.from('posts').select", "toast on error"],
-          "errors": ["RLS permission errors", "Network errors"],
-          "usedBy": ["Dashboard", "PrayerBrowse"]
-        },
-        {
-          "name": "createPost",
-          "kind": "function",
-          "signature": "(data: CreatePostData) => Promise<Post>",
-          "returns": "Promise<Post>",
-          "sideEffects": ["supabase.from('posts').insert", "toast notifications", "content moderation"],
-          "errors": ["Validation errors", "Moderation rejection", "Auth errors"],
-          "usedBy": ["Dashboard", "Post creation forms"]
-        },
-        {
-          "name": "deletePost",
-          "kind": "function",
-          "signature": "(id: string) => Promise<void>",
-          "returns": "Promise<void>",
-          "sideEffects": ["supabase.from('posts').delete", "toast notifications"],
-          "errors": ["Permission errors", "Not found errors"],
-          "usedBy": ["Dashboard", "Admin components"]
-        },
-        {
-          "name": "toggleAmen",
-          "kind": "function",
-          "signature": "(postId: string) => Promise<void>",
-          "returns": "Promise<void>",
-          "sideEffects": ["supabase.from('engagement').upsert", "optimistic updates"],
-          "errors": ["Auth errors", "Rate limiting"],
-          "usedBy": ["Dashboard", "Post components"]
-        },
-        {
-          "name": "toggleBookmark",
-          "kind": "function",
-          "signature": "(postId: string) => Promise<void>",
-          "returns": "Promise<void>",
-          "sideEffects": ["supabase.from('engagement').upsert", "optimistic updates"],
-          "errors": ["Auth errors", "Rate limiting"],
-          "usedBy": ["Dashboard", "SavedPosts"]
-        }
-      ]
-    },
-    {
-      "path": "client/src/lib/comments.ts",
-      "exports": [
-        {
-          "name": "getComments",
-          "kind": "function",
-          "signature": "(postId: string) => Promise<Comment[]>",
-          "returns": "Promise<Comment[]>",
-          "sideEffects": ["supabase.from('comments').select"],
-          "errors": ["RLS permission errors"],
-          "usedBy": ["Dashboard", "Comment components"]
-        },
-        {
-          "name": "createComment",
-          "kind": "function",
-          "signature": "(data: CreateCommentData) => Promise<Comment>",
-          "returns": "Promise<Comment>",
-          "sideEffects": ["supabase.from('comments').insert", "toast notifications", "content moderation"],
-          "errors": ["Validation errors", "Moderation rejection", "Auth errors"],
-          "usedBy": ["Dashboard", "Comment forms"]
-        },
-        {
-          "name": "deleteComment",
-          "kind": "function",
-          "signature": "(id: string) => Promise<void>",
-          "returns": "Promise<void>",
-          "sideEffects": ["supabase.from('comments').update", "soft delete", "toast notifications"],
-          "errors": ["Permission errors", "Not found errors"],
-          "usedBy": ["Comment components", "Admin components"]
-        }
-      ]
-    },
-    {
-      "path": "client/src/lib/prayer.ts",
-      "exports": [
-        {
-          "name": "createPrayerRequest",
-          "kind": "function",
-          "signature": "(data: CreatePrayerRequestData) => Promise<PrayerRequest>",
-          "returns": "Promise<PrayerRequest>",
-          "sideEffects": ["supabase.from('prayer_requests').insert", "toast notifications", "content moderation"],
-          "errors": ["Validation errors", "Moderation rejection", "Auth errors"],
-          "usedBy": ["PrayerNew"]
-        },
-        {
-          "name": "getPrayerRequests",
-          "kind": "function",
-          "signature": "(filters?: PrayerFilters) => Promise<PrayerRequest[]>",
-          "returns": "Promise<PrayerRequest[]>",
-          "sideEffects": ["supabase.from('prayer_requests').select"],
-          "errors": ["RLS permission errors"],
-          "usedBy": ["PrayerBrowse", "PrayerMy"]
-        },
-        {
-          "name": "commitToPrayer",
-          "kind": "function",
-          "signature": "(requestId: string) => Promise<void>",
-          "returns": "Promise<void>",
-          "sideEffects": ["supabase.from('prayer_commitments').insert", "toast notifications"],
-          "errors": ["Auth errors", "Duplicate commitment"],
-          "usedBy": ["PrayerDetail", "PrayerBrowse"]
-        },
-        {
-          "name": "confirmPrayed",
-          "kind": "function",
-          "signature": "(commitmentId: string) => Promise<void>",
-          "returns": "Promise<void>",
-          "sideEffects": ["supabase.from('prayer_commitments').update", "streak updates", "leaderboard updates"],
-          "errors": ["Permission errors", "Already confirmed"],
-          "usedBy": ["PrayerMy", "Dashboard"]
-        },
-        {
-          "name": "getPrayerLeaderboard",
-          "kind": "function",
-          "signature": "(timeframe: 'week' | 'month' | 'all') => Promise<LeaderboardEntry[]>",
-          "returns": "Promise<LeaderboardEntry[]>",
-          "sideEffects": ["supabase RPC calls", "realtime subscriptions"],
-          "errors": ["None"],
-          "usedBy": ["PrayerLeaderboard"]
-        },
-        {
-          "name": "getUserPrayerStats",
-          "kind": "function",
-          "signature": "(userId: string) => Promise<PrayerStats>",
-          "returns": "Promise<PrayerStats>",
-          "sideEffects": ["supabase.from('prayer_commitments').select", "streak calculations"],
-          "errors": ["RLS permission errors"],
-          "usedBy": ["Profile", "PrayerMy"]
-        }
-      ]
-    },
-    {
-      "path": "client/src/lib/profiles.ts",
-      "exports": [
-        {
-          "name": "getProfile",
-          "kind": "function",
-          "signature": "(userId: string) => Promise<Profile>",
-          "returns": "Promise<Profile>",
-          "sideEffects": ["supabase.from('profiles').select"],
-          "errors": ["Not found errors", "RLS permission errors"],
-          "usedBy": ["Profile", "PublicProfile", "Settings"]
-        },
-        {
-          "name": "updateProfile",
-          "kind": "function",
-          "signature": "(data: UpdateProfileData) => Promise<Profile>",
-          "returns": "Promise<Profile>",
-          "sideEffects": ["supabase.from('profiles').update", "toast notifications"],
-          "errors": ["Validation errors", "Permission errors"],
-          "usedBy": ["Settings"]
-        },
-        {
-          "name": "uploadAvatar",
-          "kind": "function",
-          "signature": "(file: File) => Promise<string>",
-          "returns": "Promise<string>",
-          "sideEffects": ["Object storage upload", "supabase profile update"],
-          "errors": ["File size errors", "Upload errors", "Format errors"],
-          "usedBy": ["Settings", "Profile components"]
-        }
-      ]
-    },
-    {
-      "path": "client/src/lib/reports.ts",
-      "exports": [
-        {
-          "name": "createReport",
-          "kind": "function",
-          "signature": "(data: CreateReportData) => Promise<Report>",
-          "returns": "Promise<Report>",
-          "sideEffects": ["supabase.from('reports').insert", "toast notifications"],
-          "errors": ["Validation errors", "Duplicate report errors"],
-          "usedBy": ["Report modals", "Post components"]
-        },
-        {
-          "name": "getReports",
-          "kind": "function",
-          "signature": "(filters?: ReportFilters) => Promise<Report[]>",
-          "returns": "Promise<Report[]>",
-          "sideEffects": ["supabase.from('reports').select"],
-          "errors": ["Admin permission errors"],
-          "usedBy": ["AdminReports"]
-        },
-        {
-          "name": "resolveReport",
-          "kind": "function",
-          "signature": "(id: string, action: ReportAction) => Promise<void>",
-          "returns": "Promise<void>",
-          "sideEffects": ["supabase.from('reports').update", "user actions", "content actions"],
-          "errors": ["Permission errors", "Already resolved errors"],
-          "usedBy": ["AdminReports"]
-        }
-      ]
-    },
-    {
-      "path": "shared/moderation.ts",
-      "exports": [
-        {
-          "name": "moderateContent",
-          "kind": "function",
-          "signature": "(content: string, type: ContentType) => Promise<ModerationResult>",
-          "returns": "Promise<ModerationResult>",
-          "sideEffects": ["Content analysis", "Blocked terms check", "Christian terms detection"],
-          "errors": ["None"],
-          "usedBy": ["Post creation", "Comment creation", "Prayer requests"]
-        },
-        {
-          "name": "isContentAppropriate",
-          "kind": "function",
-          "signature": "(content: string) => boolean",
-          "returns": "boolean",
-          "sideEffects": ["None"],
-          "errors": ["None"],
-          "usedBy": ["Form validation", "Real-time feedback"]
-        }
-      ]
-    },
-    {
-      "path": "server/objectStorage.ts",
-      "exports": [
-        {
-          "name": "ObjectStorageService",
-          "kind": "class",
-          "signature": "constructor()",
-          "returns": "ObjectStorageService",
-          "sideEffects": ["Google Cloud Storage client initialization"],
-          "errors": ["Configuration errors", "Auth errors"],
-          "usedBy": ["Server routes", "File upload endpoints"]
-        },
-        {
-          "name": "getObjectEntityUploadURL",
-          "kind": "method",
-          "signature": "() => Promise<string>",
-          "returns": "Promise<string>",
-          "sideEffects": ["Signed URL generation", "UUID generation"],
-          "errors": ["Auth errors", "Configuration errors"],
-          "usedBy": ["Upload endpoints"]
-        },
-        {
-          "name": "downloadObject",
-          "kind": "method",
-          "signature": "(file: File, res: Response) => Promise<void>",
-          "returns": "Promise<void>",
-          "sideEffects": ["File streaming", "Response headers"],
-          "errors": ["Not found errors", "Stream errors"],
-          "usedBy": ["File serving endpoints"]
-        }
-      ]
-    },
-    {
-      "path": "client/src/routes/ProtectedRoute.tsx",
-      "exports": [
-        {
-          "name": "ProtectedRoute",
-          "kind": "component",
-          "signature": "({ children }: { children: React.ReactNode }) => JSX.Element",
-          "returns": "JSX.Element",
-          "sideEffects": ["Navigation to login", "Session checks"],
-          "errors": ["None"],
-          "usedBy": ["App router"],
-          "testStatus": "✅ TESTED - 2 passing tests"
-        }
-      ]
-    }
-  ],
+  "modules": [],
   "routes": [
-    { "path": "/", "component": "Dashboard", "guard": "ProtectedRoute" },
-    { "path": "/login", "component": "Login", "guard": null },
-    { "path": "/register", "component": "Register", "guard": null },
-    { "path": "/forgot-password", "component": "ForgotPassword", "guard": null },
-    { "path": "/reset-password", "component": "ResetPassword", "guard": null },
-    { "path": "/prayer/new", "component": "PrayerNew", "guard": "ProtectedRoute" },
-    { "path": "/prayer/browse", "component": "PrayerBrowse", "guard": "ProtectedRoute" },
-    { "path": "/prayer/:id", "component": "PrayerDetail", "guard": "ProtectedRoute" },
-    { "path": "/prayer/my", "component": "PrayerMy", "guard": "ProtectedRoute" },
-    { "path": "/prayer/leaderboard", "component": "PrayerLeaderboard", "guard": "ProtectedRoute" },
-    { "path": "/profile/:id", "component": "PublicProfile", "guard": "ProtectedRoute" },
-    { "path": "/profile", "component": "Profile", "guard": "ProtectedRoute" },
-    { "path": "/settings", "component": "Settings", "guard": "ProtectedRoute" },
-    { "path": "/saved", "component": "SavedPosts", "guard": "ProtectedRoute" },
-    { "path": "/donate", "component": "Donate", "guard": "ProtectedRoute" },
-    { "path": "/donate/thanks", "component": "DonateThanks", "guard": "ProtectedRoute" },
-    { "path": "/guidelines", "component": "Guidelines", "guard": "ProtectedRoute" },
-    { "path": "/admin/donations", "component": "AdminDonations", "guard": "ProtectedRoute" },
-    { "path": "/admin/reports", "component": "AdminReports", "guard": "ProtectedRoute" }
-  ],
-  "testingPriorities": {
-    "high": [
-      "Dashboard component",
-      "Post creation flow",
-      "Prayer system",
-      "Comment system"
-    ],
-    "medium": [
-      "Profile management",
-      "Admin features",
-      "Search and filtering",
-      "Theme system"
-    ],
-    "low": [
-      "Storage integration",
-      "PWA features"
-    ]
-  }
+    {
+      "path": "/login",
+      "component": "/PageTransition"
+    },
+    {
+      "path": "/forgot-password",
+      "component": "/PageTransition"
+    },
+    {
+      "path": "/reset-password",
+      "component": "/PageTransition"
+    },
+    {
+      "path": "/",
+      "component": "/ProtectedRoute",
+      "guard": "ProtectedRoute"
+    },
+    {
+      "path": "/dashboard",
+      "component": "/ProtectedRoute",
+      "guard": "ProtectedRoute"
+    },
+    {
+      "path": "/profile",
+      "component": "/ProtectedRoute",
+      "guard": "ProtectedRoute"
+    },
+    {
+      "path": "/profile/:id",
+      "component": "/ProtectedRoute",
+      "guard": "ProtectedRoute"
+    },
+    {
+      "path": "/settings",
+      "component": "/ProtectedRoute",
+      "guard": "ProtectedRoute"
+    },
+    {
+      "path": "/saved",
+      "component": "/ProtectedRoute",
+      "guard": "ProtectedRoute"
+    },
+    {
+      "path": "/admin/reports",
+      "component": "/ProtectedRoute",
+      "guard": "ProtectedRoute"
+    },
+    {
+      "path": "/guidelines",
+      "component": "/ProtectedRoute",
+      "guard": "ProtectedRoute"
+    },
+    {
+      "path": "/donate",
+      "component": "/ProtectedRoute",
+      "guard": "ProtectedRoute"
+    },
+    {
+      "path": "/donate/thanks",
+      "component": "/ProtectedRoute",
+      "guard": "ProtectedRoute"
+    },
+    {
+      "path": "/admin/donations",
+      "component": "/ProtectedRoute",
+      "guard": "ProtectedRoute"
+    },
+    {
+      "path": "/prayer/new",
+      "component": "/ProtectedRoute",
+      "guard": "ProtectedRoute"
+    },
+    {
+      "path": "/prayer/browse",
+      "component": "/ProtectedRoute",
+      "guard": "ProtectedRoute"
+    },
+    {
+      "path": "/prayer/:id",
+      "component": "/ProtectedRoute",
+      "guard": "ProtectedRoute"
+    },
+    {
+      "path": "/prayer/my",
+      "component": "/ProtectedRoute",
+      "guard": "ProtectedRoute"
+    },
+    {
+      "path": "/prayer/leaderboard",
+      "component": "/ProtectedRoute",
+      "guard": "ProtectedRoute"
+    }
+  ]
 }
