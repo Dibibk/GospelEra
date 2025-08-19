@@ -43,6 +43,7 @@ interface AuthContextType {
   user: User | null
   session: Session | null
   loading: boolean
+  authTransition: 'idle' | 'signing-in' | 'signing-out' | 'signing-up'
   signIn: (email: string, password: string) => Promise<{ error: AuthError | null }>
   signUp: (email: string, password: string) => Promise<{ error: AuthError | null }>
   signOut: () => Promise<{ error: AuthError | null }>
@@ -56,6 +57,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [session, setSession] = useState<Session | null>(null)
   const [loading, setLoading] = useState(true)
+  const [authTransition, setAuthTransition] = useState<'idle' | 'signing-in' | 'signing-out' | 'signing-up'>('idle')
 
   useEffect(() => {
     // Get initial session
@@ -78,12 +80,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   const signIn = async (email: string, password: string) => {
+    setAuthTransition('signing-in')
     const { error } = await supabase.auth.signInWithPassword({ email, password })
+    
+    // Add a slight delay for smooth animation
+    if (!error) {
+      await new Promise(resolve => setTimeout(resolve, 500))
+    }
+    
+    setAuthTransition('idle')
     return { error }
   }
 
   const signUp = async (email: string, password: string) => {
+    setAuthTransition('signing-up')
     const { error } = await supabase.auth.signUp({ email, password })
+    
+    // Add a slight delay for smooth animation
+    if (!error) {
+      await new Promise(resolve => setTimeout(resolve, 500))
+    }
+    
+    setAuthTransition('idle')
     return { error }
   }
 
