@@ -106,7 +106,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const signOut = async () => {
+    setAuthTransition('signing-out')
     const { error } = await supabase.auth.signOut()
+    
+    // Add a slight delay for smooth animation
+    if (!error) {
+      await new Promise(resolve => setTimeout(resolve, 300))
+    }
+    
+    setAuthTransition('idle')
     return { error }
   }
 
@@ -129,6 +137,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     user,
     session,
     loading,
+    authTransition,
     signIn,
     signUp,
     signOut,

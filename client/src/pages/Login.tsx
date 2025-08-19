@@ -1,9 +1,50 @@
 import { useState } from 'react'
 import { Navigate, Link } from 'react-router-dom'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../hooks/useAuth'
 
+const pageVariants = {
+  initial: { opacity: 0, y: 30 },
+  animate: { 
+    opacity: 1, 
+    y: 0,
+    transition: {
+      duration: 0.7,
+      ease: [0.22, 1, 0.36, 1],
+      staggerChildren: 0.1
+    }
+  },
+  exit: { 
+    opacity: 0, 
+    y: -30,
+    transition: { duration: 0.4 }
+  }
+}
+
+const itemVariants = {
+  initial: { opacity: 0, y: 20 },
+  animate: { 
+    opacity: 1, 
+    y: 0,
+    transition: { duration: 0.5 }
+  }
+}
+
+const formVariants = {
+  initial: { opacity: 0, scale: 0.95 },
+  animate: { 
+    opacity: 1, 
+    scale: 1,
+    transition: { 
+      duration: 0.6,
+      ease: "easeOut",
+      delay: 0.2 
+    }
+  }
+}
+
 export default function Login() {
-  const { user, signIn, signUp } = useAuth()
+  const { user, signIn, signUp, authTransition } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
@@ -14,7 +55,7 @@ export default function Login() {
   const [isSignUp, setIsSignUp] = useState(false)
   const [faithAffirmed, setFaithAffirmed] = useState(false)
 
-  // Redirect if already authenticated
+  // Redirect if already authenticated with animation
   if (user) {
     return <Navigate to="/" replace />
   }
@@ -46,9 +87,15 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <motion.div 
+      variants={pageVariants}
+      initial="initial"
+      animate="animate"
+      exit="exit"
+      className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8"
+    >
       <div className="max-w-md w-full space-y-8">
-        <div className="text-center">
+        <motion.div variants={itemVariants} className="text-center">
           <div className="mx-auto h-16 w-16 bg-gradient-to-br from-primary-600 to-purple-600 rounded-xl flex items-center justify-center mb-6 shadow-lg">
             <svg className="h-8 w-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
@@ -60,9 +107,13 @@ export default function Login() {
           <p className="text-primary-600 font-medium">
             {isSignUp ? 'Create your account to share faith and fellowship' : 'Sign in to continue your spiritual journey'}
           </p>
-        </div>
+        </motion.div>
 
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+        <motion.form 
+          variants={formVariants}
+          className="mt-8 space-y-6" 
+          onSubmit={handleSubmit}
+        >
           <div className="bg-gradient-to-br from-white via-primary-50/30 to-purple-50/30 rounded-2xl p-8 shadow-xl border border-primary-200/50 backdrop-blur-sm">
             <div className="space-y-6">
               <div>
@@ -194,25 +245,47 @@ export default function Login() {
           )}
 
           <div>
-            <button
+            <motion.button
               type="submit"
-              disabled={loading || (isSignUp && !faithAffirmed)}
-              className="w-full flex justify-center items-center py-4 px-6 border border-transparent rounded-xl shadow-lg text-base font-bold text-white bg-gradient-to-r from-primary-600 via-purple-600 to-primary-600 hover:from-primary-700 hover:via-purple-700 hover:to-primary-700 focus:outline-none focus:ring-4 focus:ring-gold-500/50 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 transform hover:scale-[1.02] hover:shadow-xl"
+              disabled={loading || authTransition !== 'idle' || (isSignUp && !faithAffirmed)}
+              whileHover={!loading && authTransition === 'idle' ? { scale: 1.02 } : {}}
+              whileTap={!loading && authTransition === 'idle' ? { scale: 0.98 } : {}}
+              transition={{ duration: 0.2, ease: "easeOut" }}
+              className="w-full flex justify-center items-center py-4 px-6 border border-transparent rounded-xl shadow-lg text-base font-bold text-white bg-gradient-to-r from-primary-600 via-purple-600 to-primary-600 hover:from-primary-700 hover:via-purple-700 hover:to-primary-700 focus:outline-none focus:ring-4 focus:ring-gold-500/50 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 hover:shadow-xl"
             >
-              {loading ? (
-                <>
-                  <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent mr-3"></div>
-                  {isSignUp ? 'Creating Account...' : 'Signing In...'}
-                </>
-              ) : (
-                <>
-                  <svg className="h-5 w-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={isSignUp ? "M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" : "M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"} />
-                  </svg>
-                  {isSignUp ? 'Join Community' : 'Enter Dashboard'}
-                </>
-              )}
-            </button>
+              <AnimatePresence mode="wait">
+                {loading || authTransition !== 'idle' ? (
+                  <motion.div
+                    key="loading"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="flex items-center"
+                  >
+                    <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent mr-3"></div>
+                    {authTransition === 'signing-in' ? 'Signing you in...' :
+                     authTransition === 'signing-up' ? 'Creating account...' :
+                     authTransition === 'signing-out' ? 'Signing out...' :
+                     isSignUp ? 'Creating Account...' : 'Signing In...'}
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key="normal"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="flex items-center"
+                  >
+                    <svg className="h-5 w-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={isSignUp ? "M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" : "M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"} />
+                    </svg>
+                    {isSignUp ? 'Join Community' : 'Enter Dashboard'}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.button>
           </div>
 
           <div className="text-center">
@@ -233,8 +306,8 @@ export default function Login() {
               </button>
             </p>
           </div>
-        </form>
+        </motion.form>
       </div>
-    </div>
+    </motion.div>
   )
 }
