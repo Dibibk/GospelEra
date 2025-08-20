@@ -922,10 +922,9 @@ export default function Dashboard() {
             <div className="flex items-center">
               <div className="flex-shrink-0">
                 <div className="h-12 w-12 bg-gradient-to-br from-purple-600 to-indigo-700 rounded-xl flex items-center justify-center shadow-lg animate-glow">
-                  {/* Glowing Cross/Book Icon */}
-                  <svg className="h-7 w-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 3v18m9-9H3" />
-                    <circle cx="12" cy="12" r="2" fill="currentColor" opacity="0.6" />
+                  {/* Glowing Cross Icon */}
+                  <svg className="h-7 w-7 text-white" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M13.5 2h-3v7.5H3v3h7.5V22h3v-9.5H22v-3h-8.5V2z" />
                   </svg>
                 </div>
               </div>
