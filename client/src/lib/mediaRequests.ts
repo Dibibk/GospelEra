@@ -82,7 +82,19 @@ export async function listMyRequests() {
  */
 export async function listAllRequests(): Promise<{ data: MediaRequestWithUser[] | null, error: any }> {
   try {
-    const response = await fetch('/api/admin/media-requests')
+    // Get current user for authentication
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    
+    if (authError || !user) {
+      return { data: null, error: { message: 'Authentication required' } }
+    }
+
+    const response = await fetch('/api/admin/media-requests', {
+      headers: {
+        'Content-Type': 'application/json',
+        'x-user-id': user.id,
+      }
+    })
     
     if (!response.ok) {
       return { data: null, error: { message: 'Failed to fetch requests' } }
@@ -100,10 +112,18 @@ export async function listAllRequests(): Promise<{ data: MediaRequestWithUser[] 
  */
 export async function approveMediaRequest(requestId: number) {
   try {
+    // Get current user for authentication
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    
+    if (authError || !user) {
+      return { data: null, error: { message: 'Admin authentication required' } }
+    }
+
     const response = await fetch(`/api/admin/media-requests/${requestId}/approve`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
+        'x-user-id': user.id,
       }
     })
 
@@ -124,10 +144,18 @@ export async function approveMediaRequest(requestId: number) {
  */
 export async function denyMediaRequest(requestId: number) {
   try {
+    // Get current user for authentication
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    
+    if (authError || !user) {
+      return { data: null, error: { message: 'Admin authentication required' } }
+    }
+
     const response = await fetch(`/api/admin/media-requests/${requestId}/deny`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
+        'x-user-id': user.id,
       }
     })
 

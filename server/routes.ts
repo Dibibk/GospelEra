@@ -360,8 +360,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Invalid request ID" });
       }
       
-      // TODO: Get admin ID from authentication middleware and verify admin role
-      const adminId = req.headers['user-id'] as string || 'admin-user-id';
+      // Get admin ID from authentication headers
+      const adminId = req.headers['x-user-id'] as string || req.headers['user-id'] as string;
+      
+      if (!adminId) {
+        return res.status(401).json({ error: "Admin authentication required" });
+      }
       
       // Get the request to find the user
       const [request] = await db.select()
@@ -408,8 +412,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Invalid request ID" });
       }
       
-      // TODO: Get admin ID from authentication middleware and verify admin role
-      const adminId = req.headers['user-id'] as string || 'admin-user-id';
+      // Get admin ID from authentication headers
+      const adminId = req.headers['x-user-id'] as string || req.headers['user-id'] as string;
+      
+      if (!adminId) {
+        return res.status(401).json({ error: "Admin authentication required" });
+      }
       
       await db.update(mediaRequests)
         .set({
