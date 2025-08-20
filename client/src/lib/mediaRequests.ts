@@ -19,10 +19,18 @@ export interface MediaRequestWithUser extends MediaRequest {
  */
 export async function requestMediaAccess(reason: string) {
   try {
+    // Get current user for authentication
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    
+    if (authError || !user) {
+      return { data: null, error: { message: 'You must be logged in to request media access' } }
+    }
+
     const response = await fetch('/api/media-requests', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'x-user-id': user.id,
       },
       body: JSON.stringify({ reason })
     })
@@ -43,19 +51,30 @@ export async function requestMediaAccess(reason: string) {
  * Get the current user's media requests
  */
 export async function listMyRequests() {
-  const { data: { user }, error: authError } = await supabase.auth.getUser()
-  
-  if (authError || !user) {
-    return { data: null, error: { message: 'You must be logged in to view requests' } }
+  try {
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    
+    if (authError || !user) {
+      return { data: null, error: { message: 'You must be logged in to view requests' } }
+    }
+
+    const response = await fetch('/api/media-requests/my', {
+      headers: {
+        'Content-Type': 'application/json',
+        'x-user-id': user.id,
+      }
+    })
+
+    if (!response.ok) {
+      const error = await response.json()
+      return { data: null, error }
+    }
+
+    const data = await response.json()
+    return { data, error: null }
+  } catch (error) {
+    return { data: null, error }
   }
-
-  const { data, error } = await supabase
-    .from('media_requests')
-    .select('*')
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: false })
-
-  return { data, error }
 }
 
 /**
@@ -129,7 +148,18 @@ export async function denyMediaRequest(requestId: number) {
  */
 export async function checkMediaPermission(userId?: string) {
   try {
-    const url = userId ? `/api/media-permission/${userId}` : '/api/media-permission'
+    // Get current user for authentication if userId not provided
+    if (!userId) {
+      const { data: { user }, error: authError } = await supabase.auth.getUser()
+      
+      if (authError || !user) {
+        return { hasPermission: false, error: 'Authentication required' }
+      }
+      
+      userId = user.id
+    }
+    
+    const url = `/api/media-permission/${userId}`
     
     // Add client-side timeout for faster user experience
     const controller = new AbortController()
@@ -137,7 +167,10 @@ export async function checkMediaPermission(userId?: string) {
     
     const response = await fetch(url, {
       signal: controller.signal,
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 
+        'Content-Type': 'application/json',
+        'x-user-id': userId
+      }
     })
     
     clearTimeout(timeoutId)

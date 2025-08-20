@@ -12,9 +12,23 @@ export async function apiRequest(
   url: string,
   data?: unknown | undefined,
 ): Promise<Response> {
+  // Get current user for authentication
+  const { supabase } = await import('./supabaseClient')
+  const { data: { user } } = await supabase.auth.getUser()
+  
+  const headers: Record<string, string> = {}
+  
+  if (data) {
+    headers["Content-Type"] = "application/json"
+  }
+  
+  if (user?.id) {
+    headers["x-user-id"] = user.id
+  }
+
   const res = await fetch(url, {
     method,
-    headers: data ? { "Content-Type": "application/json" } : {},
+    headers,
     body: data ? JSON.stringify(data) : undefined,
     credentials: "include",
   });

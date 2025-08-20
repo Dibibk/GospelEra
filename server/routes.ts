@@ -267,9 +267,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Reason is required" });
       }
       
-      // TODO: Get user ID from authentication middleware
-      // For now, using a placeholder - this should be replaced with actual auth
-      const userId = req.headers['user-id'] as string || 'test-user-id';
+      // Get user ID from headers (set by frontend auth)
+      const userId = req.headers['x-user-id'] as string || req.headers['user-id'] as string;
+      
+      if (!userId) {
+        return res.status(401).json({ error: "User authentication required" });
+      }
       
       const [newRequest] = await db.insert(mediaRequests).values({
         user_id: userId,
@@ -291,8 +294,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { mediaRequests } = await import("@shared/schema");
       const { eq, desc } = await import("drizzle-orm");
       
-      // TODO: Get user ID from authentication middleware
-      const userId = req.headers['user-id'] as string || 'test-user-id';
+      // Get user ID from headers (set by frontend auth)  
+      const userId = req.headers['x-user-id'] as string || req.headers['user-id'] as string;
+      
+      if (!userId) {
+        return res.status(401).json({ error: "User authentication required" });
+      }
       
       const userRequests = await db.select()
         .from(mediaRequests)
@@ -430,7 +437,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { eq } = await import("drizzle-orm");
       
       // Use provided userId or get from auth
-      const userId = req.params.userId || (req.headers['user-id'] as string) || 'test-user-id';
+      const userId = req.params.userId || (req.headers['user-id'] as string) || req.headers['x-user-id'] as string;
       
       // Add timeout promise to race against database query
       const timeoutPromise = new Promise((_, reject) => 
