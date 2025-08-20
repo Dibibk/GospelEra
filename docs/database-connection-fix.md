@@ -9,11 +9,18 @@ PostgresError: Tenant or user not found
 
 ## Fix Steps:
 
-### 1. Check Your DATABASE_URL Format
-Make sure your DATABASE_URL in Replit Secrets looks exactly like this:
+### 1. Fix DATABASE_URL Format (CRITICAL)
+Based on your screenshot, change your DATABASE_URL from:
 ```
-postgresql://postgres.zvmvyixghcqxpnalmrbj:[YOUR-ACTUAL-PASSWORD]@aws-0-us-west-1.pooler.supabase.com:5432/postgres
+postgresql://postgres.zvmvyixghcqxpnalmrbj:StartupDb1@013aws-0-us-...
 ```
+
+To this format (notice the difference):
+```
+postgresql://postgres:[YOUR-PASSWORD]@db.zvmvyixghcqxpnalmrbj.supabase.co:5432/postgres
+```
+
+The issue: Your URL has `postgres.zvmvyixghcqxpnalmrbj` but it should be just `postgres` as the username.
 
 ### 2. If Still Getting "Tenant or user not found":
 
