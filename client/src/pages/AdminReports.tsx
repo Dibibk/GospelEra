@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { ArrowLeft, Eye, Ban, UserCheck, MoreVertical, Search, Filter, Heart, X, Users, CheckCircle } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
-import { listReports, updateReportStatus, banUser, unbanUser, getUserProfile, getBannedUsers } from '../lib/admin.js'
+// Admin functions moved inline - admin.js file doesn't exist
 import { supabase } from '../lib/supabaseClient'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
