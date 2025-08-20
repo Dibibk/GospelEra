@@ -13,7 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 
 export default function AdminMediaRequests() {
   const { user } = useAuth()
-  const { isAdmin } = useRole()
+  const { isAdmin, role } = useRole()
   const [requests, setRequests] = useState<MediaRequestWithUser[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -110,6 +110,9 @@ export default function AdminMediaRequests() {
       minute: '2-digit'
     })
   }
+
+  // Debug: Log role information
+  console.log('Admin check:', { userId: user?.id, isAdmin, role })
 
   // Check admin access
   if (!isAdmin) {

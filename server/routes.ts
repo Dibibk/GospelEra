@@ -136,7 +136,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Prayer Request Routes
   app.get("/api/prayer-requests", async (req, res) => {
     try {
-      const { db } = await import("@/lib/db");
+      const { db } = await import("../client/src/lib/db");
       const { prayerRequests } = await import("@shared/schema");
       const { desc } = await import("drizzle-orm");
       
@@ -150,7 +150,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/prayer-requests", async (req, res) => {
     try {
-      const { db } = await import("@/lib/db");
+      const { db } = await import("../client/src/lib/db");
       const { prayerRequests, insertPrayerRequestSchema } = await import("@shared/schema");
       
       const result = insertPrayerRequestSchema.safeParse(req.body);
@@ -168,28 +168,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/prayer-requests/:id/pray", async (req, res) => {
     try {
-      const { db } = await import("@/lib/db");
-      const { prayerRequests, prayerResponses } = await import("@shared/schema");
+      const { db } = await import("../client/src/lib/db");
+      const { prayerRequests, prayerActivity } = await import("@shared/schema");
       const { eq, sql } = await import("drizzle-orm");
       
       const requestId = req.params.id;
       const userId = req.body.userId || 'anonymous'; // Allow anonymous prayers
       
-      // Insert prayer response
-      await db.insert(prayerResponses).values({
-        prayer_request_id: requestId,
-        user_id: userId
+      // Insert prayer activity
+      await db.insert(prayerActivity).values({
+        request_id: parseInt(requestId),
+        kind: 'prayed',
+        actor: userId
       });
 
-      // Increment prayed count
-      await db.update(prayerRequests)
-        .set({ prayed_count: sql`${prayerRequests.prayed_count} + 1` })
-        .where(eq(prayerRequests.id, requestId));
+      // Get updated request (no update needed, just fetch)
+      // Prayer requests table doesn't have updated_at field
 
       // Get updated request
       const [updatedRequest] = await db.select()
         .from(prayerRequests)
-        .where(eq(prayerRequests.id, requestId));
+        .where(eq(prayerRequests.id, parseInt(requestId)));
 
       res.json(updatedRequest);
     } catch (error) {
@@ -201,7 +200,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Donations API Routes
   app.post("/api/donations", async (req, res) => {
     try {
-      const { db } = await import("@/lib/db");
+      const { db } = await import("../client/src/lib/db");
       const { donations, insertDonationSchema } = await import("@shared/schema");
       
       const result = insertDonationSchema.safeParse(req.body);
@@ -219,7 +218,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/donations", async (req, res) => {
     try {
-      const { db } = await import("@/lib/db");
+      const { db } = await import("../client/src/lib/db");
       const { donations } = await import("@shared/schema");
       const { desc, eq } = await import("drizzle-orm");
       
@@ -229,7 +228,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Filter by user if userId provided
       if (userId) {
-        query = query.where(eq(donations.user_id, userId));
+        query = query.where(eq(donations.user_id, userId)) as any;
       }
 
       const userDonations = await query;
@@ -243,7 +242,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Admin endpoint to get all donations
   app.get("/api/admin/donations", async (req, res) => {
     try {
-      const { db } = await import("@/lib/db");
+      const { db } = await import("../client/src/lib/db");
       const { donations } = await import("@shared/schema");
       const { desc } = await import("drizzle-orm");
       
@@ -259,7 +258,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // POST /api/media-requests - Submit a media access request
   app.post("/api/media-requests", async (req, res) => {
     try {
-      const { db } = await import("@/lib/db");
+      const { db } = await import("../client/src/lib/db");
       const { mediaRequests } = await import("@shared/schema");
       
       const { reason } = req.body;
@@ -288,7 +287,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GET /api/media-requests/my - Get current user's requests
   app.get("/api/media-requests/my", async (req, res) => {
     try {
-      const { db } = await import("@/lib/db");
+      const { db } = await import("../client/src/lib/db");
       const { mediaRequests } = await import("@shared/schema");
       const { eq, desc } = await import("drizzle-orm");
       
@@ -310,7 +309,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GET /api/admin/media-requests - Get all media requests (admin only)
   app.get("/api/admin/media-requests", async (req, res) => {
     try {
-      const { db } = await import("@/lib/db");
+      const { db } = await import("../client/src/lib/db");
       const { mediaRequests, profiles } = await import("@shared/schema");
       const { desc, eq } = await import("drizzle-orm");
       
@@ -345,7 +344,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // PUT /api/admin/media-requests/:id/approve - Approve a media request (admin only)
   app.put("/api/admin/media-requests/:id/approve", async (req, res) => {
     try {
-      const { db } = await import("@/lib/db");
+      const { db } = await import("../client/src/lib/db");
       const { mediaRequests, profiles } = await import("@shared/schema");
       const { eq } = await import("drizzle-orm");
       
@@ -393,7 +392,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // PUT /api/admin/media-requests/:id/deny - Deny a media request (admin only)
   app.put("/api/admin/media-requests/:id/deny", async (req, res) => {
     try {
-      const { db } = await import("@/lib/db");
+      const { db } = await import("../client/src/lib/db");
       const { mediaRequests } = await import("@shared/schema");
       const { eq } = await import("drizzle-orm");
       
@@ -423,7 +422,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GET /api/media-permission/:userId - Check if user has media permission
   app.get("/api/media-permission/:userId?", async (req, res) => {
     try {
-      const { db } = await import("@/lib/db");
+      const { db } = await import("../client/src/lib/db");
       const { profiles } = await import("@shared/schema");
       const { eq } = await import("drizzle-orm");
       
