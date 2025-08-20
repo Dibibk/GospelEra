@@ -25,10 +25,10 @@ BEGIN
     
     -- Update the comment if the user is the author
     UPDATE public.comments 
-    SET is_deleted = true
+    SET deleted = true
     WHERE id = comment_id 
-    AND author = current_user_id 
-    AND is_deleted = false
+    AND author_id = current_user_id 
+    AND deleted = false
     RETURNING to_json(comments.*) INTO result_data;
     
     -- Check if any row was updated
@@ -60,10 +60,10 @@ BEGIN
     
     -- Update the post if the user is the author
     UPDATE public.posts 
-    SET is_deleted = true
+    SET hidden = true
     WHERE id = post_id 
-    AND author = current_user_id 
-    AND is_deleted = false
+    AND author_id = current_user_id 
+    AND hidden = false
     RETURNING to_json(posts.*) INTO result_data;
     
     -- Check if any row was updated

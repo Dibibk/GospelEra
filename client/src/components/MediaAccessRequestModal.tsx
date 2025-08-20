@@ -22,6 +22,7 @@ export function MediaAccessRequestModal({ isOpen, onClose, onSuccess }: MediaAcc
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    e.stopPropagation() // Prevent any parent form submission
     
     if (!user) {
       toast({

@@ -64,6 +64,9 @@ export const insertPostSchema = createInsertSchema(posts).pick({
   content: true,
   tags: true,
   media_urls: true,
+}).extend({
+  title: z.string().min(1, "Title is required"),
+  content: z.string().min(1, "Message is required"),
 });
 
 export type InsertPost = z.infer<typeof insertPostSchema>;

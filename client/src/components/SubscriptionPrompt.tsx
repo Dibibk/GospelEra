@@ -22,25 +22,24 @@ export function SubscriptionPrompt({ isOpen, onClose, onSubscribe }: Subscriptio
               Media Access Approved!
             </DialogTitle>
           </div>
-          <DialogDescription className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed space-y-3">
-            <div>
-              Congratulations! Your media upload request has been approved. To continue enjoying premium features 
-              and support our Gospel community, consider becoming a supporter.
-            </div>
-            <div className="bg-gradient-to-r from-purple-50 to-primary-50 dark:from-purple-900/20 dark:to-primary-900/20 p-4 rounded-lg border border-purple-200 dark:border-purple-800">
-              <div className="font-medium text-primary-700 dark:text-primary-300 mb-2 flex items-center gap-2">
-                <Star className="w-4 h-4" />
-                Supporter Benefits
-              </div>
-              <ul className="text-sm space-y-1 text-gray-700 dark:text-gray-300">
-                <li>• Priority media upload processing</li>
-                <li>• Extended storage limits (100MB per file)</li>
-                <li>• Early access to new Gospel community features</li>
-                <li>• Direct support for ministry operations</li>
-              </ul>
-            </div>
+          <DialogDescription className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+            Congratulations! Your media upload request has been approved. To continue enjoying premium features 
+            and support our Gospel community, consider becoming a supporter.
           </DialogDescription>
         </DialogHeader>
+
+        <div className="bg-gradient-to-r from-purple-50 to-primary-50 dark:from-purple-900/20 dark:to-primary-900/20 p-4 rounded-lg border border-purple-200 dark:border-purple-800 mb-4">
+          <div className="font-medium text-primary-700 dark:text-primary-300 mb-2 flex items-center gap-2">
+            <Star className="w-4 h-4" />
+            Supporter Benefits
+          </div>
+          <ul className="text-sm space-y-1 text-gray-700 dark:text-gray-300">
+            <li>• Priority media upload processing</li>
+            <li>• Extended storage limits (100MB per file)</li>
+            <li>• Early access to new Gospel community features</li>
+            <li>• Direct support for ministry operations</li>
+          </ul>
+        </div>
 
         <div className="space-y-4 mt-4">
           <div className="text-center">
