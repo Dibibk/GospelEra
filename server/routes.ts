@@ -422,6 +422,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GET /api/media-permission/:userId - Check if user has media permission
   app.get("/api/media-permission/:userId?", async (req, res) => {
     try {
+      // Set shorter timeout for this specific request
+      req.setTimeout(10000); // 10 seconds instead of 30
+      
       const { db } = await import("../client/src/lib/db");
       const { profiles } = await import("@shared/schema");
       const { eq } = await import("drizzle-orm");
@@ -429,18 +432,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Use provided userId or get from auth
       const userId = req.params.userId || (req.headers['user-id'] as string) || 'test-user-id';
       
-      const [profile] = await db.select({ media_enabled: profiles.media_enabled })
+      // Add timeout promise to race against database query
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Database query timeout')), 8000)
+      );
+      
+      const queryPromise = db.select({ media_enabled: profiles.media_enabled })
         .from(profiles)
         .where(eq(profiles.id, userId));
       
+      const result = await Promise.race([queryPromise, timeoutPromise]);
+      const [profile] = result as any[];
+      
       if (!profile) {
-        return res.status(404).json({ hasPermission: false, error: "User not found" });
+        // If database is unreachable, assume no permission for security
+        return res.json({ hasPermission: false, error: "Database unavailable - assuming no permission" });
       }
       
       res.json({ hasPermission: profile.media_enabled });
     } catch (error) {
       console.error("Error checking media permission:", error);
-      res.status(500).json({ hasPermission: false, error: "Failed to check permission" });
+      // If database connection fails, default to no permission for security
+      res.json({ hasPermission: false, error: "Database connection failed - check DATABASE_URL format" });
     }
   });
 

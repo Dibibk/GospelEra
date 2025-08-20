@@ -125,12 +125,22 @@ export async function denyMediaRequest(requestId: number) {
 }
 
 /**
- * Check if user has media upload permission
+ * Check if user has media upload permission (with timeout protection)
  */
 export async function checkMediaPermission(userId?: string) {
   try {
     const url = userId ? `/api/media-permission/${userId}` : '/api/media-permission'
-    const response = await fetch(url)
+    
+    // Add client-side timeout for faster user experience
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 8000) // 8 second timeout
+    
+    const response = await fetch(url, {
+      signal: controller.signal,
+      headers: { 'Content-Type': 'application/json' }
+    })
+    
+    clearTimeout(timeoutId)
 
     if (!response.ok) {
       return { hasPermission: false, error: 'Failed to check permission' }
@@ -139,7 +149,12 @@ export async function checkMediaPermission(userId?: string) {
     const data = await response.json()
     return { hasPermission: data.hasPermission, error: null }
   } catch (error) {
-    return { hasPermission: false, error: 'Failed to check permission' }
+    if (error instanceof Error && error.name === 'AbortError') {
+      console.error('Media permission check timeout - database connection issue')
+    } else {
+      console.error('Error checking media permission:', error)
+    }
+    return { hasPermission: false, error: 'Connection timeout - check database' }
   }
 }
 
