@@ -42,7 +42,11 @@ export default function AdminReports() {
 
       try {
         const profile = await getUserProfile(user.id)
-        if (profile.role !== 'admin') {
+        // Admin access based on email - only diviabharath@gmail.com is admin
+        const adminEmails = ['diviabharath@gmail.com']
+        const emailBasedAdmin = user?.email && adminEmails.includes(user.email)
+        
+        if (profile.role !== 'admin' && !emailBasedAdmin) {
           navigate('/')
           return
         }

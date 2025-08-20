@@ -114,11 +114,12 @@ export default function AdminMediaRequests() {
   // Debug: Log role information
   console.log('Admin check:', { userId: user?.id, isAdmin, role })
 
-  // Temporary admin bypass for specific user during testing
-  const tempAdminAccess = user?.id === 'cbf15c7c-d08a-4e2c-9748-ebbcfa45cdfb'
+  // Admin access based on email - only diviabharath@gmail.com is admin
+  const adminEmails = ['diviabharath@gmail.com']
+  const emailBasedAdmin = user?.email && adminEmails.includes(user.email)
 
   // Check admin access
-  if (!isAdmin && !tempAdminAccess) {
+  if (!isAdmin && !emailBasedAdmin) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-purple-50 flex items-center justify-center">
         <Card className="w-full max-w-md">
