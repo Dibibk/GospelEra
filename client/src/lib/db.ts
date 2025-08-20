@@ -14,7 +14,9 @@ const connection = postgres(process.env.DATABASE_URL, {
   },
   idle_timeout: 20,
   max_lifetime: 60 * 30,
-  connect_timeout: 10
+  connect_timeout: 30,
+  max: 1,
+  prepare: false
 })
 
 export const db = drizzle(connection, { schema })

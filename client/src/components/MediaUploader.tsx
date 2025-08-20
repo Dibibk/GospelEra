@@ -8,8 +8,9 @@ import AwsS3 from "@uppy/aws-s3";
 import type { UploadResult } from "@uppy/core";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
-import { checkMediaPermission } from "@/lib/mediaRequests";
+import { checkMediaPermission, getCurrentRequestStatus } from "@/lib/mediaRequests";
 import { MediaAccessRequestModal } from "./MediaAccessRequestModal";
+import { SubscriptionPrompt } from "./SubscriptionPrompt";
 import { useToast } from '@/hooks/use-toast';
 
 interface MediaUploaderProps {
@@ -68,7 +69,9 @@ export function MediaUploader({
   const [showModal, setShowModal] = useState(false);
   const [hasMediaPermission, setHasMediaPermission] = useState(false);
   const [showRequestModal, setShowRequestModal] = useState(false);
+  const [showSubscriptionPrompt, setShowSubscriptionPrompt] = useState(false);
   const [isCheckingPermission, setIsCheckingPermission] = useState(true);
+  const [requestStatus, setRequestStatus] = useState<string | null>(null);
   
   const { user } = useAuth();
   const { toast } = useToast();
@@ -144,22 +147,42 @@ export function MediaUploader({
       });
   });
 
-  // Check media permission when component mounts or user changes
+  // Check media permission and request status when component mounts or user changes
   useEffect(() => {
-    const checkPermission = async () => {
+    const checkPermissionAndStatus = async () => {
       if (!user) {
         setHasMediaPermission(false);
         setIsCheckingPermission(false);
+        setRequestStatus(null);
         return;
       }
 
       setIsCheckingPermission(true);
-      const { hasPermission } = await checkMediaPermission(user.id);
-      setHasMediaPermission(hasPermission);
-      setIsCheckingPermission(false);
+      
+      try {
+        // Check current permission
+        const { hasPermission } = await checkMediaPermission(user.id);
+        setHasMediaPermission(hasPermission);
+
+        // Check request status
+        const { status } = await getCurrentRequestStatus();
+        setRequestStatus(status);
+
+        // Show subscription prompt if recently approved
+        if (hasPermission && status === 'approved' && !localStorage.getItem(`subscription-prompt-shown-${user.id}`)) {
+          setShowSubscriptionPrompt(true);
+          localStorage.setItem(`subscription-prompt-shown-${user.id}`, 'true');
+        }
+      } catch (error) {
+        console.error('Error checking media permission:', error);
+        setHasMediaPermission(false);
+        setRequestStatus(null);
+      } finally {
+        setIsCheckingPermission(false);
+      }
     };
 
-    checkPermission();
+    checkPermissionAndStatus();
   }, [user]);
 
   const handleOpenModal = () => {
@@ -187,13 +210,41 @@ export function MediaUploader({
       title: "Request submitted!",
       description: "Your media access request is under review. You'll be notified when approved.",
     });
+    // Refresh permission status
+    setRequestStatus('pending');
   };
 
-  // Update button text based on permission status
+  const handleSubscribe = () => {
+    setShowSubscriptionPrompt(false);
+    // Navigate to donations/subscription page
+    window.location.href = '/donations';
+  };
+
+  // Update button text based on permission and request status
   const getButtonText = () => {
     if (isCheckingPermission) return "Checking access...";
-    if (!hasMediaPermission) return "Request Media Access";
+    if (!hasMediaPermission) {
+      if (requestStatus === 'pending') return "Access Request Pending";
+      if (requestStatus === 'denied') return "Request Media Access";
+      return "Request Media Access";
+    }
     return children;
+  };
+
+  const getButtonIcon = () => {
+    if (requestStatus === 'pending') {
+      return (
+        <svg className="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+          <path className="opacity-75" fill="currentColor" d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+      );
+    }
+    return (
+      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+      </svg>
+    );
   };
 
   return (
@@ -206,9 +257,7 @@ export function MediaUploader({
       >
         {!hasMediaPermission ? (
           <div className="flex items-center gap-2">
-            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-            </svg>
+            {getButtonIcon()}
             {getButtonText()}
           </div>
         ) : (
@@ -237,6 +286,12 @@ export function MediaUploader({
         isOpen={showRequestModal}
         onClose={() => setShowRequestModal(false)}
         onSuccess={handleRequestSuccess}
+      />
+
+      <SubscriptionPrompt
+        isOpen={showSubscriptionPrompt}
+        onClose={() => setShowSubscriptionPrompt(false)}
+        onSubscribe={handleSubscribe}
       />
     </div>
   );

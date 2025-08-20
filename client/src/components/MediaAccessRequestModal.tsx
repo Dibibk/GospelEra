@@ -84,21 +84,19 @@ export function MediaAccessRequestModal({ isOpen, onClose, onSuccess }: MediaAcc
               Request Media Upload Access
             </DialogTitle>
           </div>
-          <DialogDescription className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
-            <div className="space-y-3">
-              <p>
-                <strong className="text-primary-700 dark:text-primary-300">Gospel Era</strong> is a 
-                <span className="font-medium text-purple-600 dark:text-purple-400"> faith-centered community</span> where 
-                media uploads help strengthen our witness and encourage believers.
-              </p>
-              <p>
-                Access to image and video uploads is managed through a 
-                <span className="font-medium text-gold-600 dark:text-gold-400"> subscription-based system</span> to 
-                ensure quality content that honors Christ and builds up the body.
-              </p>
-              <p className="text-xs text-gray-500 dark:text-gray-500">
-                ✝️ All content is reviewed to align with Gospel truth and community standards
-              </p>
+          <DialogDescription className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed space-y-3">
+            <div>
+              <strong className="text-primary-700 dark:text-primary-300">Gospel Era</strong> is a 
+              <span className="font-medium text-purple-600 dark:text-purple-400"> faith-centered community</span> where 
+              media uploads help strengthen our witness and encourage believers.
+            </div>
+            <div>
+              Access to image and video uploads is managed through a 
+              <span className="font-medium text-gold-600 dark:text-gold-400"> subscription-based system</span> to 
+              ensure quality content that honors Christ and builds up the body.
+            </div>
+            <div className="text-xs text-gray-500 dark:text-gray-500">
+              ✝️ All content is reviewed to align with Gospel truth and community standards
             </div>
           </DialogDescription>
         </DialogHeader>
