@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import type { ReactNode } from "react";
 import Uppy from "@uppy/core";
 import { DashboardModal } from "@uppy/react";
@@ -7,6 +7,10 @@ import "@uppy/dashboard/dist/style.min.css";
 import AwsS3 from "@uppy/aws-s3";
 import type { UploadResult } from "@uppy/core";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/hooks/useAuth";
+import { checkMediaPermission } from "@/lib/mediaRequests";
+import { MediaAccessRequestModal } from "./MediaAccessRequestModal";
+import { useToast } from '@/hooks/use-toast';
 
 interface MediaUploaderProps {
   maxNumberOfFiles?: number;
@@ -62,6 +66,12 @@ export function MediaUploader({
   disabled = false,
 }: MediaUploaderProps) {
   const [showModal, setShowModal] = useState(false);
+  const [hasMediaPermission, setHasMediaPermission] = useState(false);
+  const [showRequestModal, setShowRequestModal] = useState(false);
+  const [isCheckingPermission, setIsCheckingPermission] = useState(true);
+  
+  const { user } = useAuth();
+  const { toast } = useToast();
 
   // Build allowed file types based on props
   const getAllowedFileTypes = useCallback(() => {
@@ -134,10 +144,56 @@ export function MediaUploader({
       });
   });
 
+  // Check media permission when component mounts or user changes
+  useEffect(() => {
+    const checkPermission = async () => {
+      if (!user) {
+        setHasMediaPermission(false);
+        setIsCheckingPermission(false);
+        return;
+      }
+
+      setIsCheckingPermission(true);
+      const { hasPermission } = await checkMediaPermission(user.id);
+      setHasMediaPermission(hasPermission);
+      setIsCheckingPermission(false);
+    };
+
+    checkPermission();
+  }, [user]);
+
   const handleOpenModal = () => {
-    if (!disabled) {
-      setShowModal(true);
+    if (disabled) return;
+
+    if (!user) {
+      toast({
+        variant: "destructive",
+        title: "Authentication required",
+        description: "Please sign in to upload media.",
+      });
+      return;
     }
+
+    if (!hasMediaPermission) {
+      setShowRequestModal(true);
+      return;
+    }
+
+    setShowModal(true);
+  };
+
+  const handleRequestSuccess = () => {
+    toast({
+      title: "Request submitted!",
+      description: "Your media access request is under review. You'll be notified when approved.",
+    });
+  };
+
+  // Update button text based on permission status
+  const getButtonText = () => {
+    if (isCheckingPermission) return "Checking access...";
+    if (!hasMediaPermission) return "Request Media Access";
+    return children;
   };
 
   return (
@@ -145,9 +201,19 @@ export function MediaUploader({
       <Button 
         onClick={handleOpenModal} 
         className={buttonClassName}
-        disabled={disabled}
+        disabled={disabled || isCheckingPermission}
+        title={!hasMediaPermission ? "Media upload requires approval - click to request access" : undefined}
       >
-        {children}
+        {!hasMediaPermission ? (
+          <div className="flex items-center gap-2">
+            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+            {getButtonText()}
+          </div>
+        ) : (
+          getButtonText()
+        )}
       </Button>
 
       <DashboardModal
@@ -165,6 +231,12 @@ export function MediaUploader({
         disablePageScrollWhenModalOpen={true}
         theme="light"
         note={`Upload images (max ${Math.round(maxImageSize / 1048576)}MB each) or videos (max ${Math.round(maxVideoSize / 1048576)}MB each)`}
+      />
+
+      <MediaAccessRequestModal
+        isOpen={showRequestModal}
+        onClose={() => setShowRequestModal(false)}
+        onSuccess={handleRequestSuccess}
       />
     </div>
   );
