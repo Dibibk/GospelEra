@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowLeft, User, Shield, Bell, Trash2 } from 'lucide-react'
+import { ArrowLeft, User, Shield, Bell, Trash2, Upload, Clock, CheckCircle, XCircle } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
 import { getMyProfile, upsertMyProfile, ensureMyProfile } from '../lib/profiles'
 import { ObjectUploader } from '../components/ObjectUploader'
+import { MediaRequestModal } from '../components/MediaRequestModal'
+import { getCurrentRequestStatus, checkMediaPermission } from '../lib/mediaRequests'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -13,6 +15,7 @@ import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { Separator } from '@/components/ui/separator'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Badge } from '@/components/ui/badge'
 import type { UploadResult } from '@uppy/core'
 
 export default function Settings() {
@@ -37,9 +40,36 @@ export default function Settings() {
   const [pushNotifications, setPushNotifications] = useState(true)
   const [commentNotifications, setCommentNotifications] = useState(true)
 
+  // Media access states
+  const [mediaEnabled, setMediaEnabled] = useState(false)
+  const [mediaRequestStatus, setMediaRequestStatus] = useState<string | null>(null)
+  const [showMediaRequestModal, setShowMediaRequestModal] = useState(false)
+  const [mediaStatusLoading, setMediaStatusLoading] = useState(true)
+
   useEffect(() => {
     loadProfile()
+    loadMediaStatus()
   }, [])
+
+  const loadMediaStatus = async () => {
+    setMediaStatusLoading(true)
+    
+    try {
+      // Check if user has media enabled
+      const permissionResult = await checkMediaPermission()
+      setMediaEnabled(permissionResult.hasPermission)
+
+      // Get current request status if not enabled
+      if (!permissionResult.hasPermission) {
+        const statusResult = await getCurrentRequestStatus()
+        setMediaRequestStatus(statusResult.status)
+      }
+    } catch (error) {
+      console.error('Error loading media status:', error)
+    }
+    
+    setMediaStatusLoading(false)
+  }
 
   const loadProfile = async () => {
     setLoading(true)
@@ -198,14 +228,18 @@ export default function Settings() {
         )}
 
         <Tabs defaultValue="privacy" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="media" className="flex items-center gap-2">
+              <Upload className="h-4 w-4" />
+              Media
+            </TabsTrigger>
             <TabsTrigger value="notifications" className="flex items-center gap-2">
               <Bell className="h-4 w-4" />
               Notifications
             </TabsTrigger>
             <TabsTrigger value="privacy" className="flex items-center gap-2">
               <Shield className="h-4 w-4" />
-              Privacy & Security
+              Privacy
             </TabsTrigger>
             <TabsTrigger value="account" className="flex items-center gap-2">
               <Trash2 className="h-4 w-4" />
@@ -233,6 +267,131 @@ export default function Settings() {
               </Link>
             </CardContent>
           </Card>
+
+          {/* Media Upload Settings */}
+          <TabsContent value="media" id="media">
+            <div className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Upload className="h-5 w-5" />
+                    Media Upload Access
+                  </CardTitle>
+                  <CardDescription>
+                    Manage your ability to upload images and videos to posts, comments, and prayers
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {mediaStatusLoading ? (
+                    <div className="flex items-center space-x-2">
+                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary-300 border-t-primary-600"></div>
+                      <span className="text-sm text-primary-600">Loading media status...</span>
+                    </div>
+                  ) : mediaEnabled ? (
+                    /* Media Enabled State */
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-3">
+                        <div className="h-12 w-12 bg-gradient-to-br from-green-500 to-green-600 rounded-xl flex items-center justify-center">
+                          <CheckCircle className="h-6 w-6 text-white" />
+                        </div>
+                        <div>
+                          <h3 className="font-semibold text-green-800">Media Uploads Enabled</h3>
+                          <p className="text-sm text-green-600">
+                            You can now upload images and videos to your posts, comments, and prayers.
+                          </p>
+                        </div>
+                        <Badge className="bg-green-100 text-green-800 border-green-300">Active</Badge>
+                      </div>
+                      <Alert className="border-green-200 bg-green-50">
+                        <AlertDescription className="text-green-700 text-sm">
+                          <strong>Remember:</strong> All uploads must honor Jesus and align with our community guidelines. 
+                          Inappropriate content may result in access being revoked.
+                        </AlertDescription>
+                      </Alert>
+                    </div>
+                  ) : mediaRequestStatus === 'pending' ? (
+                    /* Pending Request State */
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-3">
+                        <div className="h-12 w-12 bg-gradient-to-br from-yellow-500 to-orange-500 rounded-xl flex items-center justify-center">
+                          <Clock className="h-6 w-6 text-white" />
+                        </div>
+                        <div>
+                          <h3 className="font-semibold text-orange-800">Request Under Review</h3>
+                          <p className="text-sm text-orange-600">
+                            Your media access request is being reviewed by our team.
+                          </p>
+                        </div>
+                        <Badge className="bg-yellow-100 text-yellow-800 border-yellow-300">Pending</Badge>
+                      </div>
+                      <Alert className="border-yellow-200 bg-yellow-50">
+                        <AlertDescription className="text-yellow-700 text-sm">
+                          We'll notify you once your request has been reviewed. This typically takes 1-2 business days.
+                        </AlertDescription>
+                      </Alert>
+                    </div>
+                  ) : mediaRequestStatus === 'denied' ? (
+                    /* Denied Request State */
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-3">
+                        <div className="h-12 w-12 bg-gradient-to-br from-red-500 to-red-600 rounded-xl flex items-center justify-center">
+                          <XCircle className="h-6 w-6 text-white" />
+                        </div>
+                        <div>
+                          <h3 className="font-semibold text-red-800">Request Not Approved</h3>
+                          <p className="text-sm text-red-600">
+                            At this time, your request for media uploads was not approved.
+                          </p>
+                        </div>
+                        <Badge className="bg-red-100 text-red-800 border-red-300">Denied</Badge>
+                      </div>
+                      <Alert className="border-red-200 bg-red-50">
+                        <AlertDescription className="text-red-700 text-sm">
+                          At this time, your request for media uploads was not approved. You can continue to post text prayers 
+                          and scriptures, which remain the heart of our community.
+                        </AlertDescription>
+                      </Alert>
+                      <Button
+                        onClick={() => setShowMediaRequestModal(true)}
+                        variant="outline"
+                        className="w-full sm:w-auto"
+                      >
+                        Submit New Request
+                      </Button>
+                    </div>
+                  ) : (
+                    /* No Request Made State */
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-3">
+                        <div className="h-12 w-12 bg-gradient-to-br from-primary-600 to-purple-600 rounded-xl flex items-center justify-center">
+                          <Upload className="h-6 w-6 text-white" />
+                        </div>
+                        <div>
+                          <h3 className="font-semibold text-primary-800">Media Upload Access</h3>
+                          <p className="text-sm text-primary-600">
+                            Request permission to upload images and videos
+                          </p>
+                        </div>
+                      </div>
+                      <Alert className="border-primary-200 bg-primary-50">
+                        <AlertDescription className="text-primary-700 text-sm leading-relaxed">
+                          Media uploads are a privilege granted to trusted community members to keep our app Christ-centered. 
+                          If you feel led to share gospel images or videos, you can request access. Every upload must honor 
+                          Jesus and align with our guidelines.
+                        </AlertDescription>
+                      </Alert>
+                      <Button
+                        onClick={() => setShowMediaRequestModal(true)}
+                        className="bg-gradient-to-r from-primary-600 to-purple-600 hover:from-primary-700 hover:to-purple-700 text-white"
+                      >
+                        Request Access
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
 
           {/* Notification Settings */}
           <TabsContent value="notifications">
@@ -528,6 +687,17 @@ export default function Settings() {
             </div>
           </TabsContent>
         </Tabs>
+
+        {/* Media Request Modal */}
+        <MediaRequestModal
+          open={showMediaRequestModal}
+          onOpenChange={setShowMediaRequestModal}
+          onSuccess={() => {
+            setSuccess('Media access request submitted successfully! We\'ll review it within 1-2 business days.')
+            setMediaRequestStatus('pending')
+            setTimeout(() => setSuccess(''), 5000)
+          }}
+        />
       </div>
     </div>
   )

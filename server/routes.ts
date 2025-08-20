@@ -255,6 +255,196 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Media Requests API Routes
+  // POST /api/media-requests - Submit a media access request
+  app.post("/api/media-requests", async (req, res) => {
+    try {
+      const { db } = await import("@/lib/db");
+      const { mediaRequests } = await import("@shared/schema");
+      
+      const { reason } = req.body;
+      
+      if (!reason || !reason.trim()) {
+        return res.status(400).json({ error: "Reason is required" });
+      }
+      
+      // TODO: Get user ID from authentication middleware
+      // For now, using a placeholder - this should be replaced with actual auth
+      const userId = req.headers['user-id'] as string || 'test-user-id';
+      
+      const [newRequest] = await db.insert(mediaRequests).values({
+        user_id: userId,
+        reason: reason.trim(),
+        status: 'pending'
+      }).returning();
+      
+      res.status(201).json(newRequest);
+    } catch (error) {
+      console.error("Error creating media request:", error);
+      res.status(500).json({ error: "Failed to create media request" });
+    }
+  });
+
+  // GET /api/media-requests/my - Get current user's requests
+  app.get("/api/media-requests/my", async (req, res) => {
+    try {
+      const { db } = await import("@/lib/db");
+      const { mediaRequests } = await import("@shared/schema");
+      const { eq, desc } = await import("drizzle-orm");
+      
+      // TODO: Get user ID from authentication middleware
+      const userId = req.headers['user-id'] as string || 'test-user-id';
+      
+      const userRequests = await db.select()
+        .from(mediaRequests)
+        .where(eq(mediaRequests.user_id, userId))
+        .orderBy(desc(mediaRequests.created_at));
+      
+      res.json(userRequests);
+    } catch (error) {
+      console.error("Error fetching user media requests:", error);
+      res.status(500).json({ error: "Failed to fetch requests" });
+    }
+  });
+
+  // GET /api/admin/media-requests - Get all media requests (admin only)
+  app.get("/api/admin/media-requests", async (req, res) => {
+    try {
+      const { db } = await import("@/lib/db");
+      const { mediaRequests, profiles } = await import("@shared/schema");
+      const { desc, eq } = await import("drizzle-orm");
+      
+      // TODO: Add admin authentication check
+      
+      const allRequests = await db
+        .select({
+          id: mediaRequests.id,
+          user_id: mediaRequests.user_id,
+          status: mediaRequests.status,
+          reason: mediaRequests.reason,
+          admin_id: mediaRequests.admin_id,
+          created_at: mediaRequests.created_at,
+          updated_at: mediaRequests.updated_at,
+          user: {
+            id: profiles.id,
+            display_name: profiles.display_name,
+            email: profiles.email
+          }
+        })
+        .from(mediaRequests)
+        .leftJoin(profiles, eq(mediaRequests.user_id, profiles.id))
+        .orderBy(desc(mediaRequests.created_at));
+      
+      res.json(allRequests);
+    } catch (error) {
+      console.error("Error fetching all media requests:", error);
+      res.status(500).json({ error: "Failed to fetch requests" });
+    }
+  });
+
+  // PUT /api/admin/media-requests/:id/approve - Approve a media request (admin only)
+  app.put("/api/admin/media-requests/:id/approve", async (req, res) => {
+    try {
+      const { db } = await import("@/lib/db");
+      const { mediaRequests, profiles } = await import("@shared/schema");
+      const { eq } = await import("drizzle-orm");
+      
+      const requestId = parseInt(req.params.id);
+      if (!requestId) {
+        return res.status(400).json({ error: "Invalid request ID" });
+      }
+      
+      // TODO: Get admin ID from authentication middleware and verify admin role
+      const adminId = req.headers['user-id'] as string || 'admin-user-id';
+      
+      // Get the request to find the user
+      const [request] = await db.select()
+        .from(mediaRequests)
+        .where(eq(mediaRequests.id, requestId));
+      
+      if (!request) {
+        return res.status(404).json({ error: "Request not found" });
+      }
+      
+      // Update request status
+      await db.update(mediaRequests)
+        .set({
+          status: 'approved',
+          admin_id: adminId,
+          updated_at: new Date()
+        })
+        .where(eq(mediaRequests.id, requestId));
+      
+      // Enable media uploads for the user
+      await db.update(profiles)
+        .set({
+          media_enabled: true,
+          updated_at: new Date()
+        })
+        .where(eq(profiles.id, request.user_id));
+      
+      res.json({ success: true, message: "Request approved successfully" });
+    } catch (error) {
+      console.error("Error approving media request:", error);
+      res.status(500).json({ error: "Failed to approve request" });
+    }
+  });
+
+  // PUT /api/admin/media-requests/:id/deny - Deny a media request (admin only)
+  app.put("/api/admin/media-requests/:id/deny", async (req, res) => {
+    try {
+      const { db } = await import("@/lib/db");
+      const { mediaRequests } = await import("@shared/schema");
+      const { eq } = await import("drizzle-orm");
+      
+      const requestId = parseInt(req.params.id);
+      if (!requestId) {
+        return res.status(400).json({ error: "Invalid request ID" });
+      }
+      
+      // TODO: Get admin ID from authentication middleware and verify admin role
+      const adminId = req.headers['user-id'] as string || 'admin-user-id';
+      
+      await db.update(mediaRequests)
+        .set({
+          status: 'denied',
+          admin_id: adminId,
+          updated_at: new Date()
+        })
+        .where(eq(mediaRequests.id, requestId));
+      
+      res.json({ success: true, message: "Request denied successfully" });
+    } catch (error) {
+      console.error("Error denying media request:", error);
+      res.status(500).json({ error: "Failed to deny request" });
+    }
+  });
+
+  // GET /api/media-permission/:userId - Check if user has media permission
+  app.get("/api/media-permission/:userId?", async (req, res) => {
+    try {
+      const { db } = await import("@/lib/db");
+      const { profiles } = await import("@shared/schema");
+      const { eq } = await import("drizzle-orm");
+      
+      // Use provided userId or get from auth
+      const userId = req.params.userId || (req.headers['user-id'] as string) || 'test-user-id';
+      
+      const [profile] = await db.select({ media_enabled: profiles.media_enabled })
+        .from(profiles)
+        .where(eq(profiles.id, userId));
+      
+      if (!profile) {
+        return res.status(404).json({ hasPermission: false, error: "User not found" });
+      }
+      
+      res.json({ hasPermission: profile.media_enabled });
+    } catch (error) {
+      console.error("Error checking media permission:", error);
+      res.status(500).json({ hasPermission: false, error: "Failed to check permission" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;

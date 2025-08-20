@@ -10,6 +10,7 @@ import PublicProfile from "../pages/PublicProfile";
 import Settings from "../pages/Settings";
 import SavedPosts from "../pages/SavedPosts";
 import AdminReports from "../pages/AdminReports";
+import AdminMediaRequests from "../pages/AdminMediaRequests";
 import PrayerNew from "../pages/PrayerNew";
 import PrayerBrowse from "../pages/PrayerBrowse";
 import PrayerDetail from "../pages/PrayerDetail";
@@ -118,6 +119,16 @@ export function AnimatedRoutes() {
             <ProtectedRoute>
               <PageTransition>
                 <AdminReports />
+              </PageTransition>
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/admin/media-requests" 
+          element={
+            <ProtectedRoute>
+              <PageTransition>
+                <AdminMediaRequests />
               </PageTransition>
             </ProtectedRoute>
           } 

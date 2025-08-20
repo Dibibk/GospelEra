@@ -1,0 +1,58 @@
+Implement a "Media Upload Access Request" system for the Gospel app.
+
+1. Database:
+- In Supabase, add to `profiles` table: 
+  - `media_enabled boolean default false`.
+- Create new table `media_requests`:
+  - `id bigserial primary key`
+  - `user_id uuid references profiles(id) on delete cascade`
+  - `status text default 'pending' check (status in ('pending','approved','denied'))`
+  - `reason text`
+  - `created_at timestamptz default now()`
+- RLS:
+  - Users can insert a request for their own user_id and select only their rows.
+  - Admins can select all, update all.
+
+2. Backend/Helpers:
+- Create `src/lib/mediaRequests.ts`:
+  - `requestMediaAccess(reason: string)`: inserts row into `media_requests`.
+  - `listMyRequests(userId)`: returns user’s own requests.
+  - `listAllRequests()`: admin only, returns all requests with user info.
+  - `approveMediaRequest(requestId, adminId)`: updates request.status='approved' and sets `profiles.media_enabled=true`.
+  - `denyMediaRequest(requestId, adminId)`: sets request.status='denied'.
+
+3. Client/User flow:
+- In `/settings` page, add **Media Uploads** section.
+  - If `profile.media_enabled=false`, show a card:
+    Title: "Media Upload Access"
+    Text: "By default, media uploads are restricted to protect the community. If you’d like to share gospel-centered images or videos, you can request access below."
+    Button: **Request Access** → opens modal.
+    Modal: textarea "Reason for request", Submit button → calls `requestMediaAccess(reason)`, then shows confirmation toast.
+  - If request pending: show banner "Your request is under review."
+  - If denied: show banner "Your request was denied. You may still post text content."
+  - If approved: user now has `profile.media_enabled=true`, so uploaders appear as normal.
+
+- In Post/Prayer/Comment composers:
+  - Hide media uploader if `!profile.media_enabled`.
+  - If hidden, show link “Request media access” that routes to `/settings#media`.
+
+4. Admin flow:
+- Add route `/admin/media-requests`.
+  - Table listing all requests: user_id → username, reason, created_at, current status.
+  - Buttons: Approve / Deny.
+    - Approve: sets `status='approved'` and flips user.profile.media_enabled=true.
+    - Deny: sets `status='denied'`.
+  - Show toast on action.
+  - Approved users immediately see upload option next time they visit.
+
+5. Server enforcement:
+- In `/server/s3/presign-upload`, before signing:
+  - Check `profiles.media_enabled`.
+  - If false → return 403 `{ code:'NO_MEDIA_PERMISSION' }`.
+  - Enforce also on video uploads (later may add subscription check).
+
+6. UI/Copy (gospel tone):
+- Request card copy: 
+  "Media uploads are a privilege granted to trusted community members to keep our app Christ-centered. If you feel led to share gospel images or videos, you can request access. Every upload must honor Jesus and align with our guidelines."
+- Denied state copy:
+  "At this time, your request for media uploads was not approved. You can continue to post text prayers and scriptures, which remain the heart of our community."
