@@ -43,8 +43,19 @@ export const getQueryFn: <T>(options: {
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
+    // Get current user for authentication
+    const { supabase } = await import('./supabaseClient')
+    const { data: { user } } = await supabase.auth.getUser()
+    
+    const headers: Record<string, string> = {}
+    
+    if (user?.id) {
+      headers["x-user-id"] = user.id
+    }
+
     const res = await fetch(queryKey.join("/") as string, {
       credentials: "include",
+      headers,
     });
 
     if (unauthorizedBehavior === "returnNull" && res.status === 401) {
