@@ -432,7 +432,7 @@ export default function Dashboard() {
         showToast('Post updated successfully!', 'success')
         
         // Refresh the posts to get the latest data
-        loadInitialPosts()
+        loadPosts()
       }
     } else {
       // Create new post
@@ -483,14 +483,20 @@ export default function Dashboard() {
     if (error) {
       alert(`Failed to delete post: ${(error as any).message || 'Unknown error'}`)
     } else {
-      // Remove the deleted post from the current posts array
-      setPosts(posts.filter(post => post.id !== postId))
+      showToast('Post deleted successfully', 'success')
+      
+      // Reload posts to ensure the deleted post is filtered out
+      if (isSearchMode) {
+        handleSearch()
+      } else {
+        loadPosts()
+      }
     }
     
     setDeletingPostId(null)
   }
 
-  const handleEditPost = async (postId: number) => {
+  const handleEditPost = (postId: number) => {
     const post = posts.find(p => p.id === postId)
     if (!post) return
     
@@ -500,7 +506,7 @@ export default function Dashboard() {
     // Pre-fill the form with current post data
     setTitle(post.title)
     setContent(post.content)
-    setTags(post.tags || [])
+    setTags(Array.isArray(post.tags) ? post.tags.join(', ') : (post.tags || ''))
     setYoutubeUrl(post.embed_url || '')
     
     // Scroll to the top form
@@ -514,8 +520,11 @@ export default function Dashboard() {
     // Clear the form
     setTitle('')
     setContent('')
-    setTags([])
+    setTags('')
     setYoutubeUrl('')
+    setYoutubeError('')
+    setCreateError('')
+    setModerationError('')
   }
 
   const toggleCommentForm = (postId: number) => {
