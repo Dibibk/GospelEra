@@ -513,8 +513,21 @@ export default function Dashboard() {
     setTags(Array.isArray(post.tags) ? post.tags.join(', ') : (post.tags || ''))
     setYoutubeUrl(post.embed_url || '')
     
-    // Scroll to the top form
-    window.scrollTo({ top: 0, behavior: 'smooth' })
+    // Clear any previous errors
+    setCreateError('')
+    setModerationError('')
+    setYoutubeError('')
+    
+    // Scroll to the form at the top and focus on title field
+    setTimeout(() => {
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+      // Focus on the title field to make editing obvious
+      const titleInput = document.querySelector('input[placeholder*="title"]') as HTMLInputElement
+      if (titleInput) {
+        titleInput.focus()
+        titleInput.select() // Select all text to make it clear we're editing
+      }
+    }, 100)
   }
 
   const handleCancelEdit = () => {
@@ -1849,7 +1862,7 @@ export default function Dashboard() {
                         </button>
                       </div>
                       
-                      {(post.author_id === user?.id || post.author_id === null && user?.id) && (
+                      {post.author_id === user?.id && (
                         <div className="flex items-center space-x-2">
                           {/* Edit Button */}
                           <button
