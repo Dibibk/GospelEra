@@ -208,6 +208,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.put("/api/posts/:id", async (req, res) => {
+    try {
+      const { db } = await import("../client/src/lib/db");
+      const { posts, insertPostSchema } = await import("@shared/schema");
+      const { eq, and } = await import("drizzle-orm");
+      
+      const postId = parseInt(req.params.id);
+      const userId = req.headers['x-user-id'] as string;
+      
+      if (!userId) {
+        return res.status(401).json({ error: "Authentication required" });
+      }
+      
+      const result = insertPostSchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ error: "Invalid post data", issues: result.error.issues });
+      }
+      
+      // First, check if the post exists and belongs to the user
+      const [existingPost] = await db.select()
+        .from(posts)
+        .where(and(eq(posts.id, postId), eq(posts.author_id, userId)));
+      
+      if (!existingPost) {
+        return res.status(404).json({ error: "Post not found or you don't have permission to edit it" });
+      }
+      
+      const postData = {
+        title: result.data.title,
+        content: result.data.content,
+        tags: result.data.tags || [],
+        embed_url: result.data.embed_url || null,
+        updated_at: new Date()
+      };
+      
+      // Update the post
+      const [updatedPost] = await db.update(posts)
+        .set(postData)
+        .where(and(eq(posts.id, postId), eq(posts.author_id, userId)))
+        .returning();
+      
+      res.json({ success: true, data: updatedPost });
+    } catch (error) {
+      console.error("Error updating post:", error);
+      res.status(500).json({ error: "Failed to update post" });
+    }
+  });
+
   app.delete("/api/posts/:id", async (req, res) => {
     try {
       const { db } = await import("../client/src/lib/db");

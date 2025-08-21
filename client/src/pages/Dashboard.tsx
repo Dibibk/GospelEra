@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useRole } from '../hooks/useRole'
 import { useOnlineStatus } from '../hooks/useOnlineStatus'
-import { createPost, listPosts, softDeletePost, searchPosts, getTopTags, CreatePostData } from '../lib/posts'
+import { createPost, listPosts, softDeletePost, updatePost, searchPosts, getTopTags, CreatePostData } from '../lib/posts'
 import { createComment, listComments, softDeleteComment } from '../lib/comments'
 import { createReport } from '../lib/reports'
 import { getDailyVerse } from '../lib/scripture'
@@ -75,6 +75,9 @@ export default function Dashboard() {
   
   // Delete post state
   const [deletingPostId, setDeletingPostId] = useState<number | null>(null)
+  // Edit post state
+  const [editingPostId, setEditingPostId] = useState<number | null>(null)
+  const [editingPost, setEditingPost] = useState<any>(null)
   
   // Comment states
   const [commentForms, setCommentForms] = useState<{[postId: number]: boolean}>({})
@@ -406,48 +409,66 @@ export default function Dashboard() {
       normalizedYouTubeUrl = validation.normalizedUrl || '';
     }
 
-    const { data, error } = await createPost({
+    const postData = {
       title: titleText,
       content: contentText,
       tags: tagsArray,
       embed_url: normalizedYouTubeUrl
-    })
+    };
 
-    if (error) {
-      setCreateError((error as any).message || 'Failed to create post')
-    } else {
-      // Clear form
-      setTitle('')
-      setContent('')
-      setTags('')
-      setYoutubeUrl('')
-      setYoutubeError('')
+    if (editingPost) {
+      // Update existing post
+      const { data, error } = await updatePost(editingPost.id, postData)
       
-      // Check if new post matches current filters
-      const newPost = { ...data }
-      
-      if (postMatchesFilters(newPost)) {
-        // Post matches filters, prepend to current list
-        setPosts(prev => [newPost, ...prev])
-        
-        // Load profile and engagement data for the new post
-        if (data.author) {
-          loadProfiles([data.author])
-          loadEngagementData([data.id])
-        }
-        
-        showToast('Post created and added to current view!', 'success')
+      if (error) {
+        setCreateError((error as any).message || 'Failed to update post')
       } else {
-        // Post doesn't match filters, show toast
-        showToast('Post created (outside current filter)', 'success')
+        // Update the post in the current list
+        setPosts(prev => prev.map(post => 
+          post.id === editingPost.id ? { ...post, ...data.data } : post
+        ))
         
-        // If not in search mode, reload to include the new post
-        if (!isSearchMode) {
-          loadPosts()
+        handleCancelEdit()
+        showToast('Post updated successfully!', 'success')
+        
+        // Refresh the posts to get the latest data
+        loadInitialPosts()
+      }
+    } else {
+      // Create new post
+      const { data, error } = await createPost(postData)
+
+      if (error) {
+        setCreateError((error as any).message || 'Failed to create post')
+      } else {
+        // Clear form
+        setTitle('')
+        setContent('')
+        setTags('')
+        setYoutubeUrl('')
+        setYoutubeError('')
+        
+        // Check if new post matches current filters
+        const newPost = { ...data }
+        
+        if (postMatchesFilters(newPost)) {
+          // Post matches filters, prepend to current list
+          setPosts(prev => [newPost, ...prev])
+          
+          // Load profile and engagement data for the new post
+          if (data.author) {
+            loadProfiles([data.author])
+            loadEngagementData([data.id])
+          }
+          
+          showToast('Post created and added to current view!', 'success')
+        } else {
+          // Post doesn't match filters, show toast
+          showToast('Post created (outside current filter)', 'success')
         }
       }
     }
-
+    
     setIsCreating(false)
   }
 
@@ -467,6 +488,34 @@ export default function Dashboard() {
     }
     
     setDeletingPostId(null)
+  }
+
+  const handleEditPost = async (postId: number) => {
+    const post = posts.find(p => p.id === postId)
+    if (!post) return
+    
+    setEditingPost(post)
+    setEditingPostId(postId)
+    
+    // Pre-fill the form with current post data
+    setTitle(post.title)
+    setContent(post.content)
+    setTags(post.tags || [])
+    setYoutubeUrl(post.embed_url || '')
+    
+    // Scroll to the top form
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  const handleCancelEdit = () => {
+    setEditingPost(null)
+    setEditingPostId(null)
+    
+    // Clear the form
+    setTitle('')
+    setContent('')
+    setTags([])
+    setYoutubeUrl('')
   }
 
   const toggleCommentForm = (postId: number) => {
@@ -1216,7 +1265,12 @@ export default function Dashboard() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                 </svg>
               </div>
-              <h2 className="text-xl font-bold bg-gradient-to-r from-primary-800 to-purple-700 bg-clip-text text-transparent">Share Your Heart</h2>
+              <h2 className="text-xl font-bold bg-gradient-to-r from-primary-800 to-purple-700 bg-clip-text text-transparent">
+                {editingPost ? 'Edit Your Post' : 'Share Your Heart'}
+              </h2>
+              {editingPost && (
+                <p className="text-sm text-blue-600 mt-1">Editing post #{editingPost.id}</p>
+              )}
             </div>
           </div>
           <form onSubmit={handleCreatePost} className="p-8">
@@ -1412,26 +1466,40 @@ export default function Dashboard() {
                     Review Community Guidelines
                   </Link>
                 </div>
-                <button
-                  type="submit"
-                  disabled={isCreating || !title.trim() || !content.trim() || isBanned}
-                  className="w-full flex justify-center items-center py-4 px-6 border border-transparent rounded-xl shadow-lg text-base font-bold text-white bg-gradient-to-r from-primary-600 via-purple-600 to-primary-600 hover:from-primary-700 hover:via-purple-700 hover:to-primary-700 focus:outline-none focus:ring-4 focus:ring-gold-500/50 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 transform hover:scale-[1.02] hover:shadow-xl"
-                  title={isBanned ? "Account limited - you cannot create posts or comments" : ""}
-                >
-                  {isCreating ? (
-                    <>
-                      <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent mr-3"></div>
-                      Sharing...
-                    </>
-                  ) : (
-                    <>
+                <div className={`${editingPost ? 'flex space-x-4' : ''}`}>
+                  {editingPost && (
+                    <button
+                      type="button"
+                      onClick={handleCancelEdit}
+                      className="flex-1 flex justify-center items-center py-4 px-6 border-2 border-gray-300 rounded-xl shadow-lg text-base font-bold text-gray-700 bg-white hover:bg-gray-50 hover:border-gray-400 focus:outline-none focus:ring-4 focus:ring-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
+                    >
                       <svg className="h-5 w-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                       </svg>
-                      {isBanned ? 'Account Limited' : 'Share with Community'}
-                    </>
+                      Cancel
+                    </button>
                   )}
-                </button>
+                  <button
+                    type="submit"
+                    disabled={isCreating || !title.trim() || !content.trim() || isBanned}
+                    className={`${editingPost ? 'flex-1' : 'w-full'} flex justify-center items-center py-4 px-6 border border-transparent rounded-xl shadow-lg text-base font-bold text-white bg-gradient-to-r from-primary-600 via-purple-600 to-primary-600 hover:from-primary-700 hover:via-purple-700 hover:to-primary-700 focus:outline-none focus:ring-4 focus:ring-gold-500/50 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 transform hover:scale-[1.02] hover:shadow-xl`}
+                    title={isBanned ? "Account limited - you cannot create posts or comments" : ""}
+                  >
+                    {isCreating ? (
+                      <>
+                        <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent mr-3"></div>
+                        {editingPost ? 'Updating...' : 'Sharing...'}
+                      </>
+                    ) : (
+                      <>
+                        <svg className="h-5 w-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={editingPost ? "M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" : "M12 6v6m0 0v6m0-6h6m-6 0H6"} />
+                        </svg>
+                        {isBanned ? 'Account Limited' : editingPost ? 'Update Post' : 'Share with Community'}
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
             </div>
           </form>
@@ -1768,26 +1836,50 @@ export default function Dashboard() {
                         </button>
                       </div>
                       
-                      {post.author_id === user?.id && (
-                        <button
-                          onClick={() => handleDeletePost(post.id)}
-                          disabled={deletingPostId === post.id}
-                          className="inline-flex items-center px-2 sm:px-3 py-2 text-sm font-medium text-red-700 bg-red-50 hover:bg-red-100 rounded-md border border-red-200 transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 self-start sm:self-auto"
-                        >
-                          {deletingPostId === post.id ? (
-                            <>
-                              <div className="animate-spin rounded-full h-4 w-4 border-2 border-red-300 border-t-red-600 sm:mr-2"></div>
-                              <span className="hidden sm:inline">Deleting...</span>
-                            </>
-                          ) : (
-                            <>
-                              <svg className="h-4 w-4 sm:mr-2 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                              </svg>
-                              <span className="hidden sm:inline">Delete</span>
-                            </>
-                          )}
-                        </button>
+                      {(post.author_id === user?.id || post.author_id === null && user?.id) && (
+                        <div className="flex items-center space-x-2">
+                          {/* Edit Button */}
+                          <button
+                            onClick={() => handleEditPost(post.id)}
+                            disabled={editingPostId === post.id}
+                            className="inline-flex items-center px-2 sm:px-3 py-2 text-sm font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-md border border-blue-200 transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 self-start sm:self-auto"
+                          >
+                            {editingPostId === post.id ? (
+                              <>
+                                <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-300 border-t-blue-600 sm:mr-2"></div>
+                                <span className="hidden sm:inline">Editing...</span>
+                              </>
+                            ) : (
+                              <>
+                                <svg className="h-4 w-4 sm:mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                </svg>
+                                <span className="hidden sm:inline">Edit</span>
+                              </>
+                            )}
+                          </button>
+                          
+                          {/* Delete Button */}
+                          <button
+                            onClick={() => handleDeletePost(post.id)}
+                            disabled={deletingPostId === post.id}
+                            className="inline-flex items-center px-2 sm:px-3 py-2 text-sm font-medium text-red-700 bg-red-50 hover:bg-red-100 rounded-md border border-red-200 transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 self-start sm:self-auto"
+                          >
+                            {deletingPostId === post.id ? (
+                              <>
+                                <div className="animate-spin rounded-full h-4 w-4 border-2 border-red-300 border-t-red-600 sm:mr-2"></div>
+                                <span className="hidden sm:inline">Deleting...</span>
+                              </>
+                            ) : (
+                              <>
+                                <svg className="h-4 w-4 sm:mr-2 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                                <span className="hidden sm:inline">Delete</span>
+                              </>
+                            )}
+                          </button>
+                        </div>
                       )}
                     </div>
 

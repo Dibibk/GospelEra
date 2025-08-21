@@ -169,6 +169,50 @@ export async function softDeletePost(id: number) {
 }
 
 /**
+ * Updates an existing post
+ * Only the author can update their own posts
+ * @param {number} id - Post ID to update
+ * @param {CreatePostData} postData - Updated post data
+ * @returns {Promise<{data: Object|null, error: Error|null}>}
+ */
+export async function updatePost(id: number, postData: CreatePostData) {
+  try {
+    // Get current user
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    
+    if (userError) {
+      throw new Error(`Authentication error: ${userError.message}`)
+    }
+    
+    if (!user) {
+      throw new Error('User must be authenticated to update posts')
+    }
+
+    // Make PUT request to server API
+    const response = await fetch(`/api/posts/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-user-id': user.id
+      },
+      body: JSON.stringify(postData)
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || `Server error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return { data, error: null }
+  } catch (err) {
+    return { data: null, error: err }
+  }
+}
+
+
+
+/**
  * Search posts with text query and/or tags filter, with keyset pagination
  * @param {Object} options - Search options
  * @param {string} options.q - Text query to search in title and content (optional)
