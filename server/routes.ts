@@ -251,7 +251,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Update the post
       const [updatedPost] = await db.update(posts)
         .set(postData)
-        .where(and(eq(posts.id, postId), eq(posts.author_id, userId)))
+        .where(eq(posts.id, postId))
         .returning();
       
       res.json({ success: true, data: updatedPost });
@@ -274,13 +274,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: "Authentication required" });
       }
       
-      // First, check if the post exists and belongs to the user
+      // First, check if the post exists
       const [existingPost] = await db.select()
         .from(posts)
-        .where(and(eq(posts.id, postId), eq(posts.author_id, userId)));
+        .where(eq(posts.id, postId));
       
       if (!existingPost) {
-        return res.status(404).json({ error: "Post not found or you don't have permission to delete it" });
+        return res.status(404).json({ error: "Post not found" });
+      }
+
+      // Check if user can delete: post author, anonymous post, or admin
+      const { profiles } = await import("@shared/schema");
+      const [userProfile] = await db.select()
+        .from(profiles)
+        .where(eq(profiles.id, userId));
+      
+      const isAdmin = userProfile?.role === 'admin';
+      const isOwner = existingPost.author_id === userId || existingPost.author_id === null;
+      
+      if (!isOwner && !isAdmin) {
+        return res.status(403).json({ error: "You don't have permission to delete this post" });
       }
       
       // Soft delete by setting hidden = true (preserves data for admin review)
@@ -292,7 +305,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           embed_url: null,  // Clear the YouTube link
           media_urls: []    // Clear any media URLs
         })
-        .where(and(eq(posts.id, postId), eq(posts.author_id, userId)))
+        .where(eq(posts.id, postId))
         .returning();
       
       res.json({ success: true, data: deletedPost });
