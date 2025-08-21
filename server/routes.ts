@@ -148,11 +148,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const fromId = req.query.fromId as string;
       const authorId = req.query.authorId as string;
       
-      let query = db.select().from(posts).orderBy(desc(posts.created_at)).limit(limit);
+      // Build where conditions
+      const { and } = await import("drizzle-orm");
+      let whereConditions = [eq(posts.hidden, false)];  // Only show non-hidden posts
       
       // Add author filter if provided
       if (authorId) {
-        query = query.where(eq(posts.author_id, authorId)) as any;
+        whereConditions.push(eq(posts.author_id, authorId));
       }
       
       // Add keyset pagination if fromId is provided
@@ -163,9 +165,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .where(eq(posts.id, parseInt(fromId)));
         
         if (fromPost) {
-          query = query.where(lt(posts.created_at, fromPost.created_at)) as any;
+          whereConditions.push(lt(posts.created_at, fromPost.created_at));
         }
       }
+      
+      const query = db.select().from(posts)
+        .where(and(...whereConditions))
+        .orderBy(desc(posts.created_at))
+        .limit(limit);
       
       const allPosts = await query;
       res.json(allPosts);
@@ -198,6 +205,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error creating post:", error);
       res.status(500).json({ error: "Failed to create post" });
+    }
+  });
+
+  app.delete("/api/posts/:id", async (req, res) => {
+    try {
+      const { db } = await import("../client/src/lib/db");
+      const { posts } = await import("@shared/schema");
+      const { eq, and } = await import("drizzle-orm");
+      
+      const postId = parseInt(req.params.id);
+      const userId = req.headers['x-user-id'] as string;
+      
+      if (!userId) {
+        return res.status(401).json({ error: "Authentication required" });
+      }
+      
+      // First, check if the post exists and belongs to the user
+      const [existingPost] = await db.select()
+        .from(posts)
+        .where(and(eq(posts.id, postId), eq(posts.author_id, userId)));
+      
+      if (!existingPost) {
+        return res.status(404).json({ error: "Post not found or you don't have permission to delete it" });
+      }
+      
+      // Soft delete by setting hidden = true (preserves data for admin review)
+      const [deletedPost] = await db.update(posts)
+        .set({ 
+          hidden: true,
+          title: "[Deleted]",
+          content: "[This post has been deleted by the author]",
+          embed_url: null,  // Clear the YouTube link
+          media_urls: []    // Clear any media URLs
+        })
+        .where(and(eq(posts.id, postId), eq(posts.author_id, userId)))
+        .returning();
+      
+      res.json({ success: true, data: deletedPost });
+    } catch (error) {
+      console.error("Error deleting post:", error);
+      res.status(500).json({ error: "Failed to delete post" });
     }
   });
 

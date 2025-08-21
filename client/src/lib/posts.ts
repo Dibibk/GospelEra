@@ -147,22 +147,21 @@ export async function softDeletePost(id: number) {
       throw new Error('User must be authenticated to delete posts')
     }
 
-    // Use secure RPC function that only allows deleting your own posts
-    const { data, error } = await supabase
-      .rpc('soft_delete_post', { post_id: id })
-
-    if (error) {
-      // If it's an RLS error, provide a more user-friendly message
-      if (error.message.includes('row-level security') || error.message.includes('new row violates')) {
-        throw new Error('You can only delete your own posts')
+    // Make DELETE request to server API
+    const response = await fetch(`/api/posts/${id}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-user-id': user.id
       }
-      throw new Error(`Failed to delete post: ${error.message}`)
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || `Server error: ${response.status}`);
     }
 
-    if (!data) {
-      throw new Error('Post not found, already deleted, or you do not have permission to delete it')
-    }
-
+    const data = await response.json();
     return { data, error: null }
   } catch (err) {
     return { data: null, error: err }
