@@ -6,6 +6,7 @@ import {
   ObjectNotFoundError,
 } from "./objectStorage";
 import { HybridStorageService } from "./hybridStorage";
+import { embedsRouter } from "./embeds";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Initialize hybrid storage service (S3 or Replit Object Storage)
@@ -18,6 +19,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/storage/status", (req, res) => {
     res.json(hybridStorage.getStorageInfo());
   });
+
+  // Embeds verification routes
+  app.use("/api/embeds", embedsRouter);
 
   // The endpoint for serving public objects
   app.get("/public-objects/:filePath(*)", async (req, res) => {

@@ -17,6 +17,8 @@ import { toggleBookmark, isBookmarked, toggleAmen, getAmenInfo, listBookmarks } 
 import { getMediaUploadURL, processUploadedMedia } from '../lib/media'
 import { MediaUploader } from '../components/MediaUploader'
 import { MediaDisplay } from '../components/MediaDisplay'
+import { EmbedCard } from '../components/EmbedCard'
+import { parseYouTube } from '../lib/embeds'
 import { ThemeSwitcher } from '../components/ThemeSwitcher'
 import { GuidelinesModal } from '../components/GuidelinesModal'
 import { MediaAccessRequestModal } from '../components/MediaAccessRequestModal'
@@ -786,6 +788,17 @@ export default function Dashboard() {
       console.error('Error loading engagement data:', error)
     }
   }
+
+  // Helper functions for YouTube embeds
+  const extractVideoId = (embedUrl: string): string => {
+    const parsed = parseYouTube(embedUrl)
+    return parsed.videoId || ''
+  }
+
+  const extractStartTime = (embedUrl: string): number | undefined => {
+    const parsed = parseYouTube(embedUrl)
+    return parsed.start
+  }
   
   // Handle bookmark toggle with optimistic updates
   const handleToggleBookmark = async (postId: number) => {
@@ -1344,7 +1357,7 @@ export default function Dashboard() {
                   </p>
                   
                   {/* Request Link Sharing Button */}
-                  {!isBanned && !userProfile?.media_enabled && (
+                  {!isBanned && !(userProfile as any)?.media_enabled && (
                     <div className="relative">
                       <button
                         type="button"
@@ -1657,16 +1670,11 @@ export default function Dashboard() {
                         {/* YouTube Embed Display */}
                         {post.embed_url && (
                           <div className="mb-4">
-                            <div className="relative w-full max-w-2xl bg-gray-100 rounded-lg overflow-hidden">
-                              <iframe
-                                src={post.embed_url}
-                                className="w-full h-64 md:h-80"
-                                frameBorder="0"
-                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                allowFullScreen
-                                title="YouTube video"
-                              />
-                            </div>
+                            <EmbedCard 
+                              videoId={extractVideoId(post.embed_url)}
+                              start={extractStartTime(post.embed_url)}
+                              className="max-w-2xl"
+                            />
                           </div>
                         )}
                         
