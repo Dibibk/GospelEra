@@ -1,0 +1,136 @@
+Perfect. Here’s a single, copy-paste Replit AI prompt to:
+
+Rename “Request Media Access” → “Request Link Sharing” (for YouTube links)
+
+Hide all image/video upload UI & endpoints
+
+Add a YouTube link field instead
+
+Route links through your existing approval workflow (same moderation/approval tables & admin page)
+
+Prompt — “Switch to YouTube Links + Approval”
+
+Goals
+
+Replace the “Request Media Access” wording with “Request Link Sharing” everywhere.
+
+Hide/remove all image & video upload controls/buttons/routes.
+
+Add YouTube link (optional) field to post/prayer composers.
+
+Reuse the existing approval pipeline (moderation_status + Admin review) for links.
+
+1) Copy changes (UI)
+
+Replace button/label text globally:
+
+From: “Request Media Access”
+
+To: “Request Link Sharing”
+
+Help text under the dashed box: “You can request permission to share YouTube links. We don’t host uploads.”
+
+If there’s a Settings section, rename “Media Uploads” → “Link Sharing”.
+
+2) Hide image/video uploads
+
+In all composers (post, prayer, comment, profile):
+
+Hide/remove the upload dropzone, icons, and any “Add Photos & Videos” CTA.
+
+Remove the upload button and any references in tooltips/empty states.
+
+Guard server routes:
+
+/s3/* or /gcs/* endpoints should return 410 Gone with { code: 'MEDIA_UPLOADS_DISABLED' }.
+
+Remove any visible “Upload” buttons from menus or modals.
+
+3) Add YouTube link field
+
+In Post and Prayer composers, insert a new optional input:
+
+Label: “YouTube link (optional)”
+
+Placeholder: “https://youtu.be/VIDEOID
+ or https://www.youtube.com/watch?v=VIDEOID”
+
+Validation:
+
+Allow only hosts: youtube.com, www.youtube.com, youtu.be.
+
+Normalize to canonical: https://www.youtube.com/watch?v=VIDEOID (keep t if present).
+
+Inline error on invalid: “Only standard YouTube links are allowed.”
+
+On blur/submit, call existing verify helper (or add /embeds/verify if missing) and show success/error state.
+
+4) DB / model (reuse existing approval flow)
+
+Ensure posts and prayer_requests have embed_url text (nullable). If missing, add a migration.
+
+When a link is present, create the record with:
+
+embed_url = canonical link
+
+moderation_status = 'pending' (use your existing moderation column)
+
+moderation_reason = null
+
+Use existing Admin moderation UI to review:
+
+Show rows with embed_url IS NOT NULL AND moderation_status='pending'
+
+Approve → moderation_status='approved'
+
+Reject → moderation_status='rejected', set moderation_reason
+
+5) Rendering
+
+In feed & detail pages:
+
+If embed_url present AND moderation_status='approved' → render <EmbedCard> (YouTube iframe).
+
+If pending → show author-only pill “Under review”.
+
+If rejected → author-only banner “Link rejected: {reason}” + Edit link action.
+
+6) Cleanup of old media UI
+
+Remove any references to “Photos & Videos” from:
+
+Buttons, helper text, empty states, and tooltips.
+
+Quick actions / FABs.
+
+The dashed placeholder box in your screenshot should now show only:
+
+A small lock icon and the text “Request Link Sharing” (if you keep the request flow), or hide the box entirely if you don’t offer requests yet.
+
+7) Tests to update
+
+Remove/skip tests that exercise /s3/* or /gcs/*.
+
+Add tests:
+
+Valid YouTube links accepted and saved with moderation_status='pending'.
+
+Non-YouTube links rejected with inline error.
+
+Approved links render <EmbedCard>; pending/rejected show the correct badges/banners.
+
+8) Copy (final UI strings)
+
+Button: “Request Link Sharing”
+
+Helper text: “Share YouTube links (no uploads). Links are reviewed before appearing publicly.”
+
+Field label: “YouTube link (optional)”
+
+Invalid link: “Only YouTube links are allowed.”
+
+Pending pill: “Under review”
+
+Rejected banner: “Link rejected — please update and resubmit.”
+
+If you also want the YouTube link verifier (oEmbed + thumbnail check) prompt so moderators have confidence when approving, I can drop that next.
