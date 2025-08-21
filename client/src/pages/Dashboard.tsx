@@ -10,6 +10,7 @@ import { getDailyVerse } from '../lib/scripture'
 import { getProfilesByIds } from '../lib/profiles'
 import { checkFlaggedStatus } from '../lib/flagged'
 import { moderateContent } from '../lib/moderation'
+import { validateAndNormalizeYouTubeUrl } from '../../../shared/youtube'
 // @ts-ignore
 import { toggleBookmark, isBookmarked, toggleAmen, getAmenInfo, listBookmarks } from '../lib/engagement'
 // @ts-ignore
@@ -18,6 +19,7 @@ import { MediaUploader } from '../components/MediaUploader'
 import { MediaDisplay } from '../components/MediaDisplay'
 import { ThemeSwitcher } from '../components/ThemeSwitcher'
 import { GuidelinesModal } from '../components/GuidelinesModal'
+import { MediaAccessRequestModal } from '../components/MediaAccessRequestModal'
 import { supabase } from '../lib/supabaseClient'
 import { HandHeart, ArrowRight } from 'lucide-react'
 
@@ -35,8 +37,6 @@ export default function Dashboard() {
   const [createError, setCreateError] = useState('')
   const [youtubeUrl, setYoutubeUrl] = useState('')
   const [youtubeError, setYoutubeError] = useState('')
-  const [uploadedMedia, setUploadedMedia] = useState<string[]>([])
-  const [isUploadingMedia, setIsUploadingMedia] = useState(false)
   
   // Posts feed state
   const [posts, setPosts] = useState<any[]>([])
@@ -100,6 +100,9 @@ export default function Dashboard() {
   // Moderation state
   const [moderationError, setModerationError] = useState<string>('')
   const [draftContent, setDraftContent] = useState({ title: '', content: '' })
+  
+  // Media request modal state  
+  const [showMediaRequestModal, setShowMediaRequestModal] = useState(false)
 
   const handleLogout = async () => {
     await signOut()
@@ -422,11 +425,23 @@ export default function Dashboard() {
 
     const tagsArray = tags.trim() ? tags.split(',').map(tag => tag.trim()) : []
     
+    // Validate YouTube URL if provided
+    let normalizedYouTubeUrl = '';
+    if (youtubeUrl.trim()) {
+      const validation = validateAndNormalizeYouTubeUrl(youtubeUrl.trim());
+      if (!validation.isValid) {
+        setYoutubeError(validation.error || 'Invalid YouTube URL');
+        setIsCreating(false);
+        return;
+      }
+      normalizedYouTubeUrl = validation.normalizedUrl || '';
+    }
+
     const { data, error } = await createPost({
       title: titleText,
       content: contentText,
       tags: tagsArray,
-      media_urls: uploadedMedia
+      embed_url: normalizedYouTubeUrl
     })
 
     if (error) {
@@ -436,7 +451,8 @@ export default function Dashboard() {
       setTitle('')
       setContent('')
       setTags('')
-      setUploadedMedia([])
+      setYoutubeUrl('')
+      setYoutubeError('')
       
       // Check if new post matches current filters
       const newPost = { ...data }
@@ -1302,67 +1318,77 @@ export default function Dashboard() {
                 </div>
               </div>
 
-              {/* Media Upload Section */}
+              {/* YouTube Link Section */}
               <div>
-                <label className="block text-sm font-bold text-primary-800 mb-2 flex items-center">
-                  <svg className="h-4 w-4 text-gold-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                <label htmlFor="youtubeUrl" className="block text-sm font-bold text-primary-800 mb-2 flex items-center">
+                  <svg className="h-4 w-4 text-red-600 mr-2" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
                   </svg>
-                  Add Photos & Videos (optional)
+                  YouTube link (optional)
                 </label>
                 
-                <div className="space-y-4">
+                <div className="space-y-3">
                   <div className="relative">
-                    <MediaUploader
-                      maxNumberOfFiles={5} // Reduced for dev
-                      maxImageSize={5242880} // 5MB (dev-friendly)
-                      maxVideoSize={20971520} // 20MB (dev-friendly)
-                      allowImages={true}
-                      allowVideos={true}
-                      onGetUploadParameters={handleMediaUpload}
-                      onComplete={handleMediaUploadComplete}
-                      disabled={isCreating || isUploadingMedia || isBanned}
-                      buttonClassName={`w-full flex justify-center items-center py-3 px-4 border-2 border-dashed rounded-xl transition-all duration-200 font-medium ${
-                        isBanned 
-                          ? 'border-gray-300 bg-gray-100 text-gray-500 cursor-not-allowed' 
-                          : 'border-primary-300 bg-primary-50/50 hover:bg-primary-100/50 hover:border-primary-400 text-primary-700'
+                    <input
+                      id="youtubeUrl"
+                      type="url"
+                      value={youtubeUrl}
+                      onChange={(e) => {
+                        setYoutubeUrl(e.target.value);
+                        setYoutubeError('');
+                      }}
+                      onBlur={() => {
+                        if (youtubeUrl.trim()) {
+                          const validation = validateAndNormalizeYouTubeUrl(youtubeUrl.trim());
+                          if (!validation.isValid) {
+                            setYoutubeError(validation.error || 'Invalid YouTube URL');
+                          } else {
+                            setYoutubeUrl(validation.normalizedUrl || youtubeUrl);
+                          }
+                        }
+                      }}
+                      disabled={isBanned}
+                      className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none transition-all duration-200 font-medium ${
+                        youtubeError 
+                          ? 'border-red-300 bg-red-50/50 focus:ring-2 focus:ring-red-500 focus:border-red-500 text-red-900' 
+                          : isBanned 
+                            ? 'border-gray-300 bg-gray-100 text-gray-500 cursor-not-allowed placeholder-gray-400' 
+                            : 'border-primary-200 bg-white/80 backdrop-blur-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 text-primary-900 placeholder-primary-400'
                       }`}
-                    >
-                    <svg className="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                    </svg>
-                    {isBanned ? 'Account limited - cannot upload media' : isUploadingMedia ? 'Processing...' : 'Upload Images & Videos (5MB/20MB)'}
-                  </MediaUploader>
+                      placeholder={isBanned ? "Account limited - cannot share links" : "https://youtu.be/VIDEO_ID or https://www.youtube.com/watch?v=VIDEO_ID"}
+                      title={isBanned ? "Account limited - you cannot create posts or comments" : ""}
+                    />
                     {isBanned && (
                       <div className="absolute inset-0 bg-transparent cursor-not-allowed" title="Account limited - you cannot create posts or comments"></div>
                     )}
                   </div>
-
-                  {/* Media Preview */}
-                  {uploadedMedia.length > 0 && (
-                    <div className="space-y-3">
-                      <p className="text-sm font-medium text-primary-700">
-                        {uploadedMedia.length} media file(s) ready to share:
-                      </p>
-                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                        {uploadedMedia.map((mediaUrl, index) => (
-                          <div key={index} className="relative group">
-                            <MediaDisplay 
-                              mediaUrls={[mediaUrl]} 
-                              className="w-full h-24"
-                              showControls={false}
-                            />
-                            <button
-                              type="button"
-                              onClick={() => removeUploadedMedia(index)}
-                              className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs transition-colors duration-200 opacity-0 group-hover:opacity-100"
-                              aria-label="Remove media"
-                            >
-                              ×
-                            </button>
-                          </div>
-                        ))}
-                      </div>
+                  
+                  {youtubeError && (
+                    <p className="text-sm text-red-600 flex items-center">
+                      <svg className="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.35 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                      </svg>
+                      {youtubeError}
+                    </p>
+                  )}
+                  
+                  <p className="text-xs text-primary-600">
+                    You can request permission to share YouTube links. We don't host uploads.
+                  </p>
+                  
+                  {/* Request Link Sharing Button */}
+                  {!isBanned && (
+                    <div className="relative">
+                      <button
+                        type="button"
+                        onClick={() => setShowMediaRequestModal(true)}
+                        className="w-full flex justify-center items-center py-2 px-4 border border-primary-300 rounded-lg bg-primary-50/50 hover:bg-primary-100/50 hover:border-primary-400 text-primary-700 text-sm font-medium transition-all duration-200"
+                      >
+                        <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                        </svg>
+                        Request Link Sharing
+                      </button>
                     </div>
                   )}
                 </div>
@@ -2083,6 +2109,18 @@ export default function Dashboard() {
         isOpen={showGuidelinesModal}
         onAgree={handleAcceptGuidelines}
         onViewFull={handleViewFullGuidelines}
+      />
+
+      {/* Media Access Request Modal */}
+      <MediaAccessRequestModal
+        isOpen={showMediaRequestModal}
+        onClose={() => setShowMediaRequestModal(false)}
+        onSuccess={() => {
+          // Refresh user's media permission status
+          if (user?.id) {
+            loadUserProfile();
+          }
+        }}
       />
     </div>
   )
