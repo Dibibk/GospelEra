@@ -28,7 +28,7 @@ export const profiles = pgTable("profiles", {
   affirmed_faith: boolean("affirmed_faith").default(false).notNull(),
   show_name_on_prayers: boolean("show_name_on_prayers").default(true).notNull(),
   private_profile: boolean("private_profile").default(false).notNull(),
-  link_sharing_enabled: boolean("link_sharing_enabled").default(false).notNull(),
+  media_enabled: boolean("media_enabled").default(false).notNull(),
   created_at: timestamp("created_at").defaultNow().notNull(),
   updated_at: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -41,7 +41,7 @@ export const insertProfileSchema = createInsertSchema(profiles).pick({
   affirmed_faith: true,
   show_name_on_prayers: true,
   private_profile: true,
-  link_sharing_enabled: true,
+  media_enabled: true,
 });
 
 export type InsertProfile = z.infer<typeof insertProfileSchema>;
@@ -217,8 +217,8 @@ export const insertDonationSchema = createInsertSchema(donations).omit({
 export type InsertDonation = z.infer<typeof insertDonationSchema>;
 export type Donation = typeof donations.$inferSelect;
 
-// Link Sharing Requests table for managing link sharing access
-export const linkSharingRequests = pgTable("link_sharing_requests", {
+// Media Requests table for managing media upload access
+export const mediaRequests = pgTable("media_requests", {
   id: bigserial("id", { mode: "number" }).primaryKey(),
   user_id: uuid("user_id").references(() => profiles.id, { onDelete: 'cascade' }).notNull(),
   status: text("status").default('pending').notNull(), // 'pending', 'approved', 'denied'
@@ -228,7 +228,7 @@ export const linkSharingRequests = pgTable("link_sharing_requests", {
   updated_at: timestamp("updated_at").defaultNow().notNull(),
 });
 
-export const insertLinkSharingRequestSchema = createInsertSchema(linkSharingRequests).omit({
+export const insertMediaRequestSchema = createInsertSchema(mediaRequests).omit({
   id: true,
   user_id: true,
   admin_id: true,
@@ -236,5 +236,5 @@ export const insertLinkSharingRequestSchema = createInsertSchema(linkSharingRequ
   updated_at: true,
 });
 
-export type InsertLinkSharingRequest = z.infer<typeof insertLinkSharingRequestSchema>;
-export type LinkSharingRequest = typeof linkSharingRequests.$inferSelect;
+export type InsertMediaRequest = z.infer<typeof insertMediaRequestSchema>;
+export type MediaRequest = typeof mediaRequests.$inferSelect;
