@@ -33,6 +33,8 @@ export default function Dashboard() {
   const [tags, setTags] = useState('')
   const [isCreating, setIsCreating] = useState(false)
   const [createError, setCreateError] = useState('')
+  const [youtubeUrl, setYoutubeUrl] = useState('')
+  const [youtubeError, setYoutubeError] = useState('')
   const [uploadedMedia, setUploadedMedia] = useState<string[]>([])
   const [isUploadingMedia, setIsUploadingMedia] = useState(false)
   

@@ -208,7 +208,7 @@ export function MediaUploader({
   const handleRequestSuccess = () => {
     toast({
       title: "Request submitted!",
-      description: "Your media access request is under review. You'll be notified when approved.",
+      description: "Your link sharing request is under review. You'll be notified when approved.",
     });
     // Refresh permission status
     setRequestStatus('pending');
@@ -224,9 +224,9 @@ export function MediaUploader({
   const getButtonText = () => {
     if (isCheckingPermission) return "Checking access...";
     if (!hasMediaPermission) {
-      if (requestStatus === 'pending') return "Access Request Pending";
-      if (requestStatus === 'denied') return "Request Media Access";
-      return "Request Media Access";
+      if (requestStatus === 'pending') return "Link Request Pending";
+      if (requestStatus === 'denied') return "Request Link Sharing";
+      return "Request Link Sharing";
     }
     return children;
   };
@@ -253,7 +253,7 @@ export function MediaUploader({
         onClick={handleOpenModal} 
         className={buttonClassName}
         disabled={disabled || isCheckingPermission}
-        title={!hasMediaPermission ? "Media upload requires approval - click to request access" : undefined}
+        title={!hasMediaPermission ? "Link sharing requires approval - click to request access" : undefined}
       >
         {!hasMediaPermission ? (
           <div className="flex items-center gap-2">

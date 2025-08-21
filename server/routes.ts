@@ -385,10 +385,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         })
         .where(eq(mediaRequests.id, requestId));
       
-      // Enable media uploads for the user
+      // Enable link sharing for the user
       await db.update(profiles)
         .set({
-          media_enabled: true,
+          link_sharing_enabled: true,
           updated_at: new Date()
         })
         .where(eq(profiles.id, request.user_id));
@@ -452,7 +452,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         setTimeout(() => reject(new Error('Database query timeout')), 8000)
       );
       
-      const queryPromise = db.select({ media_enabled: profiles.media_enabled })
+      const queryPromise = db.select({ link_sharing_enabled: profiles.link_sharing_enabled })
         .from(profiles)
         .where(eq(profiles.id, userId));
       
@@ -464,7 +464,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.json({ hasPermission: false, error: "Database unavailable - assuming no permission" });
       }
       
-      res.json({ hasPermission: profile.media_enabled });
+      res.json({ hasPermission: profile.link_sharing_enabled });
     } catch (error) {
       console.error("Error checking media permission:", error);
       // If database connection fails, default to no permission for security

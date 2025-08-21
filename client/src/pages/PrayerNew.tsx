@@ -15,6 +15,8 @@ export default function PrayerNew() {
   const [details, setDetails] = useState('')
   const [tags, setTags] = useState<string[]>([])
   const [newTag, setNewTag] = useState('')
+  const [youtubeUrl, setYoutubeUrl] = useState('')
+  const [youtubeError, setYoutubeError] = useState('')
   const [isAnonymous, setIsAnonymous] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState('')

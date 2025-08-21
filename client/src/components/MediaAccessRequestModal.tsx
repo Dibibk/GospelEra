@@ -28,7 +28,7 @@ export function MediaAccessRequestModal({ isOpen, onClose, onSuccess }: MediaAcc
       toast({
         variant: "destructive",
         title: "Authentication required",
-        description: "Please sign in to request media access."
+        description: "Please sign in to request link sharing access."
       })
       return
     }
@@ -37,7 +37,7 @@ export function MediaAccessRequestModal({ isOpen, onClose, onSuccess }: MediaAcc
       toast({
         variant: "destructive", 
         title: "Reason required",
-        description: "Please explain why you need media upload access."
+        description: "Please explain why you need link sharing access."
       })
       return
     }
@@ -82,18 +82,17 @@ export function MediaAccessRequestModal({ isOpen, onClose, onSuccess }: MediaAcc
               </svg>
             </div>
             <DialogTitle className="text-xl font-bold text-primary-800 dark:text-primary-200">
-              Request Media Upload Access
+              Request Link Sharing
             </DialogTitle>
           </div>
           <DialogDescription className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
-            Gospel Era is a faith-centered community where media uploads help strengthen our witness and encourage believers.
+            Share YouTube links (no uploads). Links are reviewed before appearing publicly.
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-3 mb-4">
           <div className="text-sm text-gray-600 dark:text-gray-400">
-            Access to image and video uploads is managed through a subscription-based system to 
-            ensure quality content that honors Christ and builds up the body.
+            You can request permission to share YouTube links. We don't host uploads.
           </div>
           <div className="text-xs text-gray-500 dark:text-gray-500">
             ✝️ All content is reviewed to align with Gospel truth and community standards
@@ -103,13 +102,13 @@ export function MediaAccessRequestModal({ isOpen, onClose, onSuccess }: MediaAcc
         <form onSubmit={handleSubmit} className="space-y-4 mt-4">
           <div>
             <Label htmlFor="reason" className="text-sm font-medium text-gray-700 dark:text-gray-300">
-              Why do you need media upload access? <span className="text-red-500">*</span>
+              Why do you need link sharing access? <span className="text-red-500">*</span>
             </Label>
             <Textarea
               id="reason"
               value={reason}
               onChange={(e) => setReason(e.target.value)}
-              placeholder="Share how you plan to use image and video uploads to encourage our Gospel community (e.g., testimony photos, scripture graphics, ministry updates, etc.)"
+              placeholder="Share how you plan to use YouTube links to encourage our Gospel community (e.g., worship music, sermons, testimonies, etc.)"
               className="mt-1 min-h-[100px] border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800"
               required
             />

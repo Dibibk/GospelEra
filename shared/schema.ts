@@ -28,7 +28,7 @@ export const profiles = pgTable("profiles", {
   affirmed_faith: boolean("affirmed_faith").default(false).notNull(),
   show_name_on_prayers: boolean("show_name_on_prayers").default(true).notNull(),
   private_profile: boolean("private_profile").default(false).notNull(),
-  media_enabled: boolean("media_enabled").default(false).notNull(),
+  link_sharing_enabled: boolean("link_sharing_enabled").default(false).notNull(),
   created_at: timestamp("created_at").defaultNow().notNull(),
   updated_at: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -41,7 +41,7 @@ export const insertProfileSchema = createInsertSchema(profiles).pick({
   affirmed_faith: true,
   show_name_on_prayers: true,
   private_profile: true,
-  media_enabled: true,
+  link_sharing_enabled: true,
 });
 
 export type InsertProfile = z.infer<typeof insertProfileSchema>;
@@ -54,6 +54,9 @@ export const posts = pgTable("posts", {
   author_id: varchar("author_id").notNull(),
   tags: text("tags").array().notNull().default([]),
   media_urls: text("media_urls").array().notNull().default([]),
+  embed_url: text("embed_url"),
+  moderation_status: text("moderation_status").default('approved').notNull(), // 'pending', 'approved', 'rejected'
+  moderation_reason: text("moderation_reason"),
   hidden: boolean("hidden").default(false).notNull(),
   created_at: timestamp("created_at").defaultNow().notNull(),
   updated_at: timestamp("updated_at").defaultNow().notNull(),
@@ -63,10 +66,11 @@ export const insertPostSchema = createInsertSchema(posts).pick({
   title: true,
   content: true,
   tags: true,
-  media_urls: true,
+  embed_url: true,
 }).extend({
   title: z.string().min(1, "Title is required"),
   content: z.string().min(1, "Message is required"),
+  embed_url: z.string().url("Please enter a valid YouTube URL").optional().or(z.literal("")),
 });
 
 export type InsertPost = z.infer<typeof insertPostSchema>;
@@ -137,6 +141,9 @@ export const prayerRequests = pgTable("prayer_requests", {
   title: text("title").notNull(),
   details: text("details").notNull(),
   tags: text("tags").array().notNull().default([]),
+  embed_url: text("embed_url"),
+  moderation_status: text("moderation_status").default('approved').notNull(), // 'pending', 'approved', 'rejected'
+  moderation_reason: text("moderation_reason"),
   is_anonymous: boolean("is_anonymous").default(false).notNull(),
   status: text("status").default('open').notNull(),
   created_at: timestamp("created_at").defaultNow().notNull(),
@@ -145,6 +152,10 @@ export const prayerRequests = pgTable("prayer_requests", {
 export const insertPrayerRequestSchema = createInsertSchema(prayerRequests).omit({
   id: true,
   created_at: true,
+  moderation_status: true,
+  moderation_reason: true,
+}).extend({
+  embed_url: z.string().url("Please enter a valid YouTube URL").optional().or(z.literal("")),
 });
 
 export type InsertPrayerRequest = z.infer<typeof insertPrayerRequestSchema>;
@@ -206,8 +217,8 @@ export const insertDonationSchema = createInsertSchema(donations).omit({
 export type InsertDonation = z.infer<typeof insertDonationSchema>;
 export type Donation = typeof donations.$inferSelect;
 
-// Media Requests table for managing media upload access
-export const mediaRequests = pgTable("media_requests", {
+// Link Sharing Requests table for managing link sharing access
+export const linkSharingRequests = pgTable("link_sharing_requests", {
   id: bigserial("id", { mode: "number" }).primaryKey(),
   user_id: uuid("user_id").references(() => profiles.id, { onDelete: 'cascade' }).notNull(),
   status: text("status").default('pending').notNull(), // 'pending', 'approved', 'denied'
@@ -217,7 +228,7 @@ export const mediaRequests = pgTable("media_requests", {
   updated_at: timestamp("updated_at").defaultNow().notNull(),
 });
 
-export const insertMediaRequestSchema = createInsertSchema(mediaRequests).omit({
+export const insertLinkSharingRequestSchema = createInsertSchema(linkSharingRequests).omit({
   id: true,
   user_id: true,
   admin_id: true,
@@ -225,5 +236,5 @@ export const insertMediaRequestSchema = createInsertSchema(mediaRequests).omit({
   updated_at: true,
 });
 
-export type InsertMediaRequest = z.infer<typeof insertMediaRequestSchema>;
-export type MediaRequest = typeof mediaRequests.$inferSelect;
+export type InsertLinkSharingRequest = z.infer<typeof insertLinkSharingRequestSchema>;
+export type LinkSharingRequest = typeof linkSharingRequests.$inferSelect;
