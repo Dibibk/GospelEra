@@ -137,6 +137,70 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Posts API Routes
+  app.get("/api/posts", async (req, res) => {
+    try {
+      const { db } = await import("../client/src/lib/db");
+      const { posts } = await import("@shared/schema");
+      const { desc, eq, lt } = await import("drizzle-orm");
+      
+      const limit = parseInt(req.query.limit as string) || 20;
+      const fromId = req.query.fromId as string;
+      const authorId = req.query.authorId as string;
+      
+      let query = db.select().from(posts).orderBy(desc(posts.created_at)).limit(limit);
+      
+      // Add author filter if provided
+      if (authorId) {
+        query = query.where(eq(posts.author_id, authorId)) as any;
+      }
+      
+      // Add keyset pagination if fromId is provided
+      if (fromId) {
+        // Get the created_at timestamp of the fromId post for keyset pagination
+        const [fromPost] = await db.select({ created_at: posts.created_at })
+          .from(posts)
+          .where(eq(posts.id, parseInt(fromId)));
+        
+        if (fromPost) {
+          query = query.where(lt(posts.created_at, fromPost.created_at)) as any;
+        }
+      }
+      
+      const allPosts = await query;
+      res.json(allPosts);
+    } catch (error) {
+      console.error("Error fetching posts:", error);
+      res.status(500).json({ error: "Failed to fetch posts" });
+    }
+  });
+
+  app.post("/api/posts", async (req, res) => {
+    try {
+      const { db } = await import("../client/src/lib/db");
+      const { posts, insertPostSchema } = await import("@shared/schema");
+      
+      const result = insertPostSchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ error: "Invalid post data", issues: result.error.issues });
+      }
+
+      const postData = {
+        title: result.data.title,
+        content: result.data.content,
+        tags: result.data.tags || [],
+        embed_url: result.data.embed_url || null,
+        author_id: req.headers['x-user-id'] as string || 'anonymous'
+      };
+      
+      const [newPost] = await db.insert(posts).values(postData).returning();
+      res.status(201).json(newPost);
+    } catch (error) {
+      console.error("Error creating post:", error);
+      res.status(500).json({ error: "Failed to create post" });
+    }
+  });
+
   // Prayer Request Routes
   app.get("/api/prayer-requests", async (req, res) => {
     try {

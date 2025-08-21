@@ -47,7 +47,7 @@ export class MemStorage implements IStorage {
   }
 
   async getBannedUsers(): Promise<User[]> {
-    return Array.from(this.users.values()).filter(user => user.role === 'banned');
+    return Array.from(this.users.values()).filter(user => (user as any).role === 'banned');
   }
 }
 
