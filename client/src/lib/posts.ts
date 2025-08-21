@@ -1,10 +1,11 @@
 import { supabase } from './supabaseClient'
 
-interface CreatePostData {
+export interface CreatePostData {
   title: string
   content: string
   tags?: string[]
   media_urls?: string[]
+  embed_url?: string
 }
 
 interface ListPostsOptions {
@@ -33,7 +34,7 @@ interface TopTagsOptions {
  * @param {string[]} postData.media_urls - Array of media URLs (optional, defaults to empty array)
  * @returns {Promise<{data: Object|null, error: Error|null}>}
  */
-export async function createPost({ title, content, tags = [], media_urls = [] }: CreatePostData) {
+export async function createPost({ title, content, tags = [], media_urls = [], embed_url }: CreatePostData) {
   try {
     // Get current user
     const { data: { user }, error: userError } = await supabase.auth.getUser()
@@ -54,6 +55,7 @@ export async function createPost({ title, content, tags = [], media_urls = [] }:
         content,
         tags,
         media_urls,
+        embed_url,
         author_id: user.id
       })
       .select()
@@ -89,7 +91,8 @@ export async function listPosts({ limit = 20, fromId, authorId }: ListPostsOptio
         created_at,
         updated_at,
         author_id,
-        media_urls
+        media_urls,
+        embed_url
       `)
       .order('created_at', { ascending: false })
       .limit(limit)
@@ -187,7 +190,8 @@ export async function searchPosts({ q = '', tags = [], limit = 20, cursor }: Sea
         created_at,
         updated_at,
         author_id,
-        media_urls
+        media_urls,
+        embed_url
       `)
       .order('created_at', { ascending: false })
       .order('id', { ascending: false })

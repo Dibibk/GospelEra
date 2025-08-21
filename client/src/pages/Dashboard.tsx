@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useRole } from '../hooks/useRole'
 import { useOnlineStatus } from '../hooks/useOnlineStatus'
-import { createPost, listPosts, softDeletePost, searchPosts, getTopTags } from '../lib/posts'
+import { createPost, listPosts, softDeletePost, searchPosts, getTopTags, CreatePostData } from '../lib/posts'
 import { createComment, listComments, softDeleteComment } from '../lib/comments'
 import { createReport } from '../lib/reports'
 import { getDailyVerse } from '../lib/scripture'
@@ -28,6 +28,18 @@ export default function Dashboard() {
   const { isBanned } = useRole()
   const isOnline = useOnlineStatus()
   const [userMenuOpen, setUserMenuOpen] = useState(false)
+  
+  // Close user menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element
+      if (userMenuOpen && !target.closest('.user-menu-container')) {
+        setUserMenuOpen(false)
+      }
+    }
+    document.addEventListener('click', handleClickOutside)
+    return () => document.removeEventListener('click', handleClickOutside)
+  }, [userMenuOpen])
   
   // Post creation form state
   const [title, setTitle] = useState('')
@@ -348,52 +360,7 @@ export default function Dashboard() {
     }
   }
 
-  // Media upload handlers
-  const handleMediaUpload = async () => {
-    try {
-      const { uploadURL, error } = await getMediaUploadURL()
-      if (error) {
-        throw error
-      }
-      return { method: 'PUT' as const, url: uploadURL }
-    } catch (error) {
-      console.error('Failed to get upload URL:', error)
-      showToast('Failed to get upload URL', 'error')
-      throw error
-    }
-  }
-
-  const handleMediaUploadComplete = async (result: any) => {
-    setIsUploadingMedia(true)
-    try {
-      const successfulUploads = result.successful || []
-      const newMediaUrls: string[] = []
-
-      for (const upload of successfulUploads) {
-        const { objectPath, error } = await processUploadedMedia(upload.uploadURL)
-        if (error) {
-          console.error('Failed to process uploaded media:', error)
-          showToast(`Failed to process ${upload.name}`, 'error')
-        } else {
-          newMediaUrls.push(objectPath)
-        }
-      }
-
-      if (newMediaUrls.length > 0) {
-        setUploadedMedia(prev => [...prev, ...newMediaUrls])
-        showToast(`${newMediaUrls.length} media file(s) uploaded successfully!`, 'success')
-      }
-    } catch (error) {
-      console.error('Error processing media uploads:', error)
-      showToast('Error processing media uploads', 'error')
-    } finally {
-      setIsUploadingMedia(false)
-    }
-  }
-
-  const removeUploadedMedia = (indexToRemove: number) => {
-    setUploadedMedia(prev => prev.filter((_, index) => index !== indexToRemove))
-  }
+  // Media upload replaced with YouTube link sharing
 
   const handleCreatePost = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -963,7 +930,7 @@ export default function Dashboard() {
 
               
               {/* User Menu */}
-              <div className="relative">
+              <div className="relative user-menu-container">
                 <button
                   type="button"
                   onClick={() => setUserMenuOpen(!userMenuOpen)}
@@ -1377,7 +1344,7 @@ export default function Dashboard() {
                   </p>
                   
                   {/* Request Link Sharing Button */}
-                  {!isBanned && (
+                  {!isBanned && !userProfile?.media_enabled && (
                     <div className="relative">
                       <button
                         type="button"
@@ -1684,6 +1651,22 @@ export default function Dashboard() {
                               className="w-full max-w-lg"
                               showControls={true}
                             />
+                          </div>
+                        )}
+
+                        {/* YouTube Embed Display */}
+                        {post.embed_url && (
+                          <div className="mb-4">
+                            <div className="relative w-full max-w-2xl bg-gray-100 rounded-lg overflow-hidden">
+                              <iframe
+                                src={post.embed_url}
+                                className="w-full h-64 md:h-80"
+                                frameBorder="0"
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                allowFullScreen
+                                title="YouTube video"
+                              />
+                            </div>
                           </div>
                         )}
                         
