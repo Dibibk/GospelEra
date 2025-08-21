@@ -1862,7 +1862,7 @@ export default function Dashboard() {
                         </button>
                       </div>
                       
-                      {post.author_id === user?.id && (
+                      {(post.author_id === user?.id || (post.author_id === null && user?.id)) && (
                         <div className="flex items-center space-x-2">
                           {/* Edit Button */}
                           <button

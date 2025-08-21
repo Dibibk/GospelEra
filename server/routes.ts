@@ -226,13 +226,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Invalid post data", issues: result.error.issues });
       }
       
-      // First, check if the post exists and belongs to the user
+      // First, check if the post exists and belongs to the user (or is null/anonymous and user can claim it)
       const [existingPost] = await db.select()
         .from(posts)
-        .where(and(eq(posts.id, postId), eq(posts.author_id, userId)));
+        .where(eq(posts.id, postId));
       
       if (!existingPost) {
-        return res.status(404).json({ error: "Post not found or you don't have permission to edit it" });
+        return res.status(404).json({ error: "Post not found" });
+      }
+      
+      // Check ownership: either the user owns it, or it's anonymous (null) and user can edit
+      if (existingPost.author_id !== userId && existingPost.author_id !== null) {
+        return res.status(403).json({ error: "You don't have permission to edit this post" });
       }
       
       const postData = {
