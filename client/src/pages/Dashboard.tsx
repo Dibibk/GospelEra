@@ -485,7 +485,11 @@ export default function Dashboard() {
     } else {
       showToast('Post deleted successfully', 'success')
       
-      // Reload posts to ensure the deleted post is filtered out
+      // Force complete refresh by clearing state first
+      setPosts([])
+      setNextCursor(null)
+      
+      // Then reload posts to ensure the deleted post is filtered out
       if (isSearchMode) {
         handleSearch()
       } else {

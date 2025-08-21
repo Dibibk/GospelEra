@@ -81,47 +81,26 @@ export async function createPost({ title, content, tags = [], media_urls = [], e
  */
 export async function listPosts({ limit = 20, fromId, authorId }: ListPostsOptions = {}) {
   try {
-    let query = supabase
-      .from('posts')
-      .select(`
-        id,
-        title,
-        content,
-        tags,
-        created_at,
-        updated_at,
-        author_id,
-        media_urls,
-        embed_url
-      `)
-      .order('created_at', { ascending: false })
-      .limit(limit)
-
-    // Add author filter if provided
-    if (authorId) {
-      query = query.eq('author_id', authorId)
-    }
-
-    // Add keyset pagination if fromId is provided
+    // Build query parameters
+    const params = new URLSearchParams()
+    params.append('limit', limit.toString())
+    
     if (fromId) {
-      // Get the created_at timestamp of the fromId post for keyset pagination
-      const { data: fromPost, error: fromError } = await supabase
-        .from('posts')
-        .select('created_at')
-        .eq('id', fromId)
-        .single()
-
-      if (!fromError && fromPost) {
-        query = query.lt('created_at', fromPost.created_at)
-      }
+      params.append('fromId', fromId.toString())
+    }
+    
+    if (authorId) {
+      params.append('authorId', authorId)
     }
 
-    const { data, error } = await query
-
-    if (error) {
-      throw new Error(`Failed to fetch posts: ${error.message}`)
+    // Make request to backend API (which properly filters out hidden posts)
+    const response = await fetch(`/api/posts?${params.toString()}`)
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch posts: ${response.statusText}`)
     }
-
+    
+    const data = await response.json()
     return { data, error: null }
   } catch (err) {
     return { data: null, error: err }
