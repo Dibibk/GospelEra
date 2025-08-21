@@ -423,16 +423,20 @@ export default function Dashboard() {
       if (error) {
         setCreateError((error as any).message || 'Failed to update post')
       } else {
-        // Update the post in the current list
-        setPosts(prev => prev.map(post => 
-          post.id === editingPost.id ? { ...post, ...data.data } : post
-        ))
-        
+        // Force a complete refresh to ensure the updated embed_url is reflected
         handleCancelEdit()
         showToast('Post updated successfully!', 'success')
         
+        // Clear posts first to force a fresh reload
+        setPosts([])
+        setNextCursor(null)
+        
         // Refresh the posts to get the latest data
-        loadPosts()
+        if (isSearchMode) {
+          handleSearch()
+        } else {
+          loadPosts()
+        }
       }
     } else {
       // Create new post
@@ -522,12 +526,14 @@ export default function Dashboard() {
     setTimeout(() => {
       window.scrollTo({ top: 0, behavior: 'smooth' })
       // Focus on the title field to make editing obvious
-      const titleInput = document.querySelector('input[placeholder*="title"]') as HTMLInputElement
+      const titleInput = document.querySelector('input[name="title"]') as HTMLInputElement || 
+                        document.querySelector('input[placeholder*="Post Title"]') as HTMLInputElement ||
+                        document.querySelector('input[type="text"]') as HTMLInputElement
       if (titleInput) {
         titleInput.focus()
         titleInput.select() // Select all text to make it clear we're editing
       }
-    }, 100)
+    }, 300) // Longer delay to ensure scroll completes first
   }
 
   const handleCancelEdit = () => {
