@@ -284,10 +284,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Check if user can delete: post author, anonymous post, or admin
+      console.log(`DELETE request for post ${postId} by user ${userId}`);
+      
       const { profiles } = await import("@shared/schema");
-      const [userProfile] = await db.select()
+      console.log('Querying profiles table for user role...');
+      
+      const [userProfile] = await db.select({ 
+        id: profiles.id, 
+        role: profiles.role 
+      })
         .from(profiles)
         .where(eq(profiles.id, userId));
+      
+      console.log('User profile result:', userProfile);
       
       const isAdmin = userProfile?.role === 'admin';
       const isOwner = existingPost.author_id === userId || existingPost.author_id === null;
