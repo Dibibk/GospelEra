@@ -164,12 +164,17 @@ export function MediaUploader({
         const { hasPermission } = await checkMediaPermission(user.id);
         setHasMediaPermission(hasPermission);
 
-        // Check request status
-        const { status } = await getCurrentRequestStatus();
-        setRequestStatus(status);
+        // Only check request status if user doesn't have permission
+        if (!hasPermission) {
+          const { status } = await getCurrentRequestStatus();
+          setRequestStatus(status);
+        } else {
+          setRequestStatus(null); // Clear request status if user has permission
+        }
 
-        // Show subscription prompt if recently approved
-        if (hasPermission && status === 'approved' && !localStorage.getItem(`subscription-prompt-shown-${user.id}`)) {
+        // Show subscription prompt if recently approved (check status from API call above)
+        const currentStatus = hasPermission ? null : requestStatus;
+        if (hasPermission && currentStatus === 'approved' && !localStorage.getItem(`subscription-prompt-shown-${user.id}`)) {
           setShowSubscriptionPrompt(true);
           localStorage.setItem(`subscription-prompt-shown-${user.id}`, 'true');
         }

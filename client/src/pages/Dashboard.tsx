@@ -1059,7 +1059,7 @@ export default function Dashboard() {
 
                 {/* Dropdown menu */}
                 {userMenuOpen && (
-                  <div className="absolute right-0 mt-3 w-52 bg-white/95 backdrop-blur-md rounded-xl shadow-xl py-2 ring-1 ring-primary-200 border border-white/50 z-50">
+                  <div className="absolute right-0 mt-3 w-52 bg-white/95 backdrop-blur-md rounded-xl shadow-xl py-2 ring-1 ring-primary-200 border border-white/50 z-50" style={{ transform: 'translateX(0)' }}>
                     <div className="px-4 py-3 border-b border-primary-100">
                       <p className="text-sm font-medium text-primary-800">Signed in as</p>
                       <p className="text-sm text-primary-600 truncate">{user?.email}</p>

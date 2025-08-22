@@ -207,7 +207,7 @@ export default function Donate() {
                         ) : (
                           <>
                             <span>💳</span>
-                            <span>Donate with Stripe</span>
+                            <span>Support with Stripe</span>
                           </>
                         )}
                       </button>
@@ -228,7 +228,7 @@ export default function Donate() {
                         ) : (
                           <>
                             <span>🅿️</span>
-                            <span>Donate with PayPal</span>
+                            <span>Support with PayPal</span>
                           </>
                         )}
                       </button>
@@ -252,7 +252,7 @@ export default function Donate() {
                     className="w-full bg-gray-400 text-gray-600 font-semibold py-3 px-6 rounded-lg cursor-not-allowed flex items-center justify-center space-x-2"
                   >
                     <span>💳</span>
-                    <span>Donate with Stripe</span>
+                    <span>Support with Stripe</span>
                   </button>
 
                   <button
@@ -261,7 +261,7 @@ export default function Donate() {
                     className="w-full bg-gray-400 text-gray-600 font-semibold py-3 px-6 rounded-lg cursor-not-allowed flex items-center justify-center space-x-2"
                   >
                     <span>🅿️</span>
-                    <span>Donate with PayPal</span>
+                    <span>Support with PayPal</span>
                   </button>
                 </div>
               )}
