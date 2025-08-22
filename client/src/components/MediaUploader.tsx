@@ -254,21 +254,31 @@ export function MediaUploader({
 
   return (
     <div>
-      <Button 
-        onClick={handleOpenModal} 
-        className={buttonClassName}
-        disabled={disabled || isCheckingPermission}
-        title={!hasMediaPermission ? "Link sharing requires approval - click to request access" : undefined}
-      >
-        {!hasMediaPermission ? (
+      {/* Only show the button if user doesn't have media permission */}
+      {!hasMediaPermission && (
+        <Button 
+          onClick={handleOpenModal} 
+          className={buttonClassName}
+          disabled={disabled || isCheckingPermission}
+          title="Link sharing requires approval - click to request access"
+        >
           <div className="flex items-center gap-2">
             {getButtonIcon()}
             {getButtonText()}
           </div>
-        ) : (
-          getButtonText()
-        )}
-      </Button>
+        </Button>
+      )}
+      
+      {/* For users with permission, show the regular children content */}
+      {hasMediaPermission && (
+        <Button 
+          onClick={handleOpenModal} 
+          className={buttonClassName}
+          disabled={disabled || isCheckingPermission}
+        >
+          {children}
+        </Button>
+      )}
 
       <DashboardModal
         uppy={uppy}

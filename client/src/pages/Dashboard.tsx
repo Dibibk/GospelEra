@@ -6,6 +6,7 @@ import { useOnlineStatus } from '../hooks/useOnlineStatus'
 import { createPost, listPosts, softDeletePost, updatePost, searchPosts, getTopTags, CreatePostData } from '../lib/posts'
 import { createComment, listComments, softDeleteComment } from '../lib/comments'
 import { createReport } from '../lib/reports'
+import { checkMediaPermission } from '../lib/mediaRequests'
 import { getDailyVerse } from '../lib/scripture'
 import { getProfilesByIds } from '../lib/profiles'
 import { checkFlaggedStatus } from '../lib/flagged'
@@ -51,6 +52,8 @@ export default function Dashboard() {
   const [createError, setCreateError] = useState('')
   const [youtubeUrl, setYoutubeUrl] = useState('')
   const [youtubeError, setYoutubeError] = useState('')
+  const [hasMediaPermission, setHasMediaPermission] = useState(false)
+  const [checkingMediaPermission, setCheckingMediaPermission] = useState(true)
   
   // Posts feed state
   const [posts, setPosts] = useState<any[]>([])
@@ -200,6 +203,30 @@ export default function Dashboard() {
       loadPosts()
     }
   }, [debouncedQuery, selectedTags])
+  
+  // Check media permission when user changes
+  useEffect(() => {
+    const checkPermission = async () => {
+      if (!user) {
+        setHasMediaPermission(false)
+        setCheckingMediaPermission(false)
+        return
+      }
+      
+      setCheckingMediaPermission(true)
+      try {
+        const { hasPermission } = await checkMediaPermission(user.id)
+        setHasMediaPermission(hasPermission)
+      } catch (error) {
+        console.error('Error checking media permission:', error)
+        setHasMediaPermission(false)
+      } finally {
+        setCheckingMediaPermission(false)
+      }
+    }
+    
+    checkPermission()
+  }, [user])
 
   const loadDailyVerse = async () => {
     try {
@@ -1413,19 +1440,37 @@ export default function Dashboard() {
                           }
                         }
                       }}
-                      disabled={isBanned}
+                      disabled={isBanned || !hasMediaPermission}
                       className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none transition-all duration-200 font-medium ${
                         youtubeError 
                           ? 'border-red-300 bg-red-50/50 focus:ring-2 focus:ring-red-500 focus:border-red-500 text-red-900' 
                           : isBanned 
-                            ? 'border-gray-300 bg-gray-100 text-gray-500 cursor-not-allowed placeholder-gray-400' 
-                            : 'border-primary-200 bg-white/80 backdrop-blur-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 text-primary-900 placeholder-primary-400'
+                            ? 'border-gray-300 bg-gray-100 text-gray-500 cursor-not-allowed placeholder-gray-400'
+                            : !hasMediaPermission
+                              ? 'border-gray-300 bg-gray-100 text-gray-500 cursor-not-allowed placeholder-gray-400'
+                              : 'border-primary-200 bg-white/80 backdrop-blur-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 text-primary-900 placeholder-primary-400'
                       }`}
-                      placeholder={isBanned ? "Account limited - cannot share links" : "https://youtu.be/VIDEO_ID or https://www.youtube.com/watch?v=VIDEO_ID"}
-                      title={isBanned ? "Account limited - you cannot create posts or comments" : ""}
+                      placeholder={
+                        isBanned 
+                          ? "Account limited - cannot share links" 
+                          : !hasMediaPermission 
+                            ? "Link sharing requires approval - disabled until approved"
+                            : "https://youtu.be/VIDEO_ID or https://www.youtube.com/watch?v=VIDEO_ID"
+                      }
+                      title={
+                        isBanned 
+                          ? "Account limited - you cannot create posts or comments" 
+                          : !hasMediaPermission 
+                            ? "Link sharing requires media upload permission - request access above"
+                            : ""
+                      }
                     />
-                    {isBanned && (
-                      <div className="absolute inset-0 bg-transparent cursor-not-allowed" title="Account limited - you cannot create posts or comments"></div>
+                    {(isBanned || !hasMediaPermission) && (
+                      <div className="absolute inset-0 bg-transparent cursor-not-allowed" title={
+                        isBanned 
+                          ? "Account limited - you cannot create posts or comments"
+                          : "Link sharing requires media upload permission - request access above"
+                      }></div>
                     )}
                   </div>
                   
