@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useAuth } from '../hooks/useAuth'
 import { DonateNotice } from '../components/DonateNotice'
-import { createDonationPledge, validateDonationAmount, formatCurrency } from '../lib/donations'
+import { createDonationPledge, validateDonationAmount, formatCurrency, createStripeCheckout } from '../lib/donations'
 import { PAYMENTS } from '../config/payments'
 import { useNavigate } from 'react-router-dom'
 
@@ -15,7 +15,7 @@ export default function Donate() {
   const [error, setError] = useState('')
 
   const predefinedAmounts = [5, 10, 25, 50, 100]
-  const paymentsEnabled = PAYMENTS.ENABLE_STRIPE || PAYMENTS.ENABLE_PAYPAL
+  const paymentsEnabled = Boolean(import.meta.env.VITE_STRIPE_PUBLIC_KEY) || PAYMENTS.ENABLE_PAYPAL
 
   const handleAmountSelect = (amount: number) => {
     setSelectedAmount(amount)
@@ -73,8 +73,36 @@ export default function Donate() {
   }
 
   const handleStripePayment = async () => {
-    // TODO: Implement Stripe integration
-    console.log('Stripe payment not implemented yet')
+    const amount = getSelectedAmount()
+    
+    // Validate amount
+    const validation = validateDonationAmount(amount)
+    if (!validation.valid) {
+      setError(validation.error || 'Invalid amount')
+      return
+    }
+
+    setIsProcessing(true)
+    setError('')
+    
+    try {
+      const result = await createStripeCheckout({
+        amount: amount,
+        note: message.trim() || undefined
+      })
+
+      if ('error' in result) {
+        setError(result.error)
+      } else {
+        // Redirect to Stripe Checkout
+        window.location.href = result.url
+      }
+    } catch (error) {
+      console.error('Stripe payment error:', error)
+      setError('An unexpected error occurred. Please try again.')
+    } finally {
+      setIsProcessing(false)
+    }
   }
 
   const handlePayPalPayment = async () => {
@@ -144,7 +172,7 @@ export default function Donate() {
             {/* Custom Amount */}
             <div className="mb-6">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Or Enter Custom Amount
+                Or Enter Custom Amount ($2–$200)
               </label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 dark:text-gray-400">
@@ -155,7 +183,8 @@ export default function Donate() {
                   value={customAmount}
                   onChange={(e) => handleCustomAmountChange(e.target.value)}
                   placeholder="0.00"
-                  min="1"
+                  min="2"
+                  max="200"
                   step="0.01"
                   className="w-full pl-8 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-700 dark:text-white"
                 />
@@ -192,7 +221,7 @@ export default function Donate() {
               {paymentsEnabled && (
                 <>
                   <div className="grid grid-cols-2 gap-4">
-                    {PAYMENTS.ENABLE_STRIPE && (
+                    {import.meta.env.VITE_STRIPE_PUBLIC_KEY && (
                       <button
                         type="button"
                         onClick={handleStripePayment}
@@ -207,7 +236,7 @@ export default function Donate() {
                         ) : (
                           <>
                             <span>💳</span>
-                            <span>Support with Stripe</span>
+                            <span>Donate with Stripe</span>
                           </>
                         )}
                       </button>
@@ -298,7 +327,7 @@ export default function Donate() {
                     Secure Payment
                   </p>
                   <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                    Your payment information is encrypted and secure. We never store your payment details.
+                    Your gift helps us keep the Gospel community alive. Not tax-deductible.
                   </p>
                 </div>
               </div>

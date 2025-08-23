@@ -10,6 +10,11 @@ export interface DonationData {
   status?: string;
 }
 
+export interface StripeCheckoutData {
+  amount: number;
+  note?: string;
+}
+
 export interface Donation {
   id: number;
   user_id: string;
@@ -121,13 +126,39 @@ export function validateDonationAmount(amount: number): { valid: boolean; error?
     return { valid: false, error: 'Amount must be greater than $0' };
   }
   
-  if (amount < 1) {
-    return { valid: false, error: 'Minimum donation is $1' };
+  if (amount < 2) {
+    return { valid: false, error: 'Minimum donation is $2' };
   }
   
-  if (amount > 10000) {
-    return { valid: false, error: 'Maximum donation is $10,000' };
+  if (amount > 200) {
+    return { valid: false, error: 'Maximum donation is $200' };
   }
   
   return { valid: true };
+}
+
+/**
+ * Create Stripe checkout session
+ */
+export async function createStripeCheckout(data: StripeCheckoutData): Promise<{ url: string } | { error: string }> {
+  try {
+    const response = await fetch('/api/stripe/create-checkout-session', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      return { error: errorData.error || 'Failed to create checkout session' };
+    }
+
+    const result = await response.json();
+    return { url: result.url };
+  } catch (error) {
+    console.error('Error creating Stripe checkout:', error);
+    return { error: 'Network error occurred' };
+  }
 }

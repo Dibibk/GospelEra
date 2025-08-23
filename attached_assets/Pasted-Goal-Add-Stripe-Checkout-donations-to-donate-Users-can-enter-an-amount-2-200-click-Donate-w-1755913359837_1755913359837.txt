@@ -1,0 +1,115 @@
+Goal: Add Stripe Checkout donations to /donate.
+Users can enter an amount ($2–$200), click “Donate with Stripe,” and complete payment. After success, insert a record into donations table.
+
+1) Env variables
+
+In .env.local add:
+
+VITE_STRIPE_PUBLISHABLE_KEY=pk_test_xxx
+STRIPE_SECRET_KEY=sk_test_xxx
+STRIPE_WEBHOOK_SECRET=whsec_xxx
+
+
+Later, replace pk_test/sk_test with pk_live/sk_live after activation.
+
+Use the toggle in Stripe dashboard to view both.
+
+2) Backend: create checkout session
+
+Add file server/api/stripe/create-checkout-session.ts.
+
+Handler:
+
+Validate amount (2 ≤ amount ≤ 200 dollars).
+
+Convert to cents.
+
+Create Stripe Checkout Session:
+
+const session = await stripe.checkout.sessions.create({
+  payment_method_types: ['card'],
+  mode: 'payment',
+  line_items: [{
+    price_data: {
+      currency: 'usd',
+      product_data: { name: 'Donation' },
+      unit_amount: amount_cents,
+    },
+    quantity: 1,
+  }],
+  success_url: `${process.env.APP_URL}/donate/thanks?session_id={CHECKOUT_SESSION_ID}`,
+  cancel_url: `${process.env.APP_URL}/donate`,
+});
+
+
+Return { url: session.url }.
+
+3) Frontend: update /donate page
+
+Add form with:
+
+Textbox: “Donation amount ($2–$200)”
+
+Optional note textarea
+
+Button: Donate with Stripe
+
+On click:
+
+POST { amount, note } to /api/stripe/create-checkout-session.
+
+Redirect window.location = session.url.
+
+4) Webhook: mark donation paid
+
+Add server/api/stripe/webhook.ts.
+
+Verify with STRIPE_WEBHOOK_SECRET.
+
+On checkout.session.completed:
+
+Extract amount_total, customer_email, id.
+
+Insert row into donations table:
+
+status = 'paid'
+
+provider = 'stripe'
+
+amount_cents, user_id (if available), note (from metadata).
+
+5) Database (Supabase)
+
+Ensure donations table has fields:
+
+id, user_id, amount_cents, status, provider, note, stripe_session_id, created_at.
+
+6) Testing
+
+In test mode, use card 4242 4242 4242 4242 with any future date + CVC.
+
+Complete a $5 test → confirm redirect → confirm row in donations.
+
+Add unit tests:
+
+Blocks amount < $2 or > $200.
+
+Handles webhook success → DB insert.
+
+7) Deployment notes
+
+Default to sandbox keys (pk_test/sk_test).
+
+After Stripe activation:
+
+Replace with pk_live/sk_live.
+
+Test with a real $2 payment to your personal bank.
+
+8) Copy / UI text
+
+Button: Donate with Stripe
+
+Note under form: “Your gift helps us keep the Gospel community alive. Not tax-deductible.”
+
+Success page (/donate/thanks): “Thank you for your support!”

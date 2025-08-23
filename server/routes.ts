@@ -7,6 +7,7 @@ import {
 } from "./objectStorage";
 import { HybridStorageService } from "./hybridStorage";
 import { embedsRouter } from "./embeds";
+import Stripe from "stripe";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Initialize hybrid storage service (S3 or Replit Object Storage)
@@ -14,6 +15,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Log storage configuration
   console.log("Storage Configuration:", hybridStorage.getStorageInfo());
+
+  // Initialize Stripe
+  if (!process.env.STRIPE_SECRET_KEY) {
+    console.warn('STRIPE_SECRET_KEY not found - Stripe payments will not work');
+  }
+  const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY, {
+    apiVersion: "2025-07-30.basil",
+  }) : null;
 
   // Storage status endpoint for debugging
   app.get("/api/storage/status", (req, res) => {
@@ -661,6 +670,110 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // If database connection fails, default to no permission for security
       res.json({ hasPermission: false, error: "Database connection failed - check DATABASE_URL format" });
     }
+  });
+
+  // Stripe Routes
+  
+  // POST /api/stripe/create-checkout-session - Create Stripe checkout session
+  app.post("/api/stripe/create-checkout-session", async (req, res) => {
+    if (!stripe) {
+      return res.status(500).json({ error: "Stripe not configured" });
+    }
+
+    try {
+      const { amount, note } = req.body;
+
+      // Validate amount ($2-$200)
+      if (!amount || amount < 2 || amount > 200) {
+        return res.status(400).json({ error: "Amount must be between $2 and $200" });
+      }
+
+      const amountCents = Math.round(amount * 100);
+
+      // Get current domain for redirect URLs
+      const host = req.get('host');
+      const protocol = req.get('x-forwarded-proto') || (host?.includes('localhost') ? 'http' : 'https');
+      const baseUrl = `${protocol}://${host}`;
+
+      // Create checkout session
+      const session = await stripe.checkout.sessions.create({
+        payment_method_types: ['card'],
+        mode: 'payment',
+        line_items: [{
+          price_data: {
+            currency: 'usd',
+            product_data: { 
+              name: 'Donation to Gospel Era Web',
+              description: 'Supporting our faith-centered community platform'
+            },
+            unit_amount: amountCents,
+          },
+          quantity: 1,
+        }],
+        success_url: `${baseUrl}/donate/thanks?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${baseUrl}/donate`,
+        metadata: {
+          note: note || '',
+        },
+      });
+
+      res.json({ url: session.url });
+    } catch (error) {
+      console.error('Stripe checkout session error:', error);
+      res.status(500).json({ error: 'Failed to create checkout session' });
+    }
+  });
+
+  // POST /api/stripe/webhook - Handle Stripe webhooks
+  app.post("/api/stripe/webhook", async (req, res) => {
+    if (!stripe) {
+      return res.status(500).json({ error: "Stripe not configured" });
+    }
+
+    const sig = req.headers['stripe-signature'] as string;
+    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+
+    if (!webhookSecret) {
+      console.error('STRIPE_WEBHOOK_SECRET not configured');
+      return res.status(500).json({ error: "Webhook secret not configured" });
+    }
+
+    let event: Stripe.Event;
+
+    try {
+      event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
+    } catch (err) {
+      console.error('Webhook signature verification failed:', err);
+      return res.status(400).json({ error: 'Invalid signature' });
+    }
+
+    if (event.type === 'checkout.session.completed') {
+      const session = event.data.object as Stripe.Checkout.Session;
+      
+      try {
+        const { db } = await import("../client/src/lib/db");
+        const { donations } = await import("@shared/schema");
+
+        // Insert donation record
+        await db.insert(donations).values({
+          amount_cents: session.amount_total || 0,
+          currency: (session.currency || 'usd').toUpperCase(),
+          provider: 'stripe',
+          provider_ref: session.payment_intent as string,
+          stripe_session_id: session.id,
+          status: 'paid',
+          message: session.metadata?.note || null,
+          user_id: null, // Could be enhanced to link to user if logged in
+        });
+
+        console.log(`Donation completed: $${(session.amount_total || 0) / 100} via Stripe session ${session.id}`);
+      } catch (error) {
+        console.error('Error recording donation:', error);
+        return res.status(500).json({ error: 'Failed to record donation' });
+      }
+    }
+
+    res.json({ received: true });
   });
 
   const httpServer = createServer(app);

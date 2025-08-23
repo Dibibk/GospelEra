@@ -205,6 +205,7 @@ export const donations = pgTable("donations", {
   message: text("message"),
   provider: text("provider").default('pending').notNull(), // 'stripe' | 'paypal' | 'manual' | 'pending'
   provider_ref: text("provider_ref"), // session id / txn id (nullable)
+  stripe_session_id: text("stripe_session_id"), // stripe checkout session id
   status: text("status").default('initiated').notNull(), // 'initiated' | 'paid' | 'failed' | 'refunded'
   created_at: timestamp("created_at").defaultNow().notNull(),
 });
