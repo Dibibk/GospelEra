@@ -250,6 +250,7 @@ export default function Dashboard() {
       setIsLoading(true)
       setPosts([])
       setNextCursor(null)
+      setFeedError('') // Clear any previous errors
     }
     
     const fromId = cursor?.id
