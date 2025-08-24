@@ -9,7 +9,8 @@ ALTER TABLE posts ADD COLUMN IF NOT EXISTS tsv tsvector
 
 -- Create partitioned GIN index for full-text search
 -- This will automatically create indexes on all existing and future partitions
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_posts_tsv_gin 
+-- Note: Cannot use CONCURRENTLY in transaction blocks
+CREATE INDEX IF NOT EXISTS idx_posts_tsv_gin 
 ON posts USING GIN (tsv);
 
 -- Create helper function for safe full-text search with pagination
@@ -104,6 +105,7 @@ LIMIT 20;
 */
 
 -- Create index for search ordering (created_at DESC for pagination)
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_posts_search_pagination
+-- Note: Cannot use CONCURRENTLY in transaction blocks
+CREATE INDEX IF NOT EXISTS idx_posts_search_pagination
 ON posts (created_at DESC, id DESC) 
 WHERE hidden = false AND COALESCE(is_deleted, false) = false;
