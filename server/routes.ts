@@ -715,6 +715,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         metadata: {
           note: note || '',
         },
+        phone_number_collection: {
+          enabled: false,
+        },
       });
 
       res.json({ url: session.url });
