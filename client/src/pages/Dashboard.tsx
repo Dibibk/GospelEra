@@ -1031,7 +1031,7 @@ export default function Dashboard() {
                 <div className="h-12 w-12 bg-gradient-to-br from-purple-600 to-indigo-700 rounded-xl flex items-center justify-center shadow-lg animate-glow">
                   {/* Glowing Cross Icon */}
                   <svg className="h-7 w-7 text-white" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M13.5 2h-3v7.5H3v3h7.5V22h3v-9.5H22v-3h-8.5V2z" />
+                    <path d="M12 2C10.34 2 9 3.34 9 5v6H5c-1.66 0-3 1.34-3 3s1.34 3 3 3h4v6c0 1.66 1.34 3 3 3s3-1.34 3-3v-6h4c1.66 0 3-1.34 3-3s-1.34-3-3-3h-4V5c0-1.66-1.34-3-3-3z" />
                   </svg>
                 </div>
               </div>
@@ -1273,7 +1273,7 @@ export default function Dashboard() {
                   </div>
                   <div>
                     <h3 className="text-xl font-bold mb-1">Prayer Requests</h3>
-                    <p className="text-white text-sm font-medium bg-gradient-to-br from-purple-600 to-blue-600 rounded-lg px-3 py-2">Share your heart with our community and receive prayer support</p>
+                    <p className="text-white text-sm font-medium">Share your heart with our community and receive prayer support</p>
                   </div>
                 </div>
                 <div className="flex items-center space-x-2 text-white/80">
@@ -1319,18 +1319,20 @@ export default function Dashboard() {
         {/* Create Post Form */}
         <div className="bg-gradient-to-br from-white via-primary-50/30 to-purple-50/30 shadow-xl rounded-2xl mb-8 border border-primary-200/50 backdrop-blur-sm">
           <div className="px-8 py-6 border-b border-gradient-to-r from-primary-200/40 via-purple-200/40 to-primary-200/40">
-            <div className="flex items-center space-x-3">
-              <div className="h-10 w-10 bg-gradient-to-br from-purple-500 to-primary-600 rounded-xl flex items-center justify-center shadow-lg">
-                <svg className="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                </svg>
+            <div className="bg-gradient-to-br from-purple-600 to-blue-600 rounded-lg px-6 py-4">
+              <div className="flex items-center space-x-3">
+                <div className="h-10 w-10 bg-white/20 rounded-xl flex items-center justify-center shadow-lg backdrop-blur-sm">
+                  <svg className="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                </div>
+                <h2 className="text-xl font-bold text-white">
+                  {editingPost ? 'Edit Your Post' : 'Share Your Heart'}
+                </h2>
+                {editingPost && (
+                  <p className="text-sm text-white/80 mt-1">Editing post #{editingPost.id}</p>
+                )}
               </div>
-              <h2 className="text-xl font-bold bg-gradient-to-r from-primary-800 to-purple-700 bg-clip-text text-transparent">
-                {editingPost ? 'Edit Your Post' : 'Share Your Heart'}
-              </h2>
-              {editingPost && (
-                <p className="text-sm text-blue-600 mt-1">Editing post #{editingPost.id}</p>
-              )}
             </div>
           </div>
           <form onSubmit={handleCreatePost} className="p-8">
@@ -1586,13 +1588,15 @@ export default function Dashboard() {
         {/* Search Section */}
         <div className="bg-gradient-to-br from-white via-primary-50/20 to-purple-50/20 shadow-xl rounded-2xl border border-primary-200/50 backdrop-blur-sm mb-8">
           <div className="px-8 py-6 border-b border-gradient-to-r from-primary-200/40 via-purple-200/40 to-primary-200/40">
-            <div className="flex items-center space-x-3 mb-6">
-              <div className="h-10 w-10 bg-gradient-to-br from-purple-500 to-primary-600 rounded-xl flex items-center justify-center shadow-lg">
-                <svg className="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
+            <div className="bg-gradient-to-br from-purple-600 to-blue-600 rounded-lg px-6 py-4 mb-6">
+              <div className="flex items-center space-x-3">
+                <div className="h-10 w-10 bg-white/20 rounded-xl flex items-center justify-center shadow-lg backdrop-blur-sm">
+                  <svg className="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </div>
+                <h2 className="text-xl font-bold text-white">Search & Discover</h2>
               </div>
-              <h2 className="text-xl font-bold text-white bg-gradient-to-br from-purple-600 to-blue-600 rounded-lg px-3 py-2">Search & Discover</h2>
             </div>
             
             {/* Search Input */}
@@ -1703,15 +1707,17 @@ export default function Dashboard() {
         <div className="bg-gradient-to-br from-white via-primary-50/20 to-purple-50/20 shadow-xl rounded-2xl border border-primary-200/50 backdrop-blur-sm">
           <div className="px-8 py-6 border-b border-gradient-to-r from-primary-200/40 via-purple-200/40 to-primary-200/40">
             <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="h-10 w-10 bg-gradient-to-br from-gold-500 to-gold-600 rounded-xl flex items-center justify-center shadow-lg">
-                  <svg className="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                  </svg>
+              <div className="bg-gradient-to-br from-purple-600 to-blue-600 rounded-lg px-6 py-4">
+                <div className="flex items-center space-x-3">
+                  <div className="h-10 w-10 bg-white/20 rounded-xl flex items-center justify-center shadow-lg backdrop-blur-sm">
+                    <svg className="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 715.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                  </div>
+                  <h2 className="text-xl font-bold text-white">
+                    {isSearchMode ? 'Search Results' : 'Community Voices'}
+                  </h2>
                 </div>
-                <h2 className="text-xl font-bold text-white bg-gradient-to-br from-purple-600 to-blue-600 rounded-lg px-3 py-2">
-                  {isSearchMode ? 'Search Results' : 'Community Voices'}
-                </h2>
               </div>
               {isSearchMode && (
                 <span className="text-sm text-primary-600 font-medium">
