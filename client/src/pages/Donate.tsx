@@ -254,50 +254,25 @@ export default function Donate() {
 
             {/* Payment Buttons */}
             <div className="space-y-4">
-              {paymentsEnabled && (
-                <>
-                  {activeTab === 'stripe' && stripeEnabled && (
-                    <button
-                      type="button"
-                      onClick={handleStripePayment}
-                      disabled={getSelectedAmount() <= 0 || isProcessing}
-                      className="w-full bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 disabled:from-gray-400 disabled:to-gray-500 text-white font-semibold py-4 px-6 rounded-lg transition-all duration-200 transform hover:scale-[1.02] disabled:transform-none disabled:cursor-not-allowed flex items-center justify-center space-x-2"
-                    >
-                      {isProcessing ? (
-                        <>
-                          <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-                          <span>Processing...</span>
-                        </>
-                      ) : (
-                        <>
-                          <span>💳</span>
-                          <span>Donate ${getSelectedAmount().toFixed(2)} with Stripe</span>
-                        </>
-                      )}
-                    </button>
+              {paymentsEnabled && stripeEnabled && (
+                <button
+                  type="button"
+                  onClick={handleStripePayment}
+                  disabled={getSelectedAmount() <= 0 || isProcessing}
+                  className="w-full bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 disabled:from-gray-400 disabled:to-gray-500 text-white font-semibold py-4 px-6 rounded-lg transition-all duration-200 transform hover:scale-[1.02] disabled:transform-none disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                >
+                  {isProcessing ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                      <span>Processing...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>💳</span>
+                      <span>Give ${getSelectedAmount().toFixed(2)} with Stripe</span>
+                    </>
                   )}
-
-                  {activeTab === 'paypal' && paypalEnabled && (
-                    <button
-                      type="button"
-                      onClick={handlePayPalPayment}
-                      disabled={getSelectedAmount() <= 0 || isProcessing}
-                      className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 disabled:from-gray-400 disabled:to-gray-500 text-white font-semibold py-4 px-6 rounded-lg transition-all duration-200 transform hover:scale-[1.02] disabled:transform-none disabled:cursor-not-allowed flex items-center justify-center space-x-2"
-                    >
-                      {isProcessing ? (
-                        <>
-                          <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-                          <span>Processing...</span>
-                        </>
-                      ) : (
-                        <>
-                          <span>🅿️</span>
-                          <span>Support ${getSelectedAmount().toFixed(2)} with PayPal</span>
-                        </>
-                      )}
-                    </button>
-                  )}
-                </>
+                </button>
               )}
 
               {!paymentsEnabled && (
