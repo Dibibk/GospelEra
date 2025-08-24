@@ -8,7 +8,7 @@ SELECT
     COUNT(c.id) AS comments_count
 FROM posts p
 LEFT JOIN comments c ON c.post_id = p.id 
-    AND c.is_deleted IS NOT TRUE
+    AND c.deleted IS NOT TRUE
 GROUP BY p.id;
 
 -- Create audit table for tracking content prunes
@@ -37,16 +37,16 @@ BEGIN
         LEFT JOIN post_engagement_v pe ON pe.post_id = p.id
         WHERE p.created_at < now() - interval '24 months'
             AND NOT p.hidden
-            AND NOT COALESCE(p.is_deleted, false)
+            AND NOT p.hidden
             AND (pe.comments_count IS NULL OR pe.comments_count = 0)
     LOOP
         -- Insert audit record before deletion
         INSERT INTO audit_content_prunes (table_name, row_id)
         VALUES ('posts', post_record.id);
         
-        -- Delete the post (soft delete by setting is_deleted = true)
+        -- Delete the post (soft delete by setting hidden = true)
         UPDATE posts 
-        SET is_deleted = true, updated_at = now()
+        SET hidden = true, updated_at = now()
         WHERE id = post_record.id;
         
         total_pruned := total_pruned + 1;
