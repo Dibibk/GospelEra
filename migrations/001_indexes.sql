@@ -25,8 +25,8 @@ CREATE INDEX IF NOT EXISTS idx_prayer_requests_created_at_desc
   ON prayer_requests (created_at DESC);
 
 -- Prayer commitments table indexes
-CREATE INDEX IF NOT EXISTS idx_prayer_commitments_request_created_at_desc
-  ON prayer_commitments (request_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_prayer_commitments_request_committed_at_desc
+  ON prayer_commitments (request_id, committed_at DESC);
 
 -- Ensure foreign key columns are indexed (if not already)
 CREATE INDEX IF NOT EXISTS idx_posts_author_id 
@@ -44,11 +44,14 @@ CREATE INDEX IF NOT EXISTS idx_prayer_commitments_request_id
 CREATE INDEX IF NOT EXISTS idx_prayer_commitments_user_id 
   ON prayer_commitments (user_id);
 
-CREATE INDEX IF NOT EXISTS idx_bookmarks_user_id 
-  ON bookmarks (user_id);
+CREATE INDEX IF NOT EXISTS idx_engagements_user_id 
+  ON engagements (user_id);
 
-CREATE INDEX IF NOT EXISTS idx_bookmarks_post_id 
-  ON bookmarks (post_id);
+CREATE INDEX IF NOT EXISTS idx_engagements_post_id 
+  ON engagements (post_id);
+
+CREATE INDEX IF NOT EXISTS idx_engagements_type_created_at_desc
+  ON engagements (type, created_at DESC);
 
 -- Composite indexes for common query patterns
 CREATE INDEX IF NOT EXISTS idx_posts_visible_recent
