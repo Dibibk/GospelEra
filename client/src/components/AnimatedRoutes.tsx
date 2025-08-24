@@ -144,7 +144,7 @@ export function AnimatedRoutes() {
           } 
         />
         <Route 
-          path="/donate" 
+          path="/support" 
           element={
             <ProtectedRoute>
               <PageTransition>
@@ -154,7 +154,7 @@ export function AnimatedRoutes() {
           } 
         />
         <Route 
-          path="/donate/thanks" 
+          path="/support/thanks" 
           element={
             <ProtectedRoute>
               <PageTransition>
@@ -164,7 +164,7 @@ export function AnimatedRoutes() {
           } 
         />
         <Route 
-          path="/admin/donations" 
+          path="/admin/support" 
           element={
             <ProtectedRoute>
               <PageTransition>

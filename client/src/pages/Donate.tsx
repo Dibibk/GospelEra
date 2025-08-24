@@ -57,7 +57,7 @@ export default function Donate() {
         setError(result.error)
       } else {
         // Success - redirect to thanks page
-        navigate('/donate/thanks', { 
+        navigate('/support/thanks', { 
           state: { 
             amount: amount,
             message: message.trim() 
@@ -116,7 +116,7 @@ export default function Donate() {
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-purple-800 dark:text-purple-200 mb-2">
-            Support Gospel Era Web
+            Support Gospel Era
           </h1>
           <p className="text-gray-600 dark:text-gray-400">
             Help keep our faith-centered community growing
@@ -140,11 +140,11 @@ export default function Donate() {
           </div>
         )}
 
-        {/* Donation Form */}
+        {/* Support Form */}
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-purple-200/60 dark:border-purple-700/60 overflow-hidden">
           <div className="p-6">
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">
-              Choose Your Contribution
+              Choose Your Support Amount
             </h2>
 
             {/* Predefined Amounts */}

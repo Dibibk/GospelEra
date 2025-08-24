@@ -7,7 +7,7 @@ if (!import.meta.env.DEV) {
   import("./pwa/swRegistration").then(({ registerServiceWorker, checkForUpdates }) => {
     registerServiceWorker().then((result) => {
       if (result.success && result.registration) {
-        console.log("✅ Gospel Era Web is now available offline!");
+        console.log("✅ Gospel Era is now available offline!");
         checkForUpdates(result.registration);
       }
     });

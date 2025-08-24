@@ -1378,7 +1378,7 @@ export default function Dashboard() {
                     className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none transition-all duration-200 font-medium resize-none ${
                       isBanned 
                         ? 'border-gray-300 bg-gray-100 text-gray-500 cursor-not-allowed placeholder-gray-400' 
-                        : 'border-primary-200 bg-white/80 backdrop-blur-sm focus:ring-2 focus:ring-gold-500 focus:border-gold-500 text-primary-900 placeholder-primary-400'
+                        : 'border-primary-200 bg-white/80 backdrop-blur-sm focus:ring-2 focus:ring-gold-500 focus:border-gold-500 text-primary-900 placeholder-gray-600'
                     }`}
                     placeholder={isBanned ? "Account limited - cannot create posts" : "Write your heart... Share testimonies, prayers, reflections, or encouragement for our community."}
                     title={isBanned ? "Account limited - you cannot create posts or comments" : ""}
@@ -1775,8 +1775,8 @@ export default function Dashboard() {
               </div>
             ) : (
               posts.map((post) => (
-                <div key={post.id} className="bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-200 mb-6">
-                  <div className="p-6">
+                <div key={post.id} className="bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-200 mb-4 sm:mb-6">
+                  <div className="p-4 sm:p-6">
                     <div className="flex items-start space-x-4 mb-4">
                       {renderAuthorInfo(post.author_id, user?.email, 'md')}
                       <div className="flex-1 min-w-0">
@@ -1796,9 +1796,9 @@ export default function Dashboard() {
                             )}
                           </div>
                         </div>
-                        <h3 className="text-xl font-semibold text-gray-900 mb-3 leading-tight">{post.title}</h3>
-                        <div className="bg-gray-50 rounded-lg p-4 mb-4 border border-gray-100">
-                          <p className="text-gray-700 leading-relaxed">{post.content}</p>
+                        <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-3 leading-tight">{post.title}</h3>
+                        <div className="bg-gray-50 rounded-lg p-3 sm:p-4 mb-4 border border-gray-100">
+                          <p className="text-sm sm:text-base text-gray-700 leading-relaxed">{post.content}</p>
                         </div>
 
                         {/* Media Display */}

@@ -18,7 +18,7 @@ export default function DonateThanks() {
     
     // If no donation data from state and no session_id, redirect back to donate page
     if (!amount && !sessionId) {
-      navigate('/donate')
+      navigate('/support')
     }
   }, [amount, sessionId, navigate])
 
@@ -32,7 +32,7 @@ export default function DonateThanks() {
         {loading ? (
           <div className="text-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-4 border-purple-500 border-t-transparent mx-auto mb-4"></div>
-            <p className="text-gray-600 dark:text-gray-400">Confirming your donation...</p>
+            <p className="text-gray-600 dark:text-gray-400">Confirming your support...</p>
           </div>
         ) : (
           <>
@@ -52,11 +52,11 @@ export default function DonateThanks() {
               
               {sessionId ? (
                 <p className="text-lg text-gray-600 dark:text-gray-300 mb-6">
-                  Your donation has been processed successfully through Stripe.
+                  Your support has been processed successfully through Stripe.
                 </p>
               ) : (
                 <p className="text-lg text-gray-600 dark:text-gray-300 mb-6">
-                  Your pledge of <span className="font-semibold text-purple-600 dark:text-purple-400">
+                  Your support pledge of <span className="font-semibold text-purple-600 dark:text-purple-400">
                     ${amount.toFixed(2)}
                   </span> has been recorded.
                 </p>
