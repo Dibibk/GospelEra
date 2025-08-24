@@ -8,10 +8,14 @@ SET enable_partitionwise_aggregate = on;
 
 -- 1. POSTS TABLE PARTITIONING
 
--- Create partitioned posts table
+-- Create partitioned posts table (without primary key initially)
 CREATE TABLE posts_partitioned (
-    LIKE posts INCLUDING ALL
+    LIKE posts INCLUDING DEFAULTS INCLUDING CONSTRAINTS
 ) PARTITION BY RANGE (created_at);
+
+-- Drop the old primary key and create a new composite one including created_at
+ALTER TABLE posts_partitioned DROP CONSTRAINT IF EXISTS posts_pkey;
+ALTER TABLE posts_partitioned ADD PRIMARY KEY (id, created_at);
 
 -- Create current and future month partitions  
 CREATE TABLE posts_2025_08 PARTITION OF posts_partitioned
@@ -29,8 +33,12 @@ CREATE TABLE posts_2025_11 PARTITION OF posts_partitioned
 -- 2. COMMENTS TABLE PARTITIONING
 
 CREATE TABLE comments_partitioned (
-    LIKE comments INCLUDING ALL  
+    LIKE comments INCLUDING DEFAULTS INCLUDING CONSTRAINTS  
 ) PARTITION BY RANGE (created_at);
+
+-- Fix primary key for partitioning
+ALTER TABLE comments_partitioned DROP CONSTRAINT IF EXISTS comments_pkey;
+ALTER TABLE comments_partitioned ADD PRIMARY KEY (id, created_at);
 
 CREATE TABLE comments_2025_08 PARTITION OF comments_partitioned
     FOR VALUES FROM ('2025-08-01') TO ('2025-09-01');
@@ -47,8 +55,12 @@ CREATE TABLE comments_2025_11 PARTITION OF comments_partitioned
 -- 3. PRAYER REQUESTS PARTITIONING  
 
 CREATE TABLE prayer_requests_partitioned (
-    LIKE prayer_requests INCLUDING ALL
+    LIKE prayer_requests INCLUDING DEFAULTS INCLUDING CONSTRAINTS
 ) PARTITION BY RANGE (created_at);
+
+-- Fix primary key for partitioning  
+ALTER TABLE prayer_requests_partitioned DROP CONSTRAINT IF EXISTS prayer_requests_pkey;
+ALTER TABLE prayer_requests_partitioned ADD PRIMARY KEY (id, created_at);
 
 CREATE TABLE prayer_requests_2025_08 PARTITION OF prayer_requests_partitioned
     FOR VALUES FROM ('2025-08-01') TO ('2025-09-01');
