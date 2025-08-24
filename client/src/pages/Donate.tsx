@@ -233,7 +233,7 @@ export default function Donate() {
                           : 'text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100'
                       }`}
                     >
-                      💳 Support by Stripe
+                      💳 Stripe
                     </button>
                   )}
                   {paypalEnabled && (
@@ -245,7 +245,7 @@ export default function Donate() {
                           : 'text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100'
                       }`}
                     >
-                      🅿️ Support by PayPal
+                      🅿️ PayPal
                     </button>
                   )}
                 </div>

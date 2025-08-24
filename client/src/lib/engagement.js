@@ -130,7 +130,7 @@ export async function listBookmarks({ limit = 20, cursor } = {}) {
           created_at,
           updated_at,
           tags,
-          user_id
+          author_id
         )
       `)
       .eq('user_id', user.id)
