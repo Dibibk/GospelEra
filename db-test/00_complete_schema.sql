@@ -1,5 +1,6 @@
--- Complete Schema Setup for New Supabase Database
--- Run this in your NEW Supabase SQL Editor
+-- Complete Schema Setup for New Supabase Test Database
+-- Run this FIRST in your NEW Supabase SQL Editor
+-- This creates all tables to match your production schema
 
 -- 1. Create profiles table (linked to Supabase auth.users)
 CREATE TABLE profiles (
@@ -46,7 +47,26 @@ CREATE TABLE comments (
   updated_at TIMESTAMP DEFAULT NOW() NOT NULL
 );
 
--- 4. Create reports table
+-- 4. Create bookmarks table
+CREATE TABLE bookmarks (
+  id SERIAL PRIMARY KEY,
+  user_id UUID REFERENCES profiles(id) NOT NULL,
+  post_id INTEGER REFERENCES posts(id) ON DELETE CASCADE NOT NULL,
+  created_at TIMESTAMP DEFAULT NOW() NOT NULL,
+  UNIQUE(user_id, post_id)
+);
+
+-- 5. Create reactions table
+CREATE TABLE reactions (
+  id SERIAL PRIMARY KEY,
+  user_id UUID REFERENCES profiles(id) NOT NULL,
+  post_id INTEGER REFERENCES posts(id) ON DELETE CASCADE NOT NULL,
+  kind TEXT NOT NULL DEFAULT 'amen',
+  created_at TIMESTAMP DEFAULT NOW() NOT NULL,
+  UNIQUE(user_id, post_id, kind)
+);
+
+-- 6. Create reports table
 CREATE TABLE reports (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   target_type TEXT NOT NULL, -- 'post' or 'comment'
@@ -58,7 +78,7 @@ CREATE TABLE reports (
   updated_at TIMESTAMP DEFAULT NOW() NOT NULL
 );
 
--- 5. Create prayer_requests table
+-- 7. Create prayer_requests table
 CREATE TABLE prayer_requests (
   id BIGSERIAL PRIMARY KEY,
   requester UUID REFERENCES profiles(id) ON DELETE SET NULL,
@@ -73,7 +93,7 @@ CREATE TABLE prayer_requests (
   created_at TIMESTAMP DEFAULT NOW() NOT NULL
 );
 
--- 6. Create prayer_commitments table
+-- 8. Create prayer_commitments table
 CREATE TABLE prayer_commitments (
   request_id BIGINT REFERENCES prayer_requests(id) ON DELETE CASCADE,
   warrior UUID REFERENCES profiles(id) ON DELETE CASCADE,
@@ -84,7 +104,7 @@ CREATE TABLE prayer_commitments (
   PRIMARY KEY (request_id, warrior)
 );
 
--- 7. Create prayer_activity table
+-- 9. Create prayer_activity table
 CREATE TABLE prayer_activity (
   id BIGSERIAL PRIMARY KEY,
   request_id BIGINT REFERENCES prayer_requests(id) ON DELETE CASCADE,
@@ -94,7 +114,7 @@ CREATE TABLE prayer_activity (
   created_at TIMESTAMP DEFAULT NOW() NOT NULL
 );
 
--- 8. Create donations table
+-- 10. Create donations table
 CREATE TABLE donations (
   id BIGSERIAL PRIMARY KEY,
   user_id UUID REFERENCES profiles(id) ON DELETE SET NULL,
@@ -108,7 +128,7 @@ CREATE TABLE donations (
   created_at TIMESTAMP DEFAULT NOW() NOT NULL
 );
 
--- 9. Create media_requests table
+-- 11. Create media_requests table
 CREATE TABLE media_requests (
   id BIGSERIAL PRIMARY KEY,
   user_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
@@ -119,10 +139,12 @@ CREATE TABLE media_requests (
   updated_at TIMESTAMP DEFAULT NOW() NOT NULL
 );
 
--- 10. Enable Row Level Security
+-- 12. Enable Row Level Security on all tables
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE posts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE comments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE bookmarks ENABLE ROW LEVEL SECURITY;
+ALTER TABLE reactions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE reports ENABLE ROW LEVEL SECURITY;
 ALTER TABLE prayer_requests ENABLE ROW LEVEL SECURITY;
 ALTER TABLE prayer_commitments ENABLE ROW LEVEL SECURITY;
