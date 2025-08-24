@@ -51,7 +51,6 @@ BEGIN
     FROM posts p
     WHERE p.tsv @@ ts_query
         AND p.hidden = false 
-        AND COALESCE(p.is_deleted, false) = false
         AND (
             cursor_created_at IS NULL 
             OR p.created_at < cursor_created_at
@@ -79,7 +78,7 @@ SELECT
     p.tsv
 FROM posts p
 WHERE p.hidden = false 
-    AND COALESCE(p.is_deleted, false) = false;
+;
 
 -- Example search queries (commented for reference):
 /*
@@ -108,4 +107,4 @@ LIMIT 20;
 -- Note: Cannot use CONCURRENTLY in transaction blocks
 CREATE INDEX IF NOT EXISTS idx_posts_search_pagination
 ON posts (created_at DESC, id DESC) 
-WHERE hidden = false AND COALESCE(is_deleted, false) = false;
+WHERE hidden = false;
