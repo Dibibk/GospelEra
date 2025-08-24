@@ -6,9 +6,14 @@ CREATE OR REPLACE FUNCTION apply_storage_params_to_partitions(parent_table regcl
 RETURNS void AS $$
 DECLARE
     partition_name text;
-    table_name text := parent_table::text;
+    table_name text;
     hot_tables text[] := ARRAY['comments', 'prayer_commitments'];
 BEGIN
+    -- Extract just the table name (without schema) for comparison
+    SELECT c.relname INTO table_name 
+    FROM pg_class c 
+    WHERE c.oid = parent_table;
+    
     -- Apply settings to parent table first
     IF table_name = ANY(hot_tables) THEN
         -- Hot-write tables: more aggressive autovacuum
