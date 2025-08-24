@@ -39,8 +39,8 @@ CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_comments_author_id
 CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_prayer_commitments_request_id 
   ON prayer_commitments (request_id);
 
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_prayer_commitments_user_id 
-  ON prayer_commitments (user_id);
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_prayer_commitments_warrior 
+  ON prayer_commitments (warrior);
 
 CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_bookmarks_user_id 
   ON bookmarks (user_id);

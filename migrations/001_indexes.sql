@@ -41,8 +41,8 @@ CREATE INDEX IF NOT EXISTS idx_comments_author_id
 CREATE INDEX IF NOT EXISTS idx_prayer_commitments_request_id 
   ON prayer_commitments (request_id);
 
-CREATE INDEX IF NOT EXISTS idx_prayer_commitments_user_id 
-  ON prayer_commitments (user_id);
+CREATE INDEX IF NOT EXISTS idx_prayer_commitments_warrior 
+  ON prayer_commitments (warrior);
 
 -- Bookmarks and reactions indexes are created in 000_create_missing_tables.sql
 -- Additional performance indexes for engagements
