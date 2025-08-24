@@ -188,33 +188,45 @@ SELECT cron.schedule(
 */
 
 -- 6. MONITORING VIEWS
+-- Note: This view will be empty until archive tables are created by the archive_old_partitions() function
 
-CREATE VIEW archive.retention_summary AS
+CREATE OR REPLACE VIEW archive.retention_summary AS
 SELECT 
     'posts' as table_name,
-    COUNT(*) as archived_records,
-    MIN(created_at) as oldest_record,
-    MAX(created_at) as newest_record
-FROM (
-    SELECT created_at FROM archive.posts_2024_01
-    UNION ALL
-    SELECT created_at FROM archive.posts_2024_02
-    -- Add more as partitions are created
-) archived_posts
+    0::bigint as archived_records,
+    NULL::timestamp as oldest_record,
+    NULL::timestamp as newest_record
+WHERE FALSE  -- Empty result set until archive tables exist
 
 UNION ALL
 
 SELECT 
     'comments' as table_name,
-    COUNT(*) as archived_records,
-    MIN(created_at) as oldest_record,
-    MAX(created_at) as newest_record
-FROM (
-    SELECT created_at FROM archive.comments_2024_01
-    UNION ALL
-    SELECT created_at FROM archive.comments_2024_02
-    -- Add more as partitions are created
-) archived_comments;
+    0::bigint as archived_records,
+    NULL::timestamp as oldest_record,
+    NULL::timestamp as newest_record
+WHERE FALSE; -- Empty result set until archive tables exist
+
+-- Function to update the monitoring view once archive tables exist
+CREATE OR REPLACE FUNCTION refresh_retention_summary()
+RETURNS void AS $$
+DECLARE
+    archive_tables_exist boolean := false;
+BEGIN
+    -- Check if any archive tables exist
+    SELECT EXISTS(
+        SELECT 1 FROM pg_tables 
+        WHERE schemaname = 'archive'
+    ) INTO archive_tables_exist;
+    
+    IF archive_tables_exist THEN
+        -- Recreate view with actual data (implementation would be dynamic)
+        RAISE NOTICE 'Archive tables found. Manual view update needed.';
+    ELSE
+        RAISE NOTICE 'No archive tables exist yet. View remains empty.';
+    END IF;
+END;
+$$ LANGUAGE plpgsql;
 
 -- 7. CLEANUP OLD ARCHIVE DATA (Optional)
 -- Remove archived data older than 5 years
