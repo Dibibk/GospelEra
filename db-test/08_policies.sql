@@ -313,12 +313,12 @@ CREATE POLICY "Users can insert their own reactions"
 CREATE POLICY "Reporters can view own reports"
   ON public.reports
   FOR SELECT TO authenticated
-  USING (auth.uid() = reporter);
+  USING (auth.uid() = reporter_id);
 
 CREATE POLICY "Users can create reports"
   ON public.reports
   FOR INSERT TO authenticated
-  WITH CHECK (auth.uid() = reporter);
+  WITH CHECK (auth.uid() = reporter_id);
 
 CREATE POLICY admins_can_select_all_reports
   ON public.reports
@@ -352,4 +352,4 @@ CREATE POLICY authenticated_can_insert_reports
 CREATE POLICY reporters_can_select_own_reports
   ON public.reports
   FOR SELECT TO authenticated
-  USING (reporter = auth.uid());
+  USING (reporter_id = auth.uid());
