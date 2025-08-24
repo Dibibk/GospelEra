@@ -703,15 +703,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
           price_data: {
             currency: 'usd',
             product_data: { 
-              name: 'Donation to Gospel Era Web',
+              name: 'Support Gospel Era',
               description: 'Supporting our faith-centered community platform'
             },
             unit_amount: amountCents,
           },
           quantity: 1,
         }],
-        success_url: `${baseUrl}/donate/thanks?session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${baseUrl}/donate`,
+        success_url: `${baseUrl}/support/thanks?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${baseUrl}/support`,
         metadata: {
           note: note || '',
         },
