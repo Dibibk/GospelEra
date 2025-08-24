@@ -116,7 +116,8 @@ GROUP BY pc.warrior
 ORDER BY prayers_confirmed DESC, last_prayed_at DESC;
 
 -- Create index on leaderboard for fast queries
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_prayer_leaderboard_30d_ranking 
+-- Note: Cannot use CONCURRENTLY on materialized views in transaction blocks
+CREATE INDEX IF NOT EXISTS idx_prayer_leaderboard_30d_ranking 
 ON prayer_leaderboard_30d (prayers_confirmed DESC, last_prayed_at DESC);
 
 -- Function to refresh leaderboard
