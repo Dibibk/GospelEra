@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { ArrowLeft, Home } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { BottomNavigation } from '../components/BottomNavigation'
 
 export function GuidelinesCard() {
   return (
@@ -116,6 +117,7 @@ export default function Guidelines() {
           </div>
         </div>
       </div>
+      <BottomNavigation />
     </div>
   )
 }

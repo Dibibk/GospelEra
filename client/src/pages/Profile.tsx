@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import type { UploadResult } from '@uppy/core'
+import { BottomNavigation } from '../components/BottomNavigation'
 
 export default function Profile() {
   const { user } = useAuth()
@@ -362,6 +363,7 @@ export default function Profile() {
           </div>
         )}
       </div>
+      <BottomNavigation />
     </div>
   )
 }

@@ -7,6 +7,7 @@ import { listBookmarks, toggleBookmark, isBookmarked } from '../lib/engagement'
 import { getProfilesByIds } from '../lib/profiles'
 import { checkFlaggedStatus } from '../lib/flagged'
 import { BookmarkIcon, Trash2Icon, HeartIcon, MessageCircleIcon, ShareIcon, FlagIcon, UserIcon, ArrowLeftIcon } from 'lucide-react'
+import { BottomNavigation } from '../components/BottomNavigation'
 
 export default function SavedPosts() {
   const { user } = useAuth()
@@ -401,6 +402,7 @@ export default function SavedPosts() {
           {toast.message}
         </div>
       )}
+      <BottomNavigation />
     </div>
   )
 }

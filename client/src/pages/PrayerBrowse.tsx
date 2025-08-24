@@ -5,6 +5,7 @@ import { Search, Plus, Heart, Check, Clock, X } from 'lucide-react'
 import { listPrayerRequests, commitToPray, confirmPrayed } from '../lib/prayer'
 import { supabase } from '../lib/supabaseClient'
 import { Leaderboard } from '../components/Leaderboard'
+import { BottomNavigation } from '../components/BottomNavigation'
 
 interface PrayerRequest {
   id: number
@@ -420,6 +421,7 @@ export default function PrayerBrowse() {
           </div>
         </div>
       </main>
+      <BottomNavigation />
     </div>
   )
 }

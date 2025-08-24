@@ -1273,7 +1273,7 @@ export default function Dashboard() {
                   </div>
                   <div>
                     <h3 className="text-xl font-bold mb-1">Prayer Requests</h3>
-                    <p className="text-white/90 text-sm">Share your heart with our community and receive prayer support</p>
+                    <p className="text-white text-sm font-medium">Share your heart with our community and receive prayer support</p>
                   </div>
                 </div>
                 <div className="flex items-center space-x-2 text-white/80">
@@ -1781,63 +1781,63 @@ export default function Dashboard() {
                     <div className="flex items-start space-x-4 mb-4">
                       {renderAuthorInfo(post.author_id, user?.email, 'md')}
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center space-x-2">
-                            <time className="text-sm text-gray-500">
-                              {formatDate(post.created_at)}
-                            </time>
-                            {/* Flagged indicator for admins */}
-                            {userProfile?.role === 'admin' && flaggedPosts.get(post.id) && (
-                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-bold bg-red-100 text-red-800 border border-red-200">
-                                <svg className="h-3 w-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.35 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                                </svg>
-                                Flagged
-                              </span>
-                            )}
-                          </div>
+                        <div className="flex items-center justify-end mb-2">
+                          {/* Flagged indicator for admins */}
+                          {userProfile?.role === 'admin' && flaggedPosts.get(post.id) && (
+                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-bold bg-red-100 text-red-800 border border-red-200">
+                              <svg className="h-3 w-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.35 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                              </svg>
+                              Flagged
+                            </span>
+                          )}
                         </div>
-                        <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-3 leading-tight">{post.title}</h3>
-                        <div className="bg-gray-50 rounded-lg p-3 sm:p-4 mb-4 border border-gray-100">
-                          <p className="text-sm sm:text-base text-gray-700 leading-relaxed">{post.content}</p>
-                        </div>
-
-                        {/* Media Display */}
-                        {post.media_urls && post.media_urls.length > 0 && (
-                          <div className="mb-4">
-                            <MediaDisplay 
-                              mediaUrls={post.media_urls} 
-                              className="w-full max-w-lg"
-                              showControls={true}
-                            />
-                          </div>
-                        )}
-
-                        {/* YouTube Embed Display */}
-                        {post.embed_url && (
-                          <div className="mb-4">
-                            <EmbedCard 
-                              videoId={extractVideoId(post.embed_url)}
-                              start={extractStartTime(post.embed_url)}
-                              className="max-w-2xl"
-                            />
-                          </div>
-                        )}
-                        
-                        {post.tags && post.tags.length > 0 && (
-                          <div className="flex flex-wrap gap-2 mb-4">
-                            {post.tags.map((tag: string, index: number) => (
-                              <span
-                                key={index}
-                                className="inline-flex items-center px-3 py-1 rounded-md text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200"
-                              >
-                                #{tag}
-                              </span>
-                            ))}
-                          </div>
-                        )}
                       </div>
                     </div>
+                    <div className="mb-3">
+                      <time className="text-sm text-gray-500">
+                        {formatDate(post.created_at)}
+                      </time>
+                    </div>
+                    <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-3 leading-tight">{post.title}</h3>
+                    <div className="bg-gray-50 rounded-lg p-3 sm:p-4 mb-4 border border-gray-100">
+                      <p className="text-sm sm:text-base text-gray-700 leading-relaxed">{post.content}</p>
+                    </div>
+
+                    {/* Media Display */}
+                    {post.media_urls && post.media_urls.length > 0 && (
+                      <div className="mb-4">
+                        <MediaDisplay 
+                          mediaUrls={post.media_urls} 
+                          className="w-full max-w-lg"
+                          showControls={true}
+                        />
+                      </div>
+                    )}
+
+                    {/* YouTube Embed Display */}
+                    {post.embed_url && (
+                      <div className="mb-4">
+                        <EmbedCard 
+                          videoId={extractVideoId(post.embed_url)}
+                          start={extractStartTime(post.embed_url)}
+                          className="max-w-2xl"
+                        />
+                      </div>
+                    )}
+                    
+                    {post.tags && post.tags.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mb-4">
+                        {post.tags.map((tag: string, index: number) => (
+                          <span
+                            key={index}
+                            className="inline-flex items-center px-3 py-1 rounded-md text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200"
+                          >
+                            #{tag}
+                          </span>
+                        ))}
+                      </div>
+                    )}
 
                     {/* Action buttons */}
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between pt-4 border-t border-gray-200 space-y-3 sm:space-y-0">

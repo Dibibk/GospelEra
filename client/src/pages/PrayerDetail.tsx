@@ -341,7 +341,7 @@ export default function PrayerDetail() {
             <div className="mb-8">
               <h2 className="text-lg font-semibold text-gray-800 mb-3">Prayer Request</h2>
               <div className="prose prose-gray max-w-none">
-                <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">{request.details}</p>
+                <p className="text-gray-700 leading-relaxed whitespace-pre-wrap break-words overflow-wrap-anywhere">{request.details}</p>
               </div>
             </div>
 

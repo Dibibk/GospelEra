@@ -4,6 +4,7 @@ import { DonateNotice } from '../components/DonateNotice'
 import { createDonationPledge, validateDonationAmount, formatCurrency, createStripeCheckout } from '../lib/donations'
 import { PAYMENTS } from '../config/payments'
 import { useNavigate } from 'react-router-dom'
+import { BottomNavigation } from '../components/BottomNavigation'
 
 export default function Donate() {
   const { user } = useAuth()
@@ -368,6 +369,7 @@ export default function Donate() {
           </div>
         </div>
       </div>
+      <BottomNavigation />
     </div>
   )
 }

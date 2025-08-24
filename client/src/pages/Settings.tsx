@@ -17,6 +17,7 @@ import { Separator } from '@/components/ui/separator'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import type { UploadResult } from '@uppy/core'
+import { BottomNavigation } from '../components/BottomNavigation'
 
 export default function Settings() {
   const { user, signOut } = useAuth()
@@ -699,6 +700,7 @@ export default function Settings() {
           }}
         />
       </div>
+      <BottomNavigation />
     </div>
   )
 }

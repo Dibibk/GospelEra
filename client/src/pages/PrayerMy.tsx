@@ -7,6 +7,7 @@ import { supabase } from '../lib/supabaseClient'
 import { Leaderboard } from '../components/Leaderboard'
 // @ts-ignore
 import { getMyStreak } from '../lib/leaderboard'
+import { BottomNavigation } from '../components/BottomNavigation'
 
 interface MyRequest {
   id: number
@@ -580,6 +581,7 @@ export default function PrayerMy() {
           </div>
         </div>
       </div>
+      <BottomNavigation />
     </div>
   )
 }
