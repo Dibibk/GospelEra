@@ -5,12 +5,14 @@ This folder contains the complete SQL migration files for database optimization 
 ## Files Overview
 
 ### Migration Files (Production Ready)
+- `migrations/000_create_missing_tables.sql` - **RUN FIRST** - Creates missing bookmarks and reactions tables
 - `migrations/001_indexes.sql` - Transaction-safe version (no CONCURRENTLY)
 - `migrations/002_keyset_pagination.md` - Implementation guide  
 - `migrations/003_partitions.sql` - Monthly partitioning setup
 - `migrations/004_archive_retention.sql` - 18-month archive retention
 
 ### Original Files (Production Optimized)
+- `docs/000_create_missing_tables.sql` - **RUN FIRST** - Creates missing tables with production indexes
 - `docs/001_indexes_original.sql` - Original version with CONCURRENTLY for production
 - `docs/002_keyset_pagination.md` - Complete pagination guide
 - `docs/003_partitions.sql` - Full partitioning implementation
