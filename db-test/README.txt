@@ -16,11 +16,11 @@ SETUP ORDER:
    05_counters_leaderboard.sql - Prayer leaderboard + smart counters
    06_autovacuum.sql           - Database optimization settings
    07_fulltext.sql             - Full-text search indexes
+   08_policies.sql             - Row Level Security policies (fixed column names)
 
-3. Copy RLS policies from your production Supabase:
-   - Go to Authentication → Policies → View SQL (in production)
-   - Copy all policies
-   - Run in new test database
+3. Run RLS policies on new test database:
+   - File 08_policies.sql contains all corrected policies from production
+   - Column names fixed: deleted (not is_deleted), hidden (not is_deleted for posts)
 
 4. Update environment variables:
    - Set new DATABASE_URL for testing
