@@ -135,10 +135,10 @@ export default function DonateThanks() {
               Continue to Dashboard
             </button>
             <button
-              onClick={() => navigate('/donate')}
+              onClick={() => navigate('/support')}
               className="px-6 py-3 border border-purple-600 text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/20 font-semibold rounded-lg transition-colors"
             >
-              Make Another Pledge
+              Give More Support
             </button>
           </div>
             </div>

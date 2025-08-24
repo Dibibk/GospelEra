@@ -25,6 +25,7 @@ import { GuidelinesModal } from '../components/GuidelinesModal'
 import { MediaAccessRequestModal } from '../components/MediaAccessRequestModal'
 import { supabase } from '../lib/supabaseClient'
 import { HandHeart, ArrowRight } from 'lucide-react'
+import { BottomNavigation } from '../components/BottomNavigation'
 
 export default function Dashboard() {
   const { user, signOut } = useAuth()
@@ -1121,7 +1122,7 @@ export default function Dashboard() {
                       Community Guidelines
                     </a>
                     <a
-                      href="/donate"
+                      href="/support"
                       className="block w-full text-left px-4 py-3 text-sm text-gold-700 hover:bg-gradient-to-r hover:from-gold-50 hover:to-yellow-50 transition-all duration-200 font-medium"
                     >
                       <svg className="inline h-4 w-4 mr-3 text-gold-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1160,13 +1161,13 @@ export default function Dashboard() {
                           Media Requests
                         </a>
                         <a
-                          href="/admin/donations"
+                          href="/admin/support"
                           className="block w-full text-left px-4 py-3 text-sm text-red-700 hover:bg-gradient-to-r hover:from-red-50 hover:to-red-100 transition-all duration-200 font-medium"
                         >
                           <svg className="inline h-4 w-4 mr-3 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
                           </svg>
-                          Admin Donations
+                          Admin Support
                         </a>
                       </div>
                     )}
@@ -1188,7 +1189,7 @@ export default function Dashboard() {
       </nav>
 
       {/* Main Content */}
-      <main className="max-w-4xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+      <main className="max-w-4xl mx-auto py-8 px-4 sm:px-6 lg:px-8 pb-20 md:pb-8">
         {/* Verse of the Day */}
         <div className="relative overflow-hidden bg-gradient-to-br from-white via-primary-50/50 to-purple-50/50 border border-primary-200/60 shadow-xl rounded-2xl mb-10 backdrop-blur-sm">
           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-pulse"></div>
@@ -2282,6 +2283,9 @@ export default function Dashboard() {
           }
         }}
       />
+
+      {/* Mobile Bottom Navigation */}
+      <BottomNavigation />
     </div>
   )
 }

@@ -222,7 +222,7 @@ export function MediaUploader({
   const handleSubscribe = () => {
     setShowSubscriptionPrompt(false);
     // Navigate to donations/subscription page
-    window.location.href = '/donations';
+    window.location.href = '/support';
   };
 
   // Update button text based on permission and request status

@@ -33,7 +33,7 @@ export default function Donate() {
     return selectedAmount || (customAmount ? parseFloat(customAmount) : 0)
   }
 
-  const handlePledge = async () => {
+  const handleSupport = async () => {
     const amount = getSelectedAmount()
     
     // Validate amount
@@ -65,7 +65,7 @@ export default function Donate() {
         })
       }
     } catch (error) {
-      console.error('Pledge error:', error)
+      console.error('Support error:', error)
       setError('An unexpected error occurred. Please try again.')
     } finally {
       setIsProcessing(false)
@@ -295,22 +295,22 @@ export default function Donate() {
                 </div>
               )}
 
-              {/* Pledge Button */}
+              {/* Support Button */}
               <button
                 type="button"
-                onClick={handlePledge}
+                onClick={handleSupport}
                 disabled={getSelectedAmount() <= 0 || isProcessing}
                 className="w-full bg-gradient-to-r from-gold-400 to-gold-500 hover:from-gold-500 hover:to-gold-600 disabled:from-gray-400 disabled:to-gray-500 text-white font-semibold py-4 px-6 rounded-lg transition-all duration-200 transform hover:scale-[1.02] disabled:transform-none disabled:cursor-not-allowed flex items-center justify-center space-x-2"
               >
                 {isProcessing ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-                    <span>Creating Pledge...</span>
+                    <span>Creating Support...</span>
                   </>
                 ) : (
                   <>
                     <span>❤️</span>
-                    <span>{paymentsEnabled ? 'Make a Pledge' : `Pledge $${getSelectedAmount().toFixed(2)} Support`}</span>
+                    <span>{paymentsEnabled ? 'Give Support' : `Give $${getSelectedAmount().toFixed(2)} Support`}</span>
                   </>
                 )}
               </button>
