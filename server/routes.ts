@@ -720,6 +720,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         },
       });
 
+      console.log('Stripe checkout session created:', session.id, 'URL:', session.url);
       res.json({ url: session.url });
     } catch (error) {
       console.error('Stripe checkout session error:', error);

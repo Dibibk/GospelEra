@@ -99,6 +99,7 @@ export default function Donate() {
         setError(result.error)
       } else {
         // Redirect to Stripe Checkout
+        console.log('Redirecting to Stripe URL:', result.url);
         window.location.href = result.url
       }
     } catch (error) {
