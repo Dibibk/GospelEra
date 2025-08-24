@@ -14,9 +14,12 @@ export default function Donate() {
   const [message, setMessage] = useState('')
   const [isProcessing, setIsProcessing] = useState(false)
   const [error, setError] = useState('')
+  const [activeTab, setActiveTab] = useState<'stripe' | 'paypal'>('stripe')
 
   const predefinedAmounts = [5, 10, 25, 50, 100]
-  const paymentsEnabled = Boolean(import.meta.env.VITE_STRIPE_PUBLIC_KEY) || PAYMENTS.ENABLE_PAYPAL
+  const stripeEnabled = Boolean(import.meta.env.VITE_STRIPE_PUBLIC_KEY)
+  const paypalEnabled = PAYMENTS.ENABLE_PAYPAL
+  const paymentsEnabled = stripeEnabled || paypalEnabled
 
   const handleAmountSelect = (amount: number) => {
     setSelectedAmount(amount)
@@ -217,104 +220,98 @@ export default function Donate() {
               </div>
             )}
 
+            {/* Payment Method Tabs */}
+            {paymentsEnabled && (
+              <div className="mb-6">
+                <div className="flex bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
+                  {stripeEnabled && (
+                    <button
+                      onClick={() => setActiveTab('stripe')}
+                      className={`flex-1 py-2 px-4 rounded-md font-medium transition-all ${
+                        activeTab === 'stripe'
+                          ? 'bg-white dark:bg-gray-600 text-purple-600 dark:text-purple-400 shadow-sm'
+                          : 'text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100'
+                      }`}
+                    >
+                      💳 Support by Stripe
+                    </button>
+                  )}
+                  {paypalEnabled && (
+                    <button
+                      onClick={() => setActiveTab('paypal')}
+                      className={`flex-1 py-2 px-4 rounded-md font-medium transition-all ${
+                        activeTab === 'paypal'
+                          ? 'bg-white dark:bg-gray-600 text-blue-600 dark:text-blue-400 shadow-sm'
+                          : 'text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100'
+                      }`}
+                    >
+                      🅿️ Support by PayPal
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* Payment Buttons */}
             <div className="space-y-4">
               {paymentsEnabled && (
                 <>
-                  <div className="grid grid-cols-2 gap-4">
-                    {import.meta.env.VITE_STRIPE_PUBLIC_KEY && (
-                      <button
-                        type="button"
-                        onClick={handleStripePayment}
-                        disabled={getSelectedAmount() <= 0 || isProcessing}
-                        className="w-full bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 disabled:from-gray-400 disabled:to-gray-500 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200 transform hover:scale-105 disabled:transform-none disabled:cursor-not-allowed flex items-center justify-center space-x-2"
-                      >
-                        {isProcessing ? (
-                          <>
-                            <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-                            <span>Processing...</span>
-                          </>
-                        ) : (
-                          <>
-                            <span>💳</span>
-                            <span>Donate with Stripe</span>
-                          </>
-                        )}
-                      </button>
-                    )}
+                  {activeTab === 'stripe' && stripeEnabled && (
+                    <button
+                      type="button"
+                      onClick={handleStripePayment}
+                      disabled={getSelectedAmount() <= 0 || isProcessing}
+                      className="w-full bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 disabled:from-gray-400 disabled:to-gray-500 text-white font-semibold py-4 px-6 rounded-lg transition-all duration-200 transform hover:scale-[1.02] disabled:transform-none disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                    >
+                      {isProcessing ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                          <span>Processing...</span>
+                        </>
+                      ) : (
+                        <>
+                          <span>💳</span>
+                          <span>Donate ${getSelectedAmount().toFixed(2)} with Stripe</span>
+                        </>
+                      )}
+                    </button>
+                  )}
 
-                    {PAYMENTS.ENABLE_PAYPAL && (
-                      <button
-                        type="button"
-                        onClick={handlePayPalPayment}
-                        disabled={getSelectedAmount() <= 0 || isProcessing}
-                        className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 disabled:from-gray-400 disabled:to-gray-500 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200 transform hover:scale-105 disabled:transform-none disabled:cursor-not-allowed flex items-center justify-center space-x-2"
-                      >
-                        {isProcessing ? (
-                          <>
-                            <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-                            <span>Processing...</span>
-                          </>
-                        ) : (
-                          <>
-                            <span>🅿️</span>
-                            <span>Support with PayPal</span>
-                          </>
-                        )}
-                      </button>
-                    )}
-                  </div>
-
-                  {/* Or divider */}
-                  <div className="text-center">
-                    <span className="inline-block px-4 py-2 text-gray-500 dark:text-gray-400 font-medium">
-                      or
-                    </span>
-                  </div>
+                  {activeTab === 'paypal' && paypalEnabled && (
+                    <button
+                      type="button"
+                      onClick={handlePayPalPayment}
+                      disabled={getSelectedAmount() <= 0 || isProcessing}
+                      className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 disabled:from-gray-400 disabled:to-gray-500 text-white font-semibold py-4 px-6 rounded-lg transition-all duration-200 transform hover:scale-[1.02] disabled:transform-none disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                    >
+                      {isProcessing ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                          <span>Processing...</span>
+                        </>
+                      ) : (
+                        <>
+                          <span>🅿️</span>
+                          <span>Support ${getSelectedAmount().toFixed(2)} with PayPal</span>
+                        </>
+                      )}
+                    </button>
+                  )}
                 </>
               )}
 
               {!paymentsEnabled && (
-                <div className="grid grid-cols-2 gap-4 mb-4">
-                  <button
-                    type="button"
-                    disabled={true}
-                    className="w-full bg-gray-400 text-gray-600 font-semibold py-3 px-6 rounded-lg cursor-not-allowed flex items-center justify-center space-x-2"
-                  >
-                    <span>💳</span>
-                    <span>Support with Stripe</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    disabled={true}
-                    className="w-full bg-gray-400 text-gray-600 font-semibold py-3 px-6 rounded-lg cursor-not-allowed flex items-center justify-center space-x-2"
-                  >
-                    <span>🅿️</span>
-                    <span>Support with PayPal</span>
-                  </button>
+                <div className="text-center py-8">
+                  <div className="bg-gray-100 dark:bg-gray-700 rounded-lg p-6">
+                    <p className="text-gray-600 dark:text-gray-400 font-medium mb-2">
+                      Payment processing coming soon!
+                    </p>
+                    <p className="text-sm text-gray-500 dark:text-gray-500">
+                      We're working on integrating Stripe and PayPal payments.
+                    </p>
+                  </div>
                 </div>
               )}
-
-              {/* Support Button */}
-              <button
-                type="button"
-                onClick={handleSupport}
-                disabled={getSelectedAmount() <= 0 || isProcessing}
-                className="w-full bg-gradient-to-r from-gold-400 to-gold-500 hover:from-gold-500 hover:to-gold-600 disabled:from-gray-400 disabled:to-gray-500 text-white font-semibold py-4 px-6 rounded-lg transition-all duration-200 transform hover:scale-[1.02] disabled:transform-none disabled:cursor-not-allowed flex items-center justify-center space-x-2"
-              >
-                {isProcessing ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-                    <span>Creating Support...</span>
-                  </>
-                ) : (
-                  <>
-                    <span>❤️</span>
-                    <span>{paymentsEnabled ? 'Give Support' : `Give $${getSelectedAmount().toFixed(2)} Support`}</span>
-                  </>
-                )}
-              </button>
             </div>
 
             {/* Security Notice */}

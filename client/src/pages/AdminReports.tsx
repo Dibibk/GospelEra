@@ -86,12 +86,12 @@ export default function AdminReports() {
             role
           ),
           prayer_commitments (
-            id,
+            request_id,
+            warrior,
             status,
             prayed_at,
             committed_at,
             note,
-            warrior,
             profiles!prayer_commitments_warrior_fkey (
               display_name,
               avatar_url,
@@ -268,14 +268,16 @@ export default function AdminReports() {
     }
   }
 
-  const handleDeleteCommitment = async (commitmentId: string, warriorId: string) => {
-    setActionLoading(prev => new Set(prev).add(commitmentId))
+  const handleDeleteCommitment = async (requestId: string, warriorId: string) => {
+    const commitmentKey = `${requestId}-${warriorId}`
+    setActionLoading(prev => new Set(prev).add(commitmentKey))
     
     try {
       const { error } = await supabase
         .from('prayer_commitments')
         .delete()
-        .eq('id', commitmentId)
+        .eq('request_id', requestId)
+        .eq('warrior', warriorId)
 
       if (error) throw error
 
@@ -299,7 +301,7 @@ export default function AdminReports() {
     } finally {
       setActionLoading(prev => {
         const newSet = new Set(prev)
-        newSet.delete(commitmentId)
+        newSet.delete(commitmentKey)
         return newSet
       })
     }
@@ -750,7 +752,7 @@ export default function AdminReports() {
                   ) : (
                     <div className="space-y-4">
                       {selectedRequest.prayer_commitments?.map((commitment: any) => (
-                        <div key={commitment.id} className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
+                        <div key={`${commitment.request_id}-${commitment.warrior}`} className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
                           <div className="flex items-start justify-between">
                             <div className="flex-1">
                               <div className="flex items-center gap-2 mb-2">
@@ -780,8 +782,8 @@ export default function AdminReports() {
                               <Button
                                 size="sm"
                                 variant="outline"
-                                onClick={() => handleDeleteCommitment(commitment.id, commitment.warrior)}
-                                disabled={actionLoading.has(commitment.id)}
+                                onClick={() => handleDeleteCommitment(commitment.request_id, commitment.warrior)}
+                                disabled={actionLoading.has(`${commitment.request_id}-${commitment.warrior}`)}
                                 className="text-red-600 hover:text-red-700"
                               >
                                 <X className="h-4 w-4 mr-1" />

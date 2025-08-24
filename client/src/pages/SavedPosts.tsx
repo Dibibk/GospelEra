@@ -46,7 +46,7 @@ export default function SavedPosts() {
       
       try {
         const { data, error } = await getProfilesByIds([user.id])
-        if (!error && data && data.length > 0) {
+        if (!error && data && Array.isArray(data) && data.length > 0) {
           setUserProfile(data[0])
         }
       } catch (err) {
@@ -93,7 +93,7 @@ export default function SavedPosts() {
       
       // Load author profiles
       if (Array.isArray(bookmarkedPosts) && bookmarkedPosts.length > 0) {
-        const authorIds = bookmarkedPosts.map((post: any) => post.author || post.user_id).filter(Boolean)
+        const authorIds = bookmarkedPosts.map((post: any) => post.author_id || post.author).filter(Boolean)
         await loadProfiles(authorIds)
         
         // Load engagement data
@@ -149,7 +149,7 @@ export default function SavedPosts() {
     try {
       const flaggedResult = await checkFlaggedStatus(postIds, 'post')
       const { data } = flaggedResult || {}
-      if (data && Array.isArray(data)) {
+      if (Array.isArray(data)) {
         const flaggedMap = data.reduce((acc: any, postId: number) => {
           acc[postId] = true
           return acc
@@ -273,7 +273,7 @@ export default function SavedPosts() {
           {posts.length > 0 && (
             <div className="space-y-6 mb-8">
               {posts.map((post) => {
-                const profile = profiles[post.author || post.user_id]
+                const profile = profiles[post.author_id || post.author]
                 const isFlagged = flaggedPosts[post.id]
                 
                 return (
@@ -292,7 +292,7 @@ export default function SavedPosts() {
                           <div>
                             <div className="flex items-center gap-2">
                               <Link 
-                                to={`/profile/${post.author || post.user_id}`}
+                                to={`/profile/${post.author_id || post.author}`}
                                 className="font-semibold text-gray-800 dark:text-white hover:text-purple-600 dark:hover:text-purple-400"
                               >
                                 {profile?.display_name || 'Gospel User'}
