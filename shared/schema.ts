@@ -95,22 +95,37 @@ export const insertCommentSchema = createInsertSchema(comments).pick({
 export type InsertComment = z.infer<typeof insertCommentSchema>;
 export type Comment = typeof comments.$inferSelect;
 
-export const engagements = pgTable("engagements", {
+// Separate tables for bookmarks and reactions (replacing old engagements table)
+export const bookmarks = pgTable("bookmarks", {
   id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
   user_id: varchar("user_id").notNull(),
   post_id: integer("post_id").notNull(),
-  type: text("type").notNull(), // 'amen' or 'bookmark'
   created_at: timestamp("created_at").defaultNow().notNull(),
 });
 
-export const insertEngagementSchema = createInsertSchema(engagements).pick({
-  user_id: true,
-  post_id: true,
-  type: true,
+export const reactions = pgTable("reactions", {
+  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+  user_id: varchar("user_id").notNull(),
+  post_id: integer("post_id").notNull(),
+  kind: text("kind").notNull().default('amen'), // 'amen' for now
+  created_at: timestamp("created_at").defaultNow().notNull(),
 });
 
-export type InsertEngagement = z.infer<typeof insertEngagementSchema>;
-export type Engagement = typeof engagements.$inferSelect;
+export const insertBookmarkSchema = createInsertSchema(bookmarks).pick({
+  user_id: true,
+  post_id: true,
+});
+
+export const insertReactionSchema = createInsertSchema(reactions).pick({
+  user_id: true,
+  post_id: true,
+  kind: true,
+});
+
+export type InsertBookmark = z.infer<typeof insertBookmarkSchema>;
+export type Bookmark = typeof bookmarks.$inferSelect;
+export type InsertReaction = z.infer<typeof insertReactionSchema>;
+export type Reaction = typeof reactions.$inferSelect;
 
 export const reports = pgTable("reports", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
