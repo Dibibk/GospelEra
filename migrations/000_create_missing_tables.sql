@@ -21,14 +21,21 @@ CREATE TABLE IF NOT EXISTS reactions (
     UNIQUE(user_id, post_id, kind)
 );
 
--- Add foreign key constraints
-ALTER TABLE bookmarks 
-ADD CONSTRAINT IF NOT EXISTS fk_bookmarks_post 
-FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE;
+-- Add foreign key constraints (only if they don't exist)
+DO $$ 
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_bookmarks_post') THEN
+        ALTER TABLE bookmarks 
+        ADD CONSTRAINT fk_bookmarks_post 
+        FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE;
+    END IF;
 
-ALTER TABLE reactions 
-ADD CONSTRAINT IF NOT EXISTS fk_reactions_post 
-FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE;
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_reactions_post') THEN
+        ALTER TABLE reactions 
+        ADD CONSTRAINT fk_reactions_post 
+        FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE;
+    END IF;
+END $$;
 
 -- Create essential indexes
 CREATE INDEX IF NOT EXISTS idx_bookmarks_user_id ON bookmarks (user_id);
