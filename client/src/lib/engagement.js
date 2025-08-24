@@ -123,7 +123,7 @@ export async function listBookmarks({ limit = 20, cursor } = {}) {
       .select(`
         created_at,
         post_id,
-        posts (
+        posts!fk_bookmarks_post (
           id,
           title,
           content,
