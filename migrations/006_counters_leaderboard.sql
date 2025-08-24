@@ -14,7 +14,7 @@ BEGIN
         SELECT COUNT(*)
         FROM comments c
         WHERE c.post_id = posts.id 
-            AND c.is_deleted IS NOT TRUE
+            AND c.deleted IS NOT TRUE
     );
     
     -- Backfill prayer_requests.prayed_count
@@ -35,18 +35,18 @@ RETURNS TRIGGER AS $$
 BEGIN
     IF TG_OP = 'INSERT' THEN
         -- Only increment if new comment is not deleted
-        IF NEW.is_deleted IS NOT TRUE THEN
+        IF NEW.deleted IS NOT TRUE THEN
             UPDATE posts SET comments_count = comments_count + 1 
             WHERE id = NEW.post_id;
         END IF;
         RETURN NEW;
     ELSIF TG_OP = 'UPDATE' THEN
-        -- Handle is_deleted status changes
-        IF OLD.is_deleted IS NOT TRUE AND NEW.is_deleted IS TRUE THEN
+        -- Handle deleted status changes
+        IF OLD.deleted IS NOT TRUE AND NEW.deleted IS TRUE THEN
             -- Comment was soft-deleted, decrement
             UPDATE posts SET comments_count = comments_count - 1 
             WHERE id = NEW.post_id;
-        ELSIF OLD.is_deleted IS TRUE AND NEW.is_deleted IS NOT TRUE THEN
+        ELSIF OLD.deleted IS TRUE AND NEW.deleted IS NOT TRUE THEN
             -- Comment was undeleted, increment
             UPDATE posts SET comments_count = comments_count + 1 
             WHERE id = NEW.post_id;
@@ -54,7 +54,7 @@ BEGIN
         RETURN NEW;
     ELSIF TG_OP = 'DELETE' THEN
         -- Only decrement if deleted comment was not marked as deleted
-        IF OLD.is_deleted IS NOT TRUE THEN
+        IF OLD.deleted IS NOT TRUE THEN
             UPDATE posts SET comments_count = comments_count - 1 
             WHERE id = OLD.post_id;
         END IF;
