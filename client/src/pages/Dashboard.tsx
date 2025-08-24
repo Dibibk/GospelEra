@@ -1319,18 +1319,18 @@ export default function Dashboard() {
         {/* Create Post Form */}
         <div className="bg-gradient-to-br from-white via-primary-50/30 to-purple-50/30 shadow-xl rounded-2xl mb-8 border border-primary-200/50 backdrop-blur-sm">
           <div className="px-8 py-6 border-b border-gradient-to-r from-primary-200/40 via-purple-200/40 to-primary-200/40">
-            <div className="bg-gradient-to-br from-purple-600 to-blue-600 rounded-lg px-6 py-4">
+            <div className="rounded-lg px-6 py-4">
               <div className="flex items-center space-x-3">
-                <div className="h-10 w-10 bg-white/20 rounded-xl flex items-center justify-center shadow-lg backdrop-blur-sm">
-                  <svg className="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="h-10 w-10 bg-purple-100 dark:bg-purple-800/30 rounded-xl flex items-center justify-center shadow-lg">
+                  <svg className="h-5 w-5 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                   </svg>
                 </div>
-                <h2 className="text-xl font-bold text-white">
+                <h2 className="text-xl font-bold text-purple-600 dark:text-purple-400">
                   {editingPost ? 'Edit Your Post' : 'Share Your Heart'}
                 </h2>
                 {editingPost && (
-                  <p className="text-sm text-white/80 mt-1">Editing post #{editingPost.id}</p>
+                  <p className="text-sm text-purple-500 dark:text-purple-400 mt-1">Editing post #{editingPost.id}</p>
                 )}
               </div>
             </div>
@@ -1588,14 +1588,14 @@ export default function Dashboard() {
         {/* Search Section */}
         <div className="bg-gradient-to-br from-white via-primary-50/20 to-purple-50/20 shadow-xl rounded-2xl border border-primary-200/50 backdrop-blur-sm mb-8">
           <div className="px-8 py-6 border-b border-gradient-to-r from-primary-200/40 via-purple-200/40 to-primary-200/40">
-            <div className="bg-gradient-to-br from-purple-600 to-blue-600 rounded-lg px-6 py-4 mb-6">
+            <div className="rounded-lg px-6 py-4 mb-6">
               <div className="flex items-center space-x-3">
-                <div className="h-10 w-10 bg-white/20 rounded-xl flex items-center justify-center shadow-lg backdrop-blur-sm">
-                  <svg className="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="h-10 w-10 bg-purple-100 dark:bg-purple-800/30 rounded-xl flex items-center justify-center shadow-lg">
+                  <svg className="h-5 w-5 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
                 </div>
-                <h2 className="text-xl font-bold text-white">Search & Discover</h2>
+                <h2 className="text-xl font-bold text-purple-600 dark:text-purple-400">Search & Discover</h2>
               </div>
             </div>
             
@@ -1707,14 +1707,14 @@ export default function Dashboard() {
         <div className="bg-gradient-to-br from-white via-primary-50/20 to-purple-50/20 shadow-xl rounded-2xl border border-primary-200/50 backdrop-blur-sm">
           <div className="px-8 py-6 border-b border-gradient-to-r from-primary-200/40 via-purple-200/40 to-primary-200/40">
             <div className="flex items-center justify-between">
-              <div className="bg-gradient-to-br from-purple-600 to-blue-600 rounded-lg px-6 py-4">
+              <div className="rounded-lg px-6 py-4">
                 <div className="flex items-center space-x-3">
-                  <div className="h-10 w-10 bg-white/20 rounded-xl flex items-center justify-center shadow-lg backdrop-blur-sm">
-                    <svg className="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="h-10 w-10 bg-purple-100 dark:bg-purple-800/30 rounded-xl flex items-center justify-center shadow-lg">
+                    <svg className="h-5 w-5 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 715.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                     </svg>
                   </div>
-                  <h2 className="text-xl font-bold text-white">
+                  <h2 className="text-xl font-bold text-purple-600 dark:text-purple-400">
                     {isSearchMode ? 'Search Results' : 'Community Voices'}
                   </h2>
                 </div>

@@ -28,7 +28,7 @@ export function validateAndNormalizeYouTubeUrl(url: string): YouTubeLinkValidati
     if (!validDomains.includes(parsedUrl.hostname)) {
       return {
         isValid: false,
-        error: 'Only YouTube links are allowed.'
+        error: 'Only Christ-centered YouTube content is allowed. Please share gospel music, sermons, or Christian testimonies.'
       };
     }
 
@@ -46,7 +46,7 @@ export function validateAndNormalizeYouTubeUrl(url: string): YouTubeLinkValidati
     if (!videoId || videoId.length !== 11) {
       return {
         isValid: false,
-        error: 'Invalid YouTube video URL format.'
+        error: 'Please provide a valid YouTube video link that honors Jesus and aligns with our Christian community guidelines.'
       };
     }
 

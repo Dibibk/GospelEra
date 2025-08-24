@@ -8,18 +8,25 @@ export interface ModerationConfig {
 export const moderationConfig: ModerationConfig = {
   // Terms that indicate non-Christian religious practices
   blockedTerms: [
-    'allah', 'muhammad', 'quran', 'mosque',
-    'vishnu', 'shiva', 'krishna', 'brahma', 'hindu gods',
-    'buddha as deity', 'buddhist prayer', 'dharma prayer',
-    'athena', 'zeus', 'thor', 'odin', 'apollo',
+    'allah', 'muhammad', 'quran', 'mosque', 'islamic prayer',
+    'vishnu', 'shiva', 'krishna', 'brahma', 'hindu gods', 'hindu prayer',
+    'buddha as deity', 'buddhist prayer', 'dharma prayer', 'meditation prayer',
+    'athena', 'zeus', 'thor', 'odin', 'apollo', 'greek gods',
     'gaia worship', 'mother earth prayer', 'nature deity',
     'tarot reading', 'horoscope prayer', 'astrology prayer',
-    'ouija', 'séance', 'spirit guide',
-    'witchcraft', 'spell casting', 'magic ritual',
+    'ouija', 'séance', 'spirit guide', 'channeling spirits',
+    'witchcraft', 'spell casting', 'magic ritual', 'wiccan',
     'occult invocation', 'pagan ritual', 'wiccan prayer',
     'ancestral worship', 'ancestor spirits',
     'chakra alignment prayer', 'crystal healing prayer',
-    'new age spirituality', 'universe prayer'
+    'new age spirituality', 'universe prayer',
+    'hail mary', 'virgin mary prayer', 'mother mary intercession',
+    'saint intercession', 'pray to saints', 'rosary prayer',
+    'catholic saints', 'our lady of', 'blessed virgin',
+    'pope blessing', 'papal prayer', 'mass prayer',
+    'purgatory prayer', 'saint joseph prayer', 'saint michael prayer',
+    'immaculate conception', 'assumption of mary',
+    'sacred heart of mary', 'queen of heaven'
   ],
   
   // Terms that boost Christian content confidence
@@ -77,7 +84,7 @@ export function moderateContent(text: string): ModerationResult {
   if (foundBlockedTerms.length > 0) {
     return {
       allowed: false,
-      reason: "This community is Christ-centered. Please direct prayers to Jesus.",
+      reason: "We welcome all, but this space is specifically for Christian prayer to Jesus. Please direct prayers to Jesus Christ, our Savior and mediator.",
       confidence: 0.9
     }
   }
