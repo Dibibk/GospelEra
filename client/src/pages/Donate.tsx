@@ -98,9 +98,8 @@ export default function Donate() {
       if ('error' in result) {
         setError(result.error)
       } else {
-        // Redirect to Stripe Checkout
-        console.log('Redirecting to Stripe URL:', result.url);
-        window.location.href = result.url
+        // Open Stripe Checkout in new tab (better for Replit environment)
+        window.open(result.url, '_blank')
       }
     } catch (error) {
       console.error('Stripe payment error:', error)
