@@ -25,8 +25,9 @@ import { GuidelinesModal } from '../components/GuidelinesModal'
 import { MediaAccessRequestModal } from '../components/MediaAccessRequestModal'
 import { HelpDrawer } from '../components/HelpDrawer'
 import { supabase } from '../lib/supabaseClient'
-import { HandHeart, ArrowRight, HelpCircle } from 'lucide-react'
+import { HandHeart, ArrowRight, HelpCircle, Plus } from 'lucide-react'
 import { BottomNavigation } from '../components/BottomNavigation'
+import { PostCreateModal } from '../components/PostCreateModal'
 
 export default function Dashboard() {
   const { user, signOut } = useAuth()
@@ -50,14 +51,8 @@ export default function Dashboard() {
     return () => document.removeEventListener('click', handleClickOutside)
   }, [userMenuOpen])
   
-  // Post creation form state
-  const [title, setTitle] = useState('')
-  const [content, setContent] = useState('')
-  const [tags, setTags] = useState('')
-  const [isCreating, setIsCreating] = useState(false)
-  const [createError, setCreateError] = useState('')
-  const [youtubeUrl, setYoutubeUrl] = useState('')
-  const [youtubeError, setYoutubeError] = useState('')
+  // Post creation modal state
+  const [showCreateModal, setShowCreateModal] = useState(false)
   const [hasMediaPermission, setHasMediaPermission] = useState(false)
   const [checkingMediaPermission, setCheckingMediaPermission] = useState(true)
   
@@ -123,9 +118,6 @@ export default function Dashboard() {
   const [bookmarkLoading, setBookmarkLoading] = useState<{[postId: number]: boolean}>({})
   const [amenLoading, setAmenLoading] = useState<{[postId: number]: boolean}>({})
 
-  // Moderation state
-  const [moderationError, setModerationError] = useState<string>('')
-  const [draftContent, setDraftContent] = useState({ title: '', content: '' })
   
   // Media request modal state  
   const [showMediaRequestModal, setShowMediaRequestModal] = useState(false)
@@ -1330,274 +1322,17 @@ export default function Dashboard() {
           </div>
         )}
         
-        {/* Create Post Form */}
-        <div className="bg-gradient-to-br from-white via-primary-50/30 to-purple-50/30 shadow-xl rounded-2xl mb-8 border border-primary-200/50 backdrop-blur-sm">
-          <div className="px-8 py-6 border-b border-gradient-to-r from-primary-200/40 via-purple-200/40 to-primary-200/40">
-            <div className="rounded-lg px-6 py-4">
-              <div className="flex items-center space-x-3">
-                <div className="h-10 w-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
-                  <svg className="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                  </svg>
-                </div>
-                <h2 className="text-xl font-bold text-purple-600 dark:text-purple-400">
-                  {editingPost ? 'Edit Your Post' : 'Share Your Heart'}
-                </h2>
-                {editingPost && (
-                  <p className="text-sm text-purple-500 dark:text-purple-400 mt-1">Editing post #{editingPost.id}</p>
-                )}
-              </div>
-            </div>
-          </div>
-          <form onSubmit={handleCreatePost} className="p-8">
-            <div className="space-y-6">
-              <div>
-                <label htmlFor="title" className="block text-sm font-bold text-primary-800 mb-2 flex items-center">
-                  <svg className="h-4 w-4 text-gold-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-                  </svg>
-                  Post Title
-                </label>
-                <div className="relative">
-                  <input
-                    id="title"
-                    type="text"
-                    required
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    disabled={isBanned}
-                    className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none transition-all duration-200 font-medium ${
-                      isBanned 
-                        ? 'border-gray-300 bg-gray-100 text-gray-500 cursor-not-allowed placeholder-gray-400' 
-                        : 'border-primary-200 bg-white/80 backdrop-blur-sm focus:ring-2 focus:ring-gold-500 focus:border-gold-500 text-primary-900 placeholder-primary-400'
-                    }`}
-                    placeholder={isBanned ? "Account limited - cannot create posts" : "Share your inspiration..."}
-                    title={isBanned ? "Account limited - you cannot create posts or comments" : ""}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label htmlFor="content" className="block text-sm font-bold text-primary-800 mb-2 flex items-center">
-                  <svg className="h-4 w-4 text-gold-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                  </svg>
-                  Your Message
-                </label>
-                <div className="relative">
-                  <textarea
-                    id="content"
-                    required
-                    rows={5}
-                    value={content}
-                    onChange={(e) => setContent(e.target.value)}
-                    disabled={isBanned}
-                    className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none transition-all duration-200 font-medium resize-none ${
-                      isBanned 
-                        ? 'border-gray-300 bg-gray-100 text-gray-500 cursor-not-allowed placeholder-gray-400' 
-                        : 'border-primary-200 bg-white/80 backdrop-blur-sm focus:ring-2 focus:ring-gold-500 focus:border-gold-500 text-primary-900 placeholder-gray-600'
-                    }`}
-                    placeholder={isBanned ? "Account limited - cannot create posts" : "Write your heart... Share testimonies, prayers, reflections, or encouragement for our community."}
-                    title={isBanned ? "Account limited - you cannot create posts or comments" : ""}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label htmlFor="tags" className="block text-sm font-bold text-primary-800 mb-2 flex items-center">
-                  <svg className="h-4 w-4 text-gold-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-                  </svg>
-                  Tags (optional)
-                </label>
-                <div className="relative">
-                  <input
-                    id="tags"
-                    type="text"
-                    value={tags}
-                    onChange={(e) => setTags(e.target.value)}
-                    disabled={isBanned}
-                    className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none transition-all duration-200 font-medium ${
-                      isBanned 
-                        ? 'border-gray-300 bg-gray-100 text-gray-500 cursor-not-allowed placeholder-gray-400' 
-                        : 'border-primary-200 bg-white/80 backdrop-blur-sm focus:ring-2 focus:ring-gold-500 focus:border-gold-500 text-primary-900 placeholder-primary-400'
-                    }`}
-                    placeholder={isBanned ? "Account limited - cannot create posts" : "prayer, testimony, encouragement, worship"}
-                    title={isBanned ? "Account limited - you cannot create posts or comments" : ""}
-                  />
-                </div>
-              </div>
-
-              {/* YouTube Link Section */}
-              <div>
-                <label htmlFor="youtubeUrl" className="block text-sm font-bold text-primary-800 mb-2 flex items-center">
-                  <svg className="h-4 w-4 text-red-600 mr-2" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
-                  </svg>
-                  YouTube link (optional)
-                </label>
-                
-                <div className="space-y-3">
-                  <div className="relative">
-                    <input
-                      id="youtubeUrl"
-                      type="url"
-                      value={youtubeUrl}
-                      onChange={(e) => {
-                        setYoutubeUrl(e.target.value);
-                        setYoutubeError('');
-                      }}
-                      onBlur={() => {
-                        if (youtubeUrl.trim()) {
-                          const validation = validateAndNormalizeYouTubeUrl(youtubeUrl.trim());
-                          if (!validation.isValid) {
-                            setYoutubeError(validation.error || 'Invalid YouTube URL');
-                          } else {
-                            setYoutubeUrl(validation.normalizedUrl || youtubeUrl);
-                          }
-                        }
-                      }}
-                      disabled={isBanned || !hasMediaPermission}
-                      className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none transition-all duration-200 font-medium ${
-                        youtubeError 
-                          ? 'border-red-300 bg-red-50/50 focus:ring-2 focus:ring-red-500 focus:border-red-500 text-red-900' 
-                          : isBanned 
-                            ? 'border-gray-300 bg-gray-100 text-gray-500 cursor-not-allowed placeholder-gray-400'
-                            : !hasMediaPermission
-                              ? 'border-gray-300 bg-gray-100 text-gray-500 cursor-not-allowed placeholder-gray-400'
-                              : 'border-primary-200 bg-white/80 backdrop-blur-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 text-primary-900 placeholder-primary-400'
-                      }`}
-                      placeholder={
-                        isBanned 
-                          ? "Account limited - cannot share links" 
-                          : !hasMediaPermission 
-                            ? "Link sharing requires approval - disabled until approved"
-                            : "https://youtu.be/VIDEO_ID or https://www.youtube.com/watch?v=VIDEO_ID"
-                      }
-                      title={
-                        isBanned 
-                          ? "Account limited - you cannot create posts or comments" 
-                          : !hasMediaPermission 
-                            ? "Link sharing requires media upload permission - request access above"
-                            : ""
-                      }
-                    />
-                    {(isBanned || !hasMediaPermission) && (
-                      <div className="absolute inset-0 bg-transparent cursor-not-allowed" title={
-                        isBanned 
-                          ? "Account limited - you cannot create posts or comments"
-                          : "Link sharing requires media upload permission - request access above"
-                      }></div>
-                    )}
-                  </div>
-                  
-                  {youtubeError && (
-                    <p className="text-sm text-red-600 flex items-center">
-                      <svg className="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.35 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                      </svg>
-                      {youtubeError}
-                    </p>
-                  )}
-                  
-                  <p className="text-xs text-primary-600">
-                    You can request permission to share YouTube links. We don't host uploads.
-                  </p>
-                  
-                  {/* Request Link Sharing Button */}
-                  {!isBanned && !(userProfile as any)?.media_enabled && (
-                    <div className="relative">
-                      <button
-                        type="button"
-                        onClick={() => setShowMediaRequestModal(true)}
-                        className="w-full flex justify-center items-center py-2 px-4 border border-primary-300 rounded-lg bg-primary-50/50 hover:bg-primary-100/50 hover:border-primary-400 text-primary-700 text-sm font-medium transition-all duration-200"
-                      >
-                        <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                        </svg>
-                        Request Link Sharing
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {(createError || moderationError) && (
-                <div className="bg-gradient-to-r from-red-50 to-pink-50 border-2 border-red-200 rounded-xl p-4 shadow-sm" role="alert">
-                  <div className="flex items-center">
-                    <svg className="h-5 w-5 text-red-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.35 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                    </svg>
-                    <div>
-                      {createError && <p className="text-sm font-medium text-red-700">{createError}</p>}
-                      {moderationError && (
-                        <div className="text-sm font-medium text-red-700">
-                          <p className="flex items-center">
-                            <svg className="h-4 w-4 mr-1 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14L21 3M7 7l-3 3 3 3" />
-                            </svg>
-                            {moderationError}
-                          </p>
-                          <p className="text-xs text-blue-600 mt-1">
-                            We welcome all, but this space is specifically for Christian prayer to Jesus.
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              <div className="space-y-4">
-                <div className="text-center">
-                  <Link 
-                    to="/guidelines"
-                    className="inline-flex items-center text-sm text-purple-600 hover:text-purple-700 font-medium transition-colors duration-200"
-                  >
-                    <svg className="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h.01M12 12h.01M15 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                    </svg>
-                    Review Community Guidelines
-                  </Link>
-                </div>
-                <div className={`${editingPost ? 'flex space-x-4' : ''}`}>
-                  {editingPost && (
-                    <button
-                      type="button"
-                      onClick={handleCancelEdit}
-                      className="flex-1 flex justify-center items-center py-4 px-6 border-2 border-gray-300 rounded-xl shadow-lg text-base font-bold text-gray-700 bg-white hover:bg-gray-50 hover:border-gray-400 focus:outline-none focus:ring-4 focus:ring-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
-                    >
-                      <svg className="h-5 w-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                      Cancel
-                    </button>
-                  )}
-                  <button
-                    type="submit"
-                    disabled={isCreating || !title.trim() || !content.trim() || isBanned}
-                    className={`${editingPost ? 'flex-1' : 'w-full'} flex justify-center items-center py-4 px-6 border border-transparent rounded-xl shadow-lg text-base font-bold text-white bg-gradient-to-r from-primary-600 via-purple-600 to-primary-600 hover:from-primary-700 hover:via-purple-700 hover:to-primary-700 focus:outline-none focus:ring-4 focus:ring-gold-500/50 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 transform hover:scale-[1.02] hover:shadow-xl`}
-                    title={isBanned ? "Account limited - you cannot create posts or comments" : ""}
-                  >
-                    {isCreating ? (
-                      <>
-                        <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent mr-3"></div>
-                        {editingPost ? 'Updating...' : 'Sharing...'}
-                      </>
-                    ) : (
-                      <>
-                        <svg className="h-5 w-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={editingPost ? "M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" : "M12 6v6m0 0v6m0-6h6m-6 0H6"} />
-                        </svg>
-                        {isBanned ? 'Account Limited' : editingPost ? 'Update Post' : 'Share with Community'}
-                      </>
-                    )}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </form>
-        </div>
+        {/* Floating Action Button */}
+        {!isBanned && (
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="fixed bottom-24 right-6 md:bottom-8 md:right-8 h-16 w-16 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white rounded-full shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-110 z-40 flex items-center justify-center group"
+            data-testid="button-new-post"
+            title="Create new post"
+          >
+            <Plus className="h-8 w-8 group-hover:rotate-90 transition-transform duration-300" />
+          </button>
+        )}
 
         {/* Search Section */}
         <div className="bg-gradient-to-br from-white via-primary-50/20 to-purple-50/20 shadow-xl rounded-2xl border border-primary-200/50 backdrop-blur-sm mb-8">
@@ -2301,6 +2036,25 @@ export default function Dashboard() {
         isOpen={showGuidelinesModal}
         onAgree={handleAcceptGuidelines}
         onViewFull={handleViewFullGuidelines}
+      />
+
+      {/* Post Create Modal */}
+      <PostCreateModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        hasMediaPermission={hasMediaPermission}
+        onMediaRequestClick={() => setShowMediaRequestModal(true)}
+        onSuccess={() => {
+          setShowCreateModal(false)
+          // Force posts refresh
+          setPosts([])
+          setNextCursor(null)
+          if (isSearchMode) {
+            handleSearch()
+          } else {
+            loadPosts()
+          }
+        }}
       />
 
       {/* Media Access Request Modal */}
