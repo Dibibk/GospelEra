@@ -1,4 +1,4 @@
-// Gospel Era Web Service Worker
+// Gospel Era Service Worker
 const APP_VERSION = 'v1';
 const CACHE_NAME = `app-${APP_VERSION}`;
 const STATIC_CACHE_NAME = `static-${APP_VERSION}`;

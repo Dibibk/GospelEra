@@ -1,4 +1,4 @@
-// Service Worker Registration for Gospel Era Web
+// Service Worker Registration for Gospel Era
 // Only registers in production builds
 
 interface ServiceWorkerRegistrationResult {
