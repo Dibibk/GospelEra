@@ -80,7 +80,7 @@ export default function Login() {
     if (error) {
       setError(error.message)
     } else if (isSignUp) {
-      setSuccess('Success! Please check your email to confirm your account.')
+      setSuccess('If this email doesn\'t already have an account, you\'ll receive a confirmation email.')
     }
     
     setLoading(false)
