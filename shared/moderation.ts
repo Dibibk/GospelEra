@@ -19,7 +19,15 @@ export const moderationConfig: ModerationConfig = {
     'occult invocation', 'pagan ritual', 'wiccan prayer',
     'ancestral worship', 'ancestor spirits',
     'chakra alignment prayer', 'crystal healing prayer',
-    'new age spirituality', 'universe prayer'
+    'new age spirituality', 'universe prayer',
+    // Prayer directed to Mary or saints (non-Protestant practices)
+    'pray to mary', 'hail mary', 'mother mary pray for us',
+    'mary queen of heaven', 'pray to saint', 'saint pray for us',
+    // Other deities and religious figures
+    'mother goddess', 'divine feminine', 'goddess prayer',
+    'ra the sun god', 'egyptian gods', 'celtic gods',
+    'native american spirits', 'ancestral deities',
+    'bahai prayer', 'zoroastrian prayer', 'sikh prayer'
   ],
   
   // Terms that boost Christian content confidence
@@ -48,7 +56,14 @@ export const moderationConfig: ModerationConfig = {
     'sharing the gospel with',
     'missionary work among',
     'converted from',
-    'used to practice but now'
+    'used to practice but now',
+    // Allow proper Christian references to Mary
+    'mary mother of jesus',
+    'mary gave birth to jesus',
+    'mary and joseph',
+    'virgin mary bore jesus',
+    'mary the mother of our lord',
+    'jesus born of mary'
   ]
 }
 
