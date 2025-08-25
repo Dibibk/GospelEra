@@ -7,23 +7,29 @@ export function BottomNavigation() {
   const isActive = (path: string) => location.pathname === path
   
   const navItems = [
-    { path: '/dashboard', icon: Home, label: 'Home' },
-    { path: '/search', icon: Search, label: 'Search' },
-    { path: '/dashboard', icon: PlusCircle, label: 'Post', isCreate: true },
-    { path: '/prayer/browse', icon: Users, label: 'Prayer' },
-    { path: '/profile', icon: User, label: 'Profile' }
+    { path: '/dashboard', icon: Home, label: 'Home', key: 'home' },
+    { path: '/dashboard', icon: Search, label: 'Search', key: 'search', isSearch: true },
+    { path: '/dashboard', icon: PlusCircle, label: 'Post', key: 'create', isCreate: true },
+    { path: '/prayer/browse', icon: Users, label: 'Prayer', key: 'prayer' },
+    { path: '/profile', icon: User, label: 'Profile', key: 'profile' }
   ]
 
   const handleCreateClick = (e: React.MouseEvent) => {
     e.preventDefault()
-    const postForm = document.getElementById('post-form')
-    if (postForm) {
-      postForm.scrollIntoView({ behavior: 'smooth' })
-      const titleInput = postForm.querySelector('input[name="title"]') as HTMLInputElement
-      if (titleInput) {
-        titleInput.focus()
+    // Trigger post creation modal via custom event
+    window.dispatchEvent(new CustomEvent('openPostModal'))
+  }
+
+  const handleSearchClick = (e: React.MouseEvent) => {
+    e.preventDefault()
+    // Focus on search input
+    setTimeout(() => {
+      const searchInput = document.querySelector('input[placeholder*="Search"]') as HTMLInputElement
+      if (searchInput) {
+        searchInput.focus()
+        searchInput.scrollIntoView({ behavior: 'smooth', block: 'center' })
       }
-    }
+    }, 100)
   }
 
   return (
@@ -31,11 +37,11 @@ export function BottomNavigation() {
       <div className="flex items-center justify-around py-2 px-4 safe-area-inset-bottom">
         {navItems.map((item) => (
           <Link
-            key={item.path + (item.isCreate ? '-create' : '')}
+            key={item.key}
             to={item.path}
-            onClick={item.isCreate ? handleCreateClick : undefined}
+            onClick={item.isCreate ? handleCreateClick : item.isSearch ? handleSearchClick : undefined}
             className={`flex flex-col items-center p-2 rounded-lg transition-colors ${
-              isActive(item.path) && !item.isCreate
+              isActive(item.path) && !item.isCreate && !item.isSearch
                 ? 'text-purple-600 dark:text-purple-400' 
                 : 'text-gray-500 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400'
             }`}

@@ -231,6 +231,19 @@ export default function Dashboard() {
     checkPermission()
   }, [user])
 
+  // Listen for modal opening events from bottom navigation
+  useEffect(() => {
+    const handleOpenPostModal = () => {
+      setShowCreateModal(true)
+    }
+
+    window.addEventListener('openPostModal', handleOpenPostModal)
+    
+    return () => {
+      window.removeEventListener('openPostModal', handleOpenPostModal)
+    }
+  }, [])
+
   const loadDailyVerse = async () => {
     try {
       setVerseLoading(true)
