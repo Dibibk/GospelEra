@@ -1,4 +1,5 @@
 import { supabase } from './supabaseClient'
+import { validateFaithContent } from '../../../shared/moderation'
 
 export interface CreatePostData {
   title: string
@@ -45,6 +46,14 @@ export async function createPost({ title, content, tags = [], media_urls = [], e
     
     if (!user) {
       throw new Error('User must be authenticated to create posts')
+    }
+
+    // Validate title and content faith alignment (at least one must pass)
+    const titleValidation = validateFaithContent(title.trim())
+    const contentValidation = validateFaithContent(content.trim())
+    
+    if (!titleValidation.isValid && !contentValidation.isValid) {
+      throw new Error(titleValidation.reason || 'Please keep your post centered on Jesus or Scripture.')
     }
 
     // Insert the post

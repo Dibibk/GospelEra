@@ -10,7 +10,7 @@ import { checkMediaPermission } from '../lib/mediaRequests'
 import { getDailyVerse } from '../lib/scripture'
 import { getProfilesByIds } from '../lib/profiles'
 import { checkFlaggedStatus } from '../lib/flagged'
-import { moderateContent } from '../lib/moderation'
+import { validateFaithContent } from '../../../shared/moderation'
 import { validateAndNormalizeYouTubeUrl } from '../../../shared/youtube'
 // @ts-ignore
 import { toggleBookmark, isBookmarked, toggleAmen, getAmenInfo, listBookmarks } from '../lib/engagement'
@@ -418,18 +418,12 @@ export default function Dashboard() {
     // Store draft in case of moderation rejection
     setDraftContent({ title: titleText, content: contentText })
     
-    // Check moderation for title and content
-    const titleModeration = moderateContent(titleText)
-    const contentModeration = moderateContent(contentText)
+    // Enhanced Christ-centric validation for title and content (at least one must pass)
+    const titleValidation = validateFaithContent(titleText)
+    const contentValidation = validateFaithContent(contentText)
     
-    if (!titleModeration.allowed) {
-      setModerationError(titleModeration.reason || 'Content moderation failed')
-      setIsCreating(false)
-      return
-    }
-    
-    if (!contentModeration.allowed) {
-      setModerationError(contentModeration.reason || 'Content moderation failed') 
+    if (!titleValidation.isValid && !contentValidation.isValid) {
+      setModerationError(titleValidation.reason || 'Please keep your post centered on Jesus or Scripture.')
       setIsCreating(false)
       return
     }
@@ -642,11 +636,11 @@ export default function Dashboard() {
     const content = commentTexts[postId]?.trim()
     if (!content) return
     
-    // Check moderation for comment content
-    const moderation = moderateContent(content)
+    // Enhanced Christ-centric validation for comment content
+    const validation = validateFaithContent(content)
     
-    if (!moderation.allowed) {
-      showToast(moderation.reason || 'We welcome all, but this space is specifically for Christian prayer to Jesus.', 'error')
+    if (!validation.isValid) {
+      showToast(validation.reason || 'Please keep your comment centered on Jesus or Scripture.', 'error')
       return
     }
     

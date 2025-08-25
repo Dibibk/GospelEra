@@ -4,7 +4,7 @@ import { useAuth } from '../hooks/useAuth'
 import { useRole } from '../hooks/useRole'
 import { ArrowLeft, Send, Plus, X } from 'lucide-react'
 import { createPrayerRequest } from '../lib/prayer'
-import { moderateContent } from '../lib/moderation'
+import { validateFaithContent } from '../../../shared/moderation'
 
 export default function PrayerNew() {
   const { user } = useAuth()
@@ -44,19 +44,14 @@ export default function PrayerNew() {
     const titleText = title.trim()
     const detailsText = details.trim()
 
-    // Check moderation for title and details
-    const titleModeration = moderateContent(titleText)
-    const detailsModeration = moderateContent(detailsText)
+    // Enhanced Christ-centric validation for title and details (at least one must pass)
+    const titleValidation = validateFaithContent(titleText)
+    const detailsValidation = validateFaithContent(detailsText)
 
     setModerationError('')
 
-    if (!titleModeration.allowed) {
-      setModerationError(titleModeration.reason || 'Content moderation failed')
-      return
-    }
-
-    if (!detailsModeration.allowed) {
-      setModerationError(detailsModeration.reason || 'Content moderation failed')
+    if (!titleValidation.isValid && !detailsValidation.isValid) {
+      setModerationError(titleValidation.reason || 'Please keep your prayer request centered on Jesus or Scripture.')
       return
     }
 

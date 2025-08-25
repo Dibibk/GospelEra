@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { parseYouTube, getYouTubeThumbnail, type EmbedVerificationResult } from '../src/lib/embeds';
 import { EMBEDS } from '../src/config/embeds';
-import { moderateContent } from '../shared/moderation';
+import { validateFaithContent } from '../shared/moderation';
 
 const router = Router();
 
@@ -90,14 +90,20 @@ router.post('/verify', async (req, res) => {
         return res.status(400).json({
           ok: false,
           code: 'CAPTION_REQUIRED',
-          reason: 'Please add a short Christ-centered caption'
+          reason: 'Please add a short Christ-centered caption (at least 6 characters)'
         });
       }
       
-      // Faith check on caption
-      const captionModeration = moderateContent(caption);
-      if (captionModeration.allowed) {
+      // Enhanced faith check on caption - must contain Christian terms or Bible references
+      const captionValidation = validateFaithContent(caption);
+      if (captionValidation.isValid) {
         faithCheck = 'pass';
+      } else {
+        return res.status(400).json({
+          ok: false,
+          code: 'CAPTION_NOT_CHRIST_CENTERED',
+          reason: captionValidation.reason || 'Please keep your caption centered on Jesus or Scripture.'
+        });
       }
     }
     

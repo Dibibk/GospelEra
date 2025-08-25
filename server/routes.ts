@@ -195,10 +195,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { db } = await import("../client/src/lib/db");
       const { posts, insertPostSchema } = await import("@shared/schema");
+      const { validateFaithContent } = await import("../shared/moderation");
       
       const result = insertPostSchema.safeParse(req.body);
       if (!result.success) {
         return res.status(400).json({ error: "Invalid post data", issues: result.error.issues });
+      }
+
+      // Server-side faith validation (backup/enforcement)
+      const titleValidation = validateFaithContent(result.data.title?.trim() || '');
+      const contentValidation = validateFaithContent(result.data.content?.trim() || '');
+      
+      if (!titleValidation.isValid && !contentValidation.isValid) {
+        return res.status(400).json({ 
+          error: "Content must be Christ-centered", 
+          reason: titleValidation.reason || 'Please keep your post centered on Jesus or Scripture.'
+        });
       }
 
       const postData = {
@@ -352,10 +364,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { db } = await import("../client/src/lib/db");
       const { prayerRequests, insertPrayerRequestSchema } = await import("@shared/schema");
+      const { validateFaithContent } = await import("../shared/moderation");
       
       const result = insertPrayerRequestSchema.safeParse(req.body);
       if (!result.success) {
         return res.status(400).json({ error: "Invalid request data", issues: result.error.issues });
+      }
+
+      // Server-side faith validation (backup/enforcement)
+      const titleValidation = validateFaithContent(result.data.title?.trim() || '');
+      const detailsValidation = validateFaithContent(result.data.details?.trim() || '');
+      
+      if (!titleValidation.isValid && !detailsValidation.isValid) {
+        return res.status(400).json({ 
+          error: "Content must be Christ-centered", 
+          reason: titleValidation.reason || 'Please keep your prayer request centered on Jesus or Scripture.'
+        });
       }
 
       const [newRequest] = await db.insert(prayerRequests).values(result.data).returning();
