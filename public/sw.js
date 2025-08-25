@@ -1,5 +1,5 @@
 // Gospel Era Service Worker
-const APP_VERSION = 'v1';
+const APP_VERSION = 'v2';
 const CACHE_NAME = `app-${APP_VERSION}`;
 const STATIC_CACHE_NAME = `static-${APP_VERSION}`;
 const DYNAMIC_CACHE_NAME = `dynamic-${APP_VERSION}`;
