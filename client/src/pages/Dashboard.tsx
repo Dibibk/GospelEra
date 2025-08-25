@@ -396,110 +396,6 @@ export default function Dashboard() {
     }
   }
 
-  // Media upload replaced with YouTube link sharing
-
-  const handleCreatePost = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsCreating(true)
-    setCreateError('')
-    setModerationError('')
-
-    const titleText = title.trim()
-    const contentText = content.trim()
-    
-    // Store draft in case of moderation rejection
-    setDraftContent({ title: titleText, content: contentText })
-    
-    // Enhanced Christ-centric validation for title and content (at least one must pass)
-    const titleValidation = validateFaithContent(titleText)
-    const contentValidation = validateFaithContent(contentText)
-    
-    if (!titleValidation.isValid && !contentValidation.isValid) {
-      setModerationError(titleValidation.reason || 'Please keep your post centered on Jesus or Scripture.')
-      setIsCreating(false)
-      return
-    }
-
-    const tagsArray = tags.trim() ? tags.split(',').map(tag => tag.trim()) : []
-    
-    // Validate YouTube URL if provided
-    let normalizedYouTubeUrl = '';
-    if (youtubeUrl.trim()) {
-      const validation = validateAndNormalizeYouTubeUrl(youtubeUrl.trim());
-      if (!validation.isValid) {
-        setYoutubeError(validation.error || 'Invalid YouTube URL');
-        setIsCreating(false);
-        return;
-      }
-      normalizedYouTubeUrl = validation.normalizedUrl || '';
-    }
-
-    const postData = {
-      title: titleText,
-      content: contentText,
-      tags: tagsArray,
-      embed_url: normalizedYouTubeUrl
-    };
-
-    if (editingPost) {
-      // Update existing post
-      const { data, error } = await updatePost(editingPost.id, postData)
-      
-      if (error) {
-        setCreateError((error as any).message || 'Failed to update post')
-      } else {
-        // Force a complete refresh to ensure the updated embed_url is reflected
-        handleCancelEdit()
-        showToast('Post updated successfully!', 'success')
-        
-        // Clear posts first to force a fresh reload
-        setPosts([])
-        setNextCursor(null)
-        
-        // Refresh the posts to get the latest data
-        if (isSearchMode) {
-          handleSearch()
-        } else {
-          loadPosts()
-        }
-      }
-    } else {
-      // Create new post
-      const { data, error } = await createPost(postData)
-
-      if (error) {
-        setCreateError((error as any).message || 'Failed to create post')
-      } else {
-        // Clear form
-        setTitle('')
-        setContent('')
-        setTags('')
-        setYoutubeUrl('')
-        setYoutubeError('')
-        
-        // Check if new post matches current filters
-        const newPost = { ...data }
-        
-        if (postMatchesFilters(newPost)) {
-          // Post matches filters, prepend to current list
-          setPosts(prev => [newPost, ...prev])
-          
-          // Load profile and engagement data for the new post
-          if (data.author) {
-            loadProfiles([data.author])
-            loadEngagementData([data.id])
-          }
-          
-          showToast('Post created and added to current view!', 'success')
-        } else {
-          // Post doesn't match filters, show toast
-          showToast('Post created (outside current filter)', 'success')
-        }
-      }
-    }
-    
-    setIsCreating(false)
-  }
 
   const handleDeletePost = async (postId: number) => {
     if (!confirm('Are you sure you want to delete this post? This action cannot be undone.')) {
@@ -535,44 +431,12 @@ export default function Dashboard() {
     
     setEditingPost(post)
     setEditingPostId(postId)
-    
-    // Pre-fill the form with current post data
-    setTitle(post.title)
-    setContent(post.content)
-    setTags(Array.isArray(post.tags) ? post.tags.join(', ') : (post.tags || ''))
-    setYoutubeUrl(post.embed_url || '')
-    
-    // Clear any previous errors
-    setCreateError('')
-    setModerationError('')
-    setYoutubeError('')
-    
-    // Scroll to the form at the top and focus on title field
-    setTimeout(() => {
-      window.scrollTo({ top: 0, behavior: 'smooth' })
-      // Focus on the title field to make editing obvious
-      const titleInput = document.querySelector('input[name="title"]') as HTMLInputElement || 
-                        document.querySelector('input[placeholder*="Post Title"]') as HTMLInputElement ||
-                        document.querySelector('input[type="text"]') as HTMLInputElement
-      if (titleInput) {
-        titleInput.focus()
-        titleInput.select() // Select all text to make it clear we're editing
-      }
-    }, 300) // Longer delay to ensure scroll completes first
+    setShowCreateModal(true)
   }
 
   const handleCancelEdit = () => {
     setEditingPost(null)
     setEditingPostId(null)
-    
-    // Clear the form
-    setTitle('')
-    setContent('')
-    setTags('')
-    setYoutubeUrl('')
-    setYoutubeError('')
-    setCreateError('')
-    setModerationError('')
   }
 
   const toggleCommentForm = (postId: number) => {
@@ -2041,11 +1905,15 @@ export default function Dashboard() {
       {/* Post Create Modal */}
       <PostCreateModal
         isOpen={showCreateModal}
-        onClose={() => setShowCreateModal(false)}
+        onClose={() => {
+          setShowCreateModal(false)
+          handleCancelEdit()
+        }}
         hasMediaPermission={hasMediaPermission}
         onMediaRequestClick={() => setShowMediaRequestModal(true)}
         onSuccess={() => {
           setShowCreateModal(false)
+          handleCancelEdit()
           // Force posts refresh
           setPosts([])
           setNextCursor(null)
@@ -2055,6 +1923,7 @@ export default function Dashboard() {
             loadPosts()
           }
         }}
+        editingPost={editingPost}
       />
 
       {/* Media Access Request Modal */}

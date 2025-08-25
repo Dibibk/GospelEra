@@ -2,27 +2,26 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '../hooks/useAuth'
 import { useRole } from '../hooks/useRole'
 import { createPost, updatePost, CreatePostData } from '../lib/posts'
-import { checkMediaPermission } from '../lib/mediaRequests'
 import { validateFaithContent } from '../../../shared/moderation'
 import { validateAndNormalizeYouTubeUrl } from '../../../shared/youtube'
-import { MediaUploader } from './MediaUploader'
-import { getMediaUploadURL, processUploadedMedia } from '../lib/media'
 import { X, Send, Edit3, Plus } from 'lucide-react'
 
 interface PostCreateModalProps {
   isOpen: boolean
   onClose: () => void
-  onPostCreated: (post: any) => void
+  hasMediaPermission: boolean
+  onMediaRequestClick: () => void
+  onSuccess: () => void
   editingPost?: any
-  onPostUpdated?: (post: any) => void
 }
 
 export function PostCreateModal({ 
   isOpen, 
   onClose, 
-  onPostCreated,
-  editingPost,
-  onPostUpdated 
+  hasMediaPermission,
+  onMediaRequestClick,
+  onSuccess,
+  editingPost
 }: PostCreateModalProps) {
   const { user } = useAuth()
   const { isBanned } = useRole()
@@ -36,12 +35,7 @@ export function PostCreateModal({
   const [createError, setCreateError] = useState('')
   const [moderationError, setModerationError] = useState('')
   const [youtubeError, setYoutubeError] = useState('')
-  const [hasMediaPermission, setHasMediaPermission] = useState(false)
-  const [checkingMediaPermission, setCheckingMediaPermission] = useState(true)
 
-  // Media upload state
-  const [uploadedMediaUrls, setUploadedMediaUrls] = useState<string[]>([])
-  const [mediaUploadError, setMediaUploadError] = useState('')
 
   // Load editing post data
   useEffect(() => {
@@ -50,46 +44,19 @@ export function PostCreateModal({
       setContent(editingPost.content || '')
       setTags(editingPost.tags ? editingPost.tags.join(', ') : '')
       setYoutubeUrl(editingPost.embed_url || '')
-      setUploadedMediaUrls(editingPost.media_urls || [])
     } else {
       // Reset form for new post
       setTitle('')
       setContent('')
       setTags('')
       setYoutubeUrl('')
-      setUploadedMediaUrls([])
     }
     setCreateError('')
     setModerationError('')
     setYoutubeError('')
-    setMediaUploadError('')
+
   }, [editingPost, isOpen])
 
-  // Check media permission
-  useEffect(() => {
-    const checkPermission = async () => {
-      if (!user) {
-        setHasMediaPermission(false)
-        setCheckingMediaPermission(false)
-        return
-      }
-      
-      setCheckingMediaPermission(true)
-      try {
-        const { hasPermission } = await checkMediaPermission(user.id)
-        setHasMediaPermission(hasPermission)
-      } catch (error) {
-        console.error('Error checking media permission:', error)
-        setHasMediaPermission(false)
-      } finally {
-        setCheckingMediaPermission(false)
-      }
-    }
-
-    if (isOpen) {
-      checkPermission()
-    }
-  }, [user, isOpen])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -141,7 +108,7 @@ export function PostCreateModal({
       title: titleText,
       content: contentText,
       tags: tagsArray,
-      media_urls: uploadedMediaUrls,
+      media_urls: [],
       embed_url: normalizedYouTubeUrl
     }
 
@@ -153,8 +120,7 @@ export function PostCreateModal({
         if (error) {
           setCreateError((error as any).message || 'Failed to update post')
         } else {
-          onPostUpdated?.(data)
-          onClose()
+          onSuccess()
         }
       } else {
         // Create new post
@@ -163,8 +129,7 @@ export function PostCreateModal({
         if (error) {
           setCreateError((error as any).message || 'Failed to create post')
         } else {
-          onPostCreated(data)
-          onClose()
+          onSuccess()
         }
       }
     } catch (error) {
@@ -174,41 +139,6 @@ export function PostCreateModal({
     }
   }
 
-  const handleMediaUpload = async (files: FileList) => {
-    if (!hasMediaPermission) {
-      setMediaUploadError('You need media permission to upload files. Please request access.')
-      return
-    }
-
-    setMediaUploadError('')
-    
-    try {
-      const uploadPromises = Array.from(files).map(async (file) => {
-        const { uploadUrl, error } = await getMediaUploadURL(file.name, file.type)
-        if (error || !uploadUrl) throw new Error('Failed to get upload URL')
-        
-        const uploadResponse = await fetch(uploadUrl, {
-          method: 'PUT',
-          body: file,
-          headers: { 'Content-Type': file.type }
-        })
-        
-        if (!uploadResponse.ok) throw new Error('Failed to upload file')
-        
-        return await processUploadedMedia(uploadUrl, file.name, file.type)
-      })
-      
-      const results = await Promise.all(uploadPromises)
-      const newUrls = results.map(result => result.mediaUrl).filter(Boolean)
-      setUploadedMediaUrls(prev => [...prev, ...newUrls])
-    } catch (error) {
-      setMediaUploadError('Failed to upload media. Please try again.')
-    }
-  }
-
-  const removeMedia = (index: number) => {
-    setUploadedMediaUrls(prev => prev.filter((_, i) => i !== index))
-  }
 
   if (!isOpen) return null
 
@@ -306,21 +236,28 @@ export function PostCreateModal({
             )}
           </div>
 
-          {/* Media Upload */}
-          {!checkingMediaPermission && hasMediaPermission && (
+          {/* Request Link Sharing */}
+          {!isBanned && !hasMediaPermission && (
             <div>
               <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
-                📸 Upload Media
+                🔗 Link Sharing
               </label>
-              <MediaUploader
-                onUpload={handleMediaUpload}
-                uploadedUrls={uploadedMediaUrls}
-                onRemove={removeMedia}
-                disabled={isBanned}
-              />
-              {mediaUploadError && (
-                <p className="mt-1 text-sm text-red-600">{mediaUploadError}</p>
-              )}
+              <div className="p-4 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl">
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                  Want to share YouTube links or media? Request permission to enable link sharing.
+                </p>
+                <button
+                  type="button"
+                  onClick={onMediaRequestClick}
+                  className="w-full flex justify-center items-center py-2 px-4 border border-purple-300 dark:border-purple-600 rounded-lg bg-purple-50 dark:bg-purple-900/20 hover:bg-purple-100 dark:hover:bg-purple-900/30 hover:border-purple-400 dark:hover:border-purple-500 text-purple-700 dark:text-purple-300 text-sm font-medium transition-all duration-200"
+                  data-testid="button-request-link-sharing"
+                >
+                  <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  </svg>
+                  Request Link Sharing
+                </button>
+              </div>
             </div>
           )}
 
