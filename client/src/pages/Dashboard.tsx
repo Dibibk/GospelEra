@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useRole } from '../hooks/useRole'
@@ -23,8 +23,9 @@ import { parseYouTube } from '../lib/embeds'
 import { ThemeSwitcher } from '../components/ThemeSwitcher'
 import { GuidelinesModal } from '../components/GuidelinesModal'
 import { MediaAccessRequestModal } from '../components/MediaAccessRequestModal'
+import { HelpDrawer } from '../components/HelpDrawer'
 import { supabase } from '../lib/supabaseClient'
-import { HandHeart, ArrowRight } from 'lucide-react'
+import { HandHeart, ArrowRight, HelpCircle } from 'lucide-react'
 import { BottomNavigation } from '../components/BottomNavigation'
 
 export default function Dashboard() {
@@ -32,6 +33,10 @@ export default function Dashboard() {
   const { isBanned } = useRole()
   const isOnline = useOnlineStatus()
   const [userMenuOpen, setUserMenuOpen] = useState(false)
+  
+  // Help drawer state
+  const [showHelpDrawer, setShowHelpDrawer] = useState(false)
+  const helpTriggerRef = useRef<HTMLButtonElement>(null)
   
   // Close user menu when clicking outside
   useEffect(() => {
@@ -124,6 +129,11 @@ export default function Dashboard() {
   
   // Media request modal state  
   const [showMediaRequestModal, setShowMediaRequestModal] = useState(false)
+
+  const handleOpenHelp = () => {
+    setUserMenuOpen(false) // Close the dropdown
+    setShowHelpDrawer(true)
+  }
 
   const handleLogout = async () => {
     await signOut()
@@ -1140,6 +1150,15 @@ export default function Dashboard() {
                       </svg>
                       Saved Posts
                     </a>
+                    <button
+                      ref={helpTriggerRef}
+                      onClick={handleOpenHelp}
+                      className="block w-full text-left px-4 py-3 text-sm text-primary-700 hover:bg-gradient-to-r hover:from-primary-50 hover:to-purple-50 transition-all duration-200 font-medium"
+                      data-testid="help-menu-item"
+                    >
+                      <HelpCircle className="inline h-4 w-4 mr-3 text-primary-600" />
+                      Help
+                    </button>
                     {/* Admin Links - only show for admin users */}
                     {userProfile?.role === 'admin' && (
                       <div className="border-t border-primary-100">
@@ -2267,6 +2286,17 @@ export default function Dashboard() {
               <p className="text-sm text-purple-700 font-medium">
                 May your words bring comfort, your testimony inspire faith, and your presence reflect His love
               </p>
+              <div className="mt-3 pt-3 border-t border-purple-200/20">
+                <p className="text-xs text-purple-600">
+                  Support: <a 
+                    href="mailto:ridibi.service@gmail.com?subject=Support%20Request" 
+                    className="font-medium hover:text-purple-800 transition-colors underline"
+                    data-testid="footer-support-email"
+                  >
+                    ridibi.service@gmail.com
+                  </a>
+                </p>
+              </div>
             </div>
           </div>
         </div>
@@ -2289,6 +2319,13 @@ export default function Dashboard() {
             loadUserProfile();
           }
         }}
+      />
+
+      {/* Help Drawer */}
+      <HelpDrawer
+        isOpen={showHelpDrawer}
+        onClose={() => setShowHelpDrawer(false)}
+        helpTriggerRef={helpTriggerRef}
       />
 
       {/* Mobile Bottom Navigation */}
