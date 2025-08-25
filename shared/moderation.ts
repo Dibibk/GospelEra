@@ -23,6 +23,8 @@ export const moderationConfig: ModerationConfig = {
     // Prayer directed to Mary or saints (non-Protestant practices)
     'pray to mary', 'hail mary', 'mother mary pray for us',
     'mary queen of heaven', 'pray to saint', 'saint pray for us',
+    // Block any standalone Mary references (will be overridden by contextual allowances)
+    'mary', 'virgin mary', 'blessed mary', 'saint mary',
     // Other deities and religious figures
     'mother goddess', 'divine feminine', 'goddess prayer',
     'ra the sun god', 'egyptian gods', 'celtic gods',
