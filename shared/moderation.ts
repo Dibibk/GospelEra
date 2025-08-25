@@ -25,6 +25,7 @@ export const moderationConfig: ModerationConfig = {
   // Terms that boost Christian content confidence
   christianTerms: [
     'jesus', 'christ', 'lord jesus', 'savior',
+    'god', 'lord', 'almighty', 'creator',
     'god the father', 'heavenly father', 'abba father',
     'holy spirit', 'holy ghost', 'comforter',
     'bible', 'scripture', 'word of god',
