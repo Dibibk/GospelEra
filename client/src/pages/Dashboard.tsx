@@ -1408,8 +1408,8 @@ export default function Dashboard() {
               </div>
             ) : (
               posts.map((post) => (
-                <div key={post.id} className="bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-200 mb-4 sm:mb-6">
-                  <div className="p-4 sm:p-6">
+                <div key={post.id} className="card-pro hover:shadow-lg transition-shadow duration-200">
+                  <div>
                     <div className="flex items-start space-x-4 mb-4">
                       {renderAuthorInfo(post.author_id, user?.email, 'md')}
                       <div className="flex-1 min-w-0">
@@ -1427,13 +1427,13 @@ export default function Dashboard() {
                       </div>
                     </div>
                     <div className="mb-3">
-                      <time className="text-sm text-gray-500">
+                      <time className="text-caption">
                         {formatDate(post.created_at)}
                       </time>
                     </div>
-                    <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-3 leading-tight">{post.title}</h3>
-                    <div className="bg-gray-50 rounded-lg p-3 sm:p-4 mb-4 border border-gray-100">
-                      <p className="text-sm sm:text-base text-gray-700 leading-relaxed">{post.content}</p>
+                    <h3 className="text-h3 mb-3">{post.title}</h3>
+                    <div className="card-pro-compact mb-4">
+                      <p className="text-body">{post.content}</p>
                     </div>
 
                     {/* Media Display */}
@@ -1463,7 +1463,7 @@ export default function Dashboard() {
                         {post.tags.map((tag: string, index: number) => (
                           <span
                             key={index}
-                            className="inline-flex items-center px-3 py-1 rounded-md text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200"
+                            className="inline-flex items-center px-3 py-1 rounded-md text-caption-medium bg-blue-50 text-blue-700 border border-blue-200"
                           >
                             #{tag}
                           </span>
@@ -1476,9 +1476,9 @@ export default function Dashboard() {
                       <div className="flex items-center space-x-2 overflow-x-auto scrollbar-hide">
                         <button
                           onClick={() => toggleCommentForm(post.id)}
-                          className="inline-flex items-center px-2 sm:px-3 py-2 text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 rounded-md border border-gray-300 transition-colors duration-150 flex-shrink-0"
+                          className="btn-pro flex items-center text-secondary flex-shrink-0"
                         >
-                          <svg className="h-4 w-4 sm:mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <svg className="h-4 w-4 sm:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                           </svg>
                           <span className="hidden sm:inline">Reply</span>
@@ -1489,10 +1489,10 @@ export default function Dashboard() {
                           onClick={() => handleToggleBookmark(post.id)}
                           disabled={bookmarkLoading[post.id]}
                           title={postBookmarks[post.id] ? "Saved" : "Save"}
-                          className={`inline-flex items-center px-2 sm:px-3 py-2 text-sm font-medium rounded-md border transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 ${
+                          className={`btn-pro flex items-center flex-shrink-0 ${
                             postBookmarks[post.id] 
                               ? 'text-blue-700 bg-blue-50 hover:bg-blue-100 border-blue-200' 
-                              : 'text-gray-700 bg-white hover:bg-gray-50 border-gray-300'
+                              : ''
                           }`}
                         >
                           {bookmarkLoading[post.id] ? (
@@ -1512,10 +1512,10 @@ export default function Dashboard() {
                           onClick={() => handleToggleAmen(post.id)}
                           disabled={amenLoading[post.id]}
                           title={postAmenInfo[post.id]?.mine ? "Amen'd" : "Amen"}
-                          className={`inline-flex items-center px-2 sm:px-3 py-2 text-sm font-medium rounded-md border transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 ${
+                          className={`btn-pro flex items-center flex-shrink-0 ${
                             postAmenInfo[post.id]?.mine 
                               ? 'text-red-700 bg-red-50 hover:bg-red-100 border-red-200' 
-                              : 'text-gray-700 bg-white hover:bg-gray-50 border-gray-300'
+                              : ''
                           }`}
                         >
                           {amenLoading[post.id] ? (
@@ -1537,9 +1537,9 @@ export default function Dashboard() {
                         
                         <button
                           onClick={() => openReportModal('post', post.id.toString())}
-                          className="inline-flex items-center px-2 sm:px-3 py-2 text-sm font-medium text-gray-500 bg-white hover:bg-gray-50 rounded-md border border-gray-300 transition-colors duration-150 flex-shrink-0"
+                          className="btn-pro flex items-center text-muted flex-shrink-0"
                         >
-                          <svg className="h-4 w-4 sm:mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <svg className="h-4 w-4 sm:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.35 16.5c-.77.833.192 2.5 1.732 2.5z" />
                           </svg>
                           <span className="hidden sm:inline">Report</span>
@@ -1552,7 +1552,7 @@ export default function Dashboard() {
                           <button
                             onClick={() => handleEditPost(post.id)}
                             disabled={editingPostId === post.id}
-                            className="inline-flex items-center px-2 sm:px-3 py-2 text-sm font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-md border border-blue-200 transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 self-start sm:self-auto"
+                            className="btn-pro flex items-center text-blue-700 bg-blue-50 hover:bg-blue-100 border-blue-200 flex-shrink-0 self-start sm:self-auto"
                           >
                             {editingPostId === post.id ? (
                               <>
@@ -1573,7 +1573,7 @@ export default function Dashboard() {
                           <button
                             onClick={() => handleDeletePost(post.id)}
                             disabled={deletingPostId === post.id}
-                            className="inline-flex items-center px-2 sm:px-3 py-2 text-sm font-medium text-red-700 bg-red-50 hover:bg-red-100 rounded-md border border-red-200 transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 self-start sm:self-auto"
+                            className="btn-pro flex items-center text-red-700 bg-red-50 hover:bg-red-100 border-red-200 flex-shrink-0 self-start sm:self-auto"
                           >
                             {deletingPostId === post.id ? (
                               <>
@@ -1597,7 +1597,7 @@ export default function Dashboard() {
 
                   {/* Comment form */}
                   {commentForms[post.id] && (
-                    <div className="border-t border-gray-200 pt-4 mt-4 bg-gray-50 -mx-6 px-6 pb-6 rounded-b-lg">
+                    <div className="divider-pro pt-4 mt-4 px-6 pb-6">
                       <div className="flex space-x-3">
                         <div className="flex-shrink-0">
                           <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center border border-gray-300">
@@ -1613,10 +1613,10 @@ export default function Dashboard() {
                             placeholder={isBanned ? "Account limited - cannot comment" : "Write a comment..."}
                             rows={3}
                             disabled={isBanned}
-                            className={`w-full px-3 py-2 border rounded-md focus:outline-none resize-none ${
+                            className={`textarea-pro resize-none ${
                               isBanned 
-                                ? 'border-gray-300 bg-gray-100 text-gray-500 cursor-not-allowed placeholder-gray-400' 
-                                : 'border-gray-300 bg-white text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
+                                ? 'opacity-50 cursor-not-allowed' 
+                                : ''
                             }`}
                             title={isBanned ? "Account limited - you cannot create posts or comments" : ""}
                           />
@@ -1624,7 +1624,7 @@ export default function Dashboard() {
                             <button
                               onClick={() => handleCreateComment(post.id)}
                               disabled={submittingComment[post.id] || !commentTexts[post.id]?.trim() || isBanned}
-                              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150 font-medium"
+                              className="btn-pro-primary"
                               title={isBanned ? "Account limited - you cannot create posts or comments" : ""}
                             >
                               {submittingComment[post.id] ? (
@@ -1670,7 +1670,7 @@ export default function Dashboard() {
                       ) : (
                         <div className="space-y-3">
                           {(postComments[post.id] || []).map((comment) => (
-                            <div key={comment.id} className="bg-white rounded-lg border border-gray-200 p-4">
+                            <div key={comment.id} className="card-pro-compact">
                               <div className="flex items-start space-x-3">
                                 {renderAuthorInfo(comment.author_id, user?.email, 'sm')}
                                 <div className="flex-1 min-w-0">
