@@ -835,111 +835,94 @@ const MobileApp = () => {
   // Create Post Component  
   const CreatePage = () => (
     <div style={{ padding: '16px' }}>
-      {/* Form Title */}
-      <div style={{ marginBottom: '20px', textAlign: 'center' }}>
-        <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#262626', margin: 0 }}>
-          Share Your Faith
-        </h2>
-        <p style={{ fontSize: '14px', color: '#8e8e8e', margin: '4px 0 0 0' }}>
-          Inspire others with your testimony
-        </p>
+      {/* Simple header like before */}
+      <div style={{ display: 'flex', alignItems: 'center', marginBottom: '16px' }}>
+        <div style={{
+          width: '32px', height: '32px', borderRadius: '50%', background: '#dbdbdb',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          marginRight: '12px', color: '#8e8e8e'
+        }}>
+          •
+        </div>
+        <div style={{ fontWeight: 600, color: '#262626' }}>Create Post</div>
       </div>
 
-      {/* Moderation Error */}
+      {/* Error messages - keep them compact */}
       {moderationError && (
         <div style={{
           background: '#fee', border: '1px solid #fcc', color: '#c00',
-          padding: '12px', borderRadius: '8px', marginBottom: '16px',
-          fontSize: '14px', textAlign: 'center'
+          padding: '8px 12px', borderRadius: '6px', marginBottom: '12px',
+          fontSize: '13px', textAlign: 'center'
         }}>
           {moderationError}
         </div>
       )}
 
-      {/* Banned User Warning */}
       {isBanned && (
         <div style={{
           background: '#fff3cd', border: '1px solid #ffeaa7', color: '#856404',
-          padding: '12px', borderRadius: '8px', marginBottom: '16px',
-          fontSize: '14px', textAlign: 'center'
+          padding: '8px 12px', borderRadius: '6px', marginBottom: '12px',
+          fontSize: '13px', textAlign: 'center'
         }}>
           Account limited. You can read but cannot post or comment.
         </div>
       )}
 
-      {/* Post Title */}
-      <div style={{ marginBottom: '16px' }}>
-        <label style={{ fontSize: '14px', fontWeight: 600, color: '#262626', marginBottom: '6px', display: 'block' }}>
-          📝 Post Title
-        </label>
-        <input
-          type="text"
-          placeholder="What's on your heart?"
-          value={createTitle}
-          onChange={(e) => setCreateTitle(e.target.value)}
-          disabled={isBanned}
-          style={{
-            width: '100%', padding: '12px 16px', border: '1px solid #dbdbdb',
-            borderRadius: '8px', fontSize: '16px', outline: 'none',
-            backgroundColor: isBanned ? '#f5f5f5' : '#ffffff',
-            color: isBanned ? '#8e8e8e' : '#262626'
-          }}
-          title={isBanned ? 'Account limited - cannot create posts' : ''}
-        />
-      </div>
+      {/* Title input - clean like before */}
+      <input
+        type="text"
+        placeholder="Post title..."
+        value={createTitle}
+        onChange={(e) => setCreateTitle(e.target.value)}
+        disabled={isBanned}
+        style={{
+          width: '100%', padding: '12px 16px', border: '1px solid #dbdbdb',
+          borderRadius: '8px', fontSize: '16px', marginBottom: '12px', outline: 'none',
+          backgroundColor: isBanned ? '#f5f5f5' : '#ffffff',
+          color: isBanned ? '#8e8e8e' : '#262626'
+        }}
+        title={isBanned ? 'Account limited - cannot create posts' : ''}
+      />
 
-      {/* Post Content */}
-      <div style={{ marginBottom: '16px' }}>
-        <label style={{ fontSize: '14px', fontWeight: 600, color: '#262626', marginBottom: '6px', display: 'block' }}>
-          ❤️ Share Your Message
-        </label>
-        <textarea
-          placeholder="Share your faith, testimony, or encouragement..."
-          value={createContent}
-          onChange={(e) => setCreateContent(e.target.value)}
-          rows={6}
-          disabled={isBanned}
-          style={{
-            width: '100%', padding: '12px 16px', border: '1px solid #dbdbdb',
-            borderRadius: '8px', fontSize: '16px', resize: 'none', outline: 'none',
-            fontFamily: 'inherit',
-            backgroundColor: isBanned ? '#f5f5f5' : '#ffffff',
-            color: isBanned ? '#8e8e8e' : '#262626'
-          }}
-          title={isBanned ? 'Account limited - cannot create posts' : ''}
-        />
-      </div>
+      {/* Content textarea - clean like before */}
+      <textarea
+        placeholder="Share your faith, testimony, or encouragement..."
+        value={createContent}
+        onChange={(e) => setCreateContent(e.target.value)}
+        rows={6}
+        disabled={isBanned}
+        style={{
+          width: '100%', padding: '12px 16px', border: '1px solid #dbdbdb',
+          borderRadius: '8px', fontSize: '16px', resize: 'none', outline: 'none',
+          fontFamily: 'inherit', marginBottom: '12px',
+          backgroundColor: isBanned ? '#f5f5f5' : '#ffffff',
+          color: isBanned ? '#8e8e8e' : '#262626'
+        }}
+        title={isBanned ? 'Account limited - cannot create posts' : ''}
+      />
 
-      {/* Tags Input */}
-      <div style={{ marginBottom: '16px' }}>
-        <label style={{ fontSize: '14px', fontWeight: 600, color: '#262626', marginBottom: '6px', display: 'block' }}>
-          🏷️ Tags (optional)
-        </label>
-        <input
-          type="text"
-          placeholder="prayer, testimony, scripture, worship (comma-separated)"
-          value={createTags}
-          onChange={(e) => setCreateTags(e.target.value)}
-          disabled={isBanned}
-          style={{
-            width: '100%', padding: '12px 16px', border: '1px solid #dbdbdb',
-            borderRadius: '8px', fontSize: '16px', outline: 'none',
-            backgroundColor: isBanned ? '#f5f5f5' : '#ffffff',
-            color: isBanned ? '#8e8e8e' : '#262626'
-          }}
-          title={isBanned ? 'Account limited - cannot create posts' : ''}
-        />
-      </div>
+      {/* Tags input - clean style */}
+      <input
+        type="text"
+        placeholder="Tags (prayer, testimony, scripture...)"
+        value={createTags}
+        onChange={(e) => setCreateTags(e.target.value)}
+        disabled={isBanned}
+        style={{
+          width: '100%', padding: '12px 16px', border: '1px solid #dbdbdb',
+          borderRadius: '8px', fontSize: '16px', marginBottom: '12px', outline: 'none',
+          backgroundColor: isBanned ? '#f5f5f5' : '#ffffff',
+          color: isBanned ? '#8e8e8e' : '#262626'
+        }}
+        title={isBanned ? 'Account limited - cannot create posts' : ''}
+      />
 
-      {/* YouTube URL Input or Link Sharing Request */}
+      {/* YouTube input or request - clean style */}
       {hasMediaPermission ? (
-        <div style={{ marginBottom: '16px' }}>
-          <label style={{ fontSize: '14px', fontWeight: 600, color: '#262626', marginBottom: '6px', display: 'block' }}>
-            🎥 YouTube Video (optional)
-          </label>
+        <div style={{ marginBottom: '12px' }}>
           <input
             type="text"
-            placeholder="https://www.youtube.com/watch?v=..."
+            placeholder="YouTube URL (optional)"
             value={createYouTubeUrl}
             onChange={(e) => setCreateYouTubeUrl(e.target.value)}
             disabled={isBanned}
@@ -952,47 +935,42 @@ const MobileApp = () => {
             title={isBanned ? 'Account limited - cannot create posts' : ''}
           />
           {youtubeError && (
-            <div style={{ color: '#c00', fontSize: '12px', marginTop: '4px' }}>
+            <div style={{ color: '#c00', fontSize: '12px', marginTop: '4px', paddingLeft: '4px' }}>
               {youtubeError}
             </div>
           )}
         </div>
       ) : (
         !isBanned && (
-          <div style={{ marginBottom: '16px' }}>
-            <label style={{ fontSize: '14px', fontWeight: 600, color: '#262626', marginBottom: '6px', display: 'block' }}>
-              🔗 Link Sharing
-            </label>
-            <div style={{ 
-              padding: '12px', background: '#f8f9fa', border: '1px solid #e9ecef', 
-              borderRadius: '8px', textAlign: 'center' 
-            }}>
-              <p style={{ margin: '0 0 8px 0', fontSize: '14px', color: '#6c757d' }}>
-                Want to share YouTube videos or media? Request permission to enable link sharing.
-              </p>
-              <button
-                onClick={() => setShowMediaRequestModal(true)}
-                style={{
-                  background: '#007bff', color: '#ffffff', border: 'none',
-                  padding: '8px 16px', borderRadius: '6px', fontSize: '14px',
-                  cursor: 'pointer', fontWeight: 500
-                }}
-              >
-                Request Link Sharing
-              </button>
+          <div style={{ 
+            padding: '12px', background: '#f8f9fa', border: '1px solid #e9ecef', 
+            borderRadius: '8px', textAlign: 'center', marginBottom: '12px'
+          }}>
+            <div style={{ fontSize: '13px', color: '#6c757d', marginBottom: '8px' }}>
+              Want to share YouTube videos?
             </div>
+            <button
+              onClick={() => setShowMediaRequestModal(true)}
+              style={{
+                background: '#0095f6', color: '#ffffff', border: 'none',
+                padding: '6px 12px', borderRadius: '6px', fontSize: '13px',
+                cursor: 'pointer', fontWeight: 600
+              }}
+            >
+              Request Access
+            </button>
           </div>
         )
       )}
 
-      {/* Submit Button */}
+      {/* Share button - same as before */}
       <button
         onClick={handleCreatePost}
         disabled={!createTitle.trim() || !createContent.trim() || isBanned}
         style={{
           width: '100%', 
           background: (createTitle.trim() && createContent.trim() && !isBanned) ? '#262626' : '#dbdbdb',
-          color: '#ffffff', border: 'none', padding: '14px', borderRadius: '8px',
+          color: '#ffffff', border: 'none', padding: '12px', borderRadius: '8px',
           fontSize: '16px', fontWeight: 600, 
           cursor: (createTitle.trim() && createContent.trim() && !isBanned) ? 'pointer' : 'not-allowed'
         }}
@@ -1000,13 +978,6 @@ const MobileApp = () => {
       >
         Share Post
       </button>
-
-      {/* Permission Loading */}
-      {isCheckingPermission && (
-        <div style={{ textAlign: 'center', marginTop: '16px', fontSize: '14px', color: '#8e8e8e' }}>
-          Checking permissions...
-        </div>
-      )}
     </div>
   );
 
