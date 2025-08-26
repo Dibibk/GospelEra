@@ -16,4 +16,4 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 });
 
 // API base URL - use your Replit app's public URL for mobile access
-export const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'https://your-replit-app.replit.app';
+export const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'https://0c5a25f0-9744-423a-9b7b-f354b588ed87-00-364hxv4w1n962.picard.replit.dev';
