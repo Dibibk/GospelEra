@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { listPosts, createPost } from '@/lib/posts';
+import { listPosts, createPost, softDeletePost } from '@/lib/posts';
 import { listPrayerRequests, createPrayerRequest, commitToPray } from '@/lib/prayer';
 import { getProfilesByIds } from '@/lib/profiles';
 import { toggleAmen, toggleBookmark, isBookmarked } from '@/lib/engagement';
 import { listComments, createComment } from '@/lib/comments';
+import { createReport } from '@/lib/reports';
 
 // Complete Instagram-style Gospel Era Mobile App with Real API Integration
 const MobileApp = () => {
@@ -27,6 +28,10 @@ const MobileApp = () => {
   const [password, setPassword] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
   const [loginError, setLoginError] = useState('');
+  const [deletingPostId, setDeletingPostId] = useState<number | null>(null);
+  const [editingPostId, setEditingPostId] = useState<number | null>(null);
+  const [reportModalOpen, setReportModalOpen] = useState(false);
+  const [reportTarget, setReportTarget] = useState<{type: 'post' | 'comment', id: string} | null>(null);
 
   useEffect(() => {
     if (user) {
@@ -45,11 +50,11 @@ const MobileApp = () => {
         setPosts(postsResult.data);
         
         // Load author profiles
-        const authorIds = postsResult.data.map(post => post.author_id);
+        const authorIds = postsResult.data.map((post: any) => post.author_id);
         await loadProfiles(authorIds);
         
         // Load engagement data  
-        const postIds = postsResult.data.map(post => post.id);
+        const postIds = postsResult.data.map((post: any) => post.id);
         await loadEngagementData(postIds);
       }
 
@@ -208,6 +213,56 @@ const MobileApp = () => {
     } catch (error) {
       console.error('Error creating comment:', error);
     }
+  };
+
+  const handleDeletePost = async (postId: number) => {
+    if (!confirm('Are you sure you want to delete this post? This action cannot be undone.')) {
+      return;
+    }
+    
+    setDeletingPostId(postId);
+    const { error } = await softDeletePost(postId);
+    
+    if (error) {
+      alert(`Failed to delete post: ${(error as any).message || 'Unknown error'}`);
+    } else {
+      alert('Post deleted successfully');
+      fetchData(); // Reload posts
+    }
+    
+    setDeletingPostId(null);
+  };
+
+  const handleEditPost = (postId: number) => {
+    // For mobile, we'll just show an alert for now
+    alert('Edit functionality coming soon! Please use the web app to edit posts.');
+  };
+
+  const handleReportPost = (postId: number) => {
+    setReportTarget({ type: 'post', id: postId.toString() });
+    setReportModalOpen(true);
+  };
+
+  const handleSubmitReport = async (reason: string) => {
+    if (!reportTarget) return;
+    
+    try {
+      const result = await createReport({
+        targetType: reportTarget.type,
+        targetId: reportTarget.id,
+        reason
+      });
+      
+      if (result.data) {
+        alert('Report submitted successfully. Thank you for helping keep our community safe.');
+      }
+    } catch (error) {
+      console.error('Error submitting report:', error);
+      alert('Failed to submit report. Please try again.');
+    }
+    
+    setReportModalOpen(false);
+    setReportTarget(null);
   };
 
   const handleLogin = async () => {
@@ -443,7 +498,7 @@ const MobileApp = () => {
               {/* Tags */}
               {post.tags && post.tags.length > 0 && (
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginBottom: '8px' }}>
-                  {post.tags.map((tag, tagIndex) => (
+                  {post.tags.map((tag: string, tagIndex: number) => (
                     <span key={tagIndex} style={{
                       background: '#f2f2f2', color: '#7c3aed', 
                       padding: '2px 8px', borderRadius: '12px', 
@@ -503,29 +558,103 @@ const MobileApp = () => {
               )}
             </div>
 
-            {/* Post actions */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 16px' }}>
-              <div style={{ display: 'flex', gap: '16px' }}>
+            {/* Post actions - All 6 icons matching webapp */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 16px', borderTop: '1px solid #efefef' }}>
+              {/* Left side actions */}
+              <div style={{ display: 'flex', gap: '12px' }}>
+                {/* Heart/Amen button */}
                 <button 
                   onClick={() => handleToggleAmen(post.id)}
-                  style={{ background: 'none', border: 'none', fontSize: '24px', color: '#262626', cursor: 'pointer', padding: '8px' }}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '8px' }}
+                  title="Amen"
                 >
-                  🙏
+                  <svg style={{ width: '24px', height: '24px', color: '#262626' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                  </svg>
                 </button>
+                
+                {/* Comment button */}
                 <button 
                   onClick={() => toggleCommentForm(post.id)}
-                  style={{ background: 'none', border: 'none', fontSize: '24px', color: '#262626', cursor: 'pointer', padding: '8px' }}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '8px' }}
+                  title="Comment"
                 >
-                  💬
+                  <svg style={{ width: '24px', height: '24px', color: '#262626' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                  </svg>
                 </button>
-                <button style={{ background: 'none', border: 'none', fontSize: '24px', color: '#262626', cursor: 'pointer', padding: '8px' }}>↗</button>
+                
+                {/* Share button (placeholder) */}
+                <button 
+                  onClick={() => alert('Share functionality coming soon!')}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '8px' }}
+                  title="Share"
+                >
+                  <svg style={{ width: '24px', height: '24px', color: '#262626' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                  </svg>
+                </button>
               </div>
-              <button 
-                onClick={() => handleToggleBookmark(post.id)}
-                style={{ background: 'none', border: 'none', fontSize: '24px', color: engagementData.get(post.id)?.isBookmarked ? '#262626' : '#8e8e8e', cursor: 'pointer', padding: '8px' }}
-              >
-                {engagementData.get(post.id)?.isBookmarked ? '🔖' : '⋄'}
-              </button>
+              
+              {/* Right side actions */}
+              <div style={{ display: 'flex', gap: '8px' }}>
+                {/* Save/Bookmark button */}
+                <button 
+                  onClick={() => handleToggleBookmark(post.id)}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '8px' }}
+                  title={engagementData.get(post.id)?.isBookmarked ? "Saved" : "Save"}
+                >
+                  <svg style={{ 
+                    width: '24px', 
+                    height: '24px', 
+                    color: engagementData.get(post.id)?.isBookmarked ? '#262626' : '#8e8e8e',
+                    fill: engagementData.get(post.id)?.isBookmarked ? 'currentColor' : 'none'
+                  }} stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                  </svg>
+                </button>
+                
+                {/* Report button */}
+                <button 
+                  onClick={() => handleReportPost(post.id)}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '8px' }}
+                  title="Report"
+                >
+                  <svg style={{ width: '20px', height: '20px', color: '#8e8e8e' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.35 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                  </svg>
+                </button>
+                
+                {/* Edit & Delete buttons (only if user owns the post) */}
+                {post.author_id === user?.id && (
+                  <>
+                    <button 
+                      onClick={() => handleEditPost(post.id)}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '8px' }}
+                      title="Edit"
+                    >
+                      <svg style={{ width: '20px', height: '20px', color: '#0095f6' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                      </svg>
+                    </button>
+                    
+                    <button 
+                      onClick={() => handleDeletePost(post.id)}
+                      disabled={deletingPostId === post.id}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '8px' }}
+                      title="Delete"
+                    >
+                      {deletingPostId === post.id ? (
+                        <div style={{ width: '20px', height: '20px', border: '2px solid #f3f4f6', borderTop: '2px solid #ef4444', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
+                      ) : (
+                        <svg style={{ width: '20px', height: '20px', color: '#ef4444' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      )}
+                    </button>
+                  </>
+                )}
+              </div>
             </div>
 
             {/* Comments section */}
@@ -995,6 +1124,63 @@ const MobileApp = () => {
             <span style={{ fontSize: '10px', marginTop: '2px' }}>Profile</span>
           </div>
         </nav>
+      )}
+
+      {/* Report Modal */}
+      {reportModalOpen && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          zIndex: 1000, padding: '20px'
+        }}>
+          <div style={{
+            background: 'white', borderRadius: '12px', padding: '24px',
+            maxWidth: '90%', width: '400px', maxHeight: '80vh', overflow: 'auto'
+          }}>
+            <h3 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '16px', color: '#262626' }}>
+              Report Content
+            </h3>
+            <p style={{ fontSize: '14px', color: '#8e8e8e', marginBottom: '20px' }}>
+              Why are you reporting this {reportTarget?.type}?
+            </p>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '24px' }}>
+              {[
+                'Inappropriate content',
+                'Spam or misleading',
+                'Not Christ-Centered (prayer not to Jesus)',
+                'Harassment or hate speech',
+                'Violence or dangerous content',
+                'Other'
+              ].map((reason) => (
+                <button
+                  key={reason}
+                  onClick={() => handleSubmitReport(reason)}
+                  style={{
+                    padding: '12px 16px', textAlign: 'left', border: '1px solid #dbdbdb',
+                    borderRadius: '8px', background: 'white', cursor: 'pointer',
+                    fontSize: '14px', color: '#262626'
+                  }}
+                >
+                  {reason}
+                </button>
+              ))}
+            </div>
+            
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <button
+                onClick={() => setReportModalOpen(false)}
+                style={{
+                  flex: 1, padding: '12px 16px', border: '1px solid #dbdbdb',
+                  borderRadius: '8px', background: 'white', cursor: 'pointer',
+                  fontSize: '14px', fontWeight: 600, color: '#262626'
+                }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
