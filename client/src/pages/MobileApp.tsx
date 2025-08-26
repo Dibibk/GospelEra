@@ -10,6 +10,7 @@ import { checkMediaPermission } from '@/lib/mediaRequests';
 import { validateAndNormalizeYouTubeUrl } from '../../../shared/youtube';
 import { validateFaithContent } from '../../../shared/moderation';
 import { useRole } from '@/hooks/useRole';
+import { getTopPrayerWarriors } from '@/lib/leaderboard';
 
 // Complete Instagram-style Gospel Era Mobile App with Real API Integration
 const MobileApp = () => {
@@ -41,6 +42,7 @@ const MobileApp = () => {
   const [myCommitments, setMyCommitments] = useState<any[]>([]);
   const [confirmingId, setConfirmingId] = useState<number | null>(null);
   const [leaderboardData, setLeaderboardData] = useState<any[]>([]);
+  const [showDonationPage, setShowDonationPage] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
@@ -333,14 +335,26 @@ const MobileApp = () => {
     }
   };
 
-  // Mock leaderboard data - replace with real API call
-  const mockLeaderboard = [
-    { id: 1, name: 'Sarah M.', prayers_prayed: 45, streak: 12 },
-    { id: 2, name: 'David L.', prayers_prayed: 38, streak: 8 },
-    { id: 3, name: 'Grace K.', prayers_prayed: 32, streak: 15 },
-    { id: 4, name: 'Michael R.', prayers_prayed: 28, streak: 5 },
-    { id: 5, name: 'Rebecca S.', prayers_prayed: 25, streak: 9 }
-  ];
+  // Get real leaderboard data
+  const [leaderboard, setLeaderboard] = useState<any[]>([]);
+
+  // Fetch leaderboard data
+  useEffect(() => {
+    const fetchLeaderboard = async () => {
+      try {
+        const result = await getTopPrayerWarriors({ timeframe: 'week', limit: 10 });
+        if (result.data) {
+          setLeaderboard(result.data);
+        }
+      } catch (error) {
+        console.error('Error fetching leaderboard:', error);
+      }
+    };
+
+    if (user) {
+      fetchLeaderboard();
+    }
+  }, [user]);
 
   const handleToggleAmen = async (postId: number) => {
     try {
@@ -1173,8 +1187,8 @@ const MobileApp = () => {
               </button>
             </div>
             <div style={{ display: 'flex', gap: '8px', overflowX: 'auto' }}>
-              {mockLeaderboard.slice(0, 3).map((warrior, index) => (
-                <div key={warrior.id} style={{
+              {leaderboard.slice(0, 3).map((warrior, index) => (
+                <div key={warrior.warrior} style={{
                   background: '#ffffff', borderRadius: '8px', padding: '12px',
                   minWidth: '100px', textAlign: 'center', border: '1px solid #dbdbdb'
                 }}>
@@ -1182,13 +1196,13 @@ const MobileApp = () => {
                     {index === 0 ? '🥇' : index === 1 ? '🥈' : '🥉'}
                   </div>
                   <div style={{ fontSize: '12px', fontWeight: 600, color: '#262626', marginBottom: '2px' }}>
-                    {warrior.name}
+                    {warrior.display_name}
                   </div>
                   <div style={{ fontSize: '10px', color: '#8e8e8e' }}>
-                    {warrior.prayers_prayed} prayers
+                    {warrior.count_prayed} prayers
                   </div>
                   <div style={{ fontSize: '10px', color: '#8e8e8e' }}>
-                    {warrior.streak} day streak
+                    {warrior.current_streak || 0} day streak
                   </div>
                 </div>
               ))}
@@ -1206,7 +1220,7 @@ const MobileApp = () => {
           }}>
             🙏
           </div>
-          <div style={{ fontWeight: 600, color: '#262626' }}>Share Prayer Request</div>
+          <div style={{ fontWeight: 600, color: '#262626' }}>Create Prayer Request</div>
         </div>
 
         {/* Error messages */}
@@ -1625,8 +1639,8 @@ const MobileApp = () => {
 
       {/* Leaderboard */}
       <div style={{ padding: '16px' }}>
-        {mockLeaderboard.map((warrior, index) => (
-          <div key={warrior.id} style={{
+        {leaderboard.map((warrior, index) => (
+          <div key={warrior.warrior} style={{
             display: 'flex', alignItems: 'center', padding: '16px',
             background: '#ffffff', borderRadius: '12px', marginBottom: '8px',
             border: '1px solid #dbdbdb'
@@ -1639,13 +1653,13 @@ const MobileApp = () => {
             </div>
             <div style={{ flex: 1 }}>
               <div style={{ fontWeight: 600, color: '#262626', marginBottom: '4px' }}>
-                {warrior.name}
+                {warrior.display_name}
               </div>
               <div style={{ fontSize: '14px', color: '#8e8e8e' }}>
-                {warrior.prayers_prayed} prayers completed • {warrior.streak} day streak
+                {warrior.count_prayed} prayers completed • {warrior.current_streak || 0} day streak
               </div>
             </div>
-            {warrior.streak >= 7 && (
+            {(warrior.current_streak || 0) >= 7 && (
               <div style={{ 
                 background: '#4a4a4a', color: '#ffffff', 
                 padding: '4px 8px', borderRadius: '12px', fontSize: '12px' 
