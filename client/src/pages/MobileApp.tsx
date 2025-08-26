@@ -561,16 +561,14 @@ const MobileApp = () => {
             {/* Post actions - All 6 icons matching webapp */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 16px', borderTop: '1px solid #efefef' }}>
               {/* Left side actions */}
-              <div style={{ display: 'flex', gap: '12px' }}>
+              <div style={{ display: 'flex', gap: '16px' }}>
                 {/* Heart/Amen button */}
                 <button 
                   onClick={() => handleToggleAmen(post.id)}
                   style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '8px' }}
                   title="Amen"
                 >
-                  <svg style={{ width: '24px', height: '24px', color: '#262626' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                  </svg>
+                  <span style={{ fontSize: '24px', color: '#262626' }}>♡</span>
                 </button>
                 
                 {/* Comment button */}
@@ -579,39 +577,33 @@ const MobileApp = () => {
                   style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '8px' }}
                   title="Comment"
                 >
-                  <svg style={{ width: '24px', height: '24px', color: '#262626' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                  </svg>
+                  <span style={{ fontSize: '24px', color: '#262626' }}>💬</span>
                 </button>
                 
-                {/* Share button (placeholder) */}
+                {/* Share button */}
                 <button 
                   onClick={() => alert('Share functionality coming soon!')}
                   style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '8px' }}
                   title="Share"
                 >
-                  <svg style={{ width: '24px', height: '24px', color: '#262626' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-                  </svg>
+                  <span style={{ fontSize: '24px', color: '#262626' }}>↗</span>
                 </button>
               </div>
               
               {/* Right side actions */}
-              <div style={{ display: 'flex', gap: '8px' }}>
+              <div style={{ display: 'flex', gap: '12px' }}>
                 {/* Save/Bookmark button */}
                 <button 
                   onClick={() => handleToggleBookmark(post.id)}
                   style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '8px' }}
                   title={engagementData.get(post.id)?.isBookmarked ? "Saved" : "Save"}
                 >
-                  <svg style={{ 
-                    width: '24px', 
-                    height: '24px', 
-                    color: engagementData.get(post.id)?.isBookmarked ? '#262626' : '#8e8e8e',
-                    fill: engagementData.get(post.id)?.isBookmarked ? 'currentColor' : 'none'
-                  }} stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
-                  </svg>
+                  <span style={{ 
+                    fontSize: '24px', 
+                    color: engagementData.get(post.id)?.isBookmarked ? '#262626' : '#8e8e8e'
+                  }}>
+                    {engagementData.get(post.id)?.isBookmarked ? '🔖' : '⋄'}
+                  </span>
                 </button>
                 
                 {/* Report button */}
@@ -620,12 +612,10 @@ const MobileApp = () => {
                   style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '8px' }}
                   title="Report"
                 >
-                  <svg style={{ width: '20px', height: '20px', color: '#8e8e8e' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.35 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                  </svg>
+                  <span style={{ fontSize: '20px', color: '#8e8e8e' }}>⚠</span>
                 </button>
                 
-                {/* Edit & Delete buttons (only if user owns the post) */}
+                {/* Edit & Delete buttons (show for all user's posts) */}
                 {post.author_id === user?.id && (
                   <>
                     <button 
@@ -633,9 +623,7 @@ const MobileApp = () => {
                       style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '8px' }}
                       title="Edit"
                     >
-                      <svg style={{ width: '20px', height: '20px', color: '#0095f6' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                      </svg>
+                      <span style={{ fontSize: '18px', color: '#0095f6' }}>✏️</span>
                     </button>
                     
                     <button 
@@ -645,11 +633,9 @@ const MobileApp = () => {
                       title="Delete"
                     >
                       {deletingPostId === post.id ? (
-                        <div style={{ width: '20px', height: '20px', border: '2px solid #f3f4f6', borderTop: '2px solid #ef4444', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
+                        <div style={{ width: '18px', height: '18px', border: '2px solid #f3f4f6', borderTop: '2px solid #ef4444', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
                       ) : (
-                        <svg style={{ width: '20px', height: '20px', color: '#ef4444' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
+                        <span style={{ fontSize: '18px', color: '#ef4444' }}>🗑️</span>
                       )}
                     </button>
                   </>
