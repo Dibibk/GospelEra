@@ -5,10 +5,10 @@ import { StatusBar } from 'expo-status-bar';
 const API_BASE_URL = 'https://0c5a25f0-9744-423a-9b7b-f354b588ed87-00-364hxv4w1n962.picard.replit.dev';
 
 export default function App() {
-  const [connectionStatus, setConnectionStatus] = useState('Testing...');
+  const [connectionStatus, setConnectionStatus] = useState('Testing connection...');
 
   useEffect(() => {
-    // Test API connection
+    // Test API connection to your Gospel Era backend
     fetch(`${API_BASE_URL}/api/posts`)
       .then(response => response.json())
       .then(data => {
@@ -21,6 +21,7 @@ export default function App() {
 
   return (
     <View style={styles.container}>
+      <Text style={styles.logo}>✝️</Text>
       <Text style={styles.title}>Gospel Era Mobile</Text>
       <Text style={styles.subtitle}>Native App Foundation</Text>
       <Text style={styles.connection}>{connectionStatus}</Text>
@@ -33,10 +34,14 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#7c3aed', // Purple theme
+    backgroundColor: '#7c3aed',
     alignItems: 'center',
     justifyContent: 'center',
     padding: 20,
+  },
+  logo: {
+    fontSize: 60,
+    marginBottom: 20,
   },
   title: {
     fontSize: 32,
@@ -49,17 +54,17 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: 'rgba(255, 255, 255, 0.8)',
     textAlign: 'center',
-    marginBottom: 20,
+    marginBottom: 30,
   },
   connection: {
     fontSize: 16,
     color: 'white',
     textAlign: 'center',
-    marginBottom: 10,
+    marginBottom: 15,
     fontWeight: '600',
   },
   url: {
-    fontSize: 12,
+    fontSize: 10,
     color: 'rgba(255, 255, 255, 0.6)',
     textAlign: 'center',
   },
