@@ -2,7 +2,7 @@ import 'react-native-url-polyfill/auto';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createClient } from '@supabase/supabase-js';
 
-// Replace with your actual Supabase credentials
+// Supabase configuration - get these from your web app's environment variables
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || 'https://your-project.supabase.co';
 const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || 'your-anon-key';
 
@@ -15,5 +15,5 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   },
 });
 
-// API base URL for your existing backend
-export const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:5000';
+// API base URL - use your Replit app's public URL for mobile access
+export const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'https://your-replit-app.replit.app';
