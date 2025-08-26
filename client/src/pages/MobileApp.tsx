@@ -47,6 +47,7 @@ const MobileApp = () => {
   const [password, setPassword] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
   const [loginError, setLoginError] = useState('');
+  const [faithAffirmed, setFaithAffirmed] = useState(false);
   const [deletingPostId, setDeletingPostId] = useState<number | null>(null);
   const [editingPostId, setEditingPostId] = useState<number | null>(null);
   const [reportModalOpen, setReportModalOpen] = useState(false);
@@ -337,24 +338,48 @@ const MobileApp = () => {
 
   // Get real leaderboard data
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
+  // User profile and dropdown state
+  const [userProfile, setUserProfile] = useState<{display_name?: string, avatar_url?: string} | null>(null);
+  const [showUserDropdown, setShowUserDropdown] = useState(false);
 
-  // Fetch leaderboard data
+  // Fetch leaderboard data and user profile
   useEffect(() => {
-    const fetchLeaderboard = async () => {
+    const fetchData = async () => {
       try {
-        const result = await getTopPrayerWarriors({ timeframe: 'week', limit: 10 });
-        if (result.data) {
-          setLeaderboard(result.data);
+        // Fetch leaderboard
+        const leaderboardResult = await getTopPrayerWarriors({ timeframe: 'week', limit: 10 });
+        if (leaderboardResult.data) {
+          setLeaderboard(leaderboardResult.data);
+        }
+
+        // Fetch user profile
+        if (user?.id) {
+          const profileResult = await getProfilesByIds([user.id]);
+          if (profileResult.data && profileResult.data.length > 0) {
+            setUserProfile(profileResult.data[0]);
+          }
         }
       } catch (error) {
-        console.error('Error fetching leaderboard:', error);
+        console.error('Error fetching data:', error);
       }
     };
 
     if (user) {
-      fetchLeaderboard();
+      fetchData();
     }
   }, [user]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+      if (showUserDropdown && !target.closest('.user-dropdown-container')) {
+        setShowUserDropdown(false);
+      }
+    };
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, [showUserDropdown]);
 
   const handleToggleAmen = async (postId: number) => {
     try {
@@ -476,6 +501,12 @@ const MobileApp = () => {
   const handleLogin = async () => {
     if (!email.trim() || !password.trim()) return;
     
+    // Check faith affirmation for signup
+    if (isSignUp && !faithAffirmed) {
+      setLoginError('Please affirm your faith to create an account.');
+      return;
+    }
+    
     setLoginError('');
     const { error } = isSignUp 
       ? await signUp(email, password)
@@ -486,6 +517,7 @@ const MobileApp = () => {
     } else {
       setEmail('');
       setPassword('');
+      setFaithAffirmed(false);
     }
   };
 
@@ -594,14 +626,40 @@ const MobileApp = () => {
         />
       </div>
 
+      {/* Faith Affirmation for Signup */}
+      {isSignUp && (
+        <div style={{ 
+          marginBottom: '16px', padding: '16px', 
+          border: '1px solid #dbdbdb', borderRadius: '8px', background: '#f9f9f9' 
+        }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', marginBottom: '8px' }}>
+            <input
+              type="checkbox"
+              checked={faithAffirmed}
+              onChange={(e) => setFaithAffirmed(e.target.checked)}
+              style={{ marginRight: '8px', marginTop: '2px' }}
+            />
+            <label style={{ fontSize: '14px', color: '#262626', lineHeight: '1.4' }}>
+              <span style={{ color: '#dc2626' }}>*</span> I affirm that I am a follower of Jesus Christ and I believe in His saving blood. I agree that prayers in this app are directed to Jesus.
+            </label>
+          </div>
+          {isSignUp && !faithAffirmed && (
+            <div style={{ fontSize: '12px', color: '#dc2626', marginLeft: '20px' }}>
+              This affirmation is required to join our Christian prayer community.
+            </div>
+          )}
+        </div>
+      )}
+
       <button
         onClick={handleLogin}
-        disabled={!email.trim() || !password.trim()}
+        disabled={!email.trim() || !password.trim() || (isSignUp && !faithAffirmed)}
         style={{
-          width: '100%', background: email.trim() && password.trim() ? '#262626' : '#dbdbdb',
+          width: '100%', 
+          background: (email.trim() && password.trim() && (!isSignUp || faithAffirmed)) ? '#262626' : '#dbdbdb',
           color: '#ffffff', border: 'none', padding: '12px', borderRadius: '8px',
           fontSize: '16px', fontWeight: 600, marginBottom: '16px',
-          cursor: email.trim() && password.trim() ? 'pointer' : 'not-allowed'
+          cursor: (email.trim() && password.trim() && (!isSignUp || faithAffirmed)) ? 'pointer' : 'not-allowed'
         }}
       >
         {isSignUp ? 'Sign Up' : 'Log In'}
@@ -1805,9 +1863,130 @@ const MobileApp = () => {
            'Profile'}
         </div>
         {user && (
-          <div style={{ display: 'flex', gap: '16px' }}>
-            <div style={{ fontSize: '24px', color: '#262626', cursor: 'pointer', padding: '8px' }}>♡</div>
-            <div style={{ fontSize: '24px', color: '#262626', cursor: 'pointer', padding: '8px' }}>✉</div>
+          <div className="user-dropdown-container" style={{ display: 'flex', alignItems: 'center', gap: '16px', position: 'relative' }}>
+            {/* User Name and Avatar */}
+            <button 
+              onClick={() => setShowUserDropdown(!showUserDropdown)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '8px',
+                background: 'none', border: 'none', cursor: 'pointer',
+                padding: '4px 8px', borderRadius: '20px',
+                ':hover': { background: '#f0f0f0' }
+              }}
+            >
+              <div style={{
+                width: '28px', height: '28px', borderRadius: '50%',
+                background: userProfile?.avatar_url ? 'none' : '#dbdbdb',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                overflow: 'hidden'
+              }}>
+                {userProfile?.avatar_url ? (
+                  <img 
+                    src={userProfile.avatar_url} 
+                    alt="Profile" 
+                    style={{ width: '28px', height: '28px', borderRadius: '50%', objectFit: 'cover' }}
+                  />
+                ) : (
+                  <span style={{ fontSize: '14px', color: '#8e8e8e' }}>👤</span>
+                )}
+              </div>
+              <span style={{ fontSize: '14px', fontWeight: 600, color: '#262626' }}>
+                {userProfile?.display_name || user?.email?.split('@')[0] || 'User'}
+              </span>
+              <span style={{ fontSize: '12px', color: '#8e8e8e' }}>▼</span>
+            </button>
+
+            {/* Dropdown Menu */}
+            {showUserDropdown && (
+              <div style={{
+                position: 'absolute', top: '100%', right: 0, marginTop: '8px',
+                background: '#ffffff', borderRadius: '12px', boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+                border: '1px solid #dbdbdb', minWidth: '200px', zIndex: 1000
+              }}>
+                <div style={{ padding: '12px 16px', borderBottom: '1px solid #f0f0f0' }}>
+                  <div style={{ fontSize: '14px', fontWeight: 600, color: '#262626' }}>
+                    {userProfile?.display_name || 'Gospel User'}
+                  </div>
+                  <div style={{ fontSize: '12px', color: '#8e8e8e' }}>
+                    {user?.email}
+                  </div>
+                </div>
+                
+                <button style={{
+                  width: '100%', padding: '12px 16px', border: 'none', background: 'none',
+                  textAlign: 'left', fontSize: '14px', color: '#262626',
+                  ':hover': { background: '#f9f9f9' }, cursor: 'pointer'
+                }}>
+                  👤 Profile
+                </button>
+                
+                <button style={{
+                  width: '100%', padding: '12px 16px', border: 'none', background: 'none',
+                  textAlign: 'left', fontSize: '14px', color: '#262626',
+                  ':hover': { background: '#f9f9f9' }, cursor: 'pointer'
+                }}>
+                  ⚙️ Settings
+                </button>
+                
+                <button style={{
+                  width: '100%', padding: '12px 16px', border: 'none', background: 'none',
+                  textAlign: 'left', fontSize: '14px', color: '#262626',
+                  ':hover': { background: '#f9f9f9' }, cursor: 'pointer'
+                }}>
+                  🔖 Saved Posts
+                </button>
+                
+                <button style={{
+                  width: '100%', padding: '12px 16px', border: 'none', background: 'none',
+                  textAlign: 'left', fontSize: '14px', color: '#262626',
+                  ':hover': { background: '#f9f9f9' }, cursor: 'pointer'
+                }}>
+                  📖 Community Guidelines
+                </button>
+                
+                <button style={{
+                  width: '100%', padding: '12px 16px', border: 'none', background: 'none',
+                  textAlign: 'left', fontSize: '14px', color: '#262626',
+                  ':hover': { background: '#f9f9f9' }, cursor: 'pointer'
+                }}>
+                  ❤️ Be a Supporter
+                </button>
+                
+                <button style={{
+                  width: '100%', padding: '12px 16px', border: 'none', background: 'none',
+                  textAlign: 'left', fontSize: '14px', color: '#262626',
+                  ':hover': { background: '#f9f9f9' }, cursor: 'pointer'
+                }}>
+                  ❓ Help
+                </button>
+                
+                {userProfile?.role === 'admin' && (
+                  <button style={{
+                    width: '100%', padding: '12px 16px', border: 'none', background: 'none',
+                    textAlign: 'left', fontSize: '14px', color: '#dc2626',
+                    ':hover': { background: '#f9f9f9' }, cursor: 'pointer',
+                    borderTop: '1px solid #f0f0f0'
+                  }}>
+                    🛡️ Admin Dashboard
+                  </button>
+                )}
+                
+                <button 
+                  onClick={() => {
+                    setShowUserDropdown(false);
+                    signOut();
+                  }}
+                  style={{
+                    width: '100%', padding: '12px 16px', border: 'none', background: 'none',
+                    textAlign: 'left', fontSize: '14px', color: '#dc2626',
+                    ':hover': { background: '#f9f9f9' }, cursor: 'pointer',
+                    borderTop: '1px solid #f0f0f0'
+                  }}
+                >
+                  🚪 Sign Out
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>
