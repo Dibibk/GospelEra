@@ -33,14 +33,14 @@ export function BottomNavigation() {
   }
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 z-50 md:hidden">
-      <div className="flex items-center justify-around py-2 px-4 safe-area-inset-bottom">
+    <nav className="nav-mobile">
+      <div className="flex items-center justify-around w-full">
         {navItems.map((item) => (
           <Link
             key={item.key}
             to={item.path}
             onClick={item.isCreate ? handleCreateClick : item.isSearch ? handleSearchClick : undefined}
-            className={`flex flex-col items-center p-2 rounded-lg transition-colors ${
+            className={`nav-mobile-item ${
               isActive(item.path) && !item.isCreate && !item.isSearch
                 ? 'text-purple-600 dark:text-purple-400' 
                 : 'text-gray-500 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400'

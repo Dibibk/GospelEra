@@ -177,7 +177,7 @@ export function PostCreateModal({
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Share your title here..."
               disabled={isBanned}
-              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+              className="input-mobile w-full bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
               data-testid="input-post-title"
             />
             {isBanned && (
@@ -196,7 +196,7 @@ export function PostCreateModal({
               rows={6}
               placeholder="Share your heart, testimony, or encouragement..."
               disabled={isBanned}
-              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed resize-none"
+              className="textarea-mobile w-full bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
               data-testid="textarea-post-content"
             />
           </div>
@@ -212,7 +212,7 @@ export function PostCreateModal({
               onChange={(e) => setTags(e.target.value)}
               placeholder="prayer, testimony, encouragement, bible-study..."
               disabled={isBanned}
-              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+              className="input-mobile w-full bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
               data-testid="input-post-tags"
             />
           </div>
@@ -228,7 +228,7 @@ export function PostCreateModal({
               onChange={(e) => setYoutubeUrl(e.target.value)}
               placeholder="https://www.youtube.com/watch?v=..."
               disabled={isBanned || !hasMediaPermission}
-              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+              className="input-mobile w-full bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
               data-testid="input-youtube-url"
             />
             {youtubeError && (
