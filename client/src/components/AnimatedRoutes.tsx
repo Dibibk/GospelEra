@@ -22,6 +22,7 @@ import DonateThanks from "../pages/DonateThanks";
 import AdminDonations from "../pages/AdminDonations";
 import ForgotPassword from "../pages/ForgotPassword";
 import ResetPassword from "../pages/ResetPassword";
+import MobileApp from "../pages/MobileApp";
 
 export function AnimatedRoutes() {
   const location = useLocation();
@@ -221,6 +222,14 @@ export function AnimatedRoutes() {
                 <PrayerLeaderboard />
               </PageTransition>
             </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/mobile" 
+          element={
+            <PageTransition>
+              <MobileApp />
+            </PageTransition>
           } 
         />
       </Routes>
