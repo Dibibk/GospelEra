@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Gospel Era Mobile</title>
+    <style>
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
+            background: #000;
+            color: #fff;
+            overflow-x: hidden;
+            height: 100vh;
+            position: relative;
+        }
+
+        /* Mobile-first design with bottom navigation */
+        .mobile-container {
+            max-width: 428px;
+            margin: 0 auto;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background: linear-gradient(180deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            position: relative;
+        }
+
+        /* Status bar simulation */
+        .status-bar {
+            height: 44px;
+            background: rgba(0,0,0,0.9);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        /* Mobile header with large title */
+        .mobile-header {
+            padding: 20px 24px 10px;
+            background: rgba(0,0,0,0.3);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .app-title {
+            font-size: 34px;
+            font-weight: 700;
+            margin-bottom: 4px;
+            background: linear-gradient(45deg, #ffd700, #fff, #ffd700);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .app-subtitle {
+            font-size: 16px;
+            opacity: 0.7;
+            font-weight: 400;
+        }
+
+        /* Content area */
+        .content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0 0 90px;
+        }
+
+        /* Native mobile cards */
+        .mobile-card {
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 20px;
+            margin: 12px 20px;
+            padding: 20px;
+            position: relative;
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .avatar {
+            width: 44px;
+            height: 44px;
+            border-radius: 22px;
+            background: linear-gradient(45deg, #7c3aed, #f59e0b);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            margin-right: 12px;
+        }
+
+        .post-meta {
+            flex: 1;
+        }
+
+        .username {
+            font-weight: 600;
+            font-size: 16px;
+            margin-bottom: 2px;
+        }
+
+        .time {
+            font-size: 12px;
+            opacity: 0.6;
+        }
+
+        .post-content {
+            font-size: 16px;
+            line-height: 1.4;
+            margin-bottom: 16px;
+        }
+
+        /* Mobile action buttons */
+        .actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .action-left {
+            display: flex;
+            gap: 24px;
+        }
+
+        .action-btn {
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 20px;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 20px;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .action-btn:active {
+            transform: scale(0.9);
+            background: rgba(255,255,255,0.1);
+        }
+
+        .action-btn.liked {
+            color: #ff6b6b;
+        }
+
+        .action-btn.bookmarked {
+            color: #ffd700;
+        }
+
+        .action-count {
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        /* Bottom navigation - pure mobile pattern */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            max-width: 428px;
+            height: 90px;
+            background: rgba(0,0,0,0.9);
+            backdrop-filter: blur(20px);
+            border-top: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding-bottom: 20px;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: rgba(255,255,255,0.6);
+            text-decoration: none;
+            transition: all 0.2s;
+            padding: 8px 12px;
+            border-radius: 12px;
+            min-width: 60px;
+        }
+
+        .nav-item.active {
+            color: #ffd700;
+            background: rgba(255,215,0,0.1);
+        }
+
+        .nav-item:active {
+            transform: scale(0.95);
+        }
+
+        .nav-icon {
+            font-size: 24px;
+            margin-bottom: 4px;
+        }
+
+        .nav-label {
+            font-size: 10px;
+            font-weight: 500;
+        }
+
+        /* Floating action button */
+        .fab {
+            position: fixed;
+            bottom: 110px;
+            right: 24px;
+            width: 56px;
+            height: 56px;
+            border-radius: 28px;
+            background: linear-gradient(45deg, #7c3aed, #f59e0b);
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 8px 32px rgba(124,58,237,0.4);
+            transition: all 0.3s;
+            z-index: 1000;
+        }
+
+        .fab:active {
+            transform: scale(0.9);
+        }
+
+        /* Loading shimmer effect */
+        .loading {
+            background: linear-gradient(90deg, rgba(255,255,255,0.1) 25%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0.1) 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+
+        /* Hide scrollbar but keep functionality */
+        .content::-webkit-scrollbar {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="mobile-container">
+        <!-- iOS-style status bar -->
+        <div class="status-bar">
+            <span>9:41</span>
+            <span>📶 📶 📶</span>
+        </div>
+
+        <!-- Large title header (iOS pattern) -->
+        <div class="mobile-header">
+            <h1 class="app-title">Gospel Era</h1>
+            <p class="app-subtitle">Faith Community</p>
+        </div>
+
+        <!-- Scrollable content -->
+        <div class="content" id="content">
+            <!-- Posts will be loaded here -->
+        </div>
+
+        <!-- Floating Action Button -->
+        <button class="fab" onclick="showCreatePost()">+</button>
+
+        <!-- Bottom Navigation (Android/iOS pattern) -->
+        <nav class="bottom-nav">
+            <a href="#" class="nav-item active" onclick="showFeed()">
+                <div class="nav-icon">🏠</div>
+                <div class="nav-label">Home</div>
+            </a>
+            <a href="#" class="nav-item" onclick="showPrayer()">
+                <div class="nav-icon">🙏</div>
+                <div class="nav-label">Prayer</div>
+            </a>
+            <a href="#" class="nav-item" onclick="showSearch()">
+                <div class="nav-icon">🔍</div>
+                <div class="nav-label">Search</div>
+            </a>
+            <a href="#" class="nav-item" onclick="showProfile()">
+                <div class="nav-icon">👤</div>
+                <div class="nav-label">Profile</div>
+            </a>
+        </nav>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'https://0c5a25f0-9744-423a-9b7b-f354b588ed87-00-364hxv4w1n962.picard.replit.dev';
+        
+        // Mock user data for demo
+        const currentUser = {
+            id: 'demo-user',
+            username: 'FaithfulUser',
+            avatar: '✝️'
+        };
+
+        // Load and display posts with mobile-native styling
+        async function loadPosts() {
+            const content = document.getElementById('content');
+            
+            // Show loading state
+            content.innerHTML = `
+                <div class="mobile-card loading" style="height: 200px;"></div>
+                <div class="mobile-card loading" style="height: 180px;"></div>
+                <div class="mobile-card loading" style="height: 220px;"></div>
+            `;
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/posts`);
+                const posts = await response.json();
+                
+                content.innerHTML = posts.map(post => `
+                    <div class="mobile-card">
+                        <div class="card-header">
+                            <div class="avatar">✝️</div>
+                            <div class="post-meta">
+                                <div class="username">${post.author || 'Gospel User'}</div>
+                                <div class="time">2 hours ago</div>
+                            </div>
+                        </div>
+                        <div class="post-content">${post.content || post.title}</div>
+                        <div class="actions">
+                            <div class="action-left">
+                                <button class="action-btn" onclick="toggleLike(this)">
+                                    ❤️ <span class="action-count">12</span>
+                                </button>
+                                <button class="action-btn" onclick="showComments()">
+                                    💬 <span class="action-count">3</span>
+                                </button>
+                                <button class="action-btn" onclick="sharePost()">
+                                    📤
+                                </button>
+                            </div>
+                            <button class="action-btn" onclick="toggleBookmark(this)">
+                                🔖
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                content.innerHTML = `
+                    <div class="mobile-card">
+                        <div style="text-align: center; padding: 40px;">
+                            <div style="font-size: 48px; margin-bottom: 16px;">📱</div>
+                            <h3>Mobile App Ready!</h3>
+                            <p style="opacity: 0.7; margin-top: 8px;">This is your native mobile interface</p>
+                            <p style="opacity: 0.5; font-size: 12px; margin-top: 16px;">Backend: ${error.message}</p>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        // Mobile-specific interactions
+        function toggleLike(btn) {
+            btn.classList.toggle('liked');
+            const count = btn.querySelector('.action-count');
+            const current = parseInt(count.textContent);
+            count.textContent = btn.classList.contains('liked') ? current + 1 : current - 1;
+            
+            // Haptic feedback simulation
+            btn.style.transform = 'scale(1.2)';
+            setTimeout(() => btn.style.transform = '', 150);
+        }
+
+        function toggleBookmark(btn) {
+            btn.classList.toggle('bookmarked');
+            btn.style.transform = 'scale(1.2)';
+            setTimeout(() => btn.style.transform = '', 150);
+        }
+
+        function showCreatePost() {
+            alert('📝 Create Post\n\nThis would open the native mobile post creation interface');
+        }
+
+        function showComments() {
+            alert('💬 Comments\n\nThis would slide up a comments sheet (mobile pattern)');
+        }
+
+        function sharePost() {
+            if (navigator.share) {
+                navigator.share({
+                    title: 'Gospel Era Post',
+                    text: 'Check out this post from Gospel Era!',
+                    url: window.location.href
+                });
+            } else {
+                alert('📤 Share\n\nThis would open native share options');
+            }
+        }
+
+        // Navigation functions
+        function showFeed() {
+            setActiveTab(0);
+            loadPosts();
+        }
+
+        function showPrayer() {
+            setActiveTab(1);
+            document.getElementById('content').innerHTML = `
+                <div class="mobile-card">
+                    <div style="text-align: center; padding: 40px;">
+                        <div style="font-size: 48px; margin-bottom: 16px;">🙏</div>
+                        <h3>Prayer Requests</h3>
+                        <p style="opacity: 0.7; margin-top: 8px;">Mobile prayer interface</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        function showSearch() {
+            setActiveTab(2);
+            document.getElementById('content').innerHTML = `
+                <div class="mobile-card">
+                    <div style="text-align: center; padding: 40px;">
+                        <div style="font-size: 48px; margin-bottom: 16px;">🔍</div>
+                        <h3>Search</h3>
+                        <p style="opacity: 0.7; margin-top: 8px;">Mobile search interface</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        function showProfile() {
+            setActiveTab(3);
+            document.getElementById('content').innerHTML = `
+                <div class="mobile-card">
+                    <div style="text-align: center; padding: 40px;">
+                        <div class="avatar" style="width: 80px; height: 80px; font-size: 32px; margin: 0 auto 16px;">✝️</div>
+                        <h3>${currentUser.username}</h3>
+                        <p style="opacity: 0.7; margin-top: 8px;">Mobile profile interface</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        function setActiveTab(index) {
+            document.querySelectorAll('.nav-item').forEach((item, i) => {
+                item.classList.toggle('active', i === index);
+            });
+        }
+
+        // Initialize the mobile app
+        loadPosts();
+    </script>
+</body>
+</html>
