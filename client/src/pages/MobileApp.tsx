@@ -41,7 +41,7 @@ const MobileApp = () => {
   };
 
   const getPostIcon = (index: number) => {
-    const icons = ['🙏', '✝️', '📖', '💒', '🎵'];
+    const icons = ['○', '□', '△', '◊', '☆'];
     return icons[index % icons.length];
   };
 
@@ -79,7 +79,7 @@ const MobileApp = () => {
         </div>
         <div style={{ display: 'flex', gap: '16px' }}>
           <div style={{ fontSize: '24px', color: '#262626', cursor: 'pointer', padding: '8px' }}>♡</div>
-          <div style={{ fontSize: '24px', color: '#262626', cursor: 'pointer', padding: '8px' }}>✉</div>
+          <div style={{ fontSize: '24px', color: '#262626', cursor: 'pointer', padding: '8px' }}>⊞</div>
         </div>
       </div>
 
@@ -95,10 +95,10 @@ const MobileApp = () => {
           style={{
             width: '100%',
             height: '36px',
-            background: '#efefef',
+            background: '#f2f2f2',
             border: 'none',
-            borderRadius: '8px',
-            padding: '0 12px',
+            borderRadius: '18px',
+            padding: '0 16px',
             fontSize: '14px',
             color: '#262626',
             outline: 'none'
@@ -174,9 +174,10 @@ const MobileApp = () => {
                   justifyContent: 'center',
                   fontSize: '16px',
                   marginRight: '12px',
-                  border: '1px solid #dbdbdb'
+                  border: '1px solid #dbdbdb',
+                  color: '#8e8e8e'
                 }}>
-                  ✝️
+                  ●
                 </div>
                 <div style={{ flex: 1 }}>
                   <div style={{
@@ -207,12 +208,13 @@ const MobileApp = () => {
               <div style={{
                 width: '100%',
                 height: '300px',
-                background: 'linear-gradient(135deg, #f0f0f0, #e0e0e0)',
+                background: '#ffffff',
+                border: '1px solid #dbdbdb',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 fontSize: '48px',
-                color: '#8e8e8e'
+                color: '#dbdbdb'
               }}>
                 {getPostIcon(index)}
               </div>
@@ -246,7 +248,7 @@ const MobileApp = () => {
                     cursor: 'pointer',
                     padding: '8px'
                   }}>
-                    💬
+                    ○
                   </button>
                   <button style={{
                     background: 'none',
@@ -256,7 +258,7 @@ const MobileApp = () => {
                     cursor: 'pointer',
                     padding: '8px'
                   }}>
-                    ✈
+                    ↗
                   </button>
                 </div>
                 <button style={{
@@ -267,7 +269,7 @@ const MobileApp = () => {
                   cursor: 'pointer',
                   padding: '8px'
                 }}>
-                  🔖
+                  ⋄
                 </button>
               </div>
 
@@ -359,7 +361,7 @@ const MobileApp = () => {
             fontWeight: activeTab === 0 ? 700 : 400
           }}
         >
-          🏠
+          ⌂
         </div>
         <div 
           onClick={() => setActiveTab(1)}
@@ -373,7 +375,7 @@ const MobileApp = () => {
             cursor: 'pointer'
           }}
         >
-          🔍
+          ○
         </div>
         <div 
           onClick={() => setActiveTab(2)}
@@ -387,7 +389,7 @@ const MobileApp = () => {
             cursor: 'pointer'
           }}
         >
-          ➕
+          ⊞
         </div>
         <div 
           onClick={() => setActiveTab(3)}
@@ -401,7 +403,7 @@ const MobileApp = () => {
             cursor: 'pointer'
           }}
         >
-          🙏
+          ☆
         </div>
         <div 
           onClick={() => setActiveTab(4)}
@@ -415,7 +417,7 @@ const MobileApp = () => {
             cursor: 'pointer'
           }}
         >
-          👤
+          ○
         </div>
       </nav>
     </div>
