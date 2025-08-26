@@ -29,6 +29,10 @@ const MobileApp = () => {
   const [createTitle, setCreateTitle] = useState('');
   const [prayerTitle, setPrayerTitle] = useState('');
   const [prayerDetails, setPrayerDetails] = useState('');
+  const [prayerTags, setPrayerTags] = useState('');
+  const [isAnonymous, setIsAnonymous] = useState(false);
+  const [prayerModerationError, setPrayerModerationError] = useState('');
+  const [committingToId, setCommittingToId] = useState<number | null>(null);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
@@ -197,31 +201,70 @@ const MobileApp = () => {
   const handleCreatePrayerRequest = async () => {
     if (!prayerTitle.trim() || !prayerDetails.trim()) return;
     
+    if (isBanned) {
+      alert('Your account is limited. You cannot create prayer requests.');
+      return;
+    }
+
+    // Clear previous errors
+    setPrayerModerationError('');
+
+    const titleText = prayerTitle.trim();
+    const detailsText = prayerDetails.trim();
+
+    // Enhanced Christ-centric validation for title and details
+    const titleValidation = validateFaithContent(titleText);
+    const detailsValidation = validateFaithContent(detailsText);
+    
+    if (!titleValidation.isValid && !detailsValidation.isValid) {
+      setPrayerModerationError(titleValidation.reason || 'Please keep your prayer request centered on Jesus or Scripture.');
+      return;
+    }
+
+    // Process tags
+    const tagsArray = prayerTags.trim() ? prayerTags.split(',').map(tag => tag.trim()) : [];
+    
     try {
       const result = await createPrayerRequest({
-        title: prayerTitle.trim(),
-        details: prayerDetails.trim(),
-        tags: [],
-        is_anonymous: false
+        title: titleText,
+        details: detailsText,
+        tags: tagsArray,
+        is_anonymous: isAnonymous
       });
       
       if (result.data) {
+        // Clear form
         setPrayerTitle('');
         setPrayerDetails('');
+        setPrayerTags('');
+        setIsAnonymous(false);
+        setPrayerModerationError('');
         fetchData();
-        setActiveTab(3); // Go to prayer tab
       }
     } catch (error) {
       console.error('Error creating prayer request:', error);
+      alert('Failed to create prayer request. Please try again.');
     }
   };
 
   const handleCommitToPray = async (requestId: number) => {
+    if (!user || isBanned) return;
+    
+    setCommittingToId(requestId);
+    
     try {
-      await commitToPray(requestId);
-      fetchData(); // Refresh to show updated stats
+      const { error } = await commitToPray(requestId);
+      if (error) {
+        alert('Failed to commit to prayer. Please try again.');
+      } else {
+        // Refresh prayer requests to show updated counts
+        fetchData();
+      }
     } catch (error) {
-      console.error('Error committing to pray:', error);
+      console.error('Error committing to prayer:', error);
+      alert('Failed to commit to prayer. Please try again.');
+    } finally {
+      setCommittingToId(null);
     }
   };
 
@@ -984,63 +1027,146 @@ const MobileApp = () => {
   // Prayer Page Component
   const PrayerPage = () => (
     <>
-      {/* Prayer Stats */}
+      {/* Prayer Stats - clean mobile style */}
       <div style={{
         display: 'flex', justifyContent: 'space-around', padding: '16px',
         background: '#ffffff', borderBottom: '1px solid #dbdbdb'
       }}>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '20px', fontWeight: 700, color: '#262626' }}>{prayerRequests.length}</div>
+          <div style={{ fontSize: '18px', fontWeight: 700, color: '#262626' }}>{prayerRequests.length}</div>
           <div style={{ fontSize: '12px', color: '#8e8e8e' }}>Requests</div>
         </div>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '20px', fontWeight: 700, color: '#262626' }}>
+          <div style={{ fontSize: '18px', fontWeight: 700, color: '#262626' }}>
             {prayerRequests.reduce((sum, req) => sum + (req.prayer_stats?.committed_count || 0), 0)}
           </div>
           <div style={{ fontSize: '12px', color: '#8e8e8e' }}>Committed</div>
         </div>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '20px', fontWeight: 700, color: '#262626' }}>
+          <div style={{ fontSize: '18px', fontWeight: 700, color: '#262626' }}>
             {prayerRequests.reduce((sum, req) => sum + (req.prayer_stats?.prayed_count || 0), 0)}
           </div>
           <div style={{ fontSize: '12px', color: '#8e8e8e' }}>Prayed</div>
         </div>
       </div>
 
-      {/* Create Prayer Request */}
+      {/* Create Prayer Request - enhanced with all features */}
       <div style={{ padding: '16px', borderBottom: '1px solid #dbdbdb' }}>
+        {/* Simple header like create post */}
+        <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
+          <div style={{
+            width: '32px', height: '32px', borderRadius: '50%', background: '#dbdbdb',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            marginRight: '12px', color: '#8e8e8e'
+          }}>
+            🙏
+          </div>
+          <div style={{ fontWeight: 600, color: '#262626' }}>Share Prayer Request</div>
+        </div>
+
+        {/* Error messages */}
+        {prayerModerationError && (
+          <div style={{
+            background: '#fee', border: '1px solid #fcc', color: '#c00',
+            padding: '8px 12px', borderRadius: '6px', marginBottom: '12px',
+            fontSize: '13px', textAlign: 'center'
+          }}>
+            {prayerModerationError}
+          </div>
+        )}
+
+        {isBanned && (
+          <div style={{
+            background: '#fff3cd', border: '1px solid #ffeaa7', color: '#856404',
+            padding: '8px 12px', borderRadius: '6px', marginBottom: '12px',
+            fontSize: '13px', textAlign: 'center'
+          }}>
+            Account limited. You can read but cannot post or comment.
+          </div>
+        )}
+
+        {/* Prayer Title */}
         <input
           type="text"
           placeholder="Prayer request title..."
           value={prayerTitle}
           onChange={(e) => setPrayerTitle(e.target.value)}
+          disabled={isBanned}
           style={{
-            width: '100%', padding: '8px 12px', border: '1px solid #dbdbdb',
-            borderRadius: '6px', fontSize: '14px', marginBottom: '8px', outline: 'none'
+            width: '100%', padding: '12px 16px', border: '1px solid #dbdbdb',
+            borderRadius: '8px', fontSize: '16px', marginBottom: '12px', outline: 'none',
+            backgroundColor: isBanned ? '#f5f5f5' : '#ffffff',
+            color: isBanned ? '#8e8e8e' : '#262626'
           }}
+          title={isBanned ? 'Account limited - cannot create prayer requests' : ''}
         />
+
+        {/* Prayer Details */}
         <textarea
           placeholder="Share your prayer need..."
           value={prayerDetails}
           onChange={(e) => setPrayerDetails(e.target.value)}
-          rows={3}
+          rows={4}
+          disabled={isBanned}
           style={{
-            width: '100%', padding: '8px 12px', border: '1px solid #dbdbdb',
-            borderRadius: '6px', fontSize: '14px', resize: 'none', outline: 'none',
-            fontFamily: 'inherit', marginBottom: '8px'
+            width: '100%', padding: '12px 16px', border: '1px solid #dbdbdb',
+            borderRadius: '8px', fontSize: '16px', resize: 'none', outline: 'none',
+            fontFamily: 'inherit', marginBottom: '12px',
+            backgroundColor: isBanned ? '#f5f5f5' : '#ffffff',
+            color: isBanned ? '#8e8e8e' : '#262626'
           }}
+          title={isBanned ? 'Account limited - cannot create prayer requests' : ''}
         />
+
+        {/* Tags Input */}
+        <input
+          type="text"
+          placeholder="Tags (healing, family, guidance...)"
+          value={prayerTags}
+          onChange={(e) => setPrayerTags(e.target.value)}
+          disabled={isBanned}
+          style={{
+            width: '100%', padding: '12px 16px', border: '1px solid #dbdbdb',
+            borderRadius: '8px', fontSize: '16px', marginBottom: '12px', outline: 'none',
+            backgroundColor: isBanned ? '#f5f5f5' : '#ffffff',
+            color: isBanned ? '#8e8e8e' : '#262626'
+          }}
+          title={isBanned ? 'Account limited - cannot create prayer requests' : ''}
+        />
+
+        {/* Anonymous Toggle */}
+        {!isBanned && (
+          <div style={{ 
+            display: 'flex', alignItems: 'center', marginBottom: '12px', 
+            padding: '8px', background: '#f8f9fa', borderRadius: '6px'
+          }}>
+            <input
+              type="checkbox"
+              id="anonymous"
+              checked={isAnonymous}
+              onChange={(e) => setIsAnonymous(e.target.checked)}
+              style={{ marginRight: '8px' }}
+            />
+            <label htmlFor="anonymous" style={{ fontSize: '14px', color: '#262626' }}>
+              Submit anonymously
+            </label>
+          </div>
+        )}
+
+        {/* Submit Button - NO PURPLE */}
         <button
           onClick={handleCreatePrayerRequest}
-          disabled={!prayerTitle.trim() || !prayerDetails.trim()}
+          disabled={!prayerTitle.trim() || !prayerDetails.trim() || isBanned}
           style={{
-            background: prayerTitle.trim() && prayerDetails.trim() ? '#7c3aed' : '#dbdbdb',
-            color: '#ffffff', border: 'none', padding: '8px 16px',
-            borderRadius: '20px', fontSize: '12px', fontWeight: 600,
-            cursor: prayerTitle.trim() && prayerDetails.trim() ? 'pointer' : 'not-allowed'
+            width: '100%',
+            background: (prayerTitle.trim() && prayerDetails.trim() && !isBanned) ? '#262626' : '#dbdbdb',
+            color: '#ffffff', border: 'none', padding: '12px',
+            borderRadius: '8px', fontSize: '16px', fontWeight: 600,
+            cursor: (prayerTitle.trim() && prayerDetails.trim() && !isBanned) ? 'pointer' : 'not-allowed'
           }}
+          title={isBanned ? 'Account limited - cannot create prayer requests' : ''}
         >
-          Submit Request
+          Submit Prayer Request
         </button>
       </div>
 
@@ -1048,6 +1174,7 @@ const MobileApp = () => {
       {prayerRequests.length > 0 ? (
         prayerRequests.map((request) => (
           <div key={request.id} style={{ background: '#ffffff', borderBottom: '1px solid #dbdbdb', padding: '16px' }}>
+            {/* Request Header */}
             <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
               <div style={{
                 width: '32px', height: '32px', borderRadius: '50%', background: '#dbdbdb',
@@ -1072,24 +1199,46 @@ const MobileApp = () => {
               )}
             </div>
 
+            {/* Request Title */}
             <div style={{ fontWeight: 600, marginBottom: '8px', color: '#262626' }}>
               {request.title}
             </div>
-            <div style={{ fontSize: '14px', lineHeight: 1.4, marginBottom: '16px', color: '#262626' }}>
+
+            {/* Request Details */}
+            <div style={{ fontSize: '14px', lineHeight: 1.4, marginBottom: '12px', color: '#262626' }}>
               {request.details}
             </div>
 
+            {/* Tags if available */}
+            {request.tags && request.tags.length > 0 && (
+              <div style={{ marginBottom: '12px' }}>
+                {request.tags.map((tag, index) => (
+                  <span key={index} style={{
+                    background: '#f0f0f0', padding: '2px 8px', borderRadius: '12px',
+                    fontSize: '12px', color: '#666', marginRight: '6px'
+                  }}>
+                    #{tag}
+                  </span>
+                ))}
+              </div>
+            )}
+
+            {/* Action Buttons */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
               <button 
                 onClick={() => handleCommitToPray(request.id)}
+                disabled={!user || isBanned || committingToId === request.id}
                 style={{
-                  background: '#7c3aed', color: '#ffffff', border: 'none',
+                  background: (!user || isBanned) ? '#dbdbdb' : '#262626',
+                  color: '#ffffff', border: 'none',
                   padding: '8px 16px', borderRadius: '20px', fontSize: '12px',
-                  fontWeight: 600, cursor: 'pointer', display: 'flex',
-                  alignItems: 'center', gap: '6px'
+                  fontWeight: 600, 
+                  cursor: (!user || isBanned) ? 'not-allowed' : 'pointer',
+                  display: 'flex', alignItems: 'center', gap: '6px'
                 }}
+                title={isBanned ? 'Account limited - cannot commit to pray' : ''}
               >
-                Pray
+                {committingToId === request.id ? '...' : '🙏 Pray'}
               </button>
               <div style={{ fontSize: '12px', color: '#8e8e8e' }}>
                 {request.prayer_stats?.committed_count || 0} committed · {request.prayer_stats?.prayed_count || 0} prayed
