@@ -1387,6 +1387,51 @@ const MobileApp = () => {
         </button>
       </div>
 
+      {/* Top Prayer Warriors Section - Added after Submit Prayer button */}
+      <div style={{ background: '#f8f9fa', padding: '16px', borderBottom: '1px solid #dbdbdb' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+          <div style={{ fontWeight: 600, fontSize: '16px', color: '#262626' }}>🏆 Top Prayer Warriors</div>
+          <button 
+            onClick={() => setPrayerTab(3)}
+            style={{
+              background: 'none', border: '1px solid #dbdbdb', borderRadius: '16px',
+              padding: '4px 12px', fontSize: '12px', color: '#8e8e8e', cursor: 'pointer'
+            }}
+          >
+            View All
+          </button>
+        </div>
+        
+        {leaderboard.length > 0 ? (
+          <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '8px' }}>
+            {leaderboard.slice(0, 5).map((warrior, index) => (
+              <div key={warrior.user_id} style={{
+                minWidth: '80px', textAlign: 'center', background: '#ffffff',
+                padding: '12px 8px', borderRadius: '12px', border: '1px solid #e1e5e9'
+              }}>
+                <div style={{
+                  width: '48px', height: '48px', borderRadius: '50%', background: '#7c3aed',
+                  margin: '0 auto 8px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: '20px', color: '#ffffff'
+                }}>
+                  {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '🙏'}
+                </div>
+                <div style={{ fontSize: '10px', fontWeight: 600, color: '#262626', marginBottom: '2px' }}>
+                  {warrior.display_name || `User ${warrior.user_id.slice(0, 8)}`}
+                </div>
+                <div style={{ fontSize: '9px', color: '#8e8e8e' }}>
+                  {warrior.prayer_count} prayers
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div style={{ textAlign: 'center', color: '#8e8e8e', fontSize: '14px', padding: '20px' }}>
+            Loading prayer warriors...
+          </div>
+        )}
+      </div>
+
       {/* Prayer Requests Feed */}
       {prayerRequests.length > 0 ? (
         prayerRequests.map((request) => (
@@ -1737,32 +1782,46 @@ const MobileApp = () => {
       {/* Profile header */}
       <div style={{ display: 'flex', alignItems: 'center', marginBottom: '16px' }}>
         <div style={{
-          width: '60px', height: '60px', borderRadius: '50%', background: '#dbdbdb',
+          width: '60px', height: '60px', borderRadius: '50%', 
+          background: userProfile?.avatar_url ? 'none' : '#dbdbdb',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: '24px', marginRight: '16px', color: '#8e8e8e'
+          fontSize: '24px', marginRight: '16px', color: '#8e8e8e',
+          overflow: 'hidden'
         }}>
-          •
+          {userProfile?.avatar_url ? (
+            <img 
+              src={userProfile.avatar_url.startsWith('/') ? userProfile.avatar_url : `/public-objects/${userProfile.avatar_url}`} 
+              alt="Profile" 
+              style={{ width: '60px', height: '60px', borderRadius: '50%', objectFit: 'cover' }}
+            />
+          ) : (
+            '👤'
+          )}
         </div>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: '18px', fontWeight: 700, color: '#262626' }}>
-            {user?.email?.split('@')[0] || 'Gospel User'}
+            {userProfile?.display_name || user?.email?.split('@')[0] || 'Gospel User'}
           </div>
-          <div style={{ fontSize: '14px', color: '#8e8e8e' }}>@{user?.email?.split('@')[0] || 'gospeluser'}</div>
+          <div style={{ fontSize: '14px', color: '#8e8e8e' }}>
+            @{userProfile?.display_name?.toLowerCase().replace(/\s+/g, '') || user?.email?.split('@')[0] || 'gospeluser'}
+          </div>
         </div>
         <button 
-          onClick={signOut}
+          onClick={() => window.location.href = '/settings'}
           style={{
-            background: 'none', border: 'none', fontSize: '24px',
+            background: 'none', border: 'none', fontSize: '20px',
             color: '#262626', cursor: 'pointer', padding: '8px'
           }}
+          title="Settings"
         >
-          ⚙
+          ⚙️
         </button>
       </div>
 
       {/* Bio */}
       <div style={{ fontSize: '14px', lineHeight: 1.4, marginBottom: '16px', color: '#262626' }}>
-        Sharing faith, hope, and love through Christ<br />
+        {userProfile?.bio || 'Sharing faith, hope, and love through Christ ✝️'}
+        <br />
         Prayer warrior | Bible study enthusiast
       </div>
 
@@ -1777,29 +1836,65 @@ const MobileApp = () => {
           <div style={{ fontSize: '12px', color: '#8e8e8e' }}>Prayers</div>
         </div>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '18px', fontWeight: 700, color: '#262626' }}>0</div>
-          <div style={{ fontSize: '12px', color: '#8e8e8e' }}>Following</div>
+          <div style={{ fontSize: '18px', fontWeight: 700, color: '#262626' }}>
+            {userProfile?.followers_count || 0}
+          </div>
+          <div style={{ fontSize: '12px', color: '#8e8e8e' }}>Followers</div>
         </div>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '18px', fontWeight: 700, color: '#262626' }}>0</div>
-          <div style={{ fontSize: '12px', color: '#8e8e8e' }}>Followers</div>
+          <div style={{ fontSize: '18px', fontWeight: 700, color: '#262626' }}>
+            {userProfile?.following_count || 0}
+          </div>
+          <div style={{ fontSize: '12px', color: '#8e8e8e' }}>Following</div>
         </div>
       </div>
 
       {/* Action buttons */}
       <div style={{ display: 'flex', gap: '12px', marginBottom: '24px' }}>
-        <button style={{
-          flex: 1, background: '#f2f2f2', border: 'none', padding: '10px',
-          borderRadius: '6px', fontSize: '14px', fontWeight: 600, color: '#262626'
-        }}>
+        <button 
+          onClick={() => window.location.href = '/settings'}
+          style={{
+            flex: 1, background: '#f2f2f2', border: 'none', padding: '10px',
+            borderRadius: '6px', fontSize: '14px', fontWeight: 600, color: '#262626',
+            cursor: 'pointer'
+          }}
+        >
           Edit Profile
         </button>
-        <button style={{
-          background: '#f2f2f2', border: 'none', padding: '10px 16px',
-          borderRadius: '6px', fontSize: '16px', color: '#262626'
-        }}>
-          ↗
+        <button 
+          onClick={() => window.location.href = '/saved-posts'}
+          style={{
+            background: '#f2f2f2', border: 'none', padding: '10px 16px',
+            borderRadius: '6px', fontSize: '16px', color: '#262626', cursor: 'pointer'
+          }}
+          title="Saved Posts"
+        >
+          🔖
         </button>
+      </div>
+
+      {/* Recent Activity */}
+      <div style={{ marginBottom: '24px' }}>
+        <div style={{ fontWeight: 600, fontSize: '16px', color: '#262626', marginBottom: '12px' }}>
+          Recent Activity
+        </div>
+        {posts.length > 0 ? (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '4px' }}>
+            {posts.slice(0, 6).map((post) => (
+              <div key={post.id} style={{
+                aspectRatio: '1', background: '#f0f0f0', borderRadius: '8px',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: '24px'
+              }}>
+                📖
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div style={{ textAlign: 'center', color: '#8e8e8e', fontSize: '14px', padding: '20px' }}>
+            No posts yet. Share your first Gospel message!
+          </div>
+        )}
       </div>
 
       {/* Logout button */}
@@ -1882,7 +1977,7 @@ const MobileApp = () => {
               }}>
                 {userProfile?.avatar_url ? (
                   <img 
-                    src={userProfile.avatar_url} 
+                    src={userProfile.avatar_url.startsWith('/') ? userProfile.avatar_url : `/public-objects/${userProfile.avatar_url}`} 
                     alt="Profile" 
                     style={{ width: '28px', height: '28px', borderRadius: '50%', objectFit: 'cover' }}
                   />
@@ -1912,63 +2007,133 @@ const MobileApp = () => {
                   </div>
                 </div>
                 
-                <button style={{
-                  width: '100%', padding: '12px 16px', border: 'none', background: 'none',
-                  textAlign: 'left', fontSize: '14px', color: '#262626',
-                  ':hover': { background: '#f9f9f9' }, cursor: 'pointer'
-                }}>
+                <button 
+                  onClick={() => {
+                    setShowUserDropdown(false);
+                    setActiveTab(4);
+                  }}
+                  style={{
+                    width: '100%', padding: '12px 16px', border: 'none', background: 'none',
+                    textAlign: 'left', fontSize: '14px', color: '#262626',
+                    ':hover': { background: '#f9f9f9' }, cursor: 'pointer'
+                  }}
+                >
                   👤 Profile
                 </button>
                 
-                <button style={{
-                  width: '100%', padding: '12px 16px', border: 'none', background: 'none',
-                  textAlign: 'left', fontSize: '14px', color: '#262626',
-                  ':hover': { background: '#f9f9f9' }, cursor: 'pointer'
-                }}>
+                <button 
+                  onClick={() => {
+                    setShowUserDropdown(false);
+                    window.location.href = '/settings';
+                  }}
+                  style={{
+                    width: '100%', padding: '12px 16px', border: 'none', background: 'none',
+                    textAlign: 'left', fontSize: '14px', color: '#262626',
+                    ':hover': { background: '#f9f9f9' }, cursor: 'pointer'
+                  }}
+                >
                   ⚙️ Settings
                 </button>
                 
-                <button style={{
-                  width: '100%', padding: '12px 16px', border: 'none', background: 'none',
-                  textAlign: 'left', fontSize: '14px', color: '#262626',
-                  ':hover': { background: '#f9f9f9' }, cursor: 'pointer'
-                }}>
+                <button 
+                  onClick={() => {
+                    setShowUserDropdown(false);
+                    window.location.href = '/saved-posts';
+                  }}
+                  style={{
+                    width: '100%', padding: '12px 16px', border: 'none', background: 'none',
+                    textAlign: 'left', fontSize: '14px', color: '#262626',
+                    ':hover': { background: '#f9f9f9' }, cursor: 'pointer'
+                  }}
+                >
                   🔖 Saved Posts
                 </button>
                 
-                <button style={{
-                  width: '100%', padding: '12px 16px', border: 'none', background: 'none',
-                  textAlign: 'left', fontSize: '14px', color: '#262626',
-                  ':hover': { background: '#f9f9f9' }, cursor: 'pointer'
-                }}>
+                <button 
+                  onClick={() => {
+                    setShowUserDropdown(false);
+                    window.location.href = '/community-guidelines';
+                  }}
+                  style={{
+                    width: '100%', padding: '12px 16px', border: 'none', background: 'none',
+                    textAlign: 'left', fontSize: '14px', color: '#262626',
+                    ':hover': { background: '#f9f9f9' }, cursor: 'pointer'
+                  }}
+                >
                   📖 Community Guidelines
                 </button>
                 
-                <button style={{
-                  width: '100%', padding: '12px 16px', border: 'none', background: 'none',
-                  textAlign: 'left', fontSize: '14px', color: '#262626',
-                  ':hover': { background: '#f9f9f9' }, cursor: 'pointer'
-                }}>
+                <button 
+                  onClick={() => {
+                    setShowUserDropdown(false);
+                    setShowDonationPage(true);
+                  }}
+                  style={{
+                    width: '100%', padding: '12px 16px', border: 'none', background: 'none',
+                    textAlign: 'left', fontSize: '14px', color: '#262626',
+                    ':hover': { background: '#f9f9f9' }, cursor: 'pointer'
+                  }}
+                >
                   ❤️ Be a Supporter
                 </button>
                 
-                <button style={{
-                  width: '100%', padding: '12px 16px', border: 'none', background: 'none',
-                  textAlign: 'left', fontSize: '14px', color: '#262626',
-                  ':hover': { background: '#f9f9f9' }, cursor: 'pointer'
-                }}>
+                <button 
+                  onClick={() => {
+                    setShowUserDropdown(false);
+                    window.location.href = '/help';
+                  }}
+                  style={{
+                    width: '100%', padding: '12px 16px', border: 'none', background: 'none',
+                    textAlign: 'left', fontSize: '14px', color: '#262626',
+                    ':hover': { background: '#f9f9f9' }, cursor: 'pointer'
+                  }}
+                >
                   ❓ Help
                 </button>
                 
                 {userProfile?.role === 'admin' && (
-                  <button style={{
-                    width: '100%', padding: '12px 16px', border: 'none', background: 'none',
-                    textAlign: 'left', fontSize: '14px', color: '#dc2626',
-                    ':hover': { background: '#f9f9f9' }, cursor: 'pointer',
-                    borderTop: '1px solid #f0f0f0'
-                  }}>
-                    🛡️ Admin Dashboard
-                  </button>
+                  <>
+                    <div style={{ borderTop: '1px solid #f0f0f0', marginTop: '4px' }} />
+                    <button 
+                      onClick={() => {
+                        setShowUserDropdown(false);
+                        window.location.href = '/admin/dashboard';
+                      }}
+                      style={{
+                        width: '100%', padding: '12px 16px', border: 'none', background: 'none',
+                        textAlign: 'left', fontSize: '14px', color: '#dc2626',
+                        ':hover': { background: '#f9f9f9' }, cursor: 'pointer'
+                      }}
+                    >
+                      🛡️ Admin Dashboard
+                    </button>
+                    <button 
+                      onClick={() => {
+                        setShowUserDropdown(false);
+                        window.location.href = '/admin/reports';
+                      }}
+                      style={{
+                        width: '100%', padding: '12px 16px', border: 'none', background: 'none',
+                        textAlign: 'left', fontSize: '14px', color: '#dc2626',
+                        ':hover': { background: '#f9f9f9' }, cursor: 'pointer'
+                      }}
+                    >
+                      🚨 Review Reports
+                    </button>
+                    <button 
+                      onClick={() => {
+                        setShowUserDropdown(false);
+                        window.location.href = '/admin/users';
+                      }}
+                      style={{
+                        width: '100%', padding: '12px 16px', border: 'none', background: 'none',
+                        textAlign: 'left', fontSize: '14px', color: '#dc2626',
+                        ':hover': { background: '#f9f9f9' }, cursor: 'pointer'
+                      }}
+                    >
+                      👥 Manage Users
+                    </button>
+                  </>
                 )}
                 
                 <button 
