@@ -2,14 +2,22 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { listPosts, createPost } from '@/lib/posts';
 import { listPrayerRequests, createPrayerRequest, commitToPray } from '@/lib/prayer';
+import { getProfilesByIds } from '@/lib/profiles';
+import { toggleAmen, toggleBookmark, isBookmarked } from '@/lib/engagement';
+import { listComments, createComment } from '@/lib/comments';
 
 // Complete Instagram-style Gospel Era Mobile App with Real API Integration
 const MobileApp = () => {
   const { user, loading: authLoading, signIn, signUp, signOut } = useAuth();
   const [activeTab, setActiveTab] = useState(0);
-  const [posts, setPosts] = useState([]);
-  const [prayerRequests, setPrayerRequests] = useState([]);
+  const [posts, setPosts] = useState<any[]>([]);
+  const [prayerRequests, setPrayerRequests] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [profiles, setProfiles] = useState<Map<string, any>>(new Map());
+  const [engagementData, setEngagementData] = useState<Map<string, any>>(new Map());
+  const [postComments, setPostComments] = useState<{[key: string]: any[]}>({});
+  const [commentForms, setCommentForms] = useState<{[key: string]: boolean}>({});
+  const [commentTexts, setCommentTexts] = useState<{[key: string]: string}>({});
   const [searchText, setSearchText] = useState('');
   const [createContent, setCreateContent] = useState('');
   const [createTitle, setCreateTitle] = useState('');
@@ -35,6 +43,14 @@ const MobileApp = () => {
       const postsResult = await listPosts({ limit: 20 });
       if (postsResult.data) {
         setPosts(postsResult.data);
+        
+        // Load author profiles
+        const authorIds = postsResult.data.map(post => post.author_id);
+        await loadProfiles(authorIds);
+        
+        // Load engagement data  
+        const postIds = postsResult.data.map(post => post.id);
+        await loadEngagementData(postIds);
       }
 
       // Fetch real prayer requests from API
@@ -49,6 +65,30 @@ const MobileApp = () => {
     }
   };
 
+  const loadProfiles = async (authorIds: string[]) => {
+    try {
+      const { data: profileMap } = await getProfilesByIds(authorIds);
+      if (profileMap) {
+        setProfiles(prev => new Map([...Array.from(prev), ...Array.from(profileMap)]));
+      }
+    } catch (error) {
+      console.error('Error loading profiles:', error);
+    }
+  };
+
+  const loadEngagementData = async (postIds: number[]) => {
+    try {
+      const engagementMap = new Map();
+      for (const postId of postIds) {
+        const { isBookmarked: bookmarked } = await isBookmarked(postId);
+        engagementMap.set(postId, { isBookmarked: bookmarked });
+      }
+      setEngagementData(prev => new Map([...Array.from(prev), ...Array.from(engagementMap)]));
+    } catch (error) {
+      console.error('Error loading engagement data:', error);
+    }
+  };
+
   const handleCreatePost = async () => {
     if (!createTitle.trim() || !createContent.trim()) return;
     
@@ -58,7 +98,7 @@ const MobileApp = () => {
         content: createContent.trim(),
         tags: [],
         media_urls: [],
-        embed_url: null
+        embed_url: ''
       });
       
       if (result.data) {
@@ -94,12 +134,79 @@ const MobileApp = () => {
     }
   };
 
-  const handleCommitToPray = async (requestId) => {
+  const handleCommitToPray = async (requestId: number) => {
     try {
       await commitToPray(requestId);
       fetchData(); // Refresh to show updated stats
     } catch (error) {
       console.error('Error committing to pray:', error);
+    }
+  };
+
+  const handleToggleAmen = async (postId: number) => {
+    try {
+      await toggleAmen(postId);
+      // Refresh engagement data for this post
+      await loadEngagementData([postId]);
+    } catch (error) {
+      console.error('Error toggling amen:', error);
+    }
+  };
+
+  const handleToggleBookmark = async (postId: number) => {
+    try {
+      await toggleBookmark(postId);
+      // Refresh engagement data for this post
+      await loadEngagementData([postId]);
+    } catch (error) {
+      console.error('Error toggling bookmark:', error);
+    }
+  };
+
+  const toggleCommentForm = (postId: number) => {
+    setCommentForms(prev => ({...prev, [postId]: !prev[postId]}));
+    
+    // Load comments when opening the form for the first time
+    if (!commentForms[postId] && !postComments[postId]) {
+      loadComments(postId);
+    }
+  };
+
+  const loadComments = async (postId: number) => {
+    try {
+      const { data, error } = await listComments({ postId, limit: 3 });
+      if (error) {
+        console.error('Failed to load comments:', error);
+      } else {
+        const comments = data || [];
+        setPostComments(prev => ({ ...prev, [postId]: comments }));
+        
+        // Load comment author profiles
+        if (comments.length > 0) {
+          const authorIds = comments.map(comment => comment.author_id);
+          await loadProfiles(authorIds);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading comments:', error);
+    }
+  };
+
+  const handleCreateComment = async (postId: number) => {
+    const content = commentTexts[postId]?.trim();
+    if (!content) return;
+    
+    try {
+      const { data, error } = await createComment({ postId, content });
+      if (error) {
+        console.error('Failed to create comment:', error);
+      } else {
+        // Clear the input and reload comments
+        setCommentTexts(prev => ({...prev, [postId]: ''}));
+        await loadComments(postId);
+      }
+    } catch (error) {
+      console.error('Error creating comment:', error);
     }
   };
 
@@ -119,10 +226,10 @@ const MobileApp = () => {
     }
   };
 
-  const formatTimeAgo = (dateString) => {
+  const formatTimeAgo = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
-    const diffInSeconds = Math.floor((now - date) / 1000);
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
     
     if (diffInSeconds < 60) return 'now';
     if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m`;
@@ -305,11 +412,17 @@ const MobileApp = () => {
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: '16px', marginRight: '12px', border: '1px solid #dbdbdb', color: '#8e8e8e'
               }}>
-                •
+                {profiles.get(post.author_id)?.avatar_url ? (
+                  <img 
+                    src={profiles.get(post.author_id).avatar_url} 
+                    alt="Avatar"
+                    style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }}
+                  />
+                ) : '👤'}
               </div>
               <div style={{ flex: 1 }}>
                 <div style={{ fontWeight: 600, fontSize: '14px', color: '#262626' }}>
-                  {post.author_username || 'User'}
+                  {profiles.get(post.author_id)?.display_name || 'Gospel User'}
                 </div>
                 <div style={{ fontSize: '12px', color: '#8e8e8e' }}>
                   {formatTimeAgo(post.created_at)}
@@ -323,20 +436,162 @@ const MobileApp = () => {
               <div style={{ fontWeight: 600, marginBottom: '8px', color: '#262626' }}>
                 {post.title}
               </div>
-              <div style={{ fontSize: '14px', lineHeight: 1.4, color: '#262626' }}>
+              <div style={{ fontSize: '14px', lineHeight: 1.4, color: '#262626', marginBottom: '8px' }}>
                 {post.content}
               </div>
+              
+              {/* Tags */}
+              {post.tags && post.tags.length > 0 && (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginBottom: '8px' }}>
+                  {post.tags.map((tag, tagIndex) => (
+                    <span key={tagIndex} style={{
+                      background: '#f2f2f2', color: '#7c3aed', 
+                      padding: '2px 8px', borderRadius: '12px', 
+                      fontSize: '12px', fontWeight: 500
+                    }}>
+                      #{tag}
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              {/* Media */}
+              {post.media_urls && post.media_urls.length > 0 && (
+                <div style={{ marginBottom: '8px' }}>
+                  <img 
+                    src={post.media_urls[0]} 
+                    alt="Post media"
+                    style={{ 
+                      width: '100%', 
+                      maxHeight: '300px', 
+                      objectFit: 'cover', 
+                      borderRadius: '8px' 
+                    }}
+                    onError={(e: any) => {
+                      e.target.style.display = 'none';
+                    }}
+                  />
+                </div>
+              )}
+
+              {/* YouTube embed */}
+              {post.embed_url && (
+                <div style={{ marginBottom: '8px' }}>
+                  <div style={{ 
+                    position: 'relative', 
+                    width: '100%', 
+                    paddingBottom: '56.25%', 
+                    background: '#f2f2f2', 
+                    borderRadius: '8px', 
+                    overflow: 'hidden' 
+                  }}>
+                    <iframe
+                      src={post.embed_url.replace('watch?v=', 'embed/')}
+                      style={{ 
+                        position: 'absolute', 
+                        top: 0, 
+                        left: 0, 
+                        width: '100%', 
+                        height: '100%' 
+                      }}
+                      frameBorder="0"
+                      allowFullScreen
+                      title="YouTube video"
+                    />
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Post actions */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 16px' }}>
               <div style={{ display: 'flex', gap: '16px' }}>
-                <button style={{ background: 'none', border: 'none', fontSize: '24px', color: '#262626', cursor: 'pointer', padding: '8px' }}>♡</button>
-                <button style={{ background: 'none', border: 'none', fontSize: '24px', color: '#262626', cursor: 'pointer', padding: '8px' }}>💬</button>
+                <button 
+                  onClick={() => handleToggleAmen(post.id)}
+                  style={{ background: 'none', border: 'none', fontSize: '24px', color: '#262626', cursor: 'pointer', padding: '8px' }}
+                >
+                  🙏
+                </button>
+                <button 
+                  onClick={() => toggleCommentForm(post.id)}
+                  style={{ background: 'none', border: 'none', fontSize: '24px', color: '#262626', cursor: 'pointer', padding: '8px' }}
+                >
+                  💬
+                </button>
                 <button style={{ background: 'none', border: 'none', fontSize: '24px', color: '#262626', cursor: 'pointer', padding: '8px' }}>↗</button>
               </div>
-              <button style={{ background: 'none', border: 'none', fontSize: '24px', color: '#262626', cursor: 'pointer', padding: '8px' }}>⋄</button>
+              <button 
+                onClick={() => handleToggleBookmark(post.id)}
+                style={{ background: 'none', border: 'none', fontSize: '24px', color: engagementData.get(post.id)?.isBookmarked ? '#262626' : '#8e8e8e', cursor: 'pointer', padding: '8px' }}
+              >
+                {engagementData.get(post.id)?.isBookmarked ? '🔖' : '⋄'}
+              </button>
             </div>
+
+            {/* Comments section */}
+            {commentForms[post.id] && (
+              <div style={{ borderTop: '1px solid #dbdbdb', padding: '12px 16px' }}>
+                {/* Comment input */}
+                <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
+                  <input
+                    type="text"
+                    placeholder="Add a comment..."
+                    value={commentTexts[post.id] || ''}
+                    onChange={(e) => setCommentTexts(prev => ({...prev, [post.id]: e.target.value}))}
+                    style={{
+                      flex: 1, padding: '8px 12px', border: '1px solid #dbdbdb',
+                      borderRadius: '20px', fontSize: '14px', outline: 'none', marginRight: '8px'
+                    }}
+                  />
+                  <button
+                    onClick={() => handleCreateComment(post.id)}
+                    disabled={!commentTexts[post.id]?.trim()}
+                    style={{
+                      background: commentTexts[post.id]?.trim() ? '#262626' : '#dbdbdb',
+                      color: '#ffffff', border: 'none', padding: '8px 16px',
+                      borderRadius: '20px', fontSize: '12px', fontWeight: 600,
+                      cursor: commentTexts[post.id]?.trim() ? 'pointer' : 'not-allowed'
+                    }}
+                  >
+                    Post
+                  </button>
+                </div>
+
+                {/* Comments list */}
+                {postComments[post.id] && postComments[post.id].length > 0 && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {postComments[post.id].map((comment, commentIndex) => (
+                      <div key={comment.id} style={{ display: 'flex', alignItems: 'flex-start', marginBottom: '8px' }}>
+                        <div style={{
+                          width: '24px', height: '24px', borderRadius: '50%', background: '#dbdbdb',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          fontSize: '12px', marginRight: '8px', flexShrink: 0, color: '#8e8e8e'
+                        }}>
+                          {profiles.get(comment.author_id)?.avatar_url ? (
+                            <img 
+                              src={profiles.get(comment.author_id).avatar_url} 
+                              alt="Avatar"
+                              style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }}
+                            />
+                          ) : '👤'}
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontSize: '12px' }}>
+                            <span style={{ fontWeight: 600, color: '#262626', marginRight: '6px' }}>
+                              {profiles.get(comment.author_id)?.display_name || 'Gospel User'}
+                            </span>
+                            <span style={{ color: '#262626' }}>{comment.content}</span>
+                          </div>
+                          <div style={{ fontSize: '10px', color: '#8e8e8e', marginTop: '2px' }}>
+                            {formatTimeAgo(comment.created_at)}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Post timestamp */}
             <div style={{ padding: '0 16px 12px', fontSize: '10px', color: '#8e8e8e', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
@@ -700,39 +955,44 @@ const MobileApp = () => {
       {user && (
         <nav style={styles.bottomNav}>
           <div onClick={() => setActiveTab(0)} style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: activeTab === 0 ? '#262626' : '#8e8e8e', fontSize: '24px',
-            padding: '12px', cursor: 'pointer', fontWeight: activeTab === 0 ? 700 : 400
+            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+            color: activeTab === 0 ? '#7c3aed' : '#8e8e8e', fontSize: '20px',
+            padding: '8px 12px', cursor: 'pointer'
           }}>
-            ⌂
+            🏠
+            <span style={{ fontSize: '10px', marginTop: '2px' }}>Home</span>
           </div>
           <div onClick={() => setActiveTab(1)} style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: activeTab === 1 ? '#262626' : '#8e8e8e', fontSize: '24px',
-            padding: '12px', cursor: 'pointer'
+            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+            color: activeTab === 1 ? '#7c3aed' : '#8e8e8e', fontSize: '20px',
+            padding: '8px 12px', cursor: 'pointer'
           }}>
-            ⚲
+            🔍
+            <span style={{ fontSize: '10px', marginTop: '2px' }}>Search</span>
           </div>
           <div onClick={() => setActiveTab(2)} style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: activeTab === 2 ? '#262626' : '#8e8e8e', fontSize: '24px',
-            padding: '12px', cursor: 'pointer'
+            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+            color: activeTab === 2 ? '#7c3aed' : '#8e8e8e', fontSize: '20px',
+            padding: '8px 12px', cursor: 'pointer'
           }}>
-            ⊞
+            ➕
+            <span style={{ fontSize: '10px', marginTop: '2px' }}>Post</span>
           </div>
           <div onClick={() => setActiveTab(3)} style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: activeTab === 3 ? '#262626' : '#8e8e8e', fontSize: '24px',
-            padding: '12px', cursor: 'pointer'
+            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+            color: activeTab === 3 ? '#7c3aed' : '#8e8e8e', fontSize: '20px',
+            padding: '8px 12px', cursor: 'pointer'
           }}>
-            ☆
+            🙏
+            <span style={{ fontSize: '10px', marginTop: '2px' }}>Prayer</span>
           </div>
           <div onClick={() => setActiveTab(4)} style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: activeTab === 4 ? '#262626' : '#8e8e8e', fontSize: '24px',
-            padding: '12px', cursor: 'pointer'
+            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+            color: activeTab === 4 ? '#7c3aed' : '#8e8e8e', fontSize: '20px',
+            padding: '8px 12px', cursor: 'pointer'
           }}>
-            ○
+            👤
+            <span style={{ fontSize: '10px', marginTop: '2px' }}>Profile</span>
           </div>
         </nav>
       )}
