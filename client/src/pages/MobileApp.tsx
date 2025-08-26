@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { listPosts, createPost } from '@/lib/posts';
+import { listPrayerRequests, createPrayerRequest, commitToPray } from '@/lib/prayer';
 
-// Complete Instagram-style Gospel Era Mobile App
+// Complete Instagram-style Gospel Era Mobile App with Real API Integration
 const MobileApp = () => {
   const { user, loading: authLoading, signIn, signUp, signOut } = useAuth();
   const [activeTab, setActiveTab] = useState(0);
@@ -12,31 +14,33 @@ const MobileApp = () => {
   const [createContent, setCreateContent] = useState('');
   const [createTitle, setCreateTitle] = useState('');
   const [prayerTitle, setPrayerTitle] = useState('');
-  const [prayerContent, setPrayerContent] = useState('');
+  const [prayerDetails, setPrayerDetails] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
   const [loginError, setLoginError] = useState('');
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    if (user) {
+      fetchData();
+    } else {
+      setLoading(false);
+    }
+  }, [user]);
 
   const fetchData = async () => {
     setLoading(true);
     try {
-      // Fetch posts
-      const postsResponse = await fetch('/api/posts');
-      const postsData = await postsResponse.json();
-      setPosts(postsData);
+      // Fetch real posts from API
+      const postsResult = await listPosts({ limit: 20 });
+      if (postsResult.data) {
+        setPosts(postsResult.data);
+      }
 
-      // Fetch prayer requests
-      try {
-        const prayerResponse = await fetch('/api/prayer/browse?limit=10');
-        const prayerData = await prayerResponse.json();
-        setPrayerRequests(prayerData.requests || []);
-      } catch (error) {
-        console.log('Prayer requests not available');
+      // Fetch real prayer requests from API
+      const prayerResult = await listPrayerRequests({ limit: 10 });
+      if (prayerResult.data) {
+        setPrayerRequests(prayerResult.data);
       }
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -45,31 +49,19 @@ const MobileApp = () => {
     }
   };
 
-  const getRandomTime = () => {
-    const times = ['2h', '5h', '1d', '3d', '1w'];
-    return times[Math.floor(Math.random() * times.length)];
-  };
-
-  const getRandomStats = () => ({
-    likes: Math.floor(Math.random() * 500) + 10,
-    comments: Math.floor(Math.random() * 50) + 1,
-    prayers: Math.floor(Math.random() * 100) + 5
-  });
-
-  const createPost = async () => {
+  const handleCreatePost = async () => {
     if (!createTitle.trim() || !createContent.trim()) return;
     
     try {
-      const response = await fetch('/api/posts', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title: createTitle.trim(),
-          content: createContent.trim()
-        })
+      const result = await createPost({
+        title: createTitle.trim(),
+        content: createContent.trim(),
+        tags: [],
+        media_urls: [],
+        embed_url: null
       });
       
-      if (response.ok) {
+      if (result.data) {
         setCreateTitle('');
         setCreateContent('');
         fetchData();
@@ -80,28 +72,34 @@ const MobileApp = () => {
     }
   };
 
-  const createPrayerRequest = async () => {
-    if (!prayerTitle.trim() || !prayerContent.trim()) return;
+  const handleCreatePrayerRequest = async () => {
+    if (!prayerTitle.trim() || !prayerDetails.trim()) return;
     
     try {
-      const response = await fetch('/api/prayer/new', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title: prayerTitle.trim(),
-          description: prayerContent.trim(),
-          anonymous: false
-        })
+      const result = await createPrayerRequest({
+        title: prayerTitle.trim(),
+        details: prayerDetails.trim(),
+        tags: [],
+        is_anonymous: false
       });
       
-      if (response.ok) {
+      if (result.data) {
         setPrayerTitle('');
-        setPrayerContent('');
+        setPrayerDetails('');
         fetchData();
         setActiveTab(3); // Go to prayer tab
       }
     } catch (error) {
       console.error('Error creating prayer request:', error);
+    }
+  };
+
+  const handleCommitToPray = async (requestId) => {
+    try {
+      await commitToPray(requestId);
+      fetchData(); // Refresh to show updated stats
+    } catch (error) {
+      console.error('Error committing to pray:', error);
     }
   };
 
@@ -118,8 +116,19 @@ const MobileApp = () => {
     } else {
       setEmail('');
       setPassword('');
-      fetchData();
     }
+  };
+
+  const formatTimeAgo = (dateString) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInSeconds = Math.floor((now - date) / 1000);
+    
+    if (diffInSeconds < 60) return 'now';
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h`;
+    if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d`;
+    return `${Math.floor(diffInSeconds / 604800)}w`;
   };
 
   // Component styles
@@ -169,404 +178,6 @@ const MobileApp = () => {
       padding: '0 16px'
     }
   };
-
-  // Home Feed Component
-  const HomeFeed = () => (
-    <>
-      {/* Search bar */}
-      <div style={{ padding: '12px 16px', background: '#ffffff', borderBottom: '1px solid #dbdbdb' }}>
-        <input 
-          type="text" 
-          placeholder="Search Gospel Era"
-          value={searchText}
-          onChange={(e) => setSearchText(e.target.value)}
-          style={{
-            width: '100%',
-            height: '36px',
-            background: '#f2f2f2',
-            border: 'none',
-            borderRadius: '18px',
-            padding: '0 16px',
-            fontSize: '14px',
-            color: '#262626',
-            outline: 'none'
-          }}
-        />
-      </div>
-
-      {/* Daily scripture */}
-      <div style={{
-        background: '#ffffff',
-        padding: '8px 16px',
-        borderBottom: '1px solid #dbdbdb',
-        fontSize: '12px',
-        color: '#8e8e8e',
-        textAlign: 'center'
-      }}>
-        "For I know the plans I have for you" - Jeremiah 29:11 ✝️
-      </div>
-
-      {/* Posts feed */}
-      {loading ? (
-        Array(3).fill(0).map((_, index) => (
-          <div key={index} style={{ background: '#ffffff', borderBottom: '1px solid #dbdbdb' }}>
-            <div style={{ padding: '12px 16px', display: 'flex', alignItems: 'center' }}>
-              <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#f0f0f0', marginRight: '12px' }} />
-              <div style={{ flex: 1 }}>
-                <div style={{ height: '12px', background: '#f0f0f0', borderRadius: '6px', marginBottom: '8px', width: '80px' }} />
-                <div style={{ height: '12px', background: '#f0f0f0', borderRadius: '6px', width: '60px' }} />
-              </div>
-            </div>
-            <div style={{ width: '100%', height: '300px', background: '#f0f0f0' }} />
-          </div>
-        ))
-      ) : posts.length > 0 ? (
-        posts.filter((post: any) => 
-          !searchText || 
-          post.title?.toLowerCase().includes(searchText.toLowerCase()) ||
-          post.content?.toLowerCase().includes(searchText.toLowerCase())
-        ).map((post: any, index: number) => {
-          const stats = getRandomStats();
-          return (
-            <div key={index} style={{ background: '#ffffff', borderBottom: '1px solid #dbdbdb' }}>
-              {/* Post header */}
-              <div style={{ display: 'flex', alignItems: 'center', padding: '12px 16px' }}>
-                <div style={{
-                  width: '32px', height: '32px', borderRadius: '50%', background: '#dbdbdb',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: '16px', marginRight: '12px', border: '1px solid #dbdbdb', color: '#8e8e8e'
-                }}>
-                  ●
-                </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 600, fontSize: '14px', color: '#262626' }}>
-                    {post.author_username || 'gospeluser'}
-                  </div>
-                  <div style={{ fontSize: '12px', color: '#8e8e8e' }}>
-                    {getRandomTime()}
-                  </div>
-                </div>
-                <div style={{ fontSize: '16px', color: '#262626', cursor: 'pointer', padding: '8px' }}>⋯</div>
-              </div>
-
-              {/* Post image placeholder */}
-              <div style={{
-                width: '100%', height: '300px', background: '#ffffff', border: '1px solid #dbdbdb',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: '48px', color: '#dbdbdb'
-              }}>
-                ○
-              </div>
-
-              {/* Post actions */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 16px' }}>
-                <div style={{ display: 'flex', gap: '16px' }}>
-                  <button style={{ background: 'none', border: 'none', fontSize: '24px', color: '#262626', cursor: 'pointer', padding: '8px' }}>♡</button>
-                  <button style={{ background: 'none', border: 'none', fontSize: '24px', color: '#262626', cursor: 'pointer', padding: '8px' }}>○</button>
-                  <button style={{ background: 'none', border: 'none', fontSize: '24px', color: '#262626', cursor: 'pointer', padding: '8px' }}>↗</button>
-                </div>
-                <button style={{ background: 'none', border: 'none', fontSize: '24px', color: '#262626', cursor: 'pointer', padding: '8px' }}>⋄</button>
-              </div>
-
-              {/* Likes count */}
-              <div style={{ padding: '0 16px 4px', fontWeight: 600, fontSize: '14px', color: '#262626' }}>
-                {stats.likes} likes
-              </div>
-
-              {/* Post caption */}
-              <div style={{ padding: '0 16px 8px', fontSize: '14px', lineHeight: 1.4, color: '#262626' }}>
-                <span style={{ fontWeight: 600, marginRight: '8px' }}>{post.author_username || 'gospeluser'}</span>
-                <span style={{ fontWeight: 600, marginRight: '8px' }}>{post.title}</span>
-                {post.content}
-              </div>
-
-              {/* View comments */}
-              <div style={{ padding: '0 16px 8px', fontSize: '14px', color: '#8e8e8e', cursor: 'pointer' }}>
-                View all {stats.comments} comments
-              </div>
-
-              {/* Post timestamp */}
-              <div style={{ padding: '0 16px 12px', fontSize: '10px', color: '#8e8e8e', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                {getRandomTime().toUpperCase()}
-              </div>
-            </div>
-          );
-        })
-      ) : (
-        <div style={{ background: '#ffffff', padding: '40px 16px', textAlign: 'center' }}>
-          <div style={{ fontSize: '48px', marginBottom: '16px' }}>✝️</div>
-          <div style={{ fontWeight: 600, marginBottom: '8px' }}>Welcome to Gospel Era</div>
-          <div style={{ color: '#8e8e8e', fontSize: '14px' }}>Share your faith and grow together</div>
-        </div>
-      )}
-    </>
-  );
-
-  // Search Component
-  const SearchPage = () => (
-    <>
-      <div style={{ padding: '16px' }}>
-        <input 
-          type="text" 
-          placeholder="Search users, posts, topics..."
-          value={searchText}
-          onChange={(e) => setSearchText(e.target.value)}
-          autoFocus
-          style={{
-            width: '100%', height: '40px', background: '#f2f2f2', border: 'none',
-            borderRadius: '20px', padding: '0 16px', fontSize: '16px', outline: 'none'
-          }}
-        />
-      </div>
-
-      <div style={{ padding: '0 16px' }}>
-        <div style={{ fontWeight: 600, marginBottom: '12px', color: '#262626' }}>Popular Topics</div>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '24px' }}>
-          {['#Faith', '#Prayer', '#Worship', '#Bible', '#Community', '#Testimony'].map((tag, index) => (
-            <div key={index} style={{
-              background: '#f2f2f2', padding: '8px 16px', borderRadius: '20px',
-              fontSize: '14px', color: '#262626', cursor: 'pointer'
-            }}>
-              {tag}
-            </div>
-          ))}
-        </div>
-
-        <div style={{ fontWeight: 600, marginBottom: '12px', color: '#262626' }}>Suggested Users</div>
-        {[1, 2, 3].map((user) => (
-          <div key={user} style={{ display: 'flex', alignItems: 'center', padding: '12px 0' }}>
-            <div style={{
-              width: '40px', height: '40px', borderRadius: '50%', background: '#dbdbdb',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              marginRight: '12px', color: '#8e8e8e'
-            }}>
-              ●
-            </div>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontWeight: 600, color: '#262626' }}>faithfuluser{user}</div>
-              <div style={{ fontSize: '12px', color: '#8e8e8e' }}>Active in prayer community</div>
-            </div>
-            <button style={{
-              background: '#262626', color: '#ffffff', border: 'none',
-              padding: '6px 16px', borderRadius: '4px', fontSize: '12px', fontWeight: 600
-            }}>
-              Follow
-            </button>
-          </div>
-        ))}
-      </div>
-    </>
-  );
-
-  // Create Post Component
-  const CreatePage = () => (
-    <div style={{ padding: '16px' }}>
-      <div style={{ marginBottom: '16px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', marginBottom: '16px' }}>
-          <div style={{
-            width: '32px', height: '32px', borderRadius: '50%', background: '#dbdbdb',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            marginRight: '12px', color: '#8e8e8e'
-          }}>
-            ●
-          </div>
-          <div style={{ fontWeight: 600, color: '#262626' }}>Create Post</div>
-        </div>
-
-        <input
-          type="text"
-          placeholder="📝 Post title..."
-          value={createTitle}
-          onChange={(e) => setCreateTitle(e.target.value)}
-          style={{
-            width: '100%', padding: '12px 16px', border: '1px solid #dbdbdb',
-            borderRadius: '8px', fontSize: '16px', marginBottom: '12px', outline: 'none'
-          }}
-        />
-
-        <textarea
-          placeholder="❤️ Share your faith, testimony, or encouragement..."
-          value={createContent}
-          onChange={(e) => setCreateContent(e.target.value)}
-          rows={6}
-          style={{
-            width: '100%', padding: '12px 16px', border: '1px solid #dbdbdb',
-            borderRadius: '8px', fontSize: '16px', resize: 'none', outline: 'none',
-            fontFamily: 'inherit', marginBottom: '16px'
-          }}
-        />
-
-        <div style={{ display: 'flex', gap: '12px', marginBottom: '16px' }}>
-          <button style={{
-            flex: 1, background: '#f2f2f2', border: 'none', padding: '12px',
-            borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            gap: '8px', cursor: 'pointer'
-          }}>
-            📷 Photo
-          </button>
-          <button style={{
-            flex: 1, background: '#f2f2f2', border: 'none', padding: '12px',
-            borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            gap: '8px', cursor: 'pointer'
-          }}>
-            🎥 Video
-          </button>
-        </div>
-
-        <button
-          onClick={createPost}
-          disabled={!createTitle.trim() || !createContent.trim()}
-          style={{
-            width: '100%', background: createTitle.trim() && createContent.trim() ? '#262626' : '#dbdbdb',
-            color: '#ffffff', border: 'none', padding: '12px', borderRadius: '8px',
-            fontSize: '16px', fontWeight: 600, cursor: createTitle.trim() && createContent.trim() ? 'pointer' : 'not-allowed'
-          }}
-        >
-          Share Post
-        </button>
-      </div>
-
-      <div style={{ marginTop: '24px' }}>
-        <div style={{ fontWeight: 600, marginBottom: '12px', color: '#262626' }}>Popular Tags</div>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-          {['#Faith', '#Prayer', '#Testimony', '#Worship', '#Bible', '#Community'].map((tag, index) => (
-            <button
-              key={index}
-              onClick={() => setCreateContent(prev => prev + ' ' + tag)}
-              style={{
-                background: '#f2f2f2', border: 'none', padding: '8px 16px',
-                borderRadius: '20px', fontSize: '14px', color: '#262626', cursor: 'pointer'
-              }}
-            >
-              {tag}
-            </button>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-
-  // Prayer Page Component
-  const PrayerPage = () => (
-    <>
-      {/* Prayer Stats */}
-      <div style={{
-        display: 'flex', justifyContent: 'space-around', padding: '16px',
-        background: '#ffffff', borderBottom: '1px solid #dbdbdb'
-      }}>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '20px', fontWeight: 700, color: '#262626' }}>127</div>
-          <div style={{ fontSize: '12px', color: '#8e8e8e' }}>Active</div>
-        </div>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '20px', fontWeight: 700, color: '#262626' }}>2.4K</div>
-          <div style={{ fontSize: '12px', color: '#8e8e8e' }}>Today</div>
-        </div>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '20px', fontWeight: 700, color: '#262626' }}>45</div>
-          <div style={{ fontSize: '12px', color: '#8e8e8e' }}>Answered</div>
-        </div>
-      </div>
-
-      {/* Create Prayer Request */}
-      <div style={{ padding: '16px', borderBottom: '1px solid #dbdbdb' }}>
-        <input
-          type="text"
-          placeholder="Prayer request title..."
-          value={prayerTitle}
-          onChange={(e) => setPrayerTitle(e.target.value)}
-          style={{
-            width: '100%', padding: '8px 12px', border: '1px solid #dbdbdb',
-            borderRadius: '6px', fontSize: '14px', marginBottom: '8px', outline: 'none'
-          }}
-        />
-        <textarea
-          placeholder="Share your prayer need..."
-          value={prayerContent}
-          onChange={(e) => setPrayerContent(e.target.value)}
-          rows={3}
-          style={{
-            width: '100%', padding: '8px 12px', border: '1px solid #dbdbdb',
-            borderRadius: '6px', fontSize: '14px', resize: 'none', outline: 'none',
-            fontFamily: 'inherit', marginBottom: '8px'
-          }}
-        />
-        <button
-          onClick={createPrayerRequest}
-          disabled={!prayerTitle.trim() || !prayerContent.trim()}
-          style={{
-            background: prayerTitle.trim() && prayerContent.trim() ? '#7c3aed' : '#dbdbdb',
-            color: '#ffffff', border: 'none', padding: '8px 16px',
-            borderRadius: '20px', fontSize: '12px', fontWeight: 600,
-            cursor: prayerTitle.trim() && prayerContent.trim() ? 'pointer' : 'not-allowed'
-          }}
-        >
-          🙏 Submit Request
-        </button>
-      </div>
-
-      {/* Prayer Requests Feed */}
-      {prayerRequests.length > 0 ? (
-        prayerRequests.map((request: any, index: number) => {
-          const stats = getRandomStats();
-          return (
-            <div key={index} style={{ background: '#ffffff', borderBottom: '1px solid #dbdbdb', padding: '16px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
-                <div style={{
-                  width: '32px', height: '32px', borderRadius: '50%', background: '#dbdbdb',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  marginRight: '12px', color: '#8e8e8e'
-                }}>
-                  {request.anonymous ? '?' : '●'}
-                </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 600, color: '#262626' }}>
-                    {request.anonymous ? 'Anonymous' : (request.author || 'FaithfulUser')}
-                  </div>
-                  <div style={{ fontSize: '12px', color: '#8e8e8e' }}>{getRandomTime()}</div>
-                </div>
-                {request.anonymous && (
-                  <div style={{
-                    background: '#f2f2f2', padding: '4px 8px', borderRadius: '12px',
-                    fontSize: '10px', color: '#8e8e8e'
-                  }}>
-                    Anonymous
-                  </div>
-                )}
-              </div>
-
-              <div style={{ fontWeight: 600, marginBottom: '8px', color: '#262626' }}>
-                {request.title}
-              </div>
-              <div style={{ fontSize: '14px', lineHeight: 1.4, marginBottom: '16px', color: '#262626' }}>
-                {request.description || request.content}
-              </div>
-
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <button style={{
-                  background: '#7c3aed', color: '#ffffff', border: 'none',
-                  padding: '8px 16px', borderRadius: '20px', fontSize: '12px',
-                  fontWeight: 600, cursor: 'pointer', display: 'flex',
-                  alignItems: 'center', gap: '6px'
-                }}>
-                  🙏 Pray
-                </button>
-                <div style={{ fontSize: '12px', color: '#8e8e8e' }}>
-                  {stats.prayers} prayers
-                </div>
-              </div>
-            </div>
-          );
-        })
-      ) : (
-        <div style={{ padding: '40px 16px', textAlign: 'center' }}>
-          <div style={{ fontSize: '48px', marginBottom: '16px' }}>🙏</div>
-          <div style={{ fontWeight: 600, marginBottom: '8px', color: '#262626' }}>Prayer Community</div>
-          <div style={{ color: '#8e8e8e', fontSize: '14px' }}>Share your prayer needs and pray for others</div>
-        </div>
-      )}
-    </>
-  );
 
   // Login Component
   const LoginPage = () => (
@@ -640,6 +251,319 @@ const MobileApp = () => {
     </div>
   );
 
+  // Home Feed Component
+  const HomeFeed = () => (
+    <>
+      {/* Search bar */}
+      <div style={{ padding: '12px 16px', background: '#ffffff', borderBottom: '1px solid #dbdbdb' }}>
+        <input 
+          type="text" 
+          placeholder="Search Gospel Era"
+          value={searchText}
+          onChange={(e) => setSearchText(e.target.value)}
+          style={{
+            width: '100%', height: '36px', background: '#f2f2f2', border: 'none',
+            borderRadius: '18px', padding: '0 16px', fontSize: '14px',
+            color: '#262626', outline: 'none'
+          }}
+        />
+      </div>
+
+      {/* Daily scripture */}
+      <div style={{
+        background: '#ffffff', padding: '8px 16px', borderBottom: '1px solid #dbdbdb',
+        fontSize: '12px', color: '#8e8e8e', textAlign: 'center'
+      }}>
+        "For I know the plans I have for you" - Jeremiah 29:11
+      </div>
+
+      {/* Posts feed */}
+      {loading ? (
+        Array(3).fill(0).map((_, index) => (
+          <div key={index} style={{ background: '#ffffff', borderBottom: '1px solid #dbdbdb' }}>
+            <div style={{ padding: '12px 16px', display: 'flex', alignItems: 'center' }}>
+              <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#f0f0f0', marginRight: '12px' }} />
+              <div style={{ flex: 1 }}>
+                <div style={{ height: '12px', background: '#f0f0f0', borderRadius: '6px', marginBottom: '8px', width: '80px' }} />
+                <div style={{ height: '12px', background: '#f0f0f0', borderRadius: '6px', width: '60px' }} />
+              </div>
+            </div>
+            <div style={{ width: '100%', height: '200px', background: '#f0f0f0' }} />
+          </div>
+        ))
+      ) : posts.length > 0 ? (
+        posts.filter((post) => 
+          !searchText || 
+          post.title?.toLowerCase().includes(searchText.toLowerCase()) ||
+          post.content?.toLowerCase().includes(searchText.toLowerCase())
+        ).map((post, index) => (
+          <div key={post.id} style={{ background: '#ffffff', borderBottom: '1px solid #dbdbdb' }}>
+            {/* Post header */}
+            <div style={{ display: 'flex', alignItems: 'center', padding: '12px 16px' }}>
+              <div style={{
+                width: '32px', height: '32px', borderRadius: '50%', background: '#dbdbdb',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: '16px', marginRight: '12px', border: '1px solid #dbdbdb', color: '#8e8e8e'
+              }}>
+                •
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: 600, fontSize: '14px', color: '#262626' }}>
+                  {post.author_username || 'User'}
+                </div>
+                <div style={{ fontSize: '12px', color: '#8e8e8e' }}>
+                  {formatTimeAgo(post.created_at)}
+                </div>
+              </div>
+              <div style={{ fontSize: '16px', color: '#262626', cursor: 'pointer', padding: '8px' }}>⋯</div>
+            </div>
+
+            {/* Post content */}
+            <div style={{ padding: '0 16px 8px' }}>
+              <div style={{ fontWeight: 600, marginBottom: '8px', color: '#262626' }}>
+                {post.title}
+              </div>
+              <div style={{ fontSize: '14px', lineHeight: 1.4, color: '#262626' }}>
+                {post.content}
+              </div>
+            </div>
+
+            {/* Post actions */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 16px' }}>
+              <div style={{ display: 'flex', gap: '16px' }}>
+                <button style={{ background: 'none', border: 'none', fontSize: '24px', color: '#262626', cursor: 'pointer', padding: '8px' }}>♡</button>
+                <button style={{ background: 'none', border: 'none', fontSize: '24px', color: '#262626', cursor: 'pointer', padding: '8px' }}>💬</button>
+                <button style={{ background: 'none', border: 'none', fontSize: '24px', color: '#262626', cursor: 'pointer', padding: '8px' }}>↗</button>
+              </div>
+              <button style={{ background: 'none', border: 'none', fontSize: '24px', color: '#262626', cursor: 'pointer', padding: '8px' }}>⋄</button>
+            </div>
+
+            {/* Post timestamp */}
+            <div style={{ padding: '0 16px 12px', fontSize: '10px', color: '#8e8e8e', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              {formatTimeAgo(post.created_at).toUpperCase()}
+            </div>
+          </div>
+        ))
+      ) : (
+        <div style={{ background: '#ffffff', padding: '40px 16px', textAlign: 'center' }}>
+          <div style={{ fontSize: '48px', marginBottom: '16px' }}>📖</div>
+          <div style={{ fontWeight: 600, marginBottom: '8px', color: '#262626' }}>Welcome to Gospel Era</div>
+          <div style={{ color: '#8e8e8e', fontSize: '14px' }}>Share your faith and grow together</div>
+        </div>
+      )}
+    </>
+  );
+
+  // Search Component
+  const SearchPage = () => (
+    <div style={{ padding: '16px' }}>
+      <input 
+        type="text" 
+        placeholder="Search users, posts, topics..."
+        value={searchText}
+        onChange={(e) => setSearchText(e.target.value)}
+        autoFocus
+        style={{
+          width: '100%', height: '40px', background: '#f2f2f2', border: 'none',
+          borderRadius: '20px', padding: '0 16px', fontSize: '16px', outline: 'none'
+        }}
+      />
+
+      <div style={{ marginTop: '16px' }}>
+        <div style={{ fontWeight: 600, marginBottom: '12px', color: '#262626' }}>Recent Posts</div>
+        {posts.slice(0, 5).map((post, index) => (
+          <div key={post.id} style={{ borderBottom: '1px solid #f2f2f2', padding: '12px 0' }}>
+            <div style={{ fontWeight: 600, fontSize: '14px', color: '#262626', marginBottom: '4px' }}>
+              {post.title}
+            </div>
+            <div style={{ fontSize: '12px', color: '#8e8e8e' }}>
+              {post.content?.substring(0, 100)}...
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  // Create Post Component
+  const CreatePage = () => (
+    <div style={{ padding: '16px' }}>
+      <div style={{ marginBottom: '16px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', marginBottom: '16px' }}>
+          <div style={{
+            width: '32px', height: '32px', borderRadius: '50%', background: '#dbdbdb',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            marginRight: '12px', color: '#8e8e8e'
+          }}>
+            •
+          </div>
+          <div style={{ fontWeight: 600, color: '#262626' }}>Create Post</div>
+        </div>
+
+        <input
+          type="text"
+          placeholder="Post title..."
+          value={createTitle}
+          onChange={(e) => setCreateTitle(e.target.value)}
+          style={{
+            width: '100%', padding: '12px 16px', border: '1px solid #dbdbdb',
+            borderRadius: '8px', fontSize: '16px', marginBottom: '12px', outline: 'none'
+          }}
+        />
+
+        <textarea
+          placeholder="Share your faith, testimony, or encouragement..."
+          value={createContent}
+          onChange={(e) => setCreateContent(e.target.value)}
+          rows={6}
+          style={{
+            width: '100%', padding: '12px 16px', border: '1px solid #dbdbdb',
+            borderRadius: '8px', fontSize: '16px', resize: 'none', outline: 'none',
+            fontFamily: 'inherit', marginBottom: '16px'
+          }}
+        />
+
+        <button
+          onClick={handleCreatePost}
+          disabled={!createTitle.trim() || !createContent.trim()}
+          style={{
+            width: '100%', background: createTitle.trim() && createContent.trim() ? '#262626' : '#dbdbdb',
+            color: '#ffffff', border: 'none', padding: '12px', borderRadius: '8px',
+            fontSize: '16px', fontWeight: 600, cursor: createTitle.trim() && createContent.trim() ? 'pointer' : 'not-allowed'
+          }}
+        >
+          Share Post
+        </button>
+      </div>
+    </div>
+  );
+
+  // Prayer Page Component
+  const PrayerPage = () => (
+    <>
+      {/* Prayer Stats */}
+      <div style={{
+        display: 'flex', justifyContent: 'space-around', padding: '16px',
+        background: '#ffffff', borderBottom: '1px solid #dbdbdb'
+      }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: '20px', fontWeight: 700, color: '#262626' }}>{prayerRequests.length}</div>
+          <div style={{ fontSize: '12px', color: '#8e8e8e' }}>Requests</div>
+        </div>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: '20px', fontWeight: 700, color: '#262626' }}>
+            {prayerRequests.reduce((sum, req) => sum + (req.prayer_stats?.committed_count || 0), 0)}
+          </div>
+          <div style={{ fontSize: '12px', color: '#8e8e8e' }}>Committed</div>
+        </div>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: '20px', fontWeight: 700, color: '#262626' }}>
+            {prayerRequests.reduce((sum, req) => sum + (req.prayer_stats?.prayed_count || 0), 0)}
+          </div>
+          <div style={{ fontSize: '12px', color: '#8e8e8e' }}>Prayed</div>
+        </div>
+      </div>
+
+      {/* Create Prayer Request */}
+      <div style={{ padding: '16px', borderBottom: '1px solid #dbdbdb' }}>
+        <input
+          type="text"
+          placeholder="Prayer request title..."
+          value={prayerTitle}
+          onChange={(e) => setPrayerTitle(e.target.value)}
+          style={{
+            width: '100%', padding: '8px 12px', border: '1px solid #dbdbdb',
+            borderRadius: '6px', fontSize: '14px', marginBottom: '8px', outline: 'none'
+          }}
+        />
+        <textarea
+          placeholder="Share your prayer need..."
+          value={prayerDetails}
+          onChange={(e) => setPrayerDetails(e.target.value)}
+          rows={3}
+          style={{
+            width: '100%', padding: '8px 12px', border: '1px solid #dbdbdb',
+            borderRadius: '6px', fontSize: '14px', resize: 'none', outline: 'none',
+            fontFamily: 'inherit', marginBottom: '8px'
+          }}
+        />
+        <button
+          onClick={handleCreatePrayerRequest}
+          disabled={!prayerTitle.trim() || !prayerDetails.trim()}
+          style={{
+            background: prayerTitle.trim() && prayerDetails.trim() ? '#7c3aed' : '#dbdbdb',
+            color: '#ffffff', border: 'none', padding: '8px 16px',
+            borderRadius: '20px', fontSize: '12px', fontWeight: 600,
+            cursor: prayerTitle.trim() && prayerDetails.trim() ? 'pointer' : 'not-allowed'
+          }}
+        >
+          Submit Request
+        </button>
+      </div>
+
+      {/* Prayer Requests Feed */}
+      {prayerRequests.length > 0 ? (
+        prayerRequests.map((request) => (
+          <div key={request.id} style={{ background: '#ffffff', borderBottom: '1px solid #dbdbdb', padding: '16px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
+              <div style={{
+                width: '32px', height: '32px', borderRadius: '50%', background: '#dbdbdb',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                marginRight: '12px', color: '#8e8e8e'
+              }}>
+                {request.is_anonymous ? '?' : '•'}
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: 600, color: '#262626' }}>
+                  {request.is_anonymous ? 'Anonymous' : (request.profiles?.display_name || 'Prayer Warrior')}
+                </div>
+                <div style={{ fontSize: '12px', color: '#8e8e8e' }}>{formatTimeAgo(request.created_at)}</div>
+              </div>
+              {request.is_anonymous && (
+                <div style={{
+                  background: '#f2f2f2', padding: '4px 8px', borderRadius: '12px',
+                  fontSize: '10px', color: '#8e8e8e'
+                }}>
+                  Anonymous
+                </div>
+              )}
+            </div>
+
+            <div style={{ fontWeight: 600, marginBottom: '8px', color: '#262626' }}>
+              {request.title}
+            </div>
+            <div style={{ fontSize: '14px', lineHeight: 1.4, marginBottom: '16px', color: '#262626' }}>
+              {request.details}
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <button 
+                onClick={() => handleCommitToPray(request.id)}
+                style={{
+                  background: '#7c3aed', color: '#ffffff', border: 'none',
+                  padding: '8px 16px', borderRadius: '20px', fontSize: '12px',
+                  fontWeight: 600, cursor: 'pointer', display: 'flex',
+                  alignItems: 'center', gap: '6px'
+                }}
+              >
+                Pray
+              </button>
+              <div style={{ fontSize: '12px', color: '#8e8e8e' }}>
+                {request.prayer_stats?.committed_count || 0} committed · {request.prayer_stats?.prayed_count || 0} prayed
+              </div>
+            </div>
+          </div>
+        ))
+      ) : (
+        <div style={{ padding: '40px 16px', textAlign: 'center' }}>
+          <div style={{ fontSize: '48px', marginBottom: '16px' }}>🙏</div>
+          <div style={{ fontWeight: 600, marginBottom: '8px', color: '#262626' }}>Prayer Community</div>
+          <div style={{ color: '#8e8e8e', fontSize: '14px' }}>Share your prayer needs and pray for others</div>
+        </div>
+      )}
+    </>
+  );
+
   // Profile Component
   const ProfilePage = () => (
     <div style={{ padding: '16px' }}>
@@ -650,7 +574,7 @@ const MobileApp = () => {
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           fontSize: '24px', marginRight: '16px', color: '#8e8e8e'
         }}>
-          ●
+          •
         </div>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: '18px', fontWeight: 700, color: '#262626' }}>
@@ -665,32 +589,32 @@ const MobileApp = () => {
             color: '#262626', cursor: 'pointer', padding: '8px'
           }}
         >
-          ⚙️
+          ⚙
         </button>
       </div>
 
       {/* Bio */}
       <div style={{ fontSize: '14px', lineHeight: 1.4, marginBottom: '16px', color: '#262626' }}>
-        Sharing faith, hope, and love through Christ ✝️<br />
+        Sharing faith, hope, and love through Christ<br />
         Prayer warrior | Bible study enthusiast
       </div>
 
       {/* Stats */}
       <div style={{ display: 'flex', justifyContent: 'space-around', marginBottom: '20px' }}>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '18px', fontWeight: 700, color: '#262626' }}>42</div>
+          <div style={{ fontSize: '18px', fontWeight: 700, color: '#262626' }}>{posts.length}</div>
           <div style={{ fontSize: '12px', color: '#8e8e8e' }}>Posts</div>
         </div>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '18px', fontWeight: 700, color: '#262626' }}>156</div>
+          <div style={{ fontSize: '18px', fontWeight: 700, color: '#262626' }}>{prayerRequests.length}</div>
           <div style={{ fontSize: '12px', color: '#8e8e8e' }}>Prayers</div>
         </div>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '18px', fontWeight: 700, color: '#262626' }}>89</div>
+          <div style={{ fontSize: '18px', fontWeight: 700, color: '#262626' }}>0</div>
           <div style={{ fontSize: '12px', color: '#8e8e8e' }}>Following</div>
         </div>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '18px', fontWeight: 700, color: '#262626' }}>124</div>
+          <div style={{ fontSize: '18px', fontWeight: 700, color: '#262626' }}>0</div>
           <div style={{ fontSize: '12px', color: '#8e8e8e' }}>Followers</div>
         </div>
       </div>
@@ -707,31 +631,34 @@ const MobileApp = () => {
           background: '#f2f2f2', border: 'none', padding: '10px 16px',
           borderRadius: '6px', fontSize: '16px', color: '#262626'
         }}>
-          📤
+          ↗
         </button>
       </div>
 
-      {/* Menu items */}
-      {[
-        { icon: '🔖', text: 'Saved Posts' },
-        { icon: '🙏', text: 'My Prayer Requests' },
-        { icon: '📖', text: 'Prayer History' },
-        { icon: '🔔', text: 'Notifications' },
-        { icon: '⚙️', text: 'Settings & Privacy' },
-        { icon: '❓', text: 'Help & Support' },
-        { icon: 'ℹ️', text: 'About Gospel Era' }
-      ].map((item, index) => (
-        <div key={index} style={{
-          display: 'flex', alignItems: 'center', padding: '16px 0',
-          borderBottom: index < 6 ? '1px solid #f2f2f2' : 'none', cursor: 'pointer'
-        }}>
-          <div style={{ fontSize: '24px', marginRight: '16px' }}>{item.icon}</div>
-          <div style={{ flex: 1, fontSize: '16px', color: '#262626' }}>{item.text}</div>
-          <div style={{ fontSize: '16px', color: '#8e8e8e' }}>›</div>
-        </div>
-      ))}
+      {/* Logout button */}
+      <button
+        onClick={signOut}
+        style={{
+          width: '100%', background: '#dc2626', color: '#ffffff',
+          border: 'none', padding: '12px', borderRadius: '8px',
+          fontSize: '16px', fontWeight: 600, cursor: 'pointer'
+        }}
+      >
+        Sign Out
+      </button>
     </div>
   );
+
+  // Loading state
+  if (authLoading) {
+    return (
+      <div style={styles.container}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+          <div style={{ fontSize: '20px', color: '#8e8e8e' }}>Loading...</div>
+        </div>
+      </div>
+    );
+  }
 
   // Render main component
   return (
@@ -739,16 +666,19 @@ const MobileApp = () => {
       {/* Header */}
       <div style={styles.header}>
         <div style={{ fontSize: '24px', fontWeight: 700, color: '#262626', letterSpacing: '-0.5px' }}>
-          {activeTab === 0 && 'Gospel Era'}
-          {activeTab === 1 && 'Search'}
-          {activeTab === 2 && 'Create'}
-          {activeTab === 3 && 'Prayer'}
-          {activeTab === 4 && 'Profile'}
+          {!user ? 'Gospel Era' :
+           activeTab === 0 ? 'Gospel Era' :
+           activeTab === 1 ? 'Search' :
+           activeTab === 2 ? 'Create' :
+           activeTab === 3 ? 'Prayer' :
+           'Profile'}
         </div>
-        <div style={{ display: 'flex', gap: '16px' }}>
-          <div style={{ fontSize: '24px', color: '#262626', cursor: 'pointer', padding: '8px' }}>♡</div>
-          <div style={{ fontSize: '24px', color: '#262626', cursor: 'pointer', padding: '8px' }}>☷</div>
-        </div>
+        {user && (
+          <div style={{ display: 'flex', gap: '16px' }}>
+            <div style={{ fontSize: '24px', color: '#262626', cursor: 'pointer', padding: '8px' }}>♡</div>
+            <div style={{ fontSize: '24px', color: '#262626', cursor: 'pointer', padding: '8px' }}>✉</div>
+          </div>
+        )}
       </div>
 
       {/* Content */}
@@ -769,41 +699,41 @@ const MobileApp = () => {
       {/* Bottom Navigation - Only show when logged in */}
       {user && (
         <nav style={styles.bottomNav}>
-        <div onClick={() => setActiveTab(0)} style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          color: activeTab === 0 ? '#262626' : '#8e8e8e', fontSize: '24px',
-          padding: '12px', cursor: 'pointer', fontWeight: activeTab === 0 ? 700 : 400
-        }}>
-          ⌂
-        </div>
-        <div onClick={() => setActiveTab(1)} style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          color: activeTab === 1 ? '#262626' : '#8e8e8e', fontSize: '24px',
-          padding: '12px', cursor: 'pointer'
-        }}>
-          ○
-        </div>
-        <div onClick={() => setActiveTab(2)} style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          color: activeTab === 2 ? '#262626' : '#8e8e8e', fontSize: '24px',
-          padding: '12px', cursor: 'pointer'
-        }}>
-          ⊞
-        </div>
-        <div onClick={() => setActiveTab(3)} style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          color: activeTab === 3 ? '#262626' : '#8e8e8e', fontSize: '24px',
-          padding: '12px', cursor: 'pointer'
-        }}>
-          ☆
-        </div>
-        <div onClick={() => setActiveTab(4)} style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          color: activeTab === 4 ? '#262626' : '#8e8e8e', fontSize: '24px',
-          padding: '12px', cursor: 'pointer'
-        }}>
-          ○
-        </div>
+          <div onClick={() => setActiveTab(0)} style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            color: activeTab === 0 ? '#262626' : '#8e8e8e', fontSize: '24px',
+            padding: '12px', cursor: 'pointer', fontWeight: activeTab === 0 ? 700 : 400
+          }}>
+            ⌂
+          </div>
+          <div onClick={() => setActiveTab(1)} style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            color: activeTab === 1 ? '#262626' : '#8e8e8e', fontSize: '24px',
+            padding: '12px', cursor: 'pointer'
+          }}>
+            ⚲
+          </div>
+          <div onClick={() => setActiveTab(2)} style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            color: activeTab === 2 ? '#262626' : '#8e8e8e', fontSize: '24px',
+            padding: '12px', cursor: 'pointer'
+          }}>
+            ⊞
+          </div>
+          <div onClick={() => setActiveTab(3)} style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            color: activeTab === 3 ? '#262626' : '#8e8e8e', fontSize: '24px',
+            padding: '12px', cursor: 'pointer'
+          }}>
+            ☆
+          </div>
+          <div onClick={() => setActiveTab(4)} style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            color: activeTab === 4 ? '#262626' : '#8e8e8e', fontSize: '24px',
+            padding: '12px', cursor: 'pointer'
+          }}>
+            ○
+          </div>
         </nav>
       )}
     </div>
