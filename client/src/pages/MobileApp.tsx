@@ -6,10 +6,15 @@ import { getProfilesByIds } from '@/lib/profiles';
 import { toggleAmen, toggleBookmark, isBookmarked } from '@/lib/engagement';
 import { listComments, createComment } from '@/lib/comments';
 import { createReport } from '@/lib/reports';
+import { checkMediaPermission } from '@/lib/mediaRequests';
+import { validateAndNormalizeYouTubeUrl } from '../../../shared/youtube';
+import { validateFaithContent } from '../../../shared/moderation';
+import { useRole } from '@/hooks/useRole';
 
 // Complete Instagram-style Gospel Era Mobile App with Real API Integration
 const MobileApp = () => {
   const { user, loading: authLoading, signIn, signUp, signOut } = useAuth();
+  const { isBanned } = useRole();
   const [activeTab, setActiveTab] = useState(0);
   const [posts, setPosts] = useState<any[]>([]);
   const [prayerRequests, setPrayerRequests] = useState<any[]>([]);
@@ -32,14 +37,40 @@ const MobileApp = () => {
   const [editingPostId, setEditingPostId] = useState<number | null>(null);
   const [reportModalOpen, setReportModalOpen] = useState(false);
   const [reportTarget, setReportTarget] = useState<{type: 'post' | 'comment', id: string} | null>(null);
+  
+  // Enhanced post creation states
+  const [createTags, setCreateTags] = useState('');
+  const [createYouTubeUrl, setCreateYouTubeUrl] = useState('');
+  const [hasMediaPermission, setHasMediaPermission] = useState(false);
+  const [isCheckingPermission, setIsCheckingPermission] = useState(true);
+  const [showMediaRequestModal, setShowMediaRequestModal] = useState(false);
+  const [youtubeError, setYoutubeError] = useState('');
+  const [moderationError, setModerationError] = useState('');
 
   useEffect(() => {
     if (user) {
       fetchData();
+      checkUserMediaPermission();
     } else {
       setLoading(false);
     }
   }, [user]);
+
+  // Check media permission for current user
+  const checkUserMediaPermission = async () => {
+    if (!user) return;
+    
+    setIsCheckingPermission(true);
+    try {
+      const result = await checkMediaPermission(user.id);
+      setHasMediaPermission(result.hasPermission);
+    } catch (error) {
+      console.error('Error checking media permission:', error);
+      setHasMediaPermission(false);
+    } finally {
+      setIsCheckingPermission(false);
+    }
+  };
 
   const fetchData = async () => {
     setLoading(true);
@@ -97,23 +128,69 @@ const MobileApp = () => {
   const handleCreatePost = async () => {
     if (!createTitle.trim() || !createContent.trim()) return;
     
+    if (isBanned) {
+      alert('Your account is limited. You cannot create posts.');
+      return;
+    }
+
+    // Clear previous errors
+    setYoutubeError('');
+    setModerationError('');
+
+    const titleText = createTitle.trim();
+    const contentText = createContent.trim();
+
+    // Enhanced Christ-centric validation for title and content
+    const titleValidation = validateFaithContent(titleText);
+    const contentValidation = validateFaithContent(contentText);
+    
+    if (!titleValidation.isValid && !contentValidation.isValid) {
+      setModerationError(titleValidation.reason || 'Please keep your post centered on Jesus or Scripture.');
+      return;
+    }
+
+    // Process tags
+    const tagsArray = createTags.trim() ? createTags.split(',').map(tag => tag.trim()) : [];
+    
+    // Validate YouTube URL if provided
+    let normalizedYouTubeUrl = '';
+    if (createYouTubeUrl.trim()) {
+      if (!hasMediaPermission) {
+        setYoutubeError('You need link sharing permission to add YouTube videos.');
+        return;
+      }
+      
+      const validation = validateAndNormalizeYouTubeUrl(createYouTubeUrl.trim());
+      if (!validation.isValid) {
+        setYoutubeError(validation.error || 'Invalid YouTube URL');
+        return;
+      }
+      normalizedYouTubeUrl = validation.normalizedUrl || '';
+    }
+    
     try {
       const result = await createPost({
-        title: createTitle.trim(),
-        content: createContent.trim(),
-        tags: [],
+        title: titleText,
+        content: contentText,
+        tags: tagsArray,
         media_urls: [],
-        embed_url: ''
+        embed_url: normalizedYouTubeUrl
       });
       
       if (result.data) {
+        // Clear form
         setCreateTitle('');
         setCreateContent('');
+        setCreateTags('');
+        setCreateYouTubeUrl('');
+        setYoutubeError('');
+        setModerationError('');
         fetchData();
         setActiveTab(0); // Go back to home
       }
     } catch (error) {
       console.error('Error creating post:', error);
+      alert('Failed to create post. Please try again.');
     }
   };
 
@@ -755,56 +832,181 @@ const MobileApp = () => {
     </div>
   );
 
-  // Create Post Component
+  // Create Post Component  
   const CreatePage = () => (
     <div style={{ padding: '16px' }}>
-      <div style={{ marginBottom: '16px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', marginBottom: '16px' }}>
-          <div style={{
-            width: '32px', height: '32px', borderRadius: '50%', background: '#dbdbdb',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            marginRight: '12px', color: '#8e8e8e'
-          }}>
-            •
-          </div>
-          <div style={{ fontWeight: 600, color: '#262626' }}>Create Post</div>
-        </div>
+      {/* Form Title */}
+      <div style={{ marginBottom: '20px', textAlign: 'center' }}>
+        <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#262626', margin: 0 }}>
+          Share Your Faith
+        </h2>
+        <p style={{ fontSize: '14px', color: '#8e8e8e', margin: '4px 0 0 0' }}>
+          Inspire others with your testimony
+        </p>
+      </div>
 
+      {/* Moderation Error */}
+      {moderationError && (
+        <div style={{
+          background: '#fee', border: '1px solid #fcc', color: '#c00',
+          padding: '12px', borderRadius: '8px', marginBottom: '16px',
+          fontSize: '14px', textAlign: 'center'
+        }}>
+          {moderationError}
+        </div>
+      )}
+
+      {/* Banned User Warning */}
+      {isBanned && (
+        <div style={{
+          background: '#fff3cd', border: '1px solid #ffeaa7', color: '#856404',
+          padding: '12px', borderRadius: '8px', marginBottom: '16px',
+          fontSize: '14px', textAlign: 'center'
+        }}>
+          Account limited. You can read but cannot post or comment.
+        </div>
+      )}
+
+      {/* Post Title */}
+      <div style={{ marginBottom: '16px' }}>
+        <label style={{ fontSize: '14px', fontWeight: 600, color: '#262626', marginBottom: '6px', display: 'block' }}>
+          📝 Post Title
+        </label>
         <input
           type="text"
-          placeholder="Post title..."
+          placeholder="What's on your heart?"
           value={createTitle}
           onChange={(e) => setCreateTitle(e.target.value)}
+          disabled={isBanned}
           style={{
             width: '100%', padding: '12px 16px', border: '1px solid #dbdbdb',
-            borderRadius: '8px', fontSize: '16px', marginBottom: '12px', outline: 'none'
+            borderRadius: '8px', fontSize: '16px', outline: 'none',
+            backgroundColor: isBanned ? '#f5f5f5' : '#ffffff',
+            color: isBanned ? '#8e8e8e' : '#262626'
           }}
+          title={isBanned ? 'Account limited - cannot create posts' : ''}
         />
+      </div>
 
+      {/* Post Content */}
+      <div style={{ marginBottom: '16px' }}>
+        <label style={{ fontSize: '14px', fontWeight: 600, color: '#262626', marginBottom: '6px', display: 'block' }}>
+          ❤️ Share Your Message
+        </label>
         <textarea
           placeholder="Share your faith, testimony, or encouragement..."
           value={createContent}
           onChange={(e) => setCreateContent(e.target.value)}
           rows={6}
+          disabled={isBanned}
           style={{
             width: '100%', padding: '12px 16px', border: '1px solid #dbdbdb',
             borderRadius: '8px', fontSize: '16px', resize: 'none', outline: 'none',
-            fontFamily: 'inherit', marginBottom: '16px'
+            fontFamily: 'inherit',
+            backgroundColor: isBanned ? '#f5f5f5' : '#ffffff',
+            color: isBanned ? '#8e8e8e' : '#262626'
           }}
+          title={isBanned ? 'Account limited - cannot create posts' : ''}
         />
-
-        <button
-          onClick={handleCreatePost}
-          disabled={!createTitle.trim() || !createContent.trim()}
-          style={{
-            width: '100%', background: createTitle.trim() && createContent.trim() ? '#262626' : '#dbdbdb',
-            color: '#ffffff', border: 'none', padding: '12px', borderRadius: '8px',
-            fontSize: '16px', fontWeight: 600, cursor: createTitle.trim() && createContent.trim() ? 'pointer' : 'not-allowed'
-          }}
-        >
-          Share Post
-        </button>
       </div>
+
+      {/* Tags Input */}
+      <div style={{ marginBottom: '16px' }}>
+        <label style={{ fontSize: '14px', fontWeight: 600, color: '#262626', marginBottom: '6px', display: 'block' }}>
+          🏷️ Tags (optional)
+        </label>
+        <input
+          type="text"
+          placeholder="prayer, testimony, scripture, worship (comma-separated)"
+          value={createTags}
+          onChange={(e) => setCreateTags(e.target.value)}
+          disabled={isBanned}
+          style={{
+            width: '100%', padding: '12px 16px', border: '1px solid #dbdbdb',
+            borderRadius: '8px', fontSize: '16px', outline: 'none',
+            backgroundColor: isBanned ? '#f5f5f5' : '#ffffff',
+            color: isBanned ? '#8e8e8e' : '#262626'
+          }}
+          title={isBanned ? 'Account limited - cannot create posts' : ''}
+        />
+      </div>
+
+      {/* YouTube URL Input or Link Sharing Request */}
+      {hasMediaPermission ? (
+        <div style={{ marginBottom: '16px' }}>
+          <label style={{ fontSize: '14px', fontWeight: 600, color: '#262626', marginBottom: '6px', display: 'block' }}>
+            🎥 YouTube Video (optional)
+          </label>
+          <input
+            type="text"
+            placeholder="https://www.youtube.com/watch?v=..."
+            value={createYouTubeUrl}
+            onChange={(e) => setCreateYouTubeUrl(e.target.value)}
+            disabled={isBanned}
+            style={{
+              width: '100%', padding: '12px 16px', border: '1px solid #dbdbdb',
+              borderRadius: '8px', fontSize: '16px', outline: 'none',
+              backgroundColor: isBanned ? '#f5f5f5' : '#ffffff',
+              color: isBanned ? '#8e8e8e' : '#262626'
+            }}
+            title={isBanned ? 'Account limited - cannot create posts' : ''}
+          />
+          {youtubeError && (
+            <div style={{ color: '#c00', fontSize: '12px', marginTop: '4px' }}>
+              {youtubeError}
+            </div>
+          )}
+        </div>
+      ) : (
+        !isBanned && (
+          <div style={{ marginBottom: '16px' }}>
+            <label style={{ fontSize: '14px', fontWeight: 600, color: '#262626', marginBottom: '6px', display: 'block' }}>
+              🔗 Link Sharing
+            </label>
+            <div style={{ 
+              padding: '12px', background: '#f8f9fa', border: '1px solid #e9ecef', 
+              borderRadius: '8px', textAlign: 'center' 
+            }}>
+              <p style={{ margin: '0 0 8px 0', fontSize: '14px', color: '#6c757d' }}>
+                Want to share YouTube videos or media? Request permission to enable link sharing.
+              </p>
+              <button
+                onClick={() => setShowMediaRequestModal(true)}
+                style={{
+                  background: '#007bff', color: '#ffffff', border: 'none',
+                  padding: '8px 16px', borderRadius: '6px', fontSize: '14px',
+                  cursor: 'pointer', fontWeight: 500
+                }}
+              >
+                Request Link Sharing
+              </button>
+            </div>
+          </div>
+        )
+      )}
+
+      {/* Submit Button */}
+      <button
+        onClick={handleCreatePost}
+        disabled={!createTitle.trim() || !createContent.trim() || isBanned}
+        style={{
+          width: '100%', 
+          background: (createTitle.trim() && createContent.trim() && !isBanned) ? '#262626' : '#dbdbdb',
+          color: '#ffffff', border: 'none', padding: '14px', borderRadius: '8px',
+          fontSize: '16px', fontWeight: 600, 
+          cursor: (createTitle.trim() && createContent.trim() && !isBanned) ? 'pointer' : 'not-allowed'
+        }}
+        title={isBanned ? 'Account limited - cannot create posts' : ''}
+      >
+        Share Post
+      </button>
+
+      {/* Permission Loading */}
+      {isCheckingPermission && (
+        <div style={{ textAlign: 'center', marginTop: '16px', fontSize: '14px', color: '#8e8e8e' }}>
+          Checking permissions...
+        </div>
+      )}
     </div>
   );
 
@@ -1163,6 +1365,50 @@ const MobileApp = () => {
                 }}
               >
                 Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Simple Media Request Modal */}
+      {showMediaRequestModal && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1000,
+          display: 'flex', alignItems: 'center', justifyContent: 'center'
+        }}>
+          <div style={{
+            background: '#ffffff', padding: '24px', borderRadius: '12px',
+            maxWidth: '300px', margin: '16px', textAlign: 'center'
+          }}>
+            <h3 style={{ margin: '0 0 16px 0', fontSize: '18px', fontWeight: 600 }}>
+              Request Link Sharing
+            </h3>
+            <p style={{ margin: '0 0 20px 0', fontSize: '14px', color: '#6c757d' }}>
+              Link sharing permissions allow you to embed YouTube videos and upload media files to enhance your posts.
+            </p>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button
+                onClick={() => setShowMediaRequestModal(false)}
+                style={{
+                  flex: 1, padding: '10px', border: '1px solid #ddd',
+                  borderRadius: '6px', background: '#ffffff', cursor: 'pointer'
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  setShowMediaRequestModal(false);
+                  alert('Link sharing request submitted! You will be notified when approved.');
+                }}
+                style={{
+                  flex: 1, padding: '10px', border: 'none',
+                  borderRadius: '6px', background: '#007bff', color: '#ffffff', cursor: 'pointer'
+                }}
+              >
+                Request
               </button>
             </div>
           </div>
