@@ -33,14 +33,14 @@ export function BottomNavigation() {
   }
 
   return (
-    <nav className="nav-mobile">
+    <nav className="nav-mobile md:hidden">
       <div className="flex items-center justify-around w-full">
         {navItems.map((item) => (
           <Link
             key={item.key}
             to={item.path}
             onClick={item.isCreate ? handleCreateClick : item.isSearch ? handleSearchClick : undefined}
-            className={`nav-mobile-item ${
+            className={`nav-mobile-item md:flex md:items-center md:space-x-2 md:px-3 md:py-2 md:rounded-lg ${
               isActive(item.path) && !item.isCreate && !item.isSearch
                 ? 'text-purple-600 dark:text-purple-400' 
                 : 'text-gray-500 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400'

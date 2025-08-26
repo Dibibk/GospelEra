@@ -1,4 +1,5 @@
-/* Native Mobile Component Styles */
+/* Native Mobile Component Styles - Mobile Only */
+@media (max-width: 767px) {
 
 /* Mobile-first button styles */
 .btn-mobile {
@@ -163,10 +164,76 @@
   }
 }
 
-/* Large text mode */
-@media (prefers-reduced-data: reduce) {
-  * {
-    background-image: none !important;
-    box-shadow: none !important;
+  /* Large text mode */
+  @media (prefers-reduced-data: reduce) {
+    * {
+      background-image: none !important;
+      box-shadow: none !important;
+    }
+  }
+
+} /* End mobile-only styles */
+
+/* Desktop-specific overrides */
+@media (min-width: 768px) {
+  /* Reset mobile classes to default desktop behavior */
+  .btn-mobile {
+    @apply h-auto px-4 py-2 rounded-lg font-medium text-sm;
+    min-height: auto;
+    transform: none;
+  }
+  
+  .btn-mobile:active {
+    transform: none;
+  }
+  
+  .btn-mobile-sm {
+    @apply h-auto px-3 py-1 text-sm;
+    min-height: auto;
+  }
+  
+  .btn-mobile-lg {
+    @apply h-auto px-6 py-3 text-base;
+    min-height: auto;
+  }
+  
+  .input-mobile {
+    @apply h-auto px-3 py-2 rounded-lg border text-sm;
+    min-height: auto;
+    font-size: 0.875rem;
+  }
+  
+  .textarea-mobile {
+    @apply px-3 py-2 rounded-lg border text-sm resize-y;
+    font-size: 0.875rem;
+    min-height: auto;
+  }
+  
+  .card-mobile {
+    @apply bg-white rounded-lg shadow-sm border border-gray-200 p-6;
+    transform: none;
+  }
+  
+  .card-mobile:active {
+    transform: none;
+  }
+  
+  .card-mobile-compact {
+    @apply bg-white rounded-lg shadow-sm border border-gray-200 p-4;
+  }
+  
+  /* Desktop navigation - hide mobile nav classes */
+  .nav-mobile {
+    display: none;
+  }
+  
+  .nav-mobile-item {
+    @apply flex items-center space-x-2 px-3 py-2 rounded-lg;
+    min-height: auto;
+    transform: none;
+  }
+  
+  .nav-mobile-item:active {
+    transform: none;
   }
 }
