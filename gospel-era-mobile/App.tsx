@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { API_BASE_URL } from './src/config/supabase';
+
+const API_BASE_URL = 'https://0c5a25f0-9744-423a-9b7b-f354b588ed87-00-364hxv4w1n962.picard.replit.dev';
 
 export default function App() {
   const [connectionStatus, setConnectionStatus] = useState('Testing...');
