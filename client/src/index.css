@@ -57,15 +57,15 @@
 }
 
 :root {
-  /* Professional color palette */
-  --background: #FFFFFF; /* Pure white */
-  --foreground: #000000; /* Black */
-  --card: #FFFFFF; /* Pure white */
-  --card-foreground: #000000;
+  /* Faith-centered color palette */
+  --background: hsl(35 30% 97%); /* Warm light ivory */
+  --foreground: hsl(235 45% 20%); /* Dark navy */
+  --card: hsl(0 0% 100%); /* Clean white */
+  --card-foreground: hsl(235 45% 20%);
   --popover: hsl(0 0% 100%);
   --popover-foreground: hsl(235 45% 20%);
-  --primary: #1A73E8; /* Professional blue */
-  --primary-foreground: #FFFFFF;
+  --primary: hsl(253 77% 58%); /* Deep royal purple */
+  --primary-foreground: hsl(0 0% 100%);
   --secondary: hsl(45 100% 75%); /* Soft gold */
   --secondary-foreground: hsl(235 45% 20%);
   --muted: hsl(35 20% 94%);
@@ -74,9 +74,9 @@
   --accent-foreground: hsl(235 45% 20%);
   --destructive: hsl(0 84.2% 60.2%);
   --destructive-foreground: hsl(210 40% 98%);
-  --border: #EAEAEA;
-  --input: #FFFFFF;
-  --ring: #1A73E8;
+  --border: hsl(35 25% 88%);
+  --input: hsl(35 25% 92%);
+  --ring: hsl(253 77% 58%);
   --chart-1: hsl(253 77% 58%);
   --chart-2: hsl(45 100% 75%);
   --chart-3: hsl(35 30% 85%);
@@ -90,7 +90,7 @@
   --sidebar-accent-foreground: hsl(253 77% 58%);
   --sidebar-border: hsl(35 25% 88%);
   --sidebar-ring: hsl(253 77% 58%);
-  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
   --font-serif: -apple-system-ui-serif, ui-serif, 'Times New Roman', serif;
   --font-mono: 'SF Mono', Monaco, Inconsolata, 'Roboto Mono', 'Source Code Pro', monospace;
   --radius: 0.75rem;
