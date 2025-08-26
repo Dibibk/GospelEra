@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { listPosts, createPost, softDeletePost } from '@/lib/posts';
-import { listPrayerRequests, createPrayerRequest, commitToPray } from '@/lib/prayer';
+import { listPrayerRequests, createPrayerRequest, commitToPray, confirmPrayed, getMyCommitments } from '@/lib/prayer';
 import { getProfilesByIds } from '@/lib/profiles';
 import { toggleAmen, toggleBookmark, isBookmarked } from '@/lib/engagement';
 import { listComments, createComment } from '@/lib/comments';
@@ -33,6 +33,9 @@ const MobileApp = () => {
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [prayerModerationError, setPrayerModerationError] = useState('');
   const [committingToId, setCommittingToId] = useState<number | null>(null);
+  const [prayerTab, setPrayerTab] = useState(0); // 0: Browse, 1: My Prayers
+  const [myCommitments, setMyCommitments] = useState<any[]>([]);
+  const [confirmingId, setConfirmingId] = useState<number | null>(null);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
@@ -97,6 +100,18 @@ const MobileApp = () => {
       const prayerResult = await listPrayerRequests({ limit: 10 });
       if (prayerResult.data) {
         setPrayerRequests(prayerResult.data);
+      }
+
+      // Fetch user's prayer commitments if authenticated
+      if (user?.id) {
+        try {
+          const commitmentsResult = await getMyCommitments();
+          if (commitmentsResult.data) {
+            setMyCommitments(commitmentsResult.data);
+          }
+        } catch (error) {
+          console.error('Error fetching commitments:', error);
+        }
       }
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -265,6 +280,27 @@ const MobileApp = () => {
       alert('Failed to commit to prayer. Please try again.');
     } finally {
       setCommittingToId(null);
+    }
+  };
+
+  const handleConfirmPrayed = async (requestId: number) => {
+    if (!user || isBanned) return;
+    
+    setConfirmingId(requestId);
+    
+    try {
+      const { error } = await confirmPrayed(requestId);
+      if (error) {
+        alert('Failed to confirm prayer. Please try again.');
+      } else {
+        // Refresh prayer requests and commitments to show updated counts
+        fetchData();
+      }
+    } catch (error) {
+      console.error('Error confirming prayer:', error);
+      alert('Failed to confirm prayer. Please try again.');
+    } finally {
+      setConfirmingId(null);
     }
   };
 
@@ -1012,7 +1048,7 @@ const MobileApp = () => {
         disabled={!createTitle.trim() || !createContent.trim() || isBanned}
         style={{
           width: '100%', 
-          background: (createTitle.trim() && createContent.trim() && !isBanned) ? '#262626' : '#dbdbdb',
+          background: (createTitle.trim() && createContent.trim() && !isBanned) ? '#4a4a4a' : '#dbdbdb',
           color: '#ffffff', border: 'none', padding: '12px', borderRadius: '8px',
           fontSize: '16px', fontWeight: 600, 
           cursor: (createTitle.trim() && createContent.trim() && !isBanned) ? 'pointer' : 'not-allowed'
@@ -1027,30 +1063,64 @@ const MobileApp = () => {
   // Prayer Page Component
   const PrayerPage = () => (
     <>
-      {/* Prayer Stats - clean mobile style */}
+      {/* Tab Navigation - sleek native style */}
       <div style={{
-        display: 'flex', justifyContent: 'space-around', padding: '16px',
-        background: '#ffffff', borderBottom: '1px solid #dbdbdb'
+        display: 'flex', background: '#ffffff', borderBottom: '1px solid #dbdbdb'
       }}>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '18px', fontWeight: 700, color: '#262626' }}>{prayerRequests.length}</div>
-          <div style={{ fontSize: '12px', color: '#8e8e8e' }}>Requests</div>
-        </div>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '18px', fontWeight: 700, color: '#262626' }}>
-            {prayerRequests.reduce((sum, req) => sum + (req.prayer_stats?.committed_count || 0), 0)}
-          </div>
-          <div style={{ fontSize: '12px', color: '#8e8e8e' }}>Committed</div>
-        </div>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '18px', fontWeight: 700, color: '#262626' }}>
-            {prayerRequests.reduce((sum, req) => sum + (req.prayer_stats?.prayed_count || 0), 0)}
-          </div>
-          <div style={{ fontSize: '12px', color: '#8e8e8e' }}>Prayed</div>
-        </div>
+        <button
+          onClick={() => setPrayerTab(0)}
+          style={{
+            flex: 1, padding: '16px', border: 'none', 
+            background: prayerTab === 0 ? '#ffffff' : 'transparent',
+            borderBottom: prayerTab === 0 ? '2px solid #262626' : '2px solid transparent',
+            fontSize: '16px', fontWeight: prayerTab === 0 ? 600 : 400,
+            color: prayerTab === 0 ? '#262626' : '#8e8e8e',
+            cursor: 'pointer'
+          }}
+        >
+          Browse
+        </button>
+        <button
+          onClick={() => setPrayerTab(1)}
+          style={{
+            flex: 1, padding: '16px', border: 'none',
+            background: prayerTab === 1 ? '#ffffff' : 'transparent',
+            borderBottom: prayerTab === 1 ? '2px solid #262626' : '2px solid transparent',
+            fontSize: '16px', fontWeight: prayerTab === 1 ? 600 : 400,
+            color: prayerTab === 1 ? '#262626' : '#8e8e8e',
+            cursor: 'pointer'
+          }}
+        >
+          My Prayers
+        </button>
       </div>
 
-      {/* Create Prayer Request - enhanced with all features */}
+      {prayerTab === 0 ? (
+        <>
+          {/* Prayer Stats - clean mobile style */}
+          <div style={{
+            display: 'flex', justifyContent: 'space-around', padding: '12px',
+            background: '#f8f9fa'
+          }}>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: '16px', fontWeight: 700, color: '#262626' }}>{prayerRequests.length}</div>
+              <div style={{ fontSize: '11px', color: '#8e8e8e' }}>Requests</div>
+            </div>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: '16px', fontWeight: 700, color: '#262626' }}>
+                {prayerRequests.reduce((sum, req) => sum + (req.prayer_stats?.committed_count || 0), 0)}
+              </div>
+              <div style={{ fontSize: '11px', color: '#8e8e8e' }}>Committed</div>
+            </div>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: '16px', fontWeight: 700, color: '#262626' }}>
+                {prayerRequests.reduce((sum, req) => sum + (req.prayer_stats?.prayed_count || 0), 0)}
+              </div>
+              <div style={{ fontSize: '11px', color: '#8e8e8e' }}>Prayed</div>
+            </div>
+          </div>
+
+          {/* Create Prayer Request - enhanced with all features */}
       <div style={{ padding: '16px', borderBottom: '1px solid #dbdbdb' }}>
         {/* Simple header like create post */}
         <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
@@ -1153,13 +1223,13 @@ const MobileApp = () => {
           </div>
         )}
 
-        {/* Submit Button - NO PURPLE */}
+        {/* Submit Button - Dark Grey */}
         <button
           onClick={handleCreatePrayerRequest}
           disabled={!prayerTitle.trim() || !prayerDetails.trim() || isBanned}
           style={{
             width: '100%',
-            background: (prayerTitle.trim() && prayerDetails.trim() && !isBanned) ? '#262626' : '#dbdbdb',
+            background: (prayerTitle.trim() && prayerDetails.trim() && !isBanned) ? '#4a4a4a' : '#dbdbdb',
             color: '#ffffff', border: 'none', padding: '12px',
             borderRadius: '8px', fontSize: '16px', fontWeight: 600,
             cursor: (prayerTitle.trim() && prayerDetails.trim() && !isBanned) ? 'pointer' : 'not-allowed'
@@ -1223,13 +1293,13 @@ const MobileApp = () => {
               </div>
             )}
 
-            {/* Action Buttons */}
+            {/* Action Buttons - Dark Grey */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
               <button 
                 onClick={() => handleCommitToPray(request.id)}
                 disabled={!user || isBanned || committingToId === request.id}
                 style={{
-                  background: (!user || isBanned) ? '#dbdbdb' : '#262626',
+                  background: (!user || isBanned) ? '#dbdbdb' : '#4a4a4a',
                   color: '#ffffff', border: 'none',
                   padding: '8px 16px', borderRadius: '20px', fontSize: '12px',
                   fontWeight: 600, 
@@ -1251,6 +1321,65 @@ const MobileApp = () => {
           <div style={{ fontSize: '48px', marginBottom: '16px' }}>🙏</div>
           <div style={{ fontWeight: 600, marginBottom: '8px', color: '#262626' }}>Prayer Community</div>
           <div style={{ color: '#8e8e8e', fontSize: '14px' }}>Share your prayer needs and pray for others</div>
+        </div>
+      )}
+        </>) : (
+        // My Prayers Tab Content
+        <div style={{ padding: '16px' }}>
+          <div style={{ marginBottom: '16px' }}>
+            <div style={{ fontWeight: 600, fontSize: '18px', color: '#262626', marginBottom: '8px' }}>
+              My Prayer Commitments
+            </div>
+            <div style={{ fontSize: '14px', color: '#8e8e8e' }}>
+              Prayers I've committed to pray for
+            </div>
+          </div>
+
+          {myCommitments.length > 0 ? (
+            myCommitments.map((commitment: any) => (
+              <div key={commitment.id} style={{
+                background: '#ffffff', borderRadius: '12px', padding: '16px',
+                marginBottom: '12px', border: '1px solid #dbdbdb'
+              }}>
+                <div style={{ marginBottom: '8px' }}>
+                  <div style={{ fontWeight: 600, color: '#262626', marginBottom: '4px' }}>
+                    {commitment.prayer_request?.title}
+                  </div>
+                  <div style={{ fontSize: '14px', color: '#8e8e8e', lineHeight: 1.4 }}>
+                    {commitment.prayer_request?.content?.slice(0, 100)}...
+                  </div>
+                </div>
+                
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div style={{ fontSize: '12px', color: '#8e8e8e' }}>
+                    Status: {commitment.has_prayed ? '✅ Prayed' : '⏳ Committed'}
+                  </div>
+                  
+                  {!commitment.has_prayed && (
+                    <button
+                      onClick={() => handleConfirmPrayed(commitment.prayer_request_id)}
+                      disabled={confirmingId === commitment.prayer_request_id}
+                      style={{
+                        background: '#4a4a4a', color: '#ffffff', border: 'none',
+                        padding: '6px 12px', borderRadius: '16px', fontSize: '12px',
+                        fontWeight: 600, cursor: 'pointer'
+                      }}
+                    >
+                      {confirmingId === commitment.prayer_request_id ? '...' : '✓ Confirm Prayed'}
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))
+          ) : (
+            <div style={{ textAlign: 'center', padding: '40px 20px' }}>
+              <div style={{ fontSize: '48px', marginBottom: '16px' }}>🙏</div>
+              <div style={{ fontWeight: 600, marginBottom: '8px', color: '#262626' }}>No Prayer Commitments</div>
+              <div style={{ color: '#8e8e8e', fontSize: '14px' }}>
+                Commit to pray for others to see them here
+              </div>
+            </div>
+          )}
         </div>
       )}
     </>
