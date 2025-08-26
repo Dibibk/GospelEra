@@ -143,98 +143,95 @@ export function PostCreateModal({
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+    <div className="modal-pro">
+      <div className="modal-pro-content w-full max-w-2xl">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+        <div className="modal-pro-header">
           <div className="flex items-center space-x-3">
-            <div className="h-10 w-10 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl flex items-center justify-center">
+            <div className="h-10 w-10 bg-blue-600 rounded-lg flex items-center justify-center">
               {editingPost ? <Edit3 className="h-5 w-5 text-white" /> : <Plus className="h-5 w-5 text-white" />}
             </div>
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+            <h2 className="text-h2">
               {editingPost ? 'Edit Post' : 'Create New Post'}
             </h2>
           </div>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+            className="btn-pro p-2 border-0"
             data-testid="button-close-modal"
           >
-            <X className="h-5 w-5 text-gray-500" />
+            <X className="h-5 w-5" />
           </button>
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          {/* Title Input */}
-          <div>
-            <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
-              📝 Post Title
-            </label>
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Share your title here..."
-              disabled={isBanned}
-              className="input-mobile w-full bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
-              data-testid="input-post-title"
-            />
-            {isBanned && (
-              <p className="mt-1 text-xs text-orange-600">Account limited - posting disabled</p>
-            )}
-          </div>
+        <div className="modal-pro-body">
+          <form onSubmit={handleSubmit} className="form-pro">
+            <div className="form-pro-group">
+              <label className="form-pro-label">
+                Post Title
+              </label>
+              <input
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Share your title here..."
+                disabled={isBanned}
+                className="input-pro"
+                data-testid="input-post-title"
+              />
+              {isBanned && (
+                <p className="form-pro-error">Account limited - posting disabled</p>
+              )}
+            </div>
 
-          {/* Content Input */}
-          <div>
-            <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
-              ❤️ Your Message
-            </label>
-            <textarea
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              rows={6}
-              placeholder="Share your heart, testimony, or encouragement..."
-              disabled={isBanned}
-              className="textarea-mobile w-full bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
-              data-testid="textarea-post-content"
-            />
-          </div>
+            <div className="form-pro-group">
+              <label className="form-pro-label">
+                Your Message
+              </label>
+              <textarea
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                rows={6}
+                placeholder="Share your heart, testimony, or encouragement..."
+                disabled={isBanned}
+                className="textarea-pro"
+                data-testid="textarea-post-content"
+              />
+            </div>
 
-          {/* Tags Input */}
-          <div>
-            <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
-              🏷️ Tags (comma-separated)
-            </label>
-            <input
-              type="text"
-              value={tags}
-              onChange={(e) => setTags(e.target.value)}
-              placeholder="prayer, testimony, encouragement, bible-study..."
-              disabled={isBanned}
-              className="input-mobile w-full bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
-              data-testid="input-post-tags"
-            />
-          </div>
+            <div className="form-pro-group">
+              <label className="form-pro-label">
+                Tags (comma-separated)
+              </label>
+              <input
+                type="text"
+                value={tags}
+                onChange={(e) => setTags(e.target.value)}
+                placeholder="prayer, testimony, encouragement, bible-study..."
+                disabled={isBanned}
+                className="input-pro"
+                data-testid="input-post-tags"
+              />
+            </div>
 
-          {/* YouTube URL Input */}
-          <div>
-            <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
-              📺 YouTube Video (optional)
-            </label>
-            <input
-              type="url"
-              value={youtubeUrl}
-              onChange={(e) => setYoutubeUrl(e.target.value)}
-              placeholder="https://www.youtube.com/watch?v=..."
-              disabled={isBanned || !hasMediaPermission}
-              className="input-mobile w-full bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
-              data-testid="input-youtube-url"
-            />
-            {youtubeError && (
-              <p className="mt-1 text-sm text-red-600">{youtubeError}</p>
-            )}
-          </div>
+            <div className="form-pro-group">
+              <label className="form-pro-label">
+                YouTube Video (optional)
+              </label>
+              <input
+                type="url"
+                value={youtubeUrl}
+                onChange={(e) => setYoutubeUrl(e.target.value)}
+                placeholder="https://www.youtube.com/watch?v=..."
+                disabled={isBanned || !hasMediaPermission}
+                className="input-pro"
+                data-testid="input-youtube-url"
+              />
+              {youtubeError && (
+                <p className="form-pro-error">{youtubeError}</p>
+              )}
+            </div>
 
           {/* Request Link Sharing */}
           {!isBanned && !hasMediaPermission && (
@@ -261,53 +258,53 @@ export function PostCreateModal({
             </div>
           )}
 
-          {/* Error Messages */}
-          {createError && (
-            <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl">
-              <p className="text-sm text-red-700 dark:text-red-400">{createError}</p>
-            </div>
-          )}
+            {/* Error Messages */}
+            {createError && (
+              <div className="card-pro-compact" style={{backgroundColor: '#fef2f2', border: '1px solid #fecaca'}}>
+                <p className="text-caption" style={{color: '#b91c1c'}}>{createError}</p>
+              </div>
+            )}
 
-          {moderationError && (
-            <div className="p-4 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-xl">
-              <p className="text-sm text-orange-700 dark:text-orange-400 font-medium">Content Review</p>
-              <p className="text-sm text-orange-600 dark:text-orange-300 mt-1">{moderationError}</p>
-              <p className="text-xs text-orange-500 dark:text-orange-400 mt-2">
-                Our community focuses on Jesus-centered content. Consider adding scripture references or gospel themes.
-              </p>
-            </div>
-          )}
+            {moderationError && (
+              <div className="card-pro-compact" style={{backgroundColor: '#fff7ed', border: '1px solid #fed7aa'}}>
+                <p className="text-secondary-medium">Content Review</p>
+                <p className="text-secondary mt-1">{moderationError}</p>
+                <p className="text-caption mt-2">
+                  Our community focuses on Jesus-centered content. Consider adding scripture references or gospel themes.
+                </p>
+              </div>
+            )}
 
-          {/* Submit Button */}
-          <div className="flex justify-end space-x-3 pt-6 border-t border-gray-200 dark:border-gray-700">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-6 py-3 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-colors"
-              data-testid="button-cancel"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={isCreating || isBanned || (!title.trim() && !content.trim())}
-              className="px-6 py-3 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-xl hover:from-purple-700 hover:to-purple-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center space-x-2 font-medium"
-              data-testid="button-submit-post"
-            >
-              {isCreating ? (
-                <>
-                  <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
-                  <span>{editingPost ? 'Updating...' : 'Creating...'}</span>
-                </>
-              ) : (
-                <>
-                  <Send className="h-4 w-4" />
-                  <span>{editingPost ? 'Update Post' : 'Create Post'}</span>
-                </>
-              )}
-            </button>
-          </div>
-        </form>
+            <div className="flex justify-end space-x-3 pt-6" style={{borderTop: '1px solid var(--border-light)'}}>
+              <button
+                type="button"
+                onClick={onClose}
+                className="btn-pro"
+                data-testid="button-cancel"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={isCreating || isBanned || (!title.trim() && !content.trim())}
+                className="btn-pro-primary flex items-center space-x-2"
+                data-testid="button-submit-post"
+              >
+                {isCreating ? (
+                  <>
+                    <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
+                    <span>{editingPost ? 'Updating...' : 'Creating...'}</span>
+                  </>
+                ) : (
+                  <>
+                    <Send className="h-4 w-4" />
+                    <span>{editingPost ? 'Update Post' : 'Create Post'}</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   )

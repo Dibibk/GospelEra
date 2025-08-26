@@ -1,7 +1,7 @@
 import { createRoot } from "react-dom/client";
 import App from "./App";
 import "./index.css";
-import "./styles/mobile-native.css";
+import "./styles/professional-design.css";
 
 // PWA Service Worker Registration (production only)
 if (!import.meta.env.DEV) {

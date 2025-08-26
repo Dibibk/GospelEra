@@ -33,25 +33,23 @@ export function BottomNavigation() {
   }
 
   return (
-    <nav className="nav-mobile md:hidden">
-      <div className="flex items-center justify-around w-full">
+    <nav className="bottom-nav-pro">
         {navItems.map((item) => (
           <Link
             key={item.key}
             to={item.path}
             onClick={item.isCreate ? handleCreateClick : item.isSearch ? handleSearchClick : undefined}
-            className={`nav-mobile-item md:flex md:items-center md:space-x-2 md:px-3 md:py-2 md:rounded-lg ${
+            className={`bottom-nav-pro-item ${
               isActive(item.path) && !item.isCreate && !item.isSearch
-                ? 'text-purple-600 dark:text-purple-400' 
-                : 'text-gray-500 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400'
+                ? 'active' 
+                : ''
             }`}
             data-testid={`bottom-nav-${item.label.toLowerCase()}`}
           >
-            <item.icon className="h-6 w-6" />
-            <span className="text-xs mt-1">{item.label}</span>
+            <item.icon className="h-5 w-5 mb-1" />
+            <span>{item.label}</span>
           </Link>
         ))}
-      </div>
     </nav>
   )
 }
