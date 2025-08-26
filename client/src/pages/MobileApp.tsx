@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import { useAuth } from '@/hooks/useAuth';
 
 // Complete Instagram-style Gospel Era Mobile App
 const MobileApp = () => {
+  const { user, loading: authLoading, signIn, signUp, signOut } = useAuth();
   const [activeTab, setActiveTab] = useState(0);
   const [posts, setPosts] = useState([]);
   const [prayerRequests, setPrayerRequests] = useState([]);
@@ -11,6 +13,10 @@ const MobileApp = () => {
   const [createTitle, setCreateTitle] = useState('');
   const [prayerTitle, setPrayerTitle] = useState('');
   const [prayerContent, setPrayerContent] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [isSignUp, setIsSignUp] = useState(false);
+  const [loginError, setLoginError] = useState('');
 
   useEffect(() => {
     fetchData();
@@ -96,6 +102,23 @@ const MobileApp = () => {
       }
     } catch (error) {
       console.error('Error creating prayer request:', error);
+    }
+  };
+
+  const handleLogin = async () => {
+    if (!email.trim() || !password.trim()) return;
+    
+    setLoginError('');
+    const { error } = isSignUp 
+      ? await signUp(email, password)
+      : await signIn(email, password);
+    
+    if (error) {
+      setLoginError(error.message);
+    } else {
+      setEmail('');
+      setPassword('');
+      fetchData();
     }
   };
 
@@ -239,10 +262,10 @@ const MobileApp = () => {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 16px' }}>
                 <div style={{ display: 'flex', gap: '16px' }}>
                   <button style={{ background: 'none', border: 'none', fontSize: '24px', color: '#262626', cursor: 'pointer', padding: '8px' }}>♡</button>
-                  <button style={{ background: 'none', border: 'none', fontSize: '24px', color: '#262626', cursor: 'pointer', padding: '8px' }}>💬</button>
+                  <button style={{ background: 'none', border: 'none', fontSize: '24px', color: '#262626', cursor: 'pointer', padding: '8px' }}>○</button>
                   <button style={{ background: 'none', border: 'none', fontSize: '24px', color: '#262626', cursor: 'pointer', padding: '8px' }}>↗</button>
                 </div>
-                <button style={{ background: 'none', border: 'none', fontSize: '24px', color: '#262626', cursor: 'pointer', padding: '8px' }}>🔖</button>
+                <button style={{ background: 'none', border: 'none', fontSize: '24px', color: '#262626', cursor: 'pointer', padding: '8px' }}>⋄</button>
               </div>
 
               {/* Likes count */}
@@ -545,6 +568,78 @@ const MobileApp = () => {
     </>
   );
 
+  // Login Component
+  const LoginPage = () => (
+    <div style={{ padding: '16px' }}>
+      <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+        <div style={{ fontSize: '32px', fontWeight: 700, color: '#262626', marginBottom: '8px' }}>
+          Gospel Era
+        </div>
+        <div style={{ fontSize: '14px', color: '#8e8e8e' }}>
+          Connect with believers worldwide
+        </div>
+      </div>
+
+      {loginError && (
+        <div style={{
+          background: '#fee', border: '1px solid #fcc', color: '#c00',
+          padding: '12px', borderRadius: '8px', marginBottom: '16px',
+          fontSize: '14px', textAlign: 'center'
+        }}>
+          {loginError}
+        </div>
+      )}
+
+      <div style={{ marginBottom: '16px' }}>
+        <input
+          type="email"
+          placeholder="Email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          style={{
+            width: '100%', padding: '12px 16px', border: '1px solid #dbdbdb',
+            borderRadius: '8px', fontSize: '16px', marginBottom: '12px', outline: 'none'
+          }}
+        />
+        <input
+          type="password"
+          placeholder="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          style={{
+            width: '100%', padding: '12px 16px', border: '1px solid #dbdbdb',
+            borderRadius: '8px', fontSize: '16px', outline: 'none'
+          }}
+        />
+      </div>
+
+      <button
+        onClick={handleLogin}
+        disabled={!email.trim() || !password.trim()}
+        style={{
+          width: '100%', background: email.trim() && password.trim() ? '#262626' : '#dbdbdb',
+          color: '#ffffff', border: 'none', padding: '12px', borderRadius: '8px',
+          fontSize: '16px', fontWeight: 600, marginBottom: '16px',
+          cursor: email.trim() && password.trim() ? 'pointer' : 'not-allowed'
+        }}
+      >
+        {isSignUp ? 'Sign Up' : 'Log In'}
+      </button>
+
+      <div style={{ textAlign: 'center' }}>
+        <button
+          onClick={() => setIsSignUp(!isSignUp)}
+          style={{
+            background: 'none', border: 'none', color: '#262626',
+            fontSize: '14px', cursor: 'pointer', textDecoration: 'underline'
+          }}
+        >
+          {isSignUp ? 'Already have an account? Log in' : "Don't have an account? Sign up"}
+        </button>
+      </div>
+    </div>
+  );
+
   // Profile Component
   const ProfilePage = () => (
     <div style={{ padding: '16px' }}>
@@ -558,13 +653,18 @@ const MobileApp = () => {
           ●
         </div>
         <div style={{ flex: 1 }}>
-          <div style={{ fontSize: '18px', fontWeight: 700, color: '#262626' }}>Gospel User</div>
-          <div style={{ fontSize: '14px', color: '#8e8e8e' }}>@gospeluser</div>
+          <div style={{ fontSize: '18px', fontWeight: 700, color: '#262626' }}>
+            {user?.email?.split('@')[0] || 'Gospel User'}
+          </div>
+          <div style={{ fontSize: '14px', color: '#8e8e8e' }}>@{user?.email?.split('@')[0] || 'gospeluser'}</div>
         </div>
-        <button style={{
-          background: 'none', border: 'none', fontSize: '24px',
-          color: '#262626', cursor: 'pointer', padding: '8px'
-        }}>
+        <button 
+          onClick={signOut}
+          style={{
+            background: 'none', border: 'none', fontSize: '24px',
+            color: '#262626', cursor: 'pointer', padding: '8px'
+          }}
+        >
           ⚙️
         </button>
       </div>
@@ -646,58 +746,66 @@ const MobileApp = () => {
           {activeTab === 4 && 'Profile'}
         </div>
         <div style={{ display: 'flex', gap: '16px' }}>
-          <div style={{ fontSize: '24px', color: '#262626', cursor: 'pointer', padding: '8px' }}>💕</div>
-          <div style={{ fontSize: '24px', color: '#262626', cursor: 'pointer', padding: '8px' }}>💬</div>
+          <div style={{ fontSize: '24px', color: '#262626', cursor: 'pointer', padding: '8px' }}>♡</div>
+          <div style={{ fontSize: '24px', color: '#262626', cursor: 'pointer', padding: '8px' }}>☷</div>
         </div>
       </div>
 
       {/* Content */}
       <div style={styles.content}>
-        {activeTab === 0 && <HomeFeed />}
-        {activeTab === 1 && <SearchPage />}
-        {activeTab === 2 && <CreatePage />}
-        {activeTab === 3 && <PrayerPage />}
-        {activeTab === 4 && <ProfilePage />}
+        {!user ? (
+          <LoginPage />
+        ) : (
+          <>
+            {activeTab === 0 && <HomeFeed />}
+            {activeTab === 1 && <SearchPage />}
+            {activeTab === 2 && <CreatePage />}
+            {activeTab === 3 && <PrayerPage />}
+            {activeTab === 4 && <ProfilePage />}
+          </>
+        )}
       </div>
 
-      {/* Bottom Navigation */}
-      <nav style={styles.bottomNav}>
+      {/* Bottom Navigation - Only show when logged in */}
+      {user && (
+        <nav style={styles.bottomNav}>
         <div onClick={() => setActiveTab(0)} style={{
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           color: activeTab === 0 ? '#262626' : '#8e8e8e', fontSize: '24px',
           padding: '12px', cursor: 'pointer', fontWeight: activeTab === 0 ? 700 : 400
         }}>
-          🏠
+          ⌂
         </div>
         <div onClick={() => setActiveTab(1)} style={{
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           color: activeTab === 1 ? '#262626' : '#8e8e8e', fontSize: '24px',
           padding: '12px', cursor: 'pointer'
         }}>
-          🔍
+          ○
         </div>
         <div onClick={() => setActiveTab(2)} style={{
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           color: activeTab === 2 ? '#262626' : '#8e8e8e', fontSize: '24px',
           padding: '12px', cursor: 'pointer'
         }}>
-          ➕
+          ⊞
         </div>
         <div onClick={() => setActiveTab(3)} style={{
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           color: activeTab === 3 ? '#262626' : '#8e8e8e', fontSize: '24px',
           padding: '12px', cursor: 'pointer'
         }}>
-          🙏
+          ☆
         </div>
         <div onClick={() => setActiveTab(4)} style={{
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           color: activeTab === 4 ? '#262626' : '#8e8e8e', fontSize: '24px',
           padding: '12px', cursor: 'pointer'
         }}>
-          👤
+          ○
         </div>
-      </nav>
+        </nav>
+      )}
     </div>
   );
 };
