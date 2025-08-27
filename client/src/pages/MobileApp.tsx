@@ -3243,20 +3243,24 @@ const MobileApp = () => {
       setSavedPostsError('');
       
       try {
-        // Import the function dynamically to avoid issues
+        // Use the same listBookmarks function as web app but handle errors properly
         const { listBookmarks } = await import('../lib/engagement');
-        const { getProfilesByIds } = await import('../lib/profiles');
+        console.log('Loading saved posts...');
         
         const { data, error } = await listBookmarks({ limit: 50 });
+        console.log('Bookmarks result:', { data, error });
         
         if (error) {
+          console.error('Bookmarks error:', error);
           setSavedPostsError((error as any).message || 'Failed to load saved posts');
         } else {
           const bookmarkedPosts = data || [];
+          console.log('Setting saved posts:', bookmarkedPosts);
           setSavedPosts(bookmarkedPosts);
           
           // Load author profiles for saved posts
           if (Array.isArray(bookmarkedPosts) && bookmarkedPosts.length > 0) {
+            const { getProfilesByIds } = await import('../lib/profiles');
             const authorIds = bookmarkedPosts.map((post: any) => post.author_id || post.author).filter(Boolean);
             const profilesResult = await getProfilesByIds(authorIds);
             
