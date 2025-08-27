@@ -373,11 +373,20 @@ const MobileApp = () => {
           setLeaderboard(leaderboardResult.data);
         }
 
-        // Fetch user profile
+        // Fetch user profile - fix to get proper profile data
         if (user?.id) {
-          const profileResult = await getProfilesByIds([user.id]);
-          if (profileResult.data && profileResult.data.length > 0) {
-            setUserProfile(profileResult.data[0]);
+          try {
+            const { data: profileData } = await ensureMyProfile();
+            if (profileData) {
+              setUserProfile(profileData);
+            }
+          } catch (error) {
+            console.error('Error loading user profile:', error);
+            // Fallback to basic profile info
+            setUserProfile({
+              display_name: user.email?.split('@')[0] || 'Gospel User',
+              avatar_url: ''
+            });
           }
         }
       } catch (error) {
@@ -2068,8 +2077,8 @@ const MobileApp = () => {
             </div>
             <button 
               onClick={() => {
+                setShowMobileProfile(false);
                 setShowMobileEditProfile(true);
-                loadMobileProfile();
               }}
               style={{
                 background: 'none', border: '1px solid #dbdbdb', 
@@ -2297,23 +2306,55 @@ const MobileApp = () => {
                 </div>
               )}
             </div>
-            <ObjectUploader
-              maxNumberOfFiles={1}
-              maxFileSize={10485760}
-              onGetUploadParameters={handleProfileGetUploadParameters}
-              onComplete={handleProfileUploadComplete}
-              buttonClassName="w-full"
-            >
-              <div style={{ 
+            <div
+              onClick={() => {
+                // We'll implement a custom file upload here instead of using ObjectUploader
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = 'image/*';
+                input.onchange = async (e) => {
+                  const files = (e.target as HTMLInputElement).files;
+                  if (files && files[0]) {
+                    try {
+                      const uploadParams = await handleProfileGetUploadParameters();
+                      
+                      // Upload the file using fetch
+                      const formData = new FormData();
+                      formData.append('file', files[0]);
+                      
+                      const response = await fetch(uploadParams.url, {
+                        method: 'PUT',
+                        body: files[0],
+                        headers: {
+                          'Content-Type': files[0].type
+                        }
+                      });
+                      
+                      if (response.ok) {
+                        const result = {
+                          successful: [{
+                            uploadURL: uploadParams.url
+                          }]
+                        };
+                        handleProfileUploadComplete(result as any);
+                      }
+                    } catch (error) {
+                      console.error('Upload error:', error);
+                    }
+                  }
+                };
+                input.click();
+              }}
+              style={{ 
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
                 background: '#4285f4', color: '#ffffff', border: 'none',
                 padding: '12px 24px', borderRadius: '8px', fontSize: '14px',
                 cursor: 'pointer', width: '100%'
-              }}>
-                <span>📷</span>
-                <span>Change Photo</span>
-              </div>
-            </ObjectUploader>
+              }}
+            >
+              <span>📷</span>
+              <span>Change Photo</span>
+            </div>
           </div>
 
           {/* Profile Information */}
@@ -3672,9 +3713,16 @@ const MobileApp = () => {
               }}>
                 {userProfile?.avatar_url ? (
                   <img 
-                    src={userProfile.avatar_url.startsWith('/') ? userProfile.avatar_url : `/public-objects/${userProfile.avatar_url}`} 
+                    src={userProfile.avatar_url.startsWith('/objects/') ? userProfile.avatar_url : (userProfile.avatar_url.startsWith('/') ? userProfile.avatar_url : `/public-objects/${userProfile.avatar_url}`)} 
                     alt="Profile" 
                     style={{ width: '28px', height: '28px', borderRadius: '50%', objectFit: 'cover' }}
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).style.display = 'none';
+                      const parent = (e.target as HTMLImageElement).parentElement;
+                      if (parent) {
+                        parent.innerHTML = '<span style="fontSize: 14px; color: #8e8e8e">👤</span>';
+                      }
+                    }}
                   />
                 ) : (
                   <span style={{ fontSize: '14px', color: '#8e8e8e' }}>👤</span>
@@ -3712,7 +3760,23 @@ const MobileApp = () => {
                     setShowMobileSupporter(false);
                     setShowMobileHelp(false);
                     setShowMobileProfile(true);
-                    loadMobileProfile();
+                    // Set profile immediately instead of loading
+                    if (userProfile) {
+                      setProfile({
+                        id: user?.id || '',
+                        display_name: userProfile.display_name || user?.email || 'Gospel User',
+                        bio: userProfile.bio || '',
+                        avatar_url: userProfile.avatar_url || '',
+                        created_at: new Date().toISOString(),
+                        updated_at: new Date().toISOString()
+                      });
+                      setEditDisplayName(userProfile.display_name || user?.email || 'Gospel User');
+                      setEditBio(userProfile.bio || '');
+                      setEditAvatarUrl(userProfile.avatar_url || '');
+                      setProfileLoading(false);
+                    } else {
+                      loadMobileProfile();
+                    }
                   }}
                   style={{
                     width: '100%', padding: '12px 16px', border: 'none', background: 'none',
