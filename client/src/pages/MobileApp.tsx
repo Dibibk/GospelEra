@@ -4463,7 +4463,7 @@ const MobileApp = () => {
             color: activeTab === 3 ? '#4285f4' : '#8e8e8e', fontSize: '20px',
             padding: '8px 12px', cursor: 'pointer'
           }}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={activeTab === 3 ? '#4285f4' : '#333333'} strokeWidth="2">
               <path d="M14 2v6a2 2 0 01-2 2 2 2 0 01-2-2V2"/>
               <path d="M10 2C8 2 8 4 10 6c0 1 0 2-2 2s-4-1-4-4"/>
               <path d="M14 2c2 0 2 2 0 4 0 1 0 2 2 2s4-1 4-4"/>
