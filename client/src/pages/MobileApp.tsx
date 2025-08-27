@@ -1168,7 +1168,7 @@ const MobileApp = () => {
                   }}
                   title={isBanned ? "Account limited" : "Reply"}
                 >
-                  <span style={{ fontSize: '24px', color: '#262626' }}>💭</span>
+                  <span style={{ fontSize: '24px', color: '#262626' }}>💬</span>
                 </button>
                 
               </div>
@@ -1185,7 +1185,7 @@ const MobileApp = () => {
                     fontSize: '24px', 
                     color: engagementData.get(post.id)?.isBookmarked ? '#262626' : '#8e8e8e'
                   }}>
-                    {engagementData.get(post.id)?.isBookmarked ? '⭐' : '☆'}
+                    {engagementData.get(post.id)?.isBookmarked ? '🔖' : '⋄'}
                   </span>
                 </button>
                 
@@ -3116,7 +3116,7 @@ const MobileApp = () => {
 
       {/* Content */}
       <div style={{ textAlign: 'center', color: '#8e8e8e', fontSize: '14px', padding: '40px 20px' }}>
-        <div style={{ fontSize: '48px', marginBottom: '16px' }}>⭐</div>
+        <div style={{ fontSize: '48px', marginBottom: '16px' }}>🔖</div>
         <div style={{ marginBottom: '8px' }}>No saved posts yet</div>
         <div>Save posts you want to read later by tapping the bookmark icon</div>
       </div>
@@ -3726,7 +3726,7 @@ const MobileApp = () => {
           }}
           title="Saved Posts"
         >
-          ⭐
+          🔖
         </button>
       </div>
 
@@ -3945,7 +3945,7 @@ const MobileApp = () => {
                     ':hover': { background: '#f9f9f9' }, cursor: 'pointer'
                   }}
                 >
-                  ⭐ Saved Posts
+                  🔖 Saved Posts
                 </button>
                 
                 <button 
@@ -4111,7 +4111,7 @@ const MobileApp = () => {
             color: activeTab === 0 ? '#4285f4' : '#8e8e8e', fontSize: '20px',
             padding: '8px 12px', cursor: 'pointer'
           }}>
-            ⌂
+            🏠
             <span style={{ fontSize: '10px', marginTop: '2px' }}>Home</span>
           </div>
           <div onClick={() => setActiveTab(1)} style={{
@@ -4119,7 +4119,7 @@ const MobileApp = () => {
             color: activeTab === 1 ? '#4285f4' : '#8e8e8e', fontSize: '20px',
             padding: '8px 12px', cursor: 'pointer'
           }}>
-            🔎
+            🔍
             <span style={{ fontSize: '10px', marginTop: '2px' }}>Search</span>
           </div>
           <div onClick={() => setActiveTab(2)} style={{
@@ -4135,7 +4135,7 @@ const MobileApp = () => {
             color: activeTab === 3 ? '#4285f4' : '#8e8e8e', fontSize: '20px',
             padding: '8px 12px', cursor: 'pointer'
           }}>
-            ✨
+            🙏
             <span style={{ fontSize: '10px', marginTop: '2px' }}>Prayer</span>
           </div>
           <div onClick={() => setActiveTab(4)} style={{
