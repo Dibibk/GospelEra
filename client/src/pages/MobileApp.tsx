@@ -4111,7 +4111,9 @@ const MobileApp = () => {
             color: activeTab === 0 ? '#4285f4' : '#8e8e8e', fontSize: '20px',
             padding: '8px 12px', cursor: 'pointer'
           }}>
-            🏠
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
+            </svg>
             <span style={{ fontSize: '10px', marginTop: '2px' }}>Home</span>
           </div>
           <div onClick={() => setActiveTab(1)} style={{
@@ -4135,7 +4137,9 @@ const MobileApp = () => {
             color: activeTab === 3 ? '#4285f4' : '#8e8e8e', fontSize: '20px',
             padding: '8px 12px', cursor: 'pointer'
           }}>
-            🙏
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M9.5 4c1.381 0 2.5 1.119 2.5 2.5V11h-1V6.5C11 5.673 10.327 5 9.5 5S8 5.673 8 6.5V16c0 .827.673 1.5 1.5 1.5h4c.827 0 1.5-.673 1.5-1.5V6.5C15 5.673 14.327 5 13.5 5S12 5.673 12 6.5V11h-1V6.5C11 5.119 12.119 4 13.5 4c1.381 0 2.5 1.119 2.5 2.5V16c0 1.381-1.119 2.5-2.5 2.5h-4C8.119 18.5 7 17.381 7 16V6.5C7 5.119 8.119 4 9.5 4z"/>
+            </svg>
             <span style={{ fontSize: '10px', marginTop: '2px' }}>Prayer</span>
           </div>
           <div onClick={() => setActiveTab(4)} style={{
