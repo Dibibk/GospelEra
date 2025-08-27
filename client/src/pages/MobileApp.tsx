@@ -1918,7 +1918,7 @@ const MobileApp = () => {
             {request.tags && request.tags.length > 0 && (
               <div style={{ marginBottom: '12px' }}>
                 {request.tags.map((tag, index) => (
-                  <span key={index} style={{
+                  <span key={`${request.id}-tag-${index}`} style={{
                     background: '#f0f0f0', padding: '2px 8px', borderRadius: '12px',
                     fontSize: '12px', color: '#666', marginRight: '6px'
                   }}>
