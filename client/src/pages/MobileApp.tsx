@@ -1168,7 +1168,9 @@ const MobileApp = () => {
                   }}
                   title={isBanned ? "Account limited" : "Reply"}
                 >
-                  <span style={{ fontSize: '24px', color: '#262626' }}>💬</span>
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" style={{ color: '#262626' }}>
+                    <path d="M21 15c0 1.1-.9 2-2 2H7l-4 4V5c0-1.1.9-2 2-2h14c1.1 0 2 .9 2 2v10z"/>
+                  </svg>
                 </button>
                 
               </div>
@@ -1181,12 +1183,14 @@ const MobileApp = () => {
                   style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '8px' }}
                   title={engagementData.get(post.id)?.isBookmarked ? "Saved" : "Save"}
                 >
-                  <span style={{ 
-                    fontSize: '24px', 
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" style={{ 
                     color: engagementData.get(post.id)?.isBookmarked ? '#262626' : '#8e8e8e'
                   }}>
-                    {engagementData.get(post.id)?.isBookmarked ? '🔖' : '⋄'}
-                  </span>
+                    <path d={engagementData.get(post.id)?.isBookmarked 
+                      ? "M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2z"
+                      : "M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2zm0 15l-5-2.18L7 18V5h10v13z"
+                    }/>
+                  </svg>
                 </button>
                 
                 {/* Report button */}
@@ -1206,7 +1210,9 @@ const MobileApp = () => {
                       style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '8px' }}
                       title="Edit"
                     >
-                      <span style={{ fontSize: '18px', color: '#0095f6' }}>✏️</span>
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style={{ color: '#0095f6' }}>
+                        <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                      </svg>
                     </button>
                     
                     <button 
