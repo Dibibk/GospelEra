@@ -11,7 +11,8 @@ import { validateAndNormalizeYouTubeUrl } from '../../../shared/youtube';
 import { validateFaithContent } from '../../../shared/moderation';
 import { useRole } from '@/hooks/useRole';
 import { getTopPrayerWarriors } from '@/lib/leaderboard';
-import { updateUserSettings, getUserSettings, upsertMyProfile } from '@/lib/profiles';
+import { updateUserSettings, getUserSettings, upsertMyProfile, ensureMyProfile } from '@/lib/profiles';
+import { ObjectUploader } from '@/components/ObjectUploader';
 
 // Complete Instagram-style Gospel Era Mobile App with Real API Integration
 const MobileApp = () => {
@@ -343,8 +344,22 @@ const MobileApp = () => {
   const [showUserDropdown, setShowUserDropdown] = useState(false);
   // Mobile page states
   const [showMobileSettings, setShowMobileSettings] = useState(false);
-  const [showMobileSavedPosts, setShowMobileSavedPosts] = useState(false);
   const [showMobileCommunityGuidelines, setShowMobileCommunityGuidelines] = useState(false);
+  
+  // Mobile Profile state
+  const [showMobileProfile, setShowMobileProfile] = useState(false);
+  const [showMobileEditProfile, setShowMobileEditProfile] = useState(false);
+  const [profile, setProfile] = useState<any>(null);
+  const [profileLoading, setProfileLoading] = useState(false);
+  const [profileError, setProfileError] = useState('');
+  const [profileSuccess, setProfileSuccess] = useState('');
+  const [profileSaving, setProfileSaving] = useState(false);
+  
+  // Profile form state
+  const [editDisplayName, setEditDisplayName] = useState('');
+  const [editBio, setEditBio] = useState('');
+  const [editAvatarUrl, setEditAvatarUrl] = useState('');
+  const [showMobileSavedPosts, setShowMobileSavedPosts] = useState(false);
   const [showMobileSupporter, setShowMobileSupporter] = useState(false);
   const [showMobileHelp, setShowMobileHelp] = useState(false);
 
@@ -374,6 +389,116 @@ const MobileApp = () => {
       fetchData();
     }
   }, [user]);
+
+  // Mobile Profile functions
+  const loadMobileProfile = async () => {
+    setProfileLoading(true);
+    setProfileError('');
+    
+    const { data, error } = await ensureMyProfile();
+    
+    if (error) {
+      setProfileError((error as any).message || 'Failed to load profile');
+    } else if (data) {
+      setProfile(data);
+      setEditDisplayName(data.display_name || '');
+      setEditBio(data.bio || '');
+      setEditAvatarUrl(data.avatar_url || '');
+    }
+    
+    setProfileLoading(false);
+  };
+
+  const handleProfileGetUploadParameters = async () => {
+    const response = await fetch('/api/objects/upload', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to get upload URL');
+    }
+    
+    const { uploadURL } = await response.json();
+    
+    return {
+      method: 'PUT' as const,
+      url: uploadURL,
+    };
+  };
+
+  const handleProfileUploadComplete = async (result: any) => {
+    if (result.successful && result.successful.length > 0) {
+      const uploadedFile = result.successful[0];
+      const uploadURL = uploadedFile.uploadURL;
+      
+      if (uploadURL) {
+        const response = await fetch('/api/avatar', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ avatarURL: uploadURL }),
+        });
+        
+        if (response.ok) {
+          const { objectPath } = await response.json();
+          setEditAvatarUrl(objectPath);
+          setProfileSuccess('Avatar updated successfully!');
+          setTimeout(() => setProfileSuccess(''), 3000);
+        } else {
+          setProfileError('Failed to process uploaded image');
+        }
+      }
+    }
+  };
+
+  const handleSaveMobileProfile = async () => {
+    if (!editDisplayName.trim()) {
+      setProfileError('Display name is required');
+      return;
+    }
+
+    setProfileSaving(true);
+    setProfileError('');
+    setProfileSuccess('');
+
+    const { data, error } = await upsertMyProfile({
+      display_name: editDisplayName.trim(),
+      bio: editBio.trim(),
+      avatar_url: editAvatarUrl
+    });
+
+    if (error) {
+      setProfileError((error as any).message || 'Failed to save profile');
+    } else {
+      setProfile(data);
+      setShowMobileEditProfile(false);
+      setProfileSuccess('Profile updated successfully!');
+      setTimeout(() => setProfileSuccess(''), 3000);
+    }
+
+    setProfileSaving(false);
+  };
+
+  const handleCancelEditMobileProfile = () => {
+    // Reset form to current profile data
+    setEditDisplayName(profile?.display_name || '');
+    setEditBio(profile?.bio || '');
+    setEditAvatarUrl(profile?.avatar_url || '');
+    setShowMobileEditProfile(false);
+    setProfileError('');
+  };
+
+  const formatProfileDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -1746,6 +1871,410 @@ const MobileApp = () => {
     </div>
   );
 
+  // Mobile Profile Component - view profile information
+  const MobileProfilePage = () => {
+    useEffect(() => {
+      loadMobileProfile();
+    }, []);
+
+    if (profileLoading) {
+      return (
+        <div style={{ 
+          display: 'flex', flexDirection: 'column', height: '100vh', 
+          background: '#ffffff', color: '#000000' 
+        }}>
+          {/* Header */}
+          <div style={{ 
+            padding: '16px 20px', borderBottom: '1px solid #e5e5e5',
+            background: '#ffffff', position: 'sticky', top: 0, zIndex: 10 
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              <button 
+                onClick={() => setShowMobileProfile(false)}
+                style={{
+                  background: 'none', border: 'none', fontSize: '20px',
+                  padding: '0', marginRight: '12px', cursor: 'pointer', color: '#000000'
+                }}
+              >
+                ←
+              </button>
+              <div style={{ fontSize: '20px', fontWeight: 600, color: '#000000' }}>Profile</div>
+            </div>
+          </div>
+          
+          <div style={{ 
+            flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' 
+          }}>
+            <div style={{ fontSize: '16px', color: '#8e8e8e' }}>Loading profile...</div>
+          </div>
+        </div>
+      );
+    }
+
+    if (profileError) {
+      return (
+        <div style={{ 
+          display: 'flex', flexDirection: 'column', height: '100vh', 
+          background: '#ffffff', color: '#000000' 
+        }}>
+          {/* Header */}
+          <div style={{ 
+            padding: '16px 20px', borderBottom: '1px solid #e5e5e5',
+            background: '#ffffff', position: 'sticky', top: 0, zIndex: 10 
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              <button 
+                onClick={() => setShowMobileProfile(false)}
+                style={{
+                  background: 'none', border: 'none', fontSize: '20px',
+                  padding: '0', marginRight: '12px', cursor: 'pointer', color: '#000000'
+                }}
+              >
+                ←
+              </button>
+              <div style={{ fontSize: '20px', fontWeight: 600, color: '#000000' }}>Profile</div>
+            </div>
+          </div>
+          
+          <div style={{ 
+            flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' 
+          }}>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: '16px', color: '#dc3545', marginBottom: '12px' }}>
+                {profileError}
+              </div>
+              <button
+                onClick={loadMobileProfile}
+                style={{
+                  background: '#000000', color: '#ffffff', border: 'none',
+                  padding: '8px 16px', borderRadius: '8px', fontSize: '14px'
+                }}
+              >
+                Try Again
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div style={{ 
+        display: 'flex', flexDirection: 'column', height: '100vh', 
+        background: '#ffffff', color: '#000000' 
+      }}>
+        {/* Header */}
+        <div style={{ 
+          padding: '16px 20px', borderBottom: '1px solid #e5e5e5',
+          background: '#ffffff', position: 'sticky', top: 0, zIndex: 10 
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              <button 
+                onClick={() => setShowMobileProfile(false)}
+                style={{
+                  background: 'none', border: 'none', fontSize: '20px',
+                  padding: '0', marginRight: '12px', cursor: 'pointer', color: '#000000'
+                }}
+              >
+                ←
+              </button>
+              <div style={{ fontSize: '20px', fontWeight: 600, color: '#000000' }}>Profile</div>
+            </div>
+            <button 
+              onClick={() => {
+                setShowMobileEditProfile(true);
+                loadMobileProfile();
+              }}
+              style={{
+                background: 'none', border: '1px solid #dbdbdb', 
+                padding: '6px 12px', borderRadius: '8px', fontSize: '14px',
+                color: '#000000', cursor: 'pointer'
+              }}
+            >
+              Edit
+            </button>
+          </div>
+        </div>
+        
+        {/* Content */}
+        <div style={{ flex: 1, overflowY: 'auto', padding: '20px' }}>
+          {/* Profile Header */}
+          <div style={{ 
+            display: 'flex', alignItems: 'center', marginBottom: '24px', 
+            background: '#ffffff', padding: '20px', borderRadius: '12px', 
+            border: '1px solid #e5e5e5' 
+          }}>
+            <div style={{ marginRight: '16px' }}>
+              {profile?.avatar_url ? (
+                <img
+                  src={profile.avatar_url.startsWith('/objects/') 
+                    ? profile.avatar_url 
+                    : profile.avatar_url
+                  }
+                  alt="Avatar"
+                  style={{
+                    width: '80px', height: '80px', borderRadius: '50%', 
+                    objectFit: 'cover', background: '#f0f0f0'
+                  }}
+                />
+              ) : (
+                <div style={{
+                  width: '80px', height: '80px', borderRadius: '50%',
+                  background: '#e5e5e5', display: 'flex', alignItems: 'center', 
+                  justifyContent: 'center', fontSize: '32px', color: '#8e8e8e'
+                }}>
+                  👤
+                </div>
+              )}
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: '22px', fontWeight: 600, color: '#000000', marginBottom: '4px' }}>
+                {profile?.display_name || 'Gospel User'}
+              </div>
+              <div style={{ fontSize: '14px', color: '#8e8e8e', marginBottom: '8px' }}>
+                {user?.email}
+              </div>
+              {profile?.bio && (
+                <div style={{ fontSize: '14px', color: '#262626', lineHeight: '1.4' }}>
+                  {profile.bio}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Profile Stats */}
+          <div style={{ 
+            background: '#ffffff', borderRadius: '12px', border: '1px solid #e5e5e5',
+            marginBottom: '20px' 
+          }}>
+            <div style={{ 
+              display: 'grid', gridTemplateColumns: '1fr 1fr', 
+              textAlign: 'center' 
+            }}>
+              <div style={{ 
+                padding: '16px', borderRight: '1px solid #e5e5e5' 
+              }}>
+                <div style={{ fontSize: '20px', fontWeight: 600, color: '#000000' }}>
+                  {userProfile?.followers_count || 0}
+                </div>
+                <div style={{ fontSize: '12px', color: '#8e8e8e' }}>Followers</div>
+              </div>
+              <div style={{ padding: '16px' }}>
+                <div style={{ fontSize: '20px', fontWeight: 600, color: '#000000' }}>
+                  {userProfile?.following_count || 0}
+                </div>
+                <div style={{ fontSize: '12px', color: '#8e8e8e' }}>Following</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Account Information */}
+          <div style={{ 
+            background: '#ffffff', borderRadius: '12px', border: '1px solid #e5e5e5' 
+          }}>
+            <div style={{ 
+              padding: '16px', borderBottom: '1px solid #e5e5e5' 
+            }}>
+              <div style={{ fontSize: '16px', fontWeight: 600, color: '#000000' }}>
+                Account Information
+              </div>
+            </div>
+            <div style={{ padding: '16px' }}>
+              <div style={{ marginBottom: '12px' }}>
+                <div style={{ fontSize: '12px', color: '#8e8e8e', marginBottom: '4px' }}>
+                  Member Since
+                </div>
+                <div style={{ fontSize: '14px', color: '#000000' }}>
+                  {profile?.created_at ? formatProfileDate(profile.created_at) : 'Recently'}
+                </div>
+              </div>
+              <div>
+                <div style={{ fontSize: '12px', color: '#8e8e8e', marginBottom: '4px' }}>
+                  Email
+                </div>
+                <div style={{ fontSize: '14px', color: '#000000' }}>
+                  {user?.email}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {profileSuccess && (
+          <div style={{ 
+            position: 'fixed', top: '80px', left: '20px', right: '20px',
+            background: '#000000', color: '#ffffff', padding: '12px 16px',
+            borderRadius: '8px', fontSize: '14px', textAlign: 'center', zIndex: 1000
+          }}>
+            {profileSuccess}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // Mobile Edit Profile Component
+  const MobileEditProfilePage = () => {
+    return (
+      <div style={{ 
+        display: 'flex', flexDirection: 'column', height: '100vh', 
+        background: '#ffffff', color: '#000000' 
+      }}>
+        {/* Header */}
+        <div style={{ 
+          padding: '16px 20px', borderBottom: '1px solid #e5e5e5',
+          background: '#ffffff', position: 'sticky', top: 0, zIndex: 10 
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              <button 
+                onClick={handleCancelEditMobileProfile}
+                style={{
+                  background: 'none', border: 'none', fontSize: '20px',
+                  padding: '0', marginRight: '12px', cursor: 'pointer', color: '#000000'
+                }}
+              >
+                ←
+              </button>
+              <div style={{ fontSize: '20px', fontWeight: 600, color: '#000000' }}>Edit Profile</div>
+            </div>
+            <button 
+              onClick={handleSaveMobileProfile}
+              disabled={profileSaving}
+              style={{
+                background: '#000000', color: '#ffffff', border: 'none', 
+                padding: '8px 16px', borderRadius: '8px', fontSize: '14px',
+                cursor: profileSaving ? 'not-allowed' : 'pointer',
+                opacity: profileSaving ? 0.7 : 1
+              }}
+            >
+              {profileSaving ? 'Saving...' : 'Save'}
+            </button>
+          </div>
+        </div>
+        
+        {/* Content */}
+        <div style={{ flex: 1, overflowY: 'auto', padding: '20px' }}>
+          {/* Avatar Section */}
+          <div style={{ 
+            background: '#ffffff', borderRadius: '12px', border: '1px solid #e5e5e5',
+            padding: '20px', marginBottom: '20px', textAlign: 'center' 
+          }}>
+            <div style={{ marginBottom: '16px' }}>
+              {editAvatarUrl ? (
+                <img
+                  src={editAvatarUrl.startsWith('/objects/') 
+                    ? editAvatarUrl 
+                    : editAvatarUrl
+                  }
+                  alt="Avatar"
+                  style={{
+                    width: '80px', height: '80px', borderRadius: '50%', 
+                    objectFit: 'cover', background: '#f0f0f0'
+                  }}
+                />
+              ) : (
+                <div style={{
+                  width: '80px', height: '80px', borderRadius: '50%',
+                  background: '#e5e5e5', display: 'flex', alignItems: 'center', 
+                  justifyContent: 'center', fontSize: '32px', color: '#8e8e8e',
+                  margin: '0 auto'
+                }}>
+                  👤
+                </div>
+              )}
+            </div>
+            <ObjectUploader
+              maxNumberOfFiles={1}
+              maxFileSize={10485760}
+              onGetUploadParameters={handleProfileGetUploadParameters}
+              onComplete={handleProfileUploadComplete}
+              buttonClassName="w-full"
+            >
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                <span>📷</span>
+                <span>Change Photo</span>
+              </div>
+            </ObjectUploader>
+          </div>
+
+          {/* Profile Information */}
+          <div style={{ 
+            background: '#ffffff', borderRadius: '12px', border: '1px solid #e5e5e5',
+            padding: '20px', marginBottom: '20px' 
+          }}>
+            <div style={{ 
+              fontSize: '16px', fontWeight: 600, color: '#000000', marginBottom: '16px' 
+            }}>
+              Profile Information
+            </div>
+            
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{ 
+                display: 'block', fontSize: '14px', fontWeight: 500, 
+                color: '#000000', marginBottom: '6px' 
+              }}>
+                Display Name *
+              </label>
+              <input
+                type="text"
+                value={editDisplayName}
+                onChange={(e) => setEditDisplayName(e.target.value)}
+                placeholder="Enter your display name"
+                style={{
+                  width: '100%', padding: '12px 16px', border: '1px solid #dbdbdb',
+                  borderRadius: '8px', fontSize: '14px', background: '#ffffff',
+                  color: '#000000'
+                }}
+              />
+            </div>
+            
+            <div>
+              <label style={{ 
+                display: 'block', fontSize: '14px', fontWeight: 500, 
+                color: '#000000', marginBottom: '6px' 
+              }}>
+                Bio
+              </label>
+              <textarea
+                value={editBio}
+                onChange={(e) => setEditBio(e.target.value)}
+                placeholder="Tell us about yourself..."
+                rows={4}
+                style={{
+                  width: '100%', padding: '12px 16px', border: '1px solid #dbdbdb',
+                  borderRadius: '8px', fontSize: '14px', background: '#ffffff',
+                  color: '#000000', resize: 'vertical', minHeight: '80px'
+                }}
+              />
+            </div>
+          </div>
+        </div>
+
+        {profileError && (
+          <div style={{ 
+            position: 'fixed', top: '80px', left: '20px', right: '20px',
+            background: '#dc3545', color: '#ffffff', padding: '12px 16px',
+            borderRadius: '8px', fontSize: '14px', textAlign: 'center', zIndex: 1000
+          }}>
+            {profileError}
+          </div>
+        )}
+
+        {profileSuccess && (
+          <div style={{ 
+            position: 'fixed', top: '80px', left: '20px', right: '20px',
+            background: '#000000', color: '#ffffff', padding: '12px 16px',
+            borderRadius: '8px', fontSize: '14px', textAlign: 'center', zIndex: 1000
+          }}>
+            {profileSuccess}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   // Mobile Settings Component - matches web app functionality exactly
   const MobileSettingsPage = () => {
     // Settings from web app
@@ -1848,7 +2377,11 @@ const MobileApp = () => {
             </div>
             
             <button
-              onClick={() => alert('Edit Profile - Navigate to /profile page')}
+              onClick={() => {
+                setShowMobileSettings(false);
+                setShowMobileEditProfile(true);
+                loadMobileProfile();
+              }}
               style={{
                 width: '100%', minHeight: '48px', background: 'none', border: 'none',
                 borderTop: '1px solid #e5e5e5', padding: '16px', textAlign: 'left',
@@ -3055,7 +3588,8 @@ const MobileApp = () => {
                 <button 
                   onClick={() => {
                     setShowUserDropdown(false);
-                    setActiveTab(4);
+                    setShowMobileProfile(true);
+                    loadMobileProfile();
                   }}
                   style={{
                     width: '100%', padding: '12px 16px', border: 'none', background: 'none',
@@ -3206,6 +3740,10 @@ const MobileApp = () => {
       <div style={styles.content}>
         {!user ? (
           <LoginPage />
+        ) : showMobileEditProfile ? (
+          <MobileEditProfilePage />
+        ) : showMobileProfile ? (
+          <MobileProfilePage />
         ) : showMobileSettings ? (
           <MobileSettingsPage />
         ) : showMobileSavedPosts ? (
@@ -3228,7 +3766,7 @@ const MobileApp = () => {
       </div>
 
       {/* Bottom Navigation - Only show when logged in and not on mobile pages */}
-      {user && !showMobileSettings && !showMobileSavedPosts && !showMobileCommunityGuidelines && !showMobileSupporter && !showMobileHelp && (
+      {user && !showMobileProfile && !showMobileEditProfile && !showMobileSettings && !showMobileSavedPosts && !showMobileCommunityGuidelines && !showMobileSupporter && !showMobileHelp && (
         <nav style={styles.bottomNav}>
           <div onClick={() => setActiveTab(0)} style={{
             display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
