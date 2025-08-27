@@ -1223,37 +1223,38 @@ const MobileApp = () => {
                   <span style={{ fontSize: '20px', color: '#8e8e8e' }}>⚠</span>
                 </button>
                 
-                {/* Edit & Delete buttons (show for all user's posts) */}
+                {/* Edit button (show for user's own posts only) */}
                 {post.author_id === user?.id && (
-                  <>
-                    <button 
-                      onClick={() => handleEditPost(post.id)}
-                      style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '8px' }}
-                      title="Edit"
-                    >
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style={{ color: '#0095f6' }}>
-                        <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                  <button 
+                    onClick={() => handleEditPost(post.id)}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '8px' }}
+                    title="Edit"
+                  >
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style={{ color: '#0095f6' }}>
+                      <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                    </svg>
+                  </button>
+                )}
+                
+                {/* Delete button (show for user's own posts OR admin for all posts) */}
+                {(post.author_id === user?.id || isAdmin) && (
+                  <button 
+                    onClick={() => handleDeletePost(post.id)}
+                    disabled={deletingPostId === post.id}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '8px' }}
+                    title="Delete"
+                  >
+                    {deletingPostId === post.id ? (
+                      <div style={{ width: '18px', height: '18px', border: '2px solid #f3f4f6', borderTop: '2px solid #ef4444', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
+                    ) : (
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: '#ef4444' }}>
+                        <polyline points="3,6 5,6 21,6"></polyline>
+                        <path d="m19,6v14a2,2 0 0,1-2,2H7a2,2 0 0,1-2-2V6m3,0V4a2,2 0 0,1,2-2h4a2,2 0 0,1,2,2v2"></path>
+                        <line x1="10" y1="11" x2="10" y2="17"></line>
+                        <line x1="14" y1="11" x2="14" y2="17"></line>
                       </svg>
-                    </button>
-                    
-                    <button 
-                      onClick={() => handleDeletePost(post.id)}
-                      disabled={deletingPostId === post.id}
-                      style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '8px' }}
-                      title="Delete"
-                    >
-                      {deletingPostId === post.id ? (
-                        <div style={{ width: '18px', height: '18px', border: '2px solid #f3f4f6', borderTop: '2px solid #ef4444', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
-                      ) : (
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: '#ef4444' }}>
-                          <polyline points="3,6 5,6 21,6"></polyline>
-                          <path d="m19,6v14a2,2 0 0,1-2,2H7a2,2 0 0,1-2-2V6m3,0V4a2,2 0 0,1,2-2h4a2,2 0 0,1,2,2v2"></path>
-                          <line x1="10" y1="11" x2="10" y2="17"></line>
-                          <line x1="14" y1="11" x2="14" y2="17"></line>
-                        </svg>
-                      )}
-                    </button>
-                  </>
+                    )}
+                  </button>
                 )}
               </div>
             </div>
@@ -3127,33 +3128,213 @@ const MobileApp = () => {
   };
 
   // Mobile Saved Posts Component
-  const MobileSavedPostsPage = () => (
-    <div style={{ padding: '16px', background: '#ffffff', minHeight: '100vh' }}>
-      {/* Header */}
-      <div style={{ 
-        display: 'flex', alignItems: 'center', marginBottom: '24px',
-        paddingBottom: '16px', borderBottom: '1px solid #dbdbdb'
-      }}>
-        <button 
-          onClick={() => setShowMobileSavedPosts(false)}
-          style={{
-            background: 'none', border: 'none', fontSize: '18px',
-            color: '#262626', cursor: 'pointer', marginRight: '16px'
-          }}
-        >
-          ←
-        </button>
-        <div style={{ fontSize: '18px', fontWeight: 600, color: '#262626' }}>Saved Posts</div>
-      </div>
+  const MobileSavedPostsPage = () => {
+    const [savedPosts, setSavedPosts] = useState<any[]>([]);
+    const [savedPostsLoading, setSavedPostsLoading] = useState(true);
+    const [savedPostsError, setSavedPostsError] = useState('');
 
-      {/* Content */}
-      <div style={{ textAlign: 'center', color: '#8e8e8e', fontSize: '14px', padding: '40px 20px' }}>
-        <div style={{ fontSize: '48px', marginBottom: '16px' }}>🔖</div>
-        <div style={{ marginBottom: '8px' }}>No saved posts yet</div>
-        <div>Save posts you want to read later by tapping the bookmark icon</div>
+    // Load saved posts when component mounts
+    useEffect(() => {
+      loadSavedPosts();
+    }, []);
+
+    const loadSavedPosts = async () => {
+      setSavedPostsLoading(true);
+      setSavedPostsError('');
+      
+      try {
+        // Import the function dynamically to avoid issues
+        const { listBookmarks } = await import('../lib/engagement.js');
+        const { getProfilesByIds } = await import('../lib/profiles');
+        
+        const { data, error } = await listBookmarks({ limit: 50 });
+        
+        if (error) {
+          setSavedPostsError((error as any).message || 'Failed to load saved posts');
+        } else {
+          const bookmarkedPosts = data || [];
+          setSavedPosts(bookmarkedPosts);
+          
+          // Load author profiles for saved posts
+          if (Array.isArray(bookmarkedPosts) && bookmarkedPosts.length > 0) {
+            const authorIds = bookmarkedPosts.map((post: any) => post.author_id || post.author).filter(Boolean);
+            const profilesData = await getProfilesByIds(authorIds);
+            
+            // Update the profiles map
+            profilesData.forEach((profile: any) => {
+              setProfiles(prev => new Map(prev.set(profile.id, profile)));
+            });
+          }
+        }
+      } catch (err) {
+        console.error('Error loading saved posts:', err);
+        setSavedPostsError((err as any).message || 'Failed to load saved posts');
+      }
+      
+      setSavedPostsLoading(false);
+    };
+
+    return (
+      <div style={{ background: '#ffffff', minHeight: '100vh' }}>
+        {/* Header */}
+        <div style={{ 
+          display: 'flex', alignItems: 'center', padding: '16px',
+          paddingBottom: '16px', borderBottom: '1px solid #dbdbdb'
+        }}>
+          <button 
+            onClick={() => setShowMobileSavedPosts(false)}
+            style={{
+              background: 'none', border: 'none', fontSize: '18px',
+              color: '#262626', cursor: 'pointer', marginRight: '16px'
+            }}
+          >
+            ←
+          </button>
+          <div style={{ fontSize: '18px', fontWeight: 600, color: '#262626' }}>Saved Posts</div>
+        </div>
+
+        {/* Content */}
+        {savedPostsLoading ? (
+          <div style={{ padding: '40px 20px', textAlign: 'center' }}>
+            <div style={{ fontSize: '20px', color: '#8e8e8e' }}>Loading saved posts...</div>
+          </div>
+        ) : savedPostsError ? (
+          <div style={{ padding: '40px 20px', textAlign: 'center' }}>
+            <div style={{ fontSize: '48px', marginBottom: '16px' }}>⚠️</div>
+            <div style={{ fontSize: '16px', color: '#ef4444', marginBottom: '8px' }}>Error</div>
+            <div style={{ fontSize: '14px', color: '#8e8e8e' }}>{savedPostsError}</div>
+            <button 
+              onClick={loadSavedPosts}
+              style={{
+                marginTop: '16px', padding: '8px 16px', background: '#4285f4',
+                color: '#ffffff', border: 'none', borderRadius: '6px',
+                fontSize: '14px', cursor: 'pointer'
+              }}
+            >
+              Try Again
+            </button>
+          </div>
+        ) : savedPosts.length === 0 ? (
+          <div style={{ textAlign: 'center', color: '#8e8e8e', fontSize: '14px', padding: '40px 20px' }}>
+            <div style={{ fontSize: '48px', marginBottom: '16px' }}>🔖</div>
+            <div style={{ marginBottom: '8px' }}>No saved posts yet</div>
+            <div>Save posts you want to read later by tapping the bookmark icon</div>
+          </div>
+        ) : (
+          <div>
+            {savedPosts.map((post) => (
+              <div key={post.id} style={{ background: '#ffffff', borderBottom: '1px solid #dbdbdb' }}>
+                {/* Post header */}
+                <div style={{ display: 'flex', alignItems: 'center', padding: '12px 16px' }}>
+                  <div style={{
+                    width: '32px', height: '32px', borderRadius: '50%', background: '#dbdbdb',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: '16px', marginRight: '12px', border: '1px solid #dbdbdb', color: '#8e8e8e'
+                  }}>
+                    {profiles.get(post.author_id)?.avatar_url ? (
+                      <img 
+                        src={profiles.get(post.author_id).avatar_url} 
+                        alt="Avatar"
+                        style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }}
+                      />
+                    ) : '👤'}
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 600, fontSize: '14px', color: '#262626' }}>
+                      {profiles.get(post.author_id)?.display_name || 'Gospel User'}
+                    </div>
+                    <div style={{ fontSize: '12px', color: '#8e8e8e' }}>
+                      Saved {formatTimeAgo(post.bookmarked_at || post.created_at)}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Post content */}
+                <div style={{ padding: '0 16px 8px' }}>
+                  <div style={{ fontWeight: 600, marginBottom: '8px', color: '#262626' }}>
+                    {post.title}
+                  </div>
+                  <div style={{ fontSize: '14px', lineHeight: 1.4, color: '#262626', marginBottom: '8px' }}>
+                    {post.content}
+                  </div>
+                  
+                  {/* Tags */}
+                  {post.tags && post.tags.length > 0 && (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginBottom: '8px' }}>
+                      {post.tags.map((tag: string, tagIndex: number) => (
+                        <span key={tagIndex} style={{
+                          background: '#f2f2f2', color: '#4285f4', 
+                          padding: '2px 8px', borderRadius: '12px', 
+                          fontSize: '12px', fontWeight: 500
+                        }}>
+                          #{tag}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Post actions */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 16px', borderTop: '1px solid #efefef' }}>
+                  <div style={{ display: 'flex', gap: '16px' }}>
+                    {/* Heart/Amen button */}
+                    <button 
+                      onClick={() => handleToggleAmen(post.id)}
+                      disabled={isBanned}
+                      style={{ 
+                        background: 'none', border: 'none', cursor: isBanned ? 'not-allowed' : 'pointer', 
+                        padding: '8px', display: 'flex', alignItems: 'center', gap: '4px',
+                        opacity: isBanned ? 0.5 : 1
+                      }}
+                    >
+                      <span style={{ 
+                        fontSize: '24px', 
+                        color: engagementData.get(post.id)?.hasAmened ? '#ef4444' : '#262626' 
+                      }}>
+                        {engagementData.get(post.id)?.hasAmened ? '♥' : '♡'}
+                      </span>
+                      {engagementData.get(post.id)?.amenCount > 0 && (
+                        <span style={{ fontSize: '12px', color: '#8e8e8e', fontWeight: 500 }}>
+                          {engagementData.get(post.id)?.amenCount}
+                        </span>
+                      )}
+                    </button>
+                    
+                    {/* Comment button */}
+                    <button 
+                      onClick={() => toggleCommentForm(post.id)}
+                      disabled={isBanned}
+                      style={{ 
+                        background: 'none', border: 'none', cursor: isBanned ? 'not-allowed' : 'pointer', 
+                        padding: '8px', opacity: isBanned ? 0.5 : 1
+                      }}
+                    >
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: '#262626' }}>
+                        <path d="M21 15c0 1.1-.9 2-2 2H7l-4 4V5c0-1.1.9-2 2-2h14c1.1 0 2 .9 2 2v10z"/>
+                      </svg>
+                    </button>
+                  </div>
+                  
+                  <div style={{ display: 'flex', gap: '12px' }}>
+                    {/* Remove from saved button */}
+                    <button 
+                      onClick={() => handleToggleBookmark(post.id)}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '8px' }}
+                      title="Remove from saved"
+                    >
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" style={{ color: '#262626' }}>
+                        <path d="M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2z"/>
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
-    </div>
-  );
+    );
+  };
 
   // Mobile Community Guidelines Component
   const MobileCommunityGuidelinesPage = () => (
