@@ -4444,7 +4444,7 @@ const MobileApp = () => {
                 </button>
                 
                 
-                {isAdmin && (
+                {(console.log('Admin check:', { isAdmin, userProfile }), isAdmin) && (
                   <>
                     <div style={{ borderTop: '1px solid #f0f0f0', marginTop: '4px' }} />
                     <button 
