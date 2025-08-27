@@ -395,15 +395,100 @@ const MobileApp = () => {
     setProfileLoading(true);
     setProfileError('');
     
-    const { data, error } = await ensureMyProfile();
-    
-    if (error) {
-      setProfileError((error as any).message || 'Failed to load profile');
-    } else if (data) {
-      setProfile(data);
-      setEditDisplayName(data.display_name || '');
-      setEditBio(data.bio || '');
-      setEditAvatarUrl(data.avatar_url || '');
+    try {
+      console.log('Loading mobile profile... user:', user?.id);
+      
+      // Fallback: Use the userProfile if it exists
+      if (userProfile && user) {
+        console.log('Using existing userProfile:', userProfile);
+        const fallbackProfile = {
+          id: user.id,
+          display_name: userProfile.display_name || user.email || 'Gospel User',
+          bio: userProfile.bio || '',
+          avatar_url: userProfile.avatar_url || '',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        };
+        setProfile(fallbackProfile);
+        setEditDisplayName(fallbackProfile.display_name);
+        setEditBio(fallbackProfile.bio);
+        setEditAvatarUrl(fallbackProfile.avatar_url);
+        setProfileLoading(false);
+        return;
+      }
+      
+      // Add timeout to prevent infinite loading
+      const profilePromise = ensureMyProfile();
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Profile loading timeout')), 5000)
+      );
+      
+      const { data, error } = await Promise.race([profilePromise, timeoutPromise]) as any;
+      console.log('Profile result:', { data, error });
+      
+      if (error) {
+        console.error('Profile error:', error);
+        // Use fallback with user data
+        if (user) {
+          const fallbackProfile = {
+            id: user.id,
+            display_name: user.email || 'Gospel User',
+            bio: '',
+            avatar_url: '',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          };
+          setProfile(fallbackProfile);
+          setEditDisplayName(fallbackProfile.display_name);
+          setEditBio(fallbackProfile.bio);
+          setEditAvatarUrl(fallbackProfile.avatar_url);
+        } else {
+          setProfileError((error as any).message || 'Failed to load profile');
+        }
+      } else if (data) {
+        console.log('Profile data loaded:', data);
+        setProfile(data);
+        setEditDisplayName(data.display_name || '');
+        setEditBio(data.bio || '');
+        setEditAvatarUrl(data.avatar_url || '');
+      } else {
+        console.log('No profile data returned, using fallback');
+        if (user) {
+          const fallbackProfile = {
+            id: user.id,
+            display_name: user.email || 'Gospel User',
+            bio: '',
+            avatar_url: '',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          };
+          setProfile(fallbackProfile);
+          setEditDisplayName(fallbackProfile.display_name);
+          setEditBio(fallbackProfile.bio);
+          setEditAvatarUrl(fallbackProfile.avatar_url);
+        } else {
+          setProfileError('No profile data found');
+        }
+      }
+    } catch (err) {
+      console.error('Profile loading exception:', err);
+      // Use fallback with user data
+      if (user) {
+        const fallbackProfile = {
+          id: user.id,
+          display_name: user.email || 'Gospel User',
+          bio: '',
+          avatar_url: '',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        };
+        setProfile(fallbackProfile);
+        setEditDisplayName(fallbackProfile.display_name);
+        setEditBio(fallbackProfile.bio);
+        setEditAvatarUrl(fallbackProfile.avatar_url);
+      } else {
+        setProfileError((err as any).message || 'Failed to load profile');
+      }
     }
     
     setProfileLoading(false);
