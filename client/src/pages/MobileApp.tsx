@@ -3369,8 +3369,19 @@ const MobileApp = () => {
             
             // Update the profiles map
             if (profilesResult.data && !profilesResult.error) {
-              profilesResult.data.forEach((profile: any) => {
-                setProfiles(prev => new Map(prev.set(profile.id, profile)));
+              setProfiles(prev => {
+                const newProfiles = new Map(prev);
+                if (Array.isArray(profilesResult.data)) {
+                  profilesResult.data.forEach((profile: any) => {
+                    newProfiles.set(profile.id, profile);
+                  });
+                } else {
+                  // Handle Map format
+                  Array.from(profilesResult.data).forEach(([id, profile]) => {
+                    newProfiles.set(id, profile);
+                  });
+                }
+                return newProfiles;
               });
             }
           }
