@@ -15,7 +15,7 @@ import { getTopPrayerWarriors } from '@/lib/leaderboard';
 // Complete Instagram-style Gospel Era Mobile App with Real API Integration
 const MobileApp = () => {
   const { user, loading: authLoading, signIn, signUp, signOut } = useAuth();
-  const { isBanned } = useRole();
+  const { isBanned, isAdmin } = useRole();
   const [activeTab, setActiveTab] = useState(0);
   const [posts, setPosts] = useState<any[]>([]);
   const [prayerRequests, setPrayerRequests] = useState<any[]>([]);
@@ -42,7 +42,6 @@ const MobileApp = () => {
   const [myCommitments, setMyCommitments] = useState<any[]>([]);
   const [confirmingId, setConfirmingId] = useState<number | null>(null);
   const [leaderboardData, setLeaderboardData] = useState<any[]>([]);
-  const [showDonationPage, setShowDonationPage] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
@@ -1932,13 +1931,13 @@ const MobileApp = () => {
 
       {/* Content */}
       <div style={{ lineHeight: 1.6, color: '#262626' }}>
-        <div style={{ fontSize: '16px', fontWeight: 600, marginBottom: '16px', color: '#7c3aed' }}>
-          ✝️ Gospel Era Community Guidelines
+        <div style={{ fontSize: '16px', fontWeight: 600, marginBottom: '16px', color: '#262626' }}>
+          Gospel Era Community Guidelines
         </div>
         
         <div style={{ marginBottom: '20px' }}>
           <div style={{ fontSize: '14px', fontWeight: 600, marginBottom: '8px' }}>
-            🙏 Our Mission
+            Our Mission
           </div>
           <div style={{ fontSize: '14px', marginBottom: '16px' }}>
             Gospel Era is a Christ-centered community dedicated to sharing faith, hope, and love through prayer and Gospel messages.
@@ -1947,7 +1946,7 @@ const MobileApp = () => {
 
         <div style={{ marginBottom: '20px' }}>
           <div style={{ fontSize: '14px', fontWeight: 600, marginBottom: '8px' }}>
-            📖 Content Guidelines
+            Content Guidelines
           </div>
           <ul style={{ fontSize: '14px', marginLeft: '16px' }}>
             <li style={{ marginBottom: '4px' }}>Share content that glorifies Jesus Christ</li>
@@ -1959,7 +1958,7 @@ const MobileApp = () => {
 
         <div style={{ marginBottom: '20px' }}>
           <div style={{ fontSize: '14px', fontWeight: 600, marginBottom: '8px' }}>
-            🚫 What's Not Allowed
+            What's Not Allowed
           </div>
           <ul style={{ fontSize: '14px', marginLeft: '16px' }}>
             <li style={{ marginBottom: '4px' }}>Hate speech or discrimination</li>
@@ -1974,7 +1973,7 @@ const MobileApp = () => {
           border: '1px solid #e1e5e9', marginTop: '24px'
         }}>
           <div style={{ fontSize: '14px', fontWeight: 600, marginBottom: '8px' }}>
-            💝 Remember
+            Remember
           </div>
           <div style={{ fontSize: '14px', fontStyle: 'italic' }}>
             "Let your conversation be always full of grace, seasoned with salt, so that you may know how to answer everyone." - Colossians 4:6
@@ -1991,8 +1990,11 @@ const MobileApp = () => {
     const [message, setMessage] = useState('');
     const [isProcessing, setIsProcessing] = useState(false);
     const [error, setError] = useState('');
+    const [activeTab, setActiveTab] = useState<'stripe' | 'paypal'>('stripe');
 
     const predefinedAmounts = [5, 10, 25, 50, 100];
+    const stripeEnabled = Boolean(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
+    const paymentsEnabled = stripeEnabled; // PayPal not implemented yet
 
     const handleAmountSelect = (amount: number) => {
       setSelectedAmount(amount);
@@ -2010,18 +2012,88 @@ const MobileApp = () => {
       return selectedAmount || (customAmount ? parseFloat(customAmount) : 0);
     };
 
-    const handleSupport = () => {
-      const amount = getSelectedAmount();
+    const validateDonationAmount = (amount: number): { valid: boolean; error?: string } => {
+      if (amount <= 0) {
+        return { valid: false, error: 'Amount must be greater than $0' };
+      }
       if (amount < 2) {
-        setError('Minimum donation is $2');
-        return;
+        return { valid: false, error: 'Minimum donation is $2' };
       }
       if (amount > 200) {
-        setError('Maximum donation is $200');
+        return { valid: false, error: 'Maximum donation is $200' };
+      }
+      return { valid: true };
+    };
+
+    const createStripeCheckout = async (data: { amount: number; note?: string }): Promise<{ url: string } | { error: string }> => {
+      try {
+        const response = await fetch('/api/stripe/create-checkout-session', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(data),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          return { error: errorData.error || 'Failed to create checkout session' };
+        }
+
+        const result = await response.json();
+        return { url: result.url };
+      } catch (error) {
+        console.error('Error creating Stripe checkout:', error);
+        return { error: 'Network error occurred' };
+      }
+    };
+
+    const handleStripePayment = async () => {
+      const amount = getSelectedAmount();
+      
+      // Validate amount
+      const validation = validateDonationAmount(amount);
+      if (!validation.valid) {
+        setError(validation.error || 'Invalid amount');
         return;
       }
+
+      setIsProcessing(true);
+      setError('');
       
-      alert(`Thank you for wanting to support with $${amount}! Payment processing will be implemented soon.`);
+      try {
+        const result = await createStripeCheckout({
+          amount: amount,
+          note: message.trim() || undefined
+        });
+
+        if ('error' in result) {
+          setError(result.error);
+        } else {
+          // Navigate directly to Stripe Checkout (mobile-friendly)
+          window.location.href = result.url;
+        }
+      } catch (error) {
+        console.error('Stripe payment error:', error);
+        setError('An unexpected error occurred. Please try again.');
+      } finally {
+        setIsProcessing(false);
+      }
+    };
+
+    const handleSupport = () => {
+      if (paymentsEnabled && activeTab === 'stripe') {
+        handleStripePayment();
+      } else {
+        const amount = getSelectedAmount();
+        const validation = validateDonationAmount(amount);
+        if (!validation.valid) {
+          setError(validation.error || 'Invalid amount');
+          return;
+        }
+        
+        alert(`Thank you for wanting to support with $${amount}! Payment processing will be implemented soon.`);
+      }
     };
 
     return (
@@ -2045,7 +2117,7 @@ const MobileApp = () => {
 
         {/* Support Notice */}
         <div style={{
-          background: 'linear-gradient(135deg, #7c3aed 0%, #3b82f6 100%)',
+          background: '#262626',
           borderRadius: '12px', padding: '20px', marginBottom: '24px', color: '#ffffff'
         }}>
           <div style={{ fontSize: '18px', fontWeight: 600, marginBottom: '8px' }}>
@@ -2055,6 +2127,18 @@ const MobileApp = () => {
             Your contribution supports hosting, development, and moderation. Contributions are not tax-deductible.
           </div>
         </div>
+
+        {/* Payment Processing Banner */}
+        {!paymentsEnabled && (
+          <div style={{
+            background: '#fff8dc', border: '1px solid #f0e68c', borderRadius: '8px',
+            padding: '12px', marginBottom: '16px', textAlign: 'center'
+          }}>
+            <div style={{ fontSize: '14px', color: '#b8860b', fontWeight: 600 }}>
+              Payment processing will be enabled soon; you can still pledge now.
+            </div>
+          </div>
+        )}
 
         {/* Amount Selection */}
         <div style={{ marginBottom: '24px' }}>
@@ -2122,27 +2206,62 @@ const MobileApp = () => {
           </div>
         )}
 
+        {/* Payment Method Selection */}
+        {paymentsEnabled && (
+          <div style={{ marginBottom: '16px' }}>
+            <div style={{ fontSize: '16px', fontWeight: 600, color: '#262626', marginBottom: '8px' }}>
+              Payment Method
+            </div>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button
+                onClick={() => setActiveTab('stripe')}
+                style={{
+                  flex: 1, padding: '8px 12px', borderRadius: '6px',
+                  border: '1px solid #dbdbdb', fontSize: '14px', fontWeight: 600,
+                  background: activeTab === 'stripe' ? '#262626' : '#ffffff',
+                  color: activeTab === 'stripe' ? '#ffffff' : '#262626',
+                  cursor: 'pointer'
+                }}
+              >
+                Stripe
+              </button>
+              <button
+                disabled
+                style={{
+                  flex: 1, padding: '8px 12px', borderRadius: '6px',
+                  border: '1px solid #dbdbdb', fontSize: '14px', fontWeight: 600,
+                  background: '#f5f5f5', color: '#8e8e8e', cursor: 'not-allowed'
+                }}
+              >
+                PayPal (Soon)
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Support Button */}
         <button
           onClick={handleSupport}
           disabled={!getSelectedAmount() || isProcessing}
           style={{
-            width: '100%', background: getSelectedAmount() ? '#7c3aed' : '#dbdbdb',
+            width: '100%', background: getSelectedAmount() ? '#262626' : '#dbdbdb',
             color: getSelectedAmount() ? '#ffffff' : '#8e8e8e',
             border: 'none', padding: '16px', borderRadius: '8px',
             fontSize: '16px', fontWeight: 600, cursor: getSelectedAmount() ? 'pointer' : 'default'
           }}
         >
-          {isProcessing ? 'Processing...' : `Support with $${getSelectedAmount() || 0}`}
+          {isProcessing ? 'Processing...' : paymentsEnabled ? `Pay $${getSelectedAmount() || 0} via Stripe` : `Support with $${getSelectedAmount() || 0}`}
         </button>
 
         {/* Info */}
-        <div style={{ 
-          marginTop: '24px', padding: '16px', background: '#f8f9fa',
-          borderRadius: '8px', fontSize: '12px', color: '#8e8e8e', textAlign: 'center'
-        }}>
-          Payment processing will be implemented soon. Thank you for your interest in supporting Gospel Era!
-        </div>
+        {!paymentsEnabled && (
+          <div style={{ 
+            marginTop: '24px', padding: '16px', background: '#f8f9fa',
+            borderRadius: '8px', fontSize: '12px', color: '#8e8e8e', textAlign: 'center'
+          }}>
+            Payment processing will be implemented soon. Thank you for your interest in supporting Gospel Era!
+          </div>
+        )}
       </div>
     );
   };
@@ -2615,35 +2734,8 @@ const MobileApp = () => {
                   ❓ Help
                 </button>
                 
-                <button 
-                  onClick={() => {
-                    setShowUserDropdown(false);
-                    setShowDonationPage(true);
-                  }}
-                  style={{
-                    width: '100%', padding: '12px 16px', border: 'none', background: 'none',
-                    textAlign: 'left', fontSize: '14px', color: '#262626',
-                    ':hover': { background: '#f9f9f9' }, cursor: 'pointer'
-                  }}
-                >
-                  ❤️ Be a Supporter
-                </button>
                 
-                <button 
-                  onClick={() => {
-                    setShowUserDropdown(false);
-                    window.location.href = '/help';
-                  }}
-                  style={{
-                    width: '100%', padding: '12px 16px', border: 'none', background: 'none',
-                    textAlign: 'left', fontSize: '14px', color: '#262626',
-                    ':hover': { background: '#f9f9f9' }, cursor: 'pointer'
-                  }}
-                >
-                  ❓ Help
-                </button>
-                
-                {userProfile?.role === 'admin' && (
+                {isAdmin && (
                   <>
                     <div style={{ borderTop: '1px solid #f0f0f0', marginTop: '4px' }} />
                     <button 
