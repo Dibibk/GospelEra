@@ -3,7 +3,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { listPosts, createPost, updatePost, softDeletePost } from '@/lib/posts';
 import { listPrayerRequests, createPrayerRequest, commitToPray, confirmPrayed, getMyCommitments, getPrayerRequest } from '@/lib/prayer';
 import { getProfilesByIds } from '@/lib/profiles';
-import { toggleAmen, toggleBookmark, isBookmarked } from '@/lib/engagement';
+import { toggleAmen, toggleBookmark, isBookmarked, getAmenInfo } from '@/lib/engagement';
 import { listComments, createComment, softDeleteComment } from '@/lib/comments';
 import { createReport } from '@/lib/reports';
 import { checkMediaPermission } from '@/lib/mediaRequests';
@@ -150,9 +150,19 @@ const MobileApp = () => {
   const loadEngagementData = async (postIds: number[]) => {
     try {
       const engagementMap = new Map();
+      
+      // Get Amen info for all posts
+      const { data: amenData } = await getAmenInfo(postIds);
+      
       for (const postId of postIds) {
         const { isBookmarked: bookmarked } = await isBookmarked(postId);
-        engagementMap.set(postId, { isBookmarked: bookmarked });
+        const amenInfo = amenData?.[postId] || { count: 0, mine: false };
+        
+        engagementMap.set(postId, { 
+          isBookmarked: bookmarked,
+          hasAmened: amenInfo.mine,
+          amenCount: amenInfo.count
+        });
       }
       setEngagementData(prev => new Map([...Array.from(prev), ...Array.from(engagementMap)]));
     } catch (error) {
@@ -631,9 +641,20 @@ const MobileApp = () => {
 
   const handleToggleAmen = async (postId: number) => {
     try {
-      await toggleAmen(postId);
-      // Refresh engagement data for this post
-      await loadEngagementData([postId]);
+      const result = await toggleAmen(postId);
+      if (result.success) {
+        // Update engagement data immediately for better UX
+        const currentData = engagementData.get(postId) || {};
+        const newData = {
+          ...currentData,
+          hasAmened: result.hasReacted,
+          amenCount: result.hasReacted ? (currentData.amenCount || 0) + 1 : Math.max(0, (currentData.amenCount || 0) - 1)
+        };
+        setEngagementData(prev => new Map([...Array.from(prev), [postId, newData]]));
+        
+        // Refresh engagement data for this post to get accurate count
+        await loadEngagementData([postId]);
+      }
     } catch (error) {
       console.error('Error toggling amen:', error);
     }
@@ -1168,7 +1189,7 @@ const MobileApp = () => {
                   }}
                   title={isBanned ? "Account limited" : "Reply"}
                 >
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" style={{ color: '#262626' }}>
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: '#262626' }}>
                     <path d="M21 15c0 1.1-.9 2-2 2H7l-4 4V5c0-1.1.9-2 2-2h14c1.1 0 2 .9 2 2v10z"/>
                   </svg>
                 </button>
@@ -1224,7 +1245,12 @@ const MobileApp = () => {
                       {deletingPostId === post.id ? (
                         <div style={{ width: '18px', height: '18px', border: '2px solid #f3f4f6', borderTop: '2px solid #ef4444', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
                       ) : (
-                        <span style={{ fontSize: '18px', color: '#ef4444' }}>🗑️</span>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: '#ef4444' }}>
+                          <polyline points="3,6 5,6 21,6"></polyline>
+                          <path d="m19,6v14a2,2 0 0,1-2,2H7a2,2 0 0,1-2-2V6m3,0V4a2,2 0 0,1,2-2h4a2,2 0 0,1,2,2v2"></path>
+                          <line x1="10" y1="11" x2="10" y2="17"></line>
+                          <line x1="14" y1="11" x2="14" y2="17"></line>
+                        </svg>
                       )}
                     </button>
                   </>
