@@ -11,7 +11,7 @@ import { validateAndNormalizeYouTubeUrl } from '../../../shared/youtube';
 import { validateFaithContent } from '../../../shared/moderation';
 import { useRole } from '@/hooks/useRole';
 import { getTopPrayerWarriors } from '@/lib/leaderboard';
-import { updateUserSettings, getUserSettings } from '@/lib/profiles';
+import { updateUserSettings, getUserSettings, upsertMyProfile } from '@/lib/profiles';
 
 // Complete Instagram-style Gospel Era Mobile App with Real API Integration
 const MobileApp = () => {
@@ -1746,21 +1746,21 @@ const MobileApp = () => {
     </div>
   );
 
-  // Mobile Settings Component
+  // Mobile Settings Component - matches web app functionality exactly
   const MobileSettingsPage = () => {
-    const [darkMode, setDarkMode] = useState(() => {
-      return localStorage.getItem('gospel-era-dark-mode') === 'true';
-    });
-    const [scriptureOfDay, setScriptureOfDay] = useState(() => {
-      return localStorage.getItem('gospel-era-scripture-enabled') !== 'false';
-    });
-    const [prayerNotifications, setPrayerNotifications] = useState(() => {
-      return localStorage.getItem('gospel-era-prayer-notifications') !== 'false';
-    });
-    const [contentFilter, setContentFilter] = useState(() => {
-      return localStorage.getItem('gospel-era-content-filter') || 'standard';
-    });
-    const [showHelpDrawer, setShowHelpDrawer] = useState(false);
+    // Settings from web app
+    const [showNameOnPrayers, setShowNameOnPrayers] = useState(true);
+    const [privateProfile, setPrivateProfile] = useState(false);
+    const [emailNotifications, setEmailNotifications] = useState(true);
+    const [pushNotifications, setPushNotifications] = useState(true);
+    const [commentNotifications, setCommentNotifications] = useState(true);
+    const [weeklyDigest, setWeeklyDigest] = useState(true);
+    const [newFeatures, setNewFeatures] = useState(true);
+    const [realTimeUpdates, setRealTimeUpdates] = useState(true);
+    const [dailyVerseReminders, setDailyVerseReminders] = useState(true);
+    const [mediaEnabled, setMediaEnabled] = useState(false);
+    const [mediaRequestStatus, setMediaRequestStatus] = useState<string | null>(null);
+    const [showMediaRequestModal, setShowMediaRequestModal] = useState(false);
 
     const handleToggle = async (setting: string, value: boolean) => {
       // Haptic feedback simulation
@@ -1768,68 +1768,47 @@ const MobileApp = () => {
         navigator.vibrate(50);
       }
       
-      // Update local state and localStorage immediately for responsiveness
       switch (setting) {
-        case 'darkMode':
-          setDarkMode(value);
-          localStorage.setItem('gospel-era-dark-mode', value.toString());
-          if (value) {
-            document.documentElement.classList.add('dark');
-          } else {
-            document.documentElement.classList.remove('dark');
-          }
+        case 'showNameOnPrayers':
+          setShowNameOnPrayers(value);
           break;
-        case 'scriptureOfDay':
-          setScriptureOfDay(value);
-          localStorage.setItem('gospel-era-scripture-enabled', value.toString());
+        case 'privateProfile':
+          setPrivateProfile(value);
           break;
-        case 'prayerNotifications':
-          setPrayerNotifications(value);
-          localStorage.setItem('gospel-era-prayer-notifications', value.toString());
+        case 'emailNotifications':
+          setEmailNotifications(value);
+          break;
+        case 'pushNotifications':
+          setPushNotifications(value);
+          break;
+        case 'commentNotifications':
+          setCommentNotifications(value);
+          break;
+        case 'weeklyDigest':
+          setWeeklyDigest(value);
+          break;
+        case 'newFeatures':
+          setNewFeatures(value);
+          break;
+        case 'realTimeUpdates':
+          setRealTimeUpdates(value);
+          break;
+        case 'dailyVerseReminders':
+          setDailyVerseReminders(value);
           break;
       }
 
-      // Sync to Supabase (non-blocking)
-      try {
-        const currentSettings = {
-          darkMode: setting === 'darkMode' ? value : darkMode,
-          scriptureOfDay: setting === 'scriptureOfDay' ? value : scriptureOfDay,
-          prayerNotifications: setting === 'prayerNotifications' ? value : prayerNotifications,
-          contentFilter
-        };
-        await updateUserSettings(currentSettings);
-      } catch (error) {
-        console.warn('Failed to sync settings to server:', error);
-        // Settings are still preserved in localStorage
+      // Sync profile settings to Supabase
+      if (setting === 'showNameOnPrayers' || setting === 'privateProfile') {
+        try {
+          await upsertMyProfile({
+            show_name_on_prayers: setting === 'showNameOnPrayers' ? value : showNameOnPrayers,
+            private_profile: setting === 'privateProfile' ? value : privateProfile
+          });
+        } catch (error) {
+          console.warn('Failed to sync profile settings:', error);
+        }
       }
-    };
-
-    const handleContentFilterChange = async (filter: string) => {
-      setContentFilter(filter);
-      localStorage.setItem('gospel-era-content-filter', filter);
-      // Haptic feedback
-      if (navigator.vibrate) {
-        navigator.vibrate(50);
-      }
-
-      // Sync to Supabase (non-blocking)
-      try {
-        const currentSettings = {
-          darkMode,
-          scriptureOfDay,
-          prayerNotifications,
-          contentFilter: filter
-        };
-        await updateUserSettings(currentSettings);
-      } catch (error) {
-        console.warn('Failed to sync content filter to server:', error);
-        // Settings are still preserved in localStorage
-      }
-    };
-
-    const copyEmailToClipboard = () => {
-      navigator.clipboard.writeText('ridibi.service@gmail.com');
-      alert('Email copied to clipboard!');
     };
 
     return (
@@ -1856,7 +1835,404 @@ const MobileApp = () => {
         </div>
 
         <div style={{ padding: '0 16px 16px' }}>
-          {/* Account Section */}
+          {/* Profile Information Section (from web app) */}
+          <div style={{ 
+            background: '#ffffff', borderRadius: '12px', border: '1px solid #e5e5e5',
+            marginBottom: '24px', overflow: 'hidden'
+          }}>
+            <div style={{ 
+              padding: '16px 16px 8px', fontSize: '13px', fontWeight: 600, 
+              color: '#8e8e8e', textTransform: 'uppercase', letterSpacing: '0.5px'
+            }}>
+              PROFILE INFORMATION
+            </div>
+            
+            <button
+              onClick={() => alert('Edit Profile - Navigate to /profile page')}
+              style={{
+                width: '100%', minHeight: '48px', background: 'none', border: 'none',
+                borderTop: '1px solid #e5e5e5', padding: '16px', textAlign: 'left',
+                cursor: 'pointer', display: 'flex', alignItems: 'center',
+                justifyContent: 'space-between'
+              }}
+            >
+              <div>
+                <div style={{ fontSize: '16px', color: '#000000' }}>Edit Profile</div>
+                <div style={{ fontSize: '13px', color: '#8e8e8e' }}>Manage your display name, bio, and avatar</div>
+              </div>
+              <div style={{ fontSize: '16px', color: '#c7c7cc' }}>›</div>
+            </button>
+          </div>
+
+          {/* Media Upload Access Section (from web app) */}
+          <div style={{ 
+            background: '#ffffff', borderRadius: '12px', border: '1px solid #e5e5e5',
+            marginBottom: '24px', overflow: 'hidden'
+          }}>
+            <div style={{ 
+              padding: '16px 16px 8px', fontSize: '13px', fontWeight: 600, 
+              color: '#8e8e8e', textTransform: 'uppercase', letterSpacing: '0.5px'
+            }}>
+              MEDIA
+            </div>
+            
+            <div style={{
+              borderTop: '1px solid #e5e5e5', padding: '16px'
+            }}>
+              <div style={{ fontSize: '16px', color: '#000000', marginBottom: '8px' }}>
+                Media Upload Access
+              </div>
+              <div style={{ fontSize: '14px', color: '#8e8e8e', marginBottom: '16px' }}>
+                Manage your ability to upload images and videos to posts, comments, and prayers
+              </div>
+              
+              {mediaEnabled ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div style={{ fontSize: '14px', color: '#22c55e' }}>✓ Media Uploads Enabled</div>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setShowMediaRequestModal(true)}
+                  style={{
+                    padding: '8px 16px', background: '#007aff', color: '#ffffff',
+                    border: 'none', borderRadius: '6px', fontSize: '14px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Request Access
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Email Notifications Section (from web app) */}
+          <div style={{ 
+            background: '#ffffff', borderRadius: '12px', border: '1px solid #e5e5e5',
+            marginBottom: '24px', overflow: 'hidden'
+          }}>
+            <div style={{ 
+              padding: '16px 16px 8px', fontSize: '13px', fontWeight: 600, 
+              color: '#8e8e8e', textTransform: 'uppercase', letterSpacing: '0.5px'
+            }}>
+              EMAIL NOTIFICATIONS
+            </div>
+            
+            <div style={{
+              minHeight: '48px', borderTop: '1px solid #e5e5e5', 
+              padding: '16px', display: 'flex', alignItems: 'center',
+              justifyContent: 'space-between'
+            }}>
+              <div>
+                <div style={{ fontSize: '16px', color: '#000000' }}>Email Notifications</div>
+                <div style={{ fontSize: '14px', color: '#8e8e8e' }}>Receive notifications via email</div>
+              </div>
+              <label style={{
+                position: 'relative', display: 'inline-block', width: '51px', height: '31px'
+              }}>
+                <input
+                  type="checkbox"
+                  checked={emailNotifications}
+                  onChange={(e) => handleToggle('emailNotifications', e.target.checked)}
+                  style={{ opacity: 0, width: 0, height: 0 }}
+                />
+                <span style={{
+                  position: 'absolute', cursor: 'pointer', top: 0, left: 0,
+                  right: 0, bottom: 0, background: emailNotifications ? '#34c759' : '#e5e5e5',
+                  borderRadius: '31px', transition: '0.3s'
+                }}>
+                  <span style={{
+                    position: 'absolute', content: '', height: '27px', width: '27px',
+                    left: emailNotifications ? '22px' : '2px', bottom: '2px', background: '#ffffff',
+                    borderRadius: '50%', transition: '0.3s'
+                  }} />
+                </span>
+              </label>
+            </div>
+
+            <div style={{
+              minHeight: '48px', borderTop: '1px solid #e5e5e5', 
+              padding: '16px', display: 'flex', alignItems: 'center',
+              justifyContent: 'space-between'
+            }}>
+              <div>
+                <div style={{ fontSize: '16px', color: '#000000' }}>Comment Notifications</div>
+                <div style={{ fontSize: '14px', color: '#8e8e8e' }}>Get notified when someone comments on your posts</div>
+              </div>
+              <label style={{
+                position: 'relative', display: 'inline-block', width: '51px', height: '31px'
+              }}>
+                <input
+                  type="checkbox"
+                  checked={commentNotifications}
+                  onChange={(e) => handleToggle('commentNotifications', e.target.checked)}
+                  style={{ opacity: 0, width: 0, height: 0 }}
+                />
+                <span style={{
+                  position: 'absolute', cursor: 'pointer', top: 0, left: 0,
+                  right: 0, bottom: 0, background: commentNotifications ? '#34c759' : '#e5e5e5',
+                  borderRadius: '31px', transition: '0.3s'
+                }}>
+                  <span style={{
+                    position: 'absolute', content: '', height: '27px', width: '27px',
+                    left: commentNotifications ? '22px' : '2px', bottom: '2px', background: '#ffffff',
+                    borderRadius: '50%', transition: '0.3s'
+                  }} />
+                </span>
+              </label>
+            </div>
+
+            <div style={{
+              minHeight: '48px', borderTop: '1px solid #e5e5e5', 
+              padding: '16px', display: 'flex', alignItems: 'center',
+              justifyContent: 'space-between'
+            }}>
+              <div>
+                <div style={{ fontSize: '16px', color: '#000000' }}>Weekly Digest</div>
+                <div style={{ fontSize: '14px', color: '#8e8e8e' }}>Get a summary of community activity each week</div>
+              </div>
+              <label style={{
+                position: 'relative', display: 'inline-block', width: '51px', height: '31px'
+              }}>
+                <input
+                  type="checkbox"
+                  checked={weeklyDigest}
+                  onChange={(e) => handleToggle('weeklyDigest', e.target.checked)}
+                  style={{ opacity: 0, width: 0, height: 0 }}
+                />
+                <span style={{
+                  position: 'absolute', cursor: 'pointer', top: 0, left: 0,
+                  right: 0, bottom: 0, background: weeklyDigest ? '#34c759' : '#e5e5e5',
+                  borderRadius: '31px', transition: '0.3s'
+                }}>
+                  <span style={{
+                    position: 'absolute', content: '', height: '27px', width: '27px',
+                    left: weeklyDigest ? '22px' : '2px', bottom: '2px', background: '#ffffff',
+                    borderRadius: '50%', transition: '0.3s'
+                  }} />
+                </span>
+              </label>
+            </div>
+
+            <div style={{
+              minHeight: '48px', borderTop: '1px solid #e5e5e5', 
+              padding: '16px', display: 'flex', alignItems: 'center',
+              justifyContent: 'space-between'
+            }}>
+              <div>
+                <div style={{ fontSize: '16px', color: '#000000' }}>New Features</div>
+                <div style={{ fontSize: '14px', color: '#8e8e8e' }}>Be notified about new platform features and updates</div>
+              </div>
+              <label style={{
+                position: 'relative', display: 'inline-block', width: '51px', height: '31px'
+              }}>
+                <input
+                  type="checkbox"
+                  checked={newFeatures}
+                  onChange={(e) => handleToggle('newFeatures', e.target.checked)}
+                  style={{ opacity: 0, width: 0, height: 0 }}
+                />
+                <span style={{
+                  position: 'absolute', cursor: 'pointer', top: 0, left: 0,
+                  right: 0, bottom: 0, background: newFeatures ? '#34c759' : '#e5e5e5',
+                  borderRadius: '31px', transition: '0.3s'
+                }}>
+                  <span style={{
+                    position: 'absolute', content: '', height: '27px', width: '27px',
+                    left: newFeatures ? '22px' : '2px', bottom: '2px', background: '#ffffff',
+                    borderRadius: '50%', transition: '0.3s'
+                  }} />
+                </span>
+              </label>
+            </div>
+          </div>
+
+          {/* Push Notifications Section (from web app) */}
+          <div style={{ 
+            background: '#ffffff', borderRadius: '12px', border: '1px solid #e5e5e5',
+            marginBottom: '24px', overflow: 'hidden'
+          }}>
+            <div style={{ 
+              padding: '16px 16px 8px', fontSize: '13px', fontWeight: 600, 
+              color: '#8e8e8e', textTransform: 'uppercase', letterSpacing: '0.5px'
+            }}>
+              PUSH NOTIFICATIONS
+            </div>
+            
+            <div style={{
+              minHeight: '48px', borderTop: '1px solid #e5e5e5', 
+              padding: '16px', display: 'flex', alignItems: 'center',
+              justifyContent: 'space-between'
+            }}>
+              <div>
+                <div style={{ fontSize: '16px', color: '#000000' }}>Push Notifications</div>
+                <div style={{ fontSize: '14px', color: '#8e8e8e' }}>Receive push notifications in your browser</div>
+              </div>
+              <label style={{
+                position: 'relative', display: 'inline-block', width: '51px', height: '31px'
+              }}>
+                <input
+                  type="checkbox"
+                  checked={pushNotifications}
+                  onChange={(e) => handleToggle('pushNotifications', e.target.checked)}
+                  style={{ opacity: 0, width: 0, height: 0 }}
+                />
+                <span style={{
+                  position: 'absolute', cursor: 'pointer', top: 0, left: 0,
+                  right: 0, bottom: 0, background: pushNotifications ? '#34c759' : '#e5e5e5',
+                  borderRadius: '31px', transition: '0.3s'
+                }}>
+                  <span style={{
+                    position: 'absolute', content: '', height: '27px', width: '27px',
+                    left: pushNotifications ? '22px' : '2px', bottom: '2px', background: '#ffffff',
+                    borderRadius: '50%', transition: '0.3s'
+                  }} />
+                </span>
+              </label>
+            </div>
+
+            <div style={{
+              minHeight: '48px', borderTop: '1px solid #e5e5e5', 
+              padding: '16px', display: 'flex', alignItems: 'center',
+              justifyContent: 'space-between'
+            }}>
+              <div>
+                <div style={{ fontSize: '16px', color: '#000000' }}>Real-time Updates</div>
+                <div style={{ fontSize: '14px', color: '#8e8e8e' }}>Get instant notifications for comments and reactions</div>
+              </div>
+              <label style={{
+                position: 'relative', display: 'inline-block', width: '51px', height: '31px'
+              }}>
+                <input
+                  type="checkbox"
+                  checked={realTimeUpdates}
+                  onChange={(e) => handleToggle('realTimeUpdates', e.target.checked)}
+                  style={{ opacity: 0, width: 0, height: 0 }}
+                />
+                <span style={{
+                  position: 'absolute', cursor: 'pointer', top: 0, left: 0,
+                  right: 0, bottom: 0, background: realTimeUpdates ? '#34c759' : '#e5e5e5',
+                  borderRadius: '31px', transition: '0.3s'
+                }}>
+                  <span style={{
+                    position: 'absolute', content: '', height: '27px', width: '27px',
+                    left: realTimeUpdates ? '22px' : '2px', bottom: '2px', background: '#ffffff',
+                    borderRadius: '50%', transition: '0.3s'
+                  }} />
+                </span>
+              </label>
+            </div>
+
+            <div style={{
+              minHeight: '48px', borderTop: '1px solid #e5e5e5', 
+              padding: '16px', display: 'flex', alignItems: 'center',
+              justifyContent: 'space-between'
+            }}>
+              <div>
+                <div style={{ fontSize: '16px', color: '#000000' }}>Daily Verse Reminders</div>
+                <div style={{ fontSize: '14px', color: '#8e8e8e' }}>Get notified when the daily verse is updated</div>
+              </div>
+              <label style={{
+                position: 'relative', display: 'inline-block', width: '51px', height: '31px'
+              }}>
+                <input
+                  type="checkbox"
+                  checked={dailyVerseReminders}
+                  onChange={(e) => handleToggle('dailyVerseReminders', e.target.checked)}
+                  style={{ opacity: 0, width: 0, height: 0 }}
+                />
+                <span style={{
+                  position: 'absolute', cursor: 'pointer', top: 0, left: 0,
+                  right: 0, bottom: 0, background: dailyVerseReminders ? '#34c759' : '#e5e5e5',
+                  borderRadius: '31px', transition: '0.3s'
+                }}>
+                  <span style={{
+                    position: 'absolute', content: '', height: '27px', width: '27px',
+                    left: dailyVerseReminders ? '22px' : '2px', bottom: '2px', background: '#ffffff',
+                    borderRadius: '50%', transition: '0.3s'
+                  }} />
+                </span>
+              </label>
+            </div>
+          </div>
+
+          {/* Privacy Settings Section (from web app) */}
+          <div style={{ 
+            background: '#ffffff', borderRadius: '12px', border: '1px solid #e5e5e5',
+            marginBottom: '24px', overflow: 'hidden'
+          }}>
+            <div style={{ 
+              padding: '16px 16px 8px', fontSize: '13px', fontWeight: 600, 
+              color: '#8e8e8e', textTransform: 'uppercase', letterSpacing: '0.5px'
+            }}>
+              PRIVACY SETTINGS
+            </div>
+            
+            <div style={{
+              minHeight: '48px', borderTop: '1px solid #e5e5e5', 
+              padding: '16px', display: 'flex', alignItems: 'center',
+              justifyContent: 'space-between'
+            }}>
+              <div>
+                <div style={{ fontSize: '16px', color: '#000000' }}>Show my display name on prayer requests</div>
+                <div style={{ fontSize: '14px', color: '#8e8e8e' }}>When disabled, they will appear as "Anonymous"</div>
+              </div>
+              <label style={{
+                position: 'relative', display: 'inline-block', width: '51px', height: '31px'
+              }}>
+                <input
+                  type="checkbox"
+                  checked={showNameOnPrayers}
+                  onChange={(e) => handleToggle('showNameOnPrayers', e.target.checked)}
+                  style={{ opacity: 0, width: 0, height: 0 }}
+                />
+                <span style={{
+                  position: 'absolute', cursor: 'pointer', top: 0, left: 0,
+                  right: 0, bottom: 0, background: showNameOnPrayers ? '#34c759' : '#e5e5e5',
+                  borderRadius: '31px', transition: '0.3s'
+                }}>
+                  <span style={{
+                    position: 'absolute', content: '', height: '27px', width: '27px',
+                    left: showNameOnPrayers ? '22px' : '2px', bottom: '2px', background: '#ffffff',
+                    borderRadius: '50%', transition: '0.3s'
+                  }} />
+                </span>
+              </label>
+            </div>
+
+            <div style={{
+              minHeight: '48px', borderTop: '1px solid #e5e5e5', 
+              padding: '16px', display: 'flex', alignItems: 'center',
+              justifyContent: 'space-between'
+            }}>
+              <div>
+                <div style={{ fontSize: '16px', color: '#000000' }}>Private profile (appear as 'Anonymous' on leaderboards)</div>
+                <div style={{ fontSize: '14px', color: '#8e8e8e' }}>You will appear as "Anonymous" on prayer leaderboards</div>
+              </div>
+              <label style={{
+                position: 'relative', display: 'inline-block', width: '51px', height: '31px'
+              }}>
+                <input
+                  type="checkbox"
+                  checked={privateProfile}
+                  onChange={(e) => handleToggle('privateProfile', e.target.checked)}
+                  style={{ opacity: 0, width: 0, height: 0 }}
+                />
+                <span style={{
+                  position: 'absolute', cursor: 'pointer', top: 0, left: 0,
+                  right: 0, bottom: 0, background: privateProfile ? '#34c759' : '#e5e5e5',
+                  borderRadius: '31px', transition: '0.3s'
+                }}>
+                  <span style={{
+                    position: 'absolute', content: '', height: '27px', width: '27px',
+                    left: privateProfile ? '22px' : '2px', bottom: '2px', background: '#ffffff',
+                    borderRadius: '50%', transition: '0.3s'
+                  }} />
+                </span>
+              </label>
+            </div>
+          </div>
+
+          {/* Account Deletion Section (from web app) */}
           <div style={{ 
             background: '#ffffff', borderRadius: '12px', border: '1px solid #e5e5e5',
             marginBottom: '24px', overflow: 'hidden'
@@ -1869,7 +2245,7 @@ const MobileApp = () => {
             </div>
             
             <button
-              onClick={() => alert('Edit Profile functionality - coming soon!')}
+              onClick={() => alert('Account deletion - This action cannot be undone')}
               style={{
                 width: '100%', minHeight: '48px', background: 'none', border: 'none',
                 borderTop: '1px solid #e5e5e5', padding: '16px', textAlign: 'left',
@@ -1877,275 +2253,12 @@ const MobileApp = () => {
                 justifyContent: 'space-between'
               }}
             >
-              <div style={{ fontSize: '16px', color: '#000000' }}>Edit Profile</div>
+              <div>
+                <div style={{ fontSize: '16px', color: '#ff3b30' }}>Delete Account</div>
+                <div style={{ fontSize: '14px', color: '#8e8e8e' }}>Permanently delete your account and all data</div>
+              </div>
               <div style={{ fontSize: '16px', color: '#c7c7cc' }}>›</div>
             </button>
-            
-            <div style={{
-              minHeight: '48px', borderTop: '1px solid #e5e5e5', 
-              padding: '16px', display: 'flex', alignItems: 'center'
-            }}>
-              <div style={{ fontSize: '16px', color: '#8e8e8e' }}>
-                {user?.email || 'No email set'}
-              </div>
-            </div>
-            
-            <button
-              onClick={() => alert('Change Password - coming soon!')}
-              style={{
-                width: '100%', minHeight: '48px', background: 'none', border: 'none',
-                borderTop: '1px solid #e5e5e5', padding: '16px', textAlign: 'left',
-                cursor: 'pointer', display: 'flex', alignItems: 'center',
-                justifyContent: 'space-between'
-              }}
-            >
-              <div style={{ fontSize: '16px', color: '#000000' }}>Change Password</div>
-              <div style={{ fontSize: '16px', color: '#c7c7cc' }}>›</div>
-            </button>
-          </div>
-
-          {/* Preferences Section */}
-          <div style={{ 
-            background: '#ffffff', borderRadius: '12px', border: '1px solid #e5e5e5',
-            marginBottom: '24px', overflow: 'hidden'
-          }}>
-            <div style={{ 
-              padding: '16px 16px 8px', fontSize: '13px', fontWeight: 600, 
-              color: '#8e8e8e', textTransform: 'uppercase', letterSpacing: '0.5px'
-            }}>
-              PREFERENCES
-            </div>
-            
-            <div style={{
-              minHeight: '48px', borderTop: '1px solid #e5e5e5', 
-              padding: '16px', display: 'flex', alignItems: 'center',
-              justifyContent: 'space-between'
-            }}>
-              <div style={{ fontSize: '16px', color: '#000000' }}>Dark Mode</div>
-              <label style={{
-                position: 'relative', display: 'inline-block', width: '51px', height: '31px'
-              }}>
-                <input
-                  type="checkbox"
-                  checked={darkMode}
-                  onChange={(e) => handleToggle('darkMode', e.target.checked)}
-                  style={{ opacity: 0, width: 0, height: 0 }}
-                />
-                <span style={{
-                  position: 'absolute', cursor: 'pointer', top: 0, left: 0,
-                  right: 0, bottom: 0, background: darkMode ? '#34c759' : '#e5e5e5',
-                  borderRadius: '31px', transition: '0.3s'
-                }}>
-                  <span style={{
-                    position: 'absolute', content: '', height: '27px', width: '27px',
-                    left: darkMode ? '22px' : '2px', bottom: '2px', background: '#ffffff',
-                    borderRadius: '50%', transition: '0.3s'
-                  }} />
-                </span>
-              </label>
-            </div>
-            
-            <div style={{
-              minHeight: '48px', borderTop: '1px solid #e5e5e5', 
-              padding: '16px', display: 'flex', alignItems: 'center',
-              justifyContent: 'space-between'
-            }}>
-              <div style={{ fontSize: '16px', color: '#000000' }}>Scripture of the Day</div>
-              <label style={{
-                position: 'relative', display: 'inline-block', width: '51px', height: '31px'
-              }}>
-                <input
-                  type="checkbox"
-                  checked={scriptureOfDay}
-                  onChange={(e) => handleToggle('scriptureOfDay', e.target.checked)}
-                  style={{ opacity: 0, width: 0, height: 0 }}
-                />
-                <span style={{
-                  position: 'absolute', cursor: 'pointer', top: 0, left: 0,
-                  right: 0, bottom: 0, background: scriptureOfDay ? '#34c759' : '#e5e5e5',
-                  borderRadius: '31px', transition: '0.3s'
-                }}>
-                  <span style={{
-                    position: 'absolute', content: '', height: '27px', width: '27px',
-                    left: scriptureOfDay ? '22px' : '2px', bottom: '2px', background: '#ffffff',
-                    borderRadius: '50%', transition: '0.3s'
-                  }} />
-                </span>
-              </label>
-            </div>
-            
-            <div style={{
-              minHeight: '48px', borderTop: '1px solid #e5e5e5', 
-              padding: '16px', display: 'flex', alignItems: 'center',
-              justifyContent: 'space-between'
-            }}>
-              <div style={{ fontSize: '16px', color: '#000000' }}>Prayer Notifications</div>
-              <label style={{
-                position: 'relative', display: 'inline-block', width: '51px', height: '31px'
-              }}>
-                <input
-                  type="checkbox"
-                  checked={prayerNotifications}
-                  onChange={(e) => handleToggle('prayerNotifications', e.target.checked)}
-                  style={{ opacity: 0, width: 0, height: 0 }}
-                />
-                <span style={{
-                  position: 'absolute', cursor: 'pointer', top: 0, left: 0,
-                  right: 0, bottom: 0, background: prayerNotifications ? '#34c759' : '#e5e5e5',
-                  borderRadius: '31px', transition: '0.3s'
-                }}>
-                  <span style={{
-                    position: 'absolute', content: '', height: '27px', width: '27px',
-                    left: prayerNotifications ? '22px' : '2px', bottom: '2px', background: '#ffffff',
-                    borderRadius: '50%', transition: '0.3s'
-                  }} />
-                </span>
-              </label>
-            </div>
-          </div>
-
-          {/* Privacy & Safety Section */}
-          <div style={{ 
-            background: '#ffffff', borderRadius: '12px', border: '1px solid #e5e5e5',
-            marginBottom: '24px', overflow: 'hidden'
-          }}>
-            <div style={{ 
-              padding: '16px 16px 8px', fontSize: '13px', fontWeight: 600, 
-              color: '#8e8e8e', textTransform: 'uppercase', letterSpacing: '0.5px'
-            }}>
-              PRIVACY & SAFETY
-            </div>
-            
-            <button
-              onClick={() => alert('Blocked users management - coming soon!')}
-              style={{
-                width: '100%', minHeight: '48px', background: 'none', border: 'none',
-                borderTop: '1px solid #e5e5e5', padding: '16px', textAlign: 'left',
-                cursor: 'pointer', display: 'flex', alignItems: 'center',
-                justifyContent: 'space-between'
-              }}
-            >
-              <div style={{ fontSize: '16px', color: '#000000' }}>Blocked Users</div>
-              <div style={{ fontSize: '16px', color: '#c7c7cc' }}>›</div>
-            </button>
-            
-            <div style={{
-              borderTop: '1px solid #e5e5e5', padding: '16px'
-            }}>
-              <div style={{ fontSize: '16px', color: '#000000', marginBottom: '12px' }}>
-                Content Filters
-              </div>
-              <div style={{ fontSize: '14px', color: '#8e8e8e', marginBottom: '16px' }}>
-                Controls what content appears in your feed
-              </div>
-              
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
-                  <input
-                    type="radio"
-                    name="contentFilter"
-                    value="standard"
-                    checked={contentFilter === 'standard'}
-                    onChange={() => handleContentFilterChange('standard')}
-                    style={{ marginRight: '12px' }}
-                  />
-                  <div>
-                    <div style={{ fontSize: '16px', color: '#000000' }}>Standard</div>
-                    <div style={{ fontSize: '14px', color: '#8e8e8e' }}>Family-friendly content</div>
-                  </div>
-                </label>
-                
-                <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
-                  <input
-                    type="radio"
-                    name="contentFilter"
-                    value="strict"
-                    checked={contentFilter === 'strict'}
-                    onChange={() => handleContentFilterChange('strict')}
-                    style={{ marginRight: '12px' }}
-                  />
-                  <div>
-                    <div style={{ fontSize: '16px', color: '#000000' }}>Strict</div>
-                    <div style={{ fontSize: '14px', color: '#8e8e8e' }}>More restrictive filtering</div>
-                  </div>
-                </label>
-              </div>
-            </div>
-          </div>
-
-          {/* Support Section */}
-          <div style={{ 
-            background: '#ffffff', borderRadius: '12px', border: '1px solid #e5e5e5',
-            marginBottom: '24px', overflow: 'hidden'
-          }}>
-            <div style={{ 
-              padding: '16px 16px 8px', fontSize: '13px', fontWeight: 600, 
-              color: '#8e8e8e', textTransform: 'uppercase', letterSpacing: '0.5px'
-            }}>
-              SUPPORT
-            </div>
-            
-            <button
-              onClick={() => setShowMobileCommunityGuidelines(true)}
-              style={{
-                width: '100%', minHeight: '48px', background: 'none', border: 'none',
-                borderTop: '1px solid #e5e5e5', padding: '16px', textAlign: 'left',
-                cursor: 'pointer', display: 'flex', alignItems: 'center',
-                justifyContent: 'space-between'
-              }}
-            >
-              <div style={{ fontSize: '16px', color: '#000000' }}>Community Guidelines</div>
-              <div style={{ fontSize: '16px', color: '#c7c7cc' }}>›</div>
-            </button>
-            
-            <button
-              onClick={() => setShowHelpDrawer(true)}
-              style={{
-                width: '100%', minHeight: '48px', background: 'none', border: 'none',
-                borderTop: '1px solid #e5e5e5', padding: '16px', textAlign: 'left',
-                cursor: 'pointer', display: 'flex', alignItems: 'center',
-                justifyContent: 'space-between'
-              }}
-            >
-              <div style={{ fontSize: '16px', color: '#000000' }}>Help & Contact</div>
-              <div style={{ fontSize: '16px', color: '#c7c7cc' }}>›</div>
-            </button>
-          </div>
-
-          {/* About Section */}
-          <div style={{ 
-            background: '#ffffff', borderRadius: '12px', border: '1px solid #e5e5e5',
-            marginBottom: '24px', overflow: 'hidden'
-          }}>
-            <div style={{ 
-              padding: '16px 16px 8px', fontSize: '13px', fontWeight: 600, 
-              color: '#8e8e8e', textTransform: 'uppercase', letterSpacing: '0.5px'
-            }}>
-              ABOUT
-            </div>
-            
-            <div style={{
-              borderTop: '1px solid #e5e5e5', padding: '16px'
-            }}>
-              <div style={{ fontSize: '16px', color: '#000000', marginBottom: '4px' }}>
-                Gospel Era Mobile
-              </div>
-              <div style={{ fontSize: '14px', color: '#8e8e8e', marginBottom: '8px' }}>
-                Version 1.0.0
-              </div>
-              <div style={{ fontSize: '14px', color: '#8e8e8e', marginBottom: '12px' }}>
-                Built {new Date().toLocaleDateString()}
-              </div>
-              <button
-                onClick={() => alert('Open source licenses - coming soon!')}
-                style={{
-                  background: 'none', border: 'none', fontSize: '14px',
-                  color: '#007aff', cursor: 'pointer', padding: 0
-                }}
-              >
-                View Licenses
-              </button>
-            </div>
           </div>
 
           {/* Sign Out Button */}
@@ -2165,84 +2278,6 @@ const MobileApp = () => {
             Sign Out
           </button>
         </div>
-
-        {/* Help & Contact Drawer */}
-        {showHelpDrawer && (
-          <div style={{
-            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-            background: 'rgba(0,0,0,0.5)', zIndex: 1000
-          }}>
-            <div style={{
-              position: 'absolute', right: 0, top: 0, bottom: 0, width: '80%',
-              maxWidth: '320px', background: '#ffffff', padding: '20px',
-              boxShadow: '-2px 0 10px rgba(0,0,0,0.1)'
-            }}>
-              <div style={{
-                display: 'flex', alignItems: 'center', marginBottom: '24px'
-              }}>
-                <button
-                  onClick={() => setShowHelpDrawer(false)}
-                  style={{
-                    background: 'none', border: 'none', fontSize: '18px',
-                    color: '#000000', cursor: 'pointer', marginRight: '16px'
-                  }}
-                >
-                  ×
-                </button>
-                <div style={{ fontSize: '18px', fontWeight: 600, color: '#000000' }}>
-                  Help & Contact
-                </div>
-              </div>
-              
-              <div style={{ marginBottom: '20px' }}>
-                <div style={{ fontSize: '16px', fontWeight: 600, color: '#000000', marginBottom: '8px' }}>
-                  Get Support
-                </div>
-                <div style={{ fontSize: '14px', color: '#8e8e8e', marginBottom: '16px' }}>
-                  For technical support or questions about Gospel Era
-                </div>
-                
-                <div style={{
-                  background: '#f8f9fa', padding: '16px', borderRadius: '8px',
-                  marginBottom: '16px'
-                }}>
-                  <div style={{ fontSize: '14px', color: '#000000', marginBottom: '8px' }}>
-                    Support Email
-                  </div>
-                  <div style={{
-                    fontSize: '16px', color: '#007aff', fontFamily: 'monospace',
-                    marginBottom: '12px'
-                  }}>
-                    ridibi.service@gmail.com
-                  </div>
-                  
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    <button
-                      onClick={() => window.open('mailto:ridibi.service@gmail.com')}
-                      style={{
-                        padding: '8px 16px', background: '#007aff', color: '#ffffff',
-                        border: 'none', borderRadius: '6px', fontSize: '14px',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      Send Email
-                    </button>
-                    <button
-                      onClick={copyEmailToClipboard}
-                      style={{
-                        padding: '8px 16px', background: '#f0f0f0', color: '#000000',
-                        border: 'none', borderRadius: '6px', fontSize: '14px',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      Copy
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     );
   };
