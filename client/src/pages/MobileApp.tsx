@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { listPosts, createPost, softDeletePost } from '@/lib/posts';
+import { listPosts, createPost, updatePost, softDeletePost } from '@/lib/posts';
 import { listPrayerRequests, createPrayerRequest, commitToPray, confirmPrayed, getMyCommitments, getPrayerRequest } from '@/lib/prayer';
 import { getProfilesByIds } from '@/lib/profiles';
 import { toggleAmen, toggleBookmark, isBookmarked } from '@/lib/engagement';
-import { listComments, createComment } from '@/lib/comments';
+import { listComments, createComment, softDeleteComment } from '@/lib/comments';
 import { createReport } from '@/lib/reports';
 import { checkMediaPermission } from '@/lib/mediaRequests';
 import { validateAndNormalizeYouTubeUrl } from '../../../shared/youtube';
@@ -62,6 +62,13 @@ const MobileApp = () => {
   const [showMediaRequestModal, setShowMediaRequestModal] = useState(false);
   const [youtubeError, setYoutubeError] = useState('');
   const [moderationError, setModerationError] = useState('');
+  
+  // Additional engagement states needed for web app parity
+  const [editingPost, setEditingPost] = useState<any>(null);
+  const [submittingComment, setSubmittingComment] = useState<{[postId: number]: boolean}>({});
+  const [deletingCommentId, setDeletingCommentId] = useState<number | null>(null);
+  const [reportModal, setReportModal] = useState<{isOpen: boolean, targetType: 'post'|'comment', targetId: string, reason: string, selectedReason: string}>({isOpen: false, targetType: 'post', targetId: '', reason: '', selectedReason: ''});
+  const [submittingReport, setSubmittingReport] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -197,13 +204,26 @@ const MobileApp = () => {
     }
     
     try {
-      const result = await createPost({
-        title: titleText,
-        content: contentText,
-        tags: tagsArray,
-        media_urls: [],
-        embed_url: normalizedYouTubeUrl
-      });
+      let result;
+      if (editingPostId && editingPost) {
+        // Update existing post
+        result = await updatePost(editingPostId, {
+          title: titleText,
+          content: contentText,
+          tags: tagsArray,
+          media_urls: editingPost.media_urls || [],
+          embed_url: normalizedYouTubeUrl
+        });
+      } else {
+        // Create new post
+        result = await createPost({
+          title: titleText,
+          content: contentText,
+          tags: tagsArray,
+          media_urls: [],
+          embed_url: normalizedYouTubeUrl
+        });
+      }
       
       if (result.data) {
         // Clear form
@@ -213,12 +233,14 @@ const MobileApp = () => {
         setCreateYouTubeUrl('');
         setYoutubeError('');
         setModerationError('');
+        setEditingPostId(null);
+        setEditingPost(null);
         fetchData();
         setActiveTab(0); // Go back to home
       }
     } catch (error) {
-      console.error('Error creating post:', error);
-      alert('Failed to create post. Please try again.');
+      console.error('Error saving post:', error);
+      alert(`Failed to ${editingPostId ? 'update' : 'create'} post. Please try again.`);
     }
   };
 
@@ -658,12 +680,22 @@ const MobileApp = () => {
 
   const handleCreateComment = async (postId: number) => {
     const content = commentTexts[postId]?.trim();
-    if (!content) return;
+    if (!content || !user || isBanned) return;
+    
+    // Enhanced Christ-centric validation for comment content
+    const validation = validateFaithContent(content);
+    
+    if (!validation.isValid) {
+      alert(validation.reason || 'Please keep your comment centered on Jesus or Scripture.');
+      return;
+    }
+    
+    setSubmittingComment(prev => ({...prev, [postId]: true}));
     
     try {
       const { data, error } = await createComment({ postId, content });
       if (error) {
-        console.error('Failed to create comment:', error);
+        alert('Failed to create comment');
       } else {
         // Clear the input and reload comments
         setCommentTexts(prev => ({...prev, [postId]: ''}));
@@ -671,6 +703,9 @@ const MobileApp = () => {
       }
     } catch (error) {
       console.error('Error creating comment:', error);
+      alert('Failed to create comment');
+    } finally {
+      setSubmittingComment(prev => ({...prev, [postId]: false}));
     }
   };
 
@@ -693,13 +728,50 @@ const MobileApp = () => {
   };
 
   const handleEditPost = (postId: number) => {
-    // For mobile, we'll just show an alert for now
-    alert('Edit functionality coming soon! Please use the web app to edit posts.');
+    const post = posts.find(p => p.id === postId);
+    if (!post) return;
+    
+    // Set edit mode and populate form fields
+    setEditingPostId(postId);
+    setEditingPost(post);
+    setCreateTitle(post.title || '');
+    setCreateContent(post.content || '');
+    setCreateTags(post.tags ? post.tags.join(', ') : '');
+    setCreateYouTubeUrl(post.embed_url || '');
+    
+    // Switch to Create tab for editing
+    setActiveTab(2);
   };
 
   const handleReportPost = (postId: number) => {
-    setReportTarget({ type: 'post', id: postId.toString() });
-    setReportModalOpen(true);
+    setReportModal({isOpen: true, targetType: 'post', targetId: postId.toString(), reason: '', selectedReason: ''});
+  };
+  
+  const handleReportComment = (commentId: number) => {
+    setReportModal({isOpen: true, targetType: 'comment', targetId: commentId.toString(), reason: '', selectedReason: ''});
+  };
+  
+  const closeReportModal = () => {
+    setReportModal({isOpen: false, targetType: 'post', targetId: '', reason: '', selectedReason: ''});
+  };
+  
+  const handleDeleteComment = async (commentId: number, postId: number) => {
+    if (!confirm('Are you sure you want to delete this comment?')) {
+      return;
+    }
+    
+    setDeletingCommentId(commentId);
+    
+    const { error } = await softDeleteComment(commentId);
+    
+    if (error) {
+      alert(`Failed to delete comment: ${(error as any).message}`);
+    } else {
+      // Reload comments to show updated list
+      await loadComments(postId);
+    }
+    
+    setDeletingCommentId(null);
   };
 
   const handleSubmitReport = async (reason: string) => {
@@ -1054,32 +1126,51 @@ const MobileApp = () => {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 16px', borderTop: '1px solid #efefef' }}>
               {/* Left side actions */}
               <div style={{ display: 'flex', gap: '16px' }}>
-                {/* Heart/Amen button */}
+                {/* Heart/Amen button with count */}
                 <button 
                   onClick={() => handleToggleAmen(post.id)}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '8px' }}
-                  title="Amen"
+                  disabled={isBanned}
+                  style={{ 
+                    background: 'none', 
+                    border: 'none', 
+                    cursor: isBanned ? 'not-allowed' : 'pointer', 
+                    padding: '8px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    opacity: isBanned ? 0.5 : 1
+                  }}
+                  title={isBanned ? "Account limited" : (engagementData.get(post.id)?.hasAmened ? "Amen'd" : "Amen")}
                 >
-                  <span style={{ fontSize: '24px', color: '#262626' }}>♡</span>
+                  <span style={{ 
+                    fontSize: '24px', 
+                    color: engagementData.get(post.id)?.hasAmened ? '#ef4444' : '#262626' 
+                  }}>
+                    {engagementData.get(post.id)?.hasAmened ? '♥' : '♡'}
+                  </span>
+                  {engagementData.get(post.id)?.amenCount > 0 && (
+                    <span style={{ fontSize: '12px', color: '#8e8e8e', fontWeight: 500 }}>
+                      {engagementData.get(post.id)?.amenCount}
+                    </span>
+                  )}
                 </button>
                 
                 {/* Comment button */}
                 <button 
                   onClick={() => toggleCommentForm(post.id)}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '8px' }}
-                  title="Comment"
+                  disabled={isBanned}
+                  style={{ 
+                    background: 'none', 
+                    border: 'none', 
+                    cursor: isBanned ? 'not-allowed' : 'pointer', 
+                    padding: '8px',
+                    opacity: isBanned ? 0.5 : 1
+                  }}
+                  title={isBanned ? "Account limited" : "Reply"}
                 >
                   <span style={{ fontSize: '24px', color: '#262626' }}>💬</span>
                 </button>
                 
-                {/* Share button */}
-                <button 
-                  onClick={() => alert('Share functionality coming soon!')}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '8px' }}
-                  title="Share"
-                >
-                  <span style={{ fontSize: '24px', color: '#262626' }}>↗</span>
-                </button>
               </div>
               
               {/* Right side actions */}
@@ -1142,25 +1233,29 @@ const MobileApp = () => {
                 <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
                   <input
                     type="text"
-                    placeholder="Add a comment..."
+                    placeholder={isBanned ? "Account limited - cannot comment" : "Add a comment..."}
                     value={commentTexts[post.id] || ''}
                     onChange={(e) => setCommentTexts(prev => ({...prev, [post.id]: e.target.value}))}
+                    disabled={isBanned}
                     style={{
                       flex: 1, padding: '8px 12px', border: '1px solid #dbdbdb',
-                      borderRadius: '20px', fontSize: '14px', outline: 'none', marginRight: '8px'
+                      borderRadius: '20px', fontSize: '14px', outline: 'none', marginRight: '8px',
+                      backgroundColor: isBanned ? '#f5f5f5' : '#ffffff',
+                      color: isBanned ? '#8e8e8e' : '#262626',
+                      cursor: isBanned ? 'not-allowed' : 'text'
                     }}
                   />
                   <button
                     onClick={() => handleCreateComment(post.id)}
-                    disabled={!commentTexts[post.id]?.trim()}
+                    disabled={!commentTexts[post.id]?.trim() || submittingComment[post.id] || isBanned}
                     style={{
-                      background: commentTexts[post.id]?.trim() ? '#262626' : '#dbdbdb',
+                      background: commentTexts[post.id]?.trim() && !isBanned ? '#4285f4' : '#dbdbdb',
                       color: '#ffffff', border: 'none', padding: '8px 16px',
                       borderRadius: '20px', fontSize: '12px', fontWeight: 600,
-                      cursor: commentTexts[post.id]?.trim() ? 'pointer' : 'not-allowed'
+                      cursor: commentTexts[post.id]?.trim() && !isBanned ? 'pointer' : 'not-allowed'
                     }}
                   >
-                    Post
+                    {submittingComment[post.id] ? 'Posting...' : 'Post'}
                   </button>
                 </div>
 
@@ -1189,8 +1284,25 @@ const MobileApp = () => {
                             </span>
                             <span style={{ color: '#262626' }}>{comment.content}</span>
                           </div>
-                          <div style={{ fontSize: '10px', color: '#8e8e8e', marginTop: '2px' }}>
-                            {formatTimeAgo(comment.created_at)}
+                          <div style={{ fontSize: '10px', color: '#8e8e8e', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span>{formatTimeAgo(comment.created_at)}</span>
+                            <button
+                              onClick={() => handleReportComment(comment.id)}
+                              style={{ background: 'none', border: 'none', color: '#8e8e8e', fontSize: '10px', cursor: 'pointer', padding: '2px' }}
+                              title="Report comment"
+                            >
+                              Report
+                            </button>
+                            {(comment.author_id === user?.id || isAdmin) && (
+                              <button
+                                onClick={() => handleDeleteComment(comment.id, post.id)}
+                                disabled={deletingCommentId === comment.id}
+                                style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '10px', cursor: 'pointer', padding: '2px' }}
+                                title="Delete comment"
+                              >
+                                {deletingCommentId === comment.id ? 'Deleting...' : 'Delete'}
+                              </button>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -1378,20 +1490,20 @@ const MobileApp = () => {
         )
       )}
 
-      {/* Share button - same as before */}
+      {/* Share/Update button - same as before */}
       <button
         onClick={handleCreatePost}
         disabled={!createTitle.trim() || !createContent.trim() || isBanned}
         style={{
           width: '100%', 
-          background: (createTitle.trim() && createContent.trim() && !isBanned) ? '#4a4a4a' : '#dbdbdb',
+          background: (createTitle.trim() && createContent.trim() && !isBanned) ? '#4285f4' : '#dbdbdb',
           color: '#ffffff', border: 'none', padding: '12px', borderRadius: '8px',
           fontSize: '16px', fontWeight: 600, 
           cursor: (createTitle.trim() && createContent.trim() && !isBanned) ? 'pointer' : 'not-allowed'
         }}
         title={isBanned ? 'Account limited - cannot create posts' : ''}
       >
-        Share Post
+        {editingPostId ? 'Update Post' : 'Share Post'}
       </button>
     </div>
   );
