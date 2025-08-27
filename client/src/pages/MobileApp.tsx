@@ -89,39 +89,6 @@ const MobileApp = () => {
     }
   }, [user]);
 
-  // Early returns for special states
-  if (authLoading) {
-    return (
-      <div style={styles.container}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
-          <div style={{ fontSize: '20px', color: '#8e8e8e' }}>Loading...</div>
-        </div>
-      </div>
-    );
-  }
-
-  // Handle prayer detail view
-  if (selectedPrayerId && selectedPrayerDetail) {
-    return (
-      <PrayerDetailView 
-        prayer={selectedPrayerDetail} 
-        onBack={() => {
-          setSelectedPrayerId(null);
-          setSelectedPrayerDetail(null);
-        }} 
-      />
-    );
-  }
-
-  // Handle full leaderboard view
-  if (showFullLeaderboard) {
-    return (
-      <FullLeaderboardView 
-        onBack={() => setShowFullLeaderboard(false)} 
-      />
-    );
-  }
-
   // Load daily scripture verse
   const loadDailyVerse = async () => {
     try {
@@ -3368,7 +3335,66 @@ const MobileApp = () => {
     );
   };
 
-  // Mobile Saved Posts removed - now redirects to web version
+  // Mobile Saved Posts Component
+  const MobileSavedPostsPage = () => {
+    const [savedPosts, setSavedPosts] = useState<any[]>([]);
+    const [savedPostsLoading, setSavedPostsLoading] = useState(true);
+    const [savedPostsError, setSavedPostsError] = useState('');
+
+    // Load saved posts when component mounts  
+    useEffect(() => {
+      if (showMobileSavedPosts) {
+        loadSavedPosts();
+      }
+    }, [showMobileSavedPosts]); // Only load when this page is shown
+
+    const loadSavedPosts = async () => {
+      setSavedPostsLoading(true);
+      setSavedPostsError('');
+      
+      try {
+        // Use the same listBookmarks function as web app but handle errors properly
+        const { listBookmarks } = await import('../lib/engagement');
+        const { data, error } = await listBookmarks({ limit: 50 });
+        
+        if (error) {
+          setSavedPostsError((error as any).message || 'Failed to load saved posts');
+        } else {
+          const bookmarkedPosts = data || [];
+          setSavedPosts(bookmarkedPosts);
+          
+          // Load author profiles for saved posts
+          if (Array.isArray(bookmarkedPosts) && bookmarkedPosts.length > 0) {
+            const { getProfilesByIds } = await import('../lib/profiles');
+            const authorIds = bookmarkedPosts.map((post: any) => post.author_id || post.author).filter(Boolean);
+            const profilesResult = await getProfilesByIds(authorIds);
+            
+            // Update the profiles map
+            if (profilesResult.data && !profilesResult.error) {
+              setProfiles(prev => {
+                const newProfiles = new Map(prev);
+                if (Array.isArray(profilesResult.data)) {
+                  profilesResult.data.forEach((profile: any) => {
+                    newProfiles.set(profile.id, profile);
+                  });
+                } else {
+                  // Handle Map format
+                  Array.from(profilesResult.data).forEach(([id, profile]) => {
+                    newProfiles.set(id, profile);
+                  });
+                }
+                return newProfiles;
+              });
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Error loading saved posts:', err);
+        setSavedPostsError((err as any).message || 'Failed to load saved posts');
+      }
+      
+      setSavedPostsLoading(false);
+    };
 
     return (
       <div style={{ background: '#ffffff', minHeight: '100vh' }}>
@@ -4175,13 +4201,409 @@ const MobileApp = () => {
         Sign Out
       </button>
     </div>
-  ); // End ProfileComponent
+  );
 
-  // Main component renders at the end of MobileApp function (at line ~4650)
+  // Loading state
+  if (authLoading) {
+    return (
+      <div style={styles.container}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+          <div style={{ fontSize: '20px', color: '#8e8e8e' }}>Loading...</div>
+        </div>
+      </div>
+    );
+  }
+
+  // Handle prayer detail view
+  if (selectedPrayerId && selectedPrayerDetail) {
+    return (
+      <PrayerDetailView 
+        prayer={selectedPrayerDetail} 
+        onBack={() => {
+          setSelectedPrayerId(null);
+          setSelectedPrayerDetail(null);
+        }} 
+      />
+    );
+  }
+
+  // Handle full leaderboard view
+  if (showFullLeaderboard) {
+    return (
+      <FullLeaderboardView 
+        onBack={() => setShowFullLeaderboard(false)} 
+      />
+    );
+  }
+
+  // Render main component
+  return (
+    <div style={styles.container}>
+      {/* Header */}
+      <div style={styles.header}>
+        <div style={{ fontSize: '24px', fontWeight: 700, color: '#262626', letterSpacing: '-0.5px' }}>
+          {!user ? 'Gospel Era' :
+           activeTab === 0 ? 'Gospel Era' :
+           activeTab === 1 ? 'Search' :
+           activeTab === 2 ? 'Create' :
+           activeTab === 3 ? 'Prayer' :
+           'Profile'}
+        </div>
+        {user && (
+          <div className="user-dropdown-container" style={{ display: 'flex', alignItems: 'center', gap: '16px', position: 'relative' }}>
             {/* User Name and Avatar */}
             <button 
+              onClick={() => setShowUserDropdown(!showUserDropdown)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '8px',
+                background: 'none', border: 'none', cursor: 'pointer',
+                padding: '4px 8px', borderRadius: '20px',
+                ':hover': { background: '#f0f0f0' }
+              }}
+            >
+              <div style={{
+                width: '28px', height: '28px', borderRadius: '50%',
+                background: userProfile?.avatar_url ? 'none' : '#dbdbdb',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                overflow: 'hidden'
+              }}>
+                {userProfile?.avatar_url ? (
+                  <img 
+                    src={userProfile.avatar_url.startsWith('/objects/') ? userProfile.avatar_url : (userProfile.avatar_url.startsWith('/') ? userProfile.avatar_url : `/public-objects/${userProfile.avatar_url}`)} 
+                    alt="Profile" 
+                    style={{ width: '28px', height: '28px', borderRadius: '50%', objectFit: 'cover' }}
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).style.display = 'none';
+                      const parent = (e.target as HTMLImageElement).parentElement;
+                      if (parent) {
+                        parent.innerHTML = '<span style="fontSize: 14px; color: #8e8e8e">👤</span>';
+                      }
+                    }}
+                  />
+                ) : (
+                  <span style={{ fontSize: '14px', color: '#8e8e8e' }}>👤</span>
+                )}
+              </div>
+              <span style={{ fontSize: '14px', fontWeight: 600, color: '#262626' }}>
+                {userProfile?.display_name || user?.email?.split('@')[0] || 'User'}
+              </span>
+              <span style={{ fontSize: '12px', color: '#8e8e8e' }}>▼</span>
+            </button>
+
+            {/* Dropdown Menu */}
+            {showUserDropdown && (
+              <div style={{
+                position: 'absolute', top: '100%', right: 0, marginTop: '8px',
+                background: '#ffffff', borderRadius: '12px', boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+                border: '1px solid #dbdbdb', minWidth: '200px', zIndex: 1000
+              }}>
+                <div style={{ padding: '12px 16px', borderBottom: '1px solid #f0f0f0' }}>
+                  <div style={{ fontSize: '14px', fontWeight: 600, color: '#262626' }}>
+                    {userProfile?.display_name || 'Gospel User'}
+                  </div>
+                  <div style={{ fontSize: '12px', color: '#8e8e8e' }}>
+                    {user?.email}
+                  </div>
+                </div>
+                
+                <button 
+                  onClick={() => {
+                    setShowUserDropdown(false);
+                    setShowMobileEditProfile(false);
+                    setShowMobileSettings(false);
+                    setShowMobileSavedPosts(false);
+                    setShowMobileCommunityGuidelines(false);
+                    setShowMobileSupporter(false);
+                    setShowMobileHelp(false);
+                    setShowMobileProfile(true);
+                    // Set profile immediately instead of loading
+                    if (userProfile) {
+                      setProfile({
+                        id: user?.id || '',
+                        display_name: userProfile.display_name || user?.email || 'Gospel User',
+                        bio: userProfile.bio || '',
+                        avatar_url: userProfile.avatar_url || '',
+                        created_at: new Date().toISOString(),
+                        updated_at: new Date().toISOString()
+                      });
+                      setEditDisplayName(userProfile.display_name || user?.email || 'Gospel User');
+                      setEditBio(userProfile.bio || '');
+                      setEditAvatarUrl(userProfile.avatar_url || '');
+                      setProfileLoading(false);
+                    } else {
+                      loadMobileProfile();
+                    }
+                  }}
+                  style={{
+                    width: '100%', padding: '12px 16px', border: 'none', background: 'none',
+                    textAlign: 'left', fontSize: '14px', color: '#262626',
+                    ':hover': { background: '#f9f9f9' }, cursor: 'pointer'
+                  }}
+                >
+                  👤 Profile
+                </button>
+                
+                <button 
+                  onClick={() => {
+                    setShowUserDropdown(false);
+                    setShowMobileProfile(false);
+                    setShowMobileEditProfile(false);
+                    setShowMobileSavedPosts(false);
+                    setShowMobileCommunityGuidelines(false);
+                    setShowMobileSupporter(false);
+                    setShowMobileHelp(false);
+                    setShowMobileSettings(true);
+                  }}
+                  style={{
+                    width: '100%', padding: '12px 16px', border: 'none', background: 'none',
+                    textAlign: 'left', fontSize: '14px', color: '#262626',
+                    ':hover': { background: '#f9f9f9' }, cursor: 'pointer'
+                  }}
+                >
+                  ⚙️ Settings
+                </button>
+                
+                <button 
+                  onClick={() => {
+                    setShowUserDropdown(false);
+                    setShowMobileProfile(false);
+                    setShowMobileEditProfile(false);
+                    setShowMobileSettings(false);
+                    setShowMobileCommunityGuidelines(false);
+                    setShowMobileSupporter(false);
+                    setShowMobileHelp(false);
+                    setShowMobileSavedPosts(true);
+                  }}
+                  style={{
+                    width: '100%', padding: '12px 16px', border: 'none', background: 'none',
+                    textAlign: 'left', fontSize: '14px', color: '#262626',
+                    ':hover': { background: '#f9f9f9' }, cursor: 'pointer'
+                  }}
+                >
+                  🔖 Saved Posts
+                </button>
+                
+                <button 
+                  onClick={() => {
+                    setShowUserDropdown(false);
+                    setShowMobileProfile(false);
+                    setShowMobileEditProfile(false);
+                    setShowMobileSettings(false);
+                    setShowMobileSavedPosts(false);
+                    setShowMobileSupporter(false);
+                    setShowMobileHelp(false);
+                    setShowMobileCommunityGuidelines(true);
+                  }}
+                  style={{
+                    width: '100%', padding: '12px 16px', border: 'none', background: 'none',
+                    textAlign: 'left', fontSize: '14px', color: '#262626',
+                    ':hover': { background: '#f9f9f9' }, cursor: 'pointer'
+                  }}
+                >
+                  📖 Community Guidelines
+                </button>
+                
+                <button 
+                  onClick={() => {
+                    setShowUserDropdown(false);
+                    setShowMobileProfile(false);
+                    setShowMobileEditProfile(false);
+                    setShowMobileSettings(false);
+                    setShowMobileSavedPosts(false);
+                    setShowMobileCommunityGuidelines(false);
+                    setShowMobileHelp(false);
+                    setShowMobileSupporter(true);
+                  }}
+                  style={{
+                    width: '100%', padding: '12px 16px', border: 'none', background: 'none',
+                    textAlign: 'left', fontSize: '14px', color: '#262626',
+                    ':hover': { background: '#f9f9f9' }, cursor: 'pointer'
+                  }}
+                >
+                  💖 Be a Supporter
+                </button>
+                
+                <button 
+                  onClick={() => {
+                    setShowUserDropdown(false);
+                    setShowMobileProfile(false);
+                    setShowMobileEditProfile(false);
+                    setShowMobileSettings(false);
+                    setShowMobileSavedPosts(false);
+                    setShowMobileCommunityGuidelines(false);
+                    setShowMobileSupporter(false);
+                    setShowMobileHelp(true);
+                  }}
+                  style={{
+                    width: '100%', padding: '12px 16px', border: 'none', background: 'none',
+                    textAlign: 'left', fontSize: '14px', color: '#262626',
+                    ':hover': { background: '#f9f9f9' }, cursor: 'pointer'
+                  }}
+                >
+                  ❓ Help
+                </button>
+                
+                
+                {isAdmin && (
+                  <>
+                    <div style={{ borderTop: '1px solid #f0f0f0', marginTop: '4px' }} />
+                    <button 
+                      onClick={() => {
+                        setShowUserDropdown(false);
+                        window.location.href = '/admin/dashboard';
+                      }}
+                      style={{
+                        width: '100%', padding: '12px 16px', border: 'none', background: 'none',
+                        textAlign: 'left', fontSize: '14px', color: '#dc2626',
+                        ':hover': { background: '#f9f9f9' }, cursor: 'pointer'
+                      }}
+                    >
+                      🛡️ Admin Dashboard
+                    </button>
+                    <button 
+                      onClick={() => {
+                        setShowUserDropdown(false);
+                        window.location.href = '/admin/reports';
+                      }}
+                      style={{
+                        width: '100%', padding: '12px 16px', border: 'none', background: 'none',
+                        textAlign: 'left', fontSize: '14px', color: '#dc2626',
+                        ':hover': { background: '#f9f9f9' }, cursor: 'pointer'
+                      }}
+                    >
+                      🚨 Review Reports
+                    </button>
+                    <button 
+                      onClick={() => {
+                        setShowUserDropdown(false);
+                        window.location.href = '/admin/media-requests';
+                      }}
+                      style={{
+                        width: '100%', padding: '12px 16px', border: 'none', background: 'none',
+                        textAlign: 'left', fontSize: '14px', color: '#dc2626',
+                        ':hover': { background: '#f9f9f9' }, cursor: 'pointer'
+                      }}
+                    >
+                      📂 Media Requests
+                    </button>
+                    <button 
+                      onClick={() => {
+                        setShowUserDropdown(false);
+                        window.location.href = '/admin/users';
+                      }}
+                      style={{
+                        width: '100%', padding: '12px 16px', border: 'none', background: 'none',
+                        textAlign: 'left', fontSize: '14px', color: '#dc2626',
+                        ':hover': { background: '#f9f9f9' }, cursor: 'pointer'
+                      }}
+                    >
+                      👥 Manage Users
+                    </button>
+                  </>
+                )}
+                
+                <button 
+                  onClick={() => {
+                    setShowUserDropdown(false);
+                    signOut();
+                  }}
+                  style={{
+                    width: '100%', padding: '12px 16px', border: 'none', background: 'none',
+                    textAlign: 'left', fontSize: '14px', color: '#dc2626',
+                    ':hover': { background: '#f9f9f9' }, cursor: 'pointer',
+                    borderTop: '1px solid #f0f0f0'
+                  }}
+                >
+                  🚪 Sign Out
+                </button>
+              </div>
+            )}
           </div>
-        </div>
+        )}
+      </div>
+
+      {/* Content */}
+      <div style={styles.content}>
+        {!user ? (
+          <LoginPage />
+        ) : showMobileEditProfile ? (
+          <MobileEditProfilePage />
+        ) : showMobileProfile ? (
+          <MobileProfilePage />
+        ) : showMobileSettings ? (
+          <MobileSettingsPage />
+        ) : showMobileSavedPosts ? (
+          <MobileSavedPostsPage />
+        ) : showMobileCommunityGuidelines ? (
+          <MobileCommunityGuidelinesPage />
+        ) : showMobileSupporter ? (
+          <MobileSupporterPage />
+        ) : showMobileHelp ? (
+          <MobileHelpPage />
+        ) : (
+          <>
+            {activeTab === 0 && <HomeFeed />}
+            {activeTab === 1 && <SearchPage />}
+            {activeTab === 2 && <CreatePage />}
+            {activeTab === 3 && <PrayerPage />}
+            {activeTab === 4 && <ProfilePage />}
+          </>
+        )}
+      </div>
+
+      {/* Bottom Navigation - Always show when logged in */}
+      {user && (
+        <nav style={styles.bottomNav}>
+          <div onClick={() => setActiveTab(0)} style={{
+            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+            color: activeTab === 0 ? '#4285f4' : '#8e8e8e', fontSize: '20px',
+            padding: '8px 12px', cursor: 'pointer'
+          }}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
+            </svg>
+            <span style={{ fontSize: '10px', marginTop: '2px' }}>Home</span>
+          </div>
+          <div onClick={() => setActiveTab(1)} style={{
+            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+            color: activeTab === 1 ? '#4285f4' : '#8e8e8e', fontSize: '20px',
+            padding: '8px 12px', cursor: 'pointer'
+          }}>
+            🔍
+            <span style={{ fontSize: '10px', marginTop: '2px' }}>Search</span>
+          </div>
+          <div onClick={() => setActiveTab(2)} style={{
+            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+            color: activeTab === 2 ? '#4285f4' : '#8e8e8e', fontSize: '20px',
+            padding: '8px 12px', cursor: 'pointer'
+          }}>
+            ➕
+            <span style={{ fontSize: '10px', marginTop: '2px' }}>Post</span>
+          </div>
+          <div onClick={() => setActiveTab(3)} style={{
+            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+            color: activeTab === 3 ? '#4285f4' : '#8e8e8e', fontSize: '20px',
+            padding: '8px 12px', cursor: 'pointer'
+          }}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={activeTab === 3 ? '#4285f4' : '#333333'} strokeWidth="2">
+              <path d="M14 2v6a2 2 0 01-2 2 2 2 0 01-2-2V2"/>
+              <path d="M10 2C8 2 8 4 10 6c0 1 0 2-2 2s-4-1-4-4"/>
+              <path d="M14 2c2 0 2 2 0 4 0 1 0 2 2 2s4-1 4-4"/>
+              <path d="M9 16v3a1 1 0 002 0v-3"/>
+              <path d="M13 16v3a1 1 0 002 0v-3"/>
+              <path d="M9 16h6"/>
+            </svg>
+            <span style={{ fontSize: '10px', marginTop: '2px' }}>Prayer</span>
+          </div>
+          <div onClick={() => setActiveTab(4)} style={{
+            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+            color: activeTab === 4 ? '#4285f4' : '#8e8e8e', fontSize: '20px',
+            padding: '8px 12px', cursor: 'pointer'
+          }}>
+            👤
+            <span style={{ fontSize: '10px', marginTop: '2px' }}>Profile</span>
+          </div>
+        </nav>
       )}
 
       {/* Report Modal */}
@@ -4189,33 +4611,52 @@ const MobileApp = () => {
         <div style={{
           position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
           background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-          zIndex: 1000
+          zIndex: 1000, padding: '20px'
         }}>
           <div style={{
-            background: '#ffffff', padding: '20px', borderRadius: '12px',
-            minWidth: '300px', maxWidth: '400px'
+            background: 'white', borderRadius: '12px', padding: '24px',
+            maxWidth: '90%', width: '400px', maxHeight: '80vh', overflow: 'auto'
           }}>
-            <h3 style={{ margin: '0 0 16px 0', fontSize: '18px', fontWeight: 600 }}>Report Content</h3>
-            <p style={{ margin: '0 0 16px 0', fontSize: '14px', color: '#6c757d' }}>
-              {reportModal.selectedReason || reportModal.reason}
+            <h3 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '16px', color: '#262626' }}>
+              Report Content
+            </h3>
+            <p style={{ fontSize: '14px', color: '#8e8e8e', marginBottom: '20px' }}>
+              Why are you reporting this {reportTarget?.type}?
             </p>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '24px' }}>
+              {[
+                'Inappropriate content',
+                'Spam or misleading',
+                'Not Christ-Centered (prayer not to Jesus)',
+                'Harassment or hate speech',
+                'Violence or dangerous content',
+                'Other'
+              ].map((reason) => (
+                <button
+                  key={reason}
+                  onClick={() => handleSubmitReport(reason)}
+                  style={{
+                    padding: '12px 16px', textAlign: 'left', border: '1px solid #dbdbdb',
+                    borderRadius: '8px', background: 'white', cursor: 'pointer',
+                    fontSize: '14px', color: '#262626'
+                  }}
+                >
+                  {reason}
+                </button>
+              ))}
+            </div>
+            
             <div style={{ display: 'flex', gap: '12px' }}>
               <button
                 onClick={() => setReportModalOpen(false)}
                 style={{
-                  flex: 1, padding: '10px', border: '1px solid #ddd',
-                  borderRadius: '6px', background: '#ffffff', cursor: 'pointer'
+                  flex: 1, padding: '12px 16px', border: '1px solid #dbdbdb',
+                  borderRadius: '8px', background: 'white', cursor: 'pointer',
+                  fontSize: '14px', fontWeight: 600, color: '#262626'
                 }}
               >
                 Cancel
-              </button>
-              <button
-                style={{
-                  flex: 1, padding: '10px', border: 'none',
-                  borderRadius: '6px', background: '#dc3545', color: '#ffffff', cursor: 'pointer'
-                }}
-              >
-                Submit Report
               </button>
             </div>
           </div>
@@ -4226,18 +4667,18 @@ const MobileApp = () => {
       {showMediaRequestModal && (
         <div style={{
           position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-          background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-          zIndex: 1000
+          backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1000,
+          display: 'flex', alignItems: 'center', justifyContent: 'center'
         }}>
           <div style={{
-            background: '#ffffff', padding: '20px', borderRadius: '12px',
-            minWidth: '300px', maxWidth: '400px'
+            background: '#ffffff', padding: '24px', borderRadius: '12px',
+            maxWidth: '300px', margin: '16px', textAlign: 'center'
           }}>
             <h3 style={{ margin: '0 0 16px 0', fontSize: '18px', fontWeight: 600 }}>
-              Request Media Sharing Permission
+              Request Link Sharing
             </h3>
             <p style={{ margin: '0 0 20px 0', fontSize: '14px', color: '#6c757d' }}>
-              To share links and media in your posts, you need permission from our admin team. This helps us maintain a safe and uplifting community.
+              Link sharing permissions allow you to embed YouTube videos and upload media files to enhance your posts.
             </p>
             <div style={{ display: 'flex', gap: '8px' }}>
               <button
