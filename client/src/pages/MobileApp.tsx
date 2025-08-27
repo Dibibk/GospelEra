@@ -43,6 +43,8 @@ const MobileApp = () => {
   const [showFullLeaderboard, setShowFullLeaderboard] = useState(false);
   const [prayedJustNow, setPrayedJustNow] = useState<Set<number>>(new Set());
   const [myCommitments, setMyCommitments] = useState<any[]>([]);
+  const [myRequests, setMyRequests] = useState<any[]>([]);
+  const [myPrayersTab, setMyPrayersTab] = useState<'commitments' | 'requests'>('commitments');
   const [confirmingId, setConfirmingId] = useState<number | null>(null);
   const [leaderboardData, setLeaderboardData] = useState<any[]>([]);
   const [email, setEmail] = useState('');
@@ -166,15 +168,24 @@ const MobileApp = () => {
         setPrayerRequests(prayerResult.data);
       }
 
-      // Fetch user's prayer commitments if authenticated
+      // Fetch user's prayer commitments and requests if authenticated
       if (user?.id) {
         try {
-          const commitmentsResult = await getMyCommitments();
+          const { getMyCommitments, getMyRequests } = await import('../lib/prayer');
+          const [commitmentsResult, requestsResult] = await Promise.all([
+            getMyCommitments(),
+            getMyRequests()
+          ]);
+          
           if (commitmentsResult.data) {
             setMyCommitments(commitmentsResult.data);
           }
+          
+          if (requestsResult.data) {
+            setMyRequests(requestsResult.data);
+          }
         } catch (error) {
-          console.error('Error fetching commitments:', error);
+          console.error('Error fetching user prayer data:', error);
         }
       }
     } catch (error) {
@@ -1973,59 +1984,156 @@ const MobileApp = () => {
         </>) : (
         // My Prayers Tab Content
         <div style={{ padding: '16px' }}>
-          <div style={{ marginBottom: '16px' }}>
-            <div style={{ fontWeight: 600, fontSize: '18px', color: '#262626', marginBottom: '8px' }}>
-              My Prayer Commitments
-            </div>
-            <div style={{ fontSize: '14px', color: '#8e8e8e' }}>
-              Prayers I've committed to pray for
-            </div>
+          {/* Tab Navigation for My Prayers */}
+          <div style={{ display: 'flex', marginBottom: '16px' }}>
+            <button
+              onClick={() => setMyPrayersTab('commitments')}
+              style={{
+                flex: 1, padding: '12px', border: 'none',
+                background: myPrayersTab === 'commitments' ? '#4285f4' : '#f5f5f5',
+                color: myPrayersTab === 'commitments' ? '#ffffff' : '#8e8e8e',
+                borderRadius: '8px 0 0 8px', fontSize: '14px', fontWeight: 600,
+                cursor: 'pointer'
+              }}
+            >
+              My Commitments
+            </button>
+            <button
+              onClick={() => setMyPrayersTab('requests')}
+              style={{
+                flex: 1, padding: '12px', border: 'none',
+                background: myPrayersTab === 'requests' ? '#4285f4' : '#f5f5f5',
+                color: myPrayersTab === 'requests' ? '#ffffff' : '#8e8e8e',
+                borderRadius: '0 8px 8px 0', fontSize: '14px', fontWeight: 600,
+                cursor: 'pointer'
+              }}
+            >
+              My Requests
+            </button>
           </div>
 
-          {myCommitments.length > 0 ? (
-            myCommitments.map((commitment: any) => (
-              <div key={commitment.id} style={{
-                background: '#ffffff', borderRadius: '12px', padding: '16px',
-                marginBottom: '12px', border: '1px solid #dbdbdb'
-              }}>
-                <div style={{ marginBottom: '8px' }}>
-                  <div style={{ fontWeight: 600, color: '#262626', marginBottom: '4px' }}>
-                    {commitment.prayer_request?.title}
-                  </div>
-                  <div style={{ fontSize: '14px', color: '#8e8e8e', lineHeight: 1.4 }}>
-                    {commitment.prayer_request?.content?.slice(0, 100)}...
-                  </div>
+          {myPrayersTab === 'commitments' ? (
+            <>
+              <div style={{ marginBottom: '16px' }}>
+                <div style={{ fontWeight: 600, fontSize: '18px', color: '#262626', marginBottom: '8px' }}>
+                  My Prayer Commitments
                 </div>
-                
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <div style={{ fontSize: '12px', color: '#8e8e8e' }}>
-                    Status: {commitment.has_prayed ? '✅ Prayed' : '⏳ Committed'}
-                  </div>
-                  
-                  {!commitment.has_prayed && (
-                    <button
-                      onClick={() => handleConfirmPrayed(commitment.request_id || commitment.prayer_request_id)}
-                      disabled={confirmingId === (commitment.request_id || commitment.prayer_request_id)}
-                      style={{
-                        background: '#28a745', color: '#ffffff', border: 'none',
-                        padding: '6px 12px', borderRadius: '16px', fontSize: '12px',
-                        fontWeight: 600, cursor: 'pointer'
-                      }}
-                    >
-                      {confirmingId === commitment.prayer_request_id ? '...' : '✓ Confirm Prayed'}
-                    </button>
-                  )}
+                <div style={{ fontSize: '14px', color: '#8e8e8e' }}>
+                  Prayers I've committed to pray for
                 </div>
               </div>
-            ))
+
+              {myCommitments.length > 0 ? (
+                myCommitments.map((commitment: any) => (
+                  <div key={commitment.id} style={{
+                    background: '#ffffff', borderRadius: '12px', padding: '16px',
+                    marginBottom: '12px', border: '1px solid #dbdbdb'
+                  }}>
+                    {/* Author info */}
+                    <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
+                      <div style={{
+                        width: '24px', height: '24px', borderRadius: '50%', background: '#dbdbdb',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: '12px', marginRight: '8px', border: '1px solid #dbdbdb', color: '#8e8e8e'
+                      }}>
+                        {commitment.prayer_requests?.is_anonymous ? '👤' : '🙏'}
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontWeight: 600, color: '#262626' }}>
+                          {commitment.prayer_requests?.is_anonymous ? 'Anonymous' : 
+                           (commitment.prayer_requests?.profiles?.display_name || 'Prayer Warrior')}
+                        </div>
+                        <div style={{ fontSize: '12px', color: '#8e8e8e' }}>{formatTimeAgo(commitment.committed_at)}</div>
+                      </div>
+                    </div>
+
+                    {/* Request content */}
+                    <div style={{ marginBottom: '12px' }}>
+                      <div style={{ fontWeight: 600, color: '#262626', marginBottom: '4px' }}>
+                        {commitment.prayer_requests?.title}
+                      </div>
+                      <div style={{ fontSize: '14px', color: '#8e8e8e', lineHeight: 1.4 }}>
+                        {commitment.prayer_requests?.details}
+                      </div>
+                    </div>
+                    
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <div style={{ fontSize: '12px', color: '#8e8e8e' }}>
+                        Status: {commitment.status === 'prayed' ? '✅ Prayed' : '⏳ Committed'}
+                      </div>
+                      
+                      {commitment.status === 'committed' && (
+                        <button
+                          onClick={() => handleConfirmPrayed(commitment.prayer_requests?.id)}
+                          disabled={confirmingId === commitment.prayer_requests?.id}
+                          style={{
+                            background: '#28a745', color: '#ffffff', border: 'none',
+                            padding: '6px 12px', borderRadius: '16px', fontSize: '12px',
+                            fontWeight: 600, cursor: 'pointer'
+                          }}
+                        >
+                          {confirmingId === commitment.prayer_requests?.id ? '...' : '✓ Confirm Prayed'}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div style={{ textAlign: 'center', padding: '40px 20px' }}>
+                  <div style={{ fontSize: '48px', marginBottom: '16px' }}>🙏</div>
+                  <div style={{ fontWeight: 600, marginBottom: '8px', color: '#262626' }}>No Prayer Commitments</div>
+                  <div style={{ color: '#8e8e8e', fontSize: '14px' }}>
+                    Commit to pray for others to see them here
+                  </div>
+                </div>
+              )}
+            </>
           ) : (
-            <div style={{ textAlign: 'center', padding: '40px 20px' }}>
-              <div style={{ fontSize: '48px', marginBottom: '16px' }}>🙏</div>
-              <div style={{ fontWeight: 600, marginBottom: '8px', color: '#262626' }}>No Prayer Commitments</div>
-              <div style={{ color: '#8e8e8e', fontSize: '14px' }}>
-                Commit to pray for others to see them here
+            <>
+              <div style={{ marginBottom: '16px' }}>
+                <div style={{ fontWeight: 600, fontSize: '18px', color: '#262626', marginBottom: '8px' }}>
+                  My Prayer Requests
+                </div>
+                <div style={{ fontSize: '14px', color: '#8e8e8e' }}>
+                  Prayer requests I've submitted
+                </div>
               </div>
-            </div>
+
+              {myRequests.length > 0 ? (
+                myRequests.map((request: any) => (
+                  <div key={request.id} style={{
+                    background: '#ffffff', borderRadius: '12px', padding: '16px',
+                    marginBottom: '12px', border: '1px solid #dbdbdb'
+                  }}>
+                    <div style={{ marginBottom: '8px' }}>
+                      <div style={{ fontWeight: 600, color: '#262626', marginBottom: '4px' }}>
+                        {request.title}
+                      </div>
+                      <div style={{ fontSize: '14px', color: '#8e8e8e', lineHeight: 1.4 }}>
+                        {request.details}
+                      </div>
+                    </div>
+                    
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <div style={{ fontSize: '12px', color: '#8e8e8e' }}>
+                        {request.prayer_stats?.committed_count || 0} committed • {request.prayer_stats?.prayed_count || 0} prayed
+                      </div>
+                      <div style={{ fontSize: '12px', color: request.status === 'open' ? '#28a745' : '#8e8e8e' }}>
+                        {request.status === 'open' ? '🟢 Active' : '⏸️ Closed'}
+                      </div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div style={{ textAlign: 'center', padding: '40px 20px' }}>
+                  <div style={{ fontSize: '48px', marginBottom: '16px' }}>✍️</div>
+                  <div style={{ fontWeight: 600, marginBottom: '8px', color: '#262626' }}>No Prayer Requests</div>
+                  <div style={{ color: '#8e8e8e', fontSize: '14px' }}>
+                    Submit a prayer request to see it here
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </div>
       )}
