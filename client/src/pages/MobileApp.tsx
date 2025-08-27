@@ -80,13 +80,17 @@ const MobileApp = () => {
   const [showPostMenu, setShowPostMenu] = useState<{[postId: number]: boolean}>({});
 
   useEffect(() => {
-    if (user) {
+    let isMounted = true;
+    
+    if (user && isMounted) {
       fetchData();
       checkUserMediaPermission();
       loadDailyVerse();
     } else {
       setLoading(false);
     }
+    
+    return () => { isMounted = false; };
   }, [user]);
 
   // Load daily scripture verse
@@ -213,8 +217,19 @@ const MobileApp = () => {
       // Get Amen info for all posts
       const { data: amenData } = await getAmenInfo(postIds);
       
-      for (const postId of postIds) {
-        const { isBookmarked: bookmarked } = await isBookmarked(postId);
+      // Batch load bookmarks to reduce API calls
+      const bookmarkPromises = postIds.map(async (postId) => {
+        try {
+          const { isBookmarked: bookmarked } = await isBookmarked(postId);
+          return { postId, bookmarked };
+        } catch {
+          return { postId, bookmarked: false };
+        }
+      });
+      
+      const bookmarkResults = await Promise.all(bookmarkPromises);
+      
+      for (const { postId, bookmarked } of bookmarkResults) {
         const amenInfo = amenData?.[postId] || { count: 0, mine: false };
         
         engagementMap.set(postId, { 
@@ -989,7 +1004,8 @@ const MobileApp = () => {
           onChange={(e) => setEmail(e.target.value)}
           style={{
             width: '100%', padding: '12px 16px', border: '1px solid #dbdbdb',
-            borderRadius: '8px', fontSize: '16px', marginBottom: '12px', outline: 'none'
+            borderRadius: '8px', fontSize: '16px', marginBottom: '12px', outline: 'none',
+            WebkitAppearance: 'none', touchAction: 'manipulation'
           }}
         />
         <input
@@ -999,7 +1015,8 @@ const MobileApp = () => {
           onChange={(e) => setPassword(e.target.value)}
           style={{
             width: '100%', padding: '12px 16px', border: '1px solid #dbdbdb',
-            borderRadius: '8px', fontSize: '16px', outline: 'none'
+            borderRadius: '8px', fontSize: '16px', outline: 'none',
+            WebkitAppearance: 'none', touchAction: 'manipulation'
           }}
         />
       </div>
@@ -3343,10 +3360,10 @@ const MobileApp = () => {
 
     // Load saved posts when component mounts  
     useEffect(() => {
-      if (showMobileSavedPosts) {
+      if (showMobileSavedPosts && savedPosts.length === 0) {
         loadSavedPosts();
       }
-    }, [showMobileSavedPosts]); // Only load when this page is shown
+    }, [showMobileSavedPosts]); // Only load when this page is shown and no posts loaded
 
     const loadSavedPosts = async () => {
       setSavedPostsLoading(true);
