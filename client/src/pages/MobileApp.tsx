@@ -2090,7 +2090,7 @@ const MobileApp = () => {
         {prayer.tags && prayer.tags.length > 0 && (
           <div style={{ marginBottom: '16px' }}>
             {prayer.tags.map((tag: string, index: number) => (
-              <span key={index} style={{
+              <span key={`${prayer.id}-detail-tag-${index}`} style={{
                 background: '#f0f0f0', padding: '4px 12px', borderRadius: '16px',
                 fontSize: '14px', color: '#666', marginRight: '8px', marginBottom: '8px',
                 display: 'inline-block'
