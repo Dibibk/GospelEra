@@ -583,6 +583,7 @@ const MobileApp = () => {
     setEditBio(profile?.bio || '');
     setEditAvatarUrl(profile?.avatar_url || '');
     setShowMobileEditProfile(false);
+    setShowMobileProfile(true);
     setProfileError('');
   };
 
@@ -1682,8 +1683,11 @@ const MobileApp = () => {
               </div>
             )}
 
-            {/* Action Buttons - Dark Grey */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            {/* Action Buttons */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ fontSize: '12px', color: '#8e8e8e' }}>
+                {request.prayer_stats?.committed_count || 0} committed · {request.prayer_stats?.prayed_count || 0} prayed
+              </div>
               <button 
                 onClick={() => {
                   const commitment = myCommitments.find(c => c.prayer_request_id === request.id);
@@ -1695,7 +1699,8 @@ const MobileApp = () => {
                 }}
                 disabled={!user || isBanned || committingToId === request.id}
                 style={{
-                  background: (!user || isBanned) ? '#dbdbdb' : '#4a4a4a',
+                  background: (!user || isBanned) ? '#dbdbdb' : 
+                    myCommitments.some(c => c.prayer_request_id === request.id && !c.has_prayed) ? '#28a745' : '#4285f4',
                   color: '#ffffff', border: 'none',
                   padding: '8px 16px', borderRadius: '20px', fontSize: '12px',
                   fontWeight: 600, 
@@ -1710,9 +1715,6 @@ const MobileApp = () => {
                  myCommitments.some(c => c.prayer_request_id === request.id && c.has_prayed) ? '✓ Prayed' :
                  'I will pray'}
               </button>
-              <div style={{ fontSize: '12px', color: '#8e8e8e' }}>
-                {request.prayer_stats?.committed_count || 0} committed · {request.prayer_stats?.prayed_count || 0} prayed
-              </div>
             </div>
           </div>
         ))
@@ -1757,10 +1759,10 @@ const MobileApp = () => {
                   
                   {!commitment.has_prayed && (
                     <button
-                      onClick={() => handleConfirmPrayed(commitment.prayer_request_id)}
-                      disabled={confirmingId === commitment.prayer_request_id}
+                      onClick={() => handleConfirmPrayed(commitment.request_id || commitment.prayer_request_id)}
+                      disabled={confirmingId === (commitment.request_id || commitment.prayer_request_id)}
                       style={{
-                        background: '#4a4a4a', color: '#ffffff', border: 'none',
+                        background: '#28a745', color: '#ffffff', border: 'none',
                         padding: '6px 12px', borderRadius: '16px', fontSize: '12px',
                         fontWeight: 600, cursor: 'pointer'
                       }}
@@ -1889,7 +1891,8 @@ const MobileApp = () => {
           disabled={!user || isBanned}
           style={{
             width: '100%',
-            background: (!user || isBanned) ? '#dbdbdb' : '#4a4a4a',
+            background: (!user || isBanned) ? '#dbdbdb' : 
+              myCommitments.some(c => c.prayer_request_id === prayer.id && !c.has_prayed) ? '#28a745' : '#4285f4',
             color: '#ffffff', border: 'none',
             padding: '16px', borderRadius: '12px', fontSize: '16px',
             fontWeight: 600, cursor: (!user || isBanned) ? 'not-allowed' : 'pointer'
@@ -2079,6 +2082,12 @@ const MobileApp = () => {
               onClick={() => {
                 setShowMobileProfile(false);
                 setShowMobileEditProfile(true);
+                // Set profile data for editing
+                if (profile) {
+                  setEditDisplayName(profile.display_name || '');
+                  setEditBio(profile.bio || '');
+                  setEditAvatarUrl(profile.avatar_url || '');
+                }
               }}
               style={{
                 background: 'none', border: '1px solid #dbdbdb', 
@@ -2150,15 +2159,15 @@ const MobileApp = () => {
                 padding: '16px', borderRight: '1px solid #e5e5e5' 
               }}>
                 <div style={{ fontSize: '20px', fontWeight: 600, color: '#000000' }}>
-                  {userProfile?.followers_count || 0}
+                  {posts.filter(p => p.author_id === user?.id).length || 0}
                 </div>
-                <div style={{ fontSize: '12px', color: '#8e8e8e' }}>Followers</div>
+                <div style={{ fontSize: '12px', color: '#8e8e8e' }}>Posts</div>
               </div>
               <div style={{ padding: '16px' }}>
                 <div style={{ fontSize: '20px', fontWeight: 600, color: '#000000' }}>
-                  {userProfile?.following_count || 0}
+                  {prayerRequests.filter(p => p.author_id === user?.id).length || 0}
                 </div>
-                <div style={{ fontSize: '12px', color: '#8e8e8e' }}>Following</div>
+                <div style={{ fontSize: '12px', color: '#8e8e8e' }}>Prayers</div>
               </div>
             </div>
           </div>
