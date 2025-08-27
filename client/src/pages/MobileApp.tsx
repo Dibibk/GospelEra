@@ -4499,6 +4499,32 @@ const MobileApp = () => {
                     >
                       👥 Manage Users
                     </button>
+                    <button 
+                      onClick={() => {
+                        setShowUserDropdown(false);
+                        window.location.href = '/admin/donations';
+                      }}
+                      style={{
+                        width: '100%', padding: '12px 16px', border: 'none', background: 'none',
+                        textAlign: 'left', fontSize: '14px', color: '#dc2626',
+                        ':hover': { background: '#f9f9f9' }, cursor: 'pointer'
+                      }}
+                    >
+                      💰 Admin Donations
+                    </button>
+                    <button 
+                      onClick={() => {
+                        setShowUserDropdown(false);
+                        window.location.href = '/admin/support';
+                      }}
+                      style={{
+                        width: '100%', padding: '12px 16px', border: 'none', background: 'none',
+                        textAlign: 'left', fontSize: '14px', color: '#dc2626',
+                        ':hover': { background: '#f9f9f9' }, cursor: 'pointer'
+                      }}
+                    >
+                      🛠️ Admin Support
+                    </button>
                   </>
                 )}
                 
