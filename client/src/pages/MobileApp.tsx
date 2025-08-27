@@ -1169,7 +1169,7 @@ const MobileApp = () => {
                         borderBottom: '1px solid #f0f0f0'
                       }}
                     >
-                      🚨 Report
+                      Report
                     </button>
                     
                     {/* Edit option for post owner only */}
@@ -1186,7 +1186,7 @@ const MobileApp = () => {
                           borderBottom: '1px solid #f0f0f0'
                         }}
                       >
-                        ✏️ Edit
+                        Edit
                       </button>
                     )}
                     
@@ -1204,7 +1204,7 @@ const MobileApp = () => {
                           color: '#ef4444', cursor: 'pointer'
                         }}
                       >
-                        {deletingPostId === post.id ? '⏳ Deleting...' : '🗑️ Delete'}
+                        {deletingPostId === post.id ? 'Deleting...' : 'Delete'}
                       </button>
                     )}
                   </div>
@@ -1355,14 +1355,6 @@ const MobileApp = () => {
                   </svg>
                 </button>
                 
-                {/* Report button */}
-                <button 
-                  onClick={() => handleReportPost(post.id)}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '8px' }}
-                  title="Report"
-                >
-                  <span style={{ fontSize: '20px', color: '#8e8e8e' }}>⚠</span>
-                </button>
                 
               </div>
             </div>
