@@ -3258,12 +3258,14 @@ const MobileApp = () => {
           // Load author profiles for saved posts
           if (Array.isArray(bookmarkedPosts) && bookmarkedPosts.length > 0) {
             const authorIds = bookmarkedPosts.map((post: any) => post.author_id || post.author).filter(Boolean);
-            const profilesData = await getProfilesByIds(authorIds);
+            const profilesResult = await getProfilesByIds(authorIds);
             
             // Update the profiles map
-            profilesData.forEach((profile: any) => {
-              setProfiles(prev => new Map(prev.set(profile.id, profile)));
-            });
+            if (profilesResult.data && !profilesResult.error) {
+              profilesResult.data.forEach((profile: any) => {
+                setProfiles(prev => new Map(prev.set(profile.id, profile)));
+              });
+            }
           }
         }
       } catch (err) {
