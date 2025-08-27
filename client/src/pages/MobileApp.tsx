@@ -89,6 +89,39 @@ const MobileApp = () => {
     }
   }, [user]);
 
+  // Early returns for special states
+  if (authLoading) {
+    return (
+      <div style={styles.container}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+          <div style={{ fontSize: '20px', color: '#8e8e8e' }}>Loading...</div>
+        </div>
+      </div>
+    );
+  }
+
+  // Handle prayer detail view
+  if (selectedPrayerId && selectedPrayerDetail) {
+    return (
+      <PrayerDetailView 
+        prayer={selectedPrayerDetail} 
+        onBack={() => {
+          setSelectedPrayerId(null);
+          setSelectedPrayerDetail(null);
+        }} 
+      />
+    );
+  }
+
+  // Handle full leaderboard view
+  if (showFullLeaderboard) {
+    return (
+      <FullLeaderboardView 
+        onBack={() => setShowFullLeaderboard(false)} 
+      />
+    );
+  }
+
   // Load daily scripture verse
   const loadDailyVerse = async () => {
     try {
@@ -3335,66 +3368,7 @@ const MobileApp = () => {
     );
   };
 
-  // Mobile Saved Posts Component
-  const MobileSavedPostsPage = () => {
-    const [savedPosts, setSavedPosts] = useState<any[]>([]);
-    const [savedPostsLoading, setSavedPostsLoading] = useState(true);
-    const [savedPostsError, setSavedPostsError] = useState('');
-
-    // Load saved posts when component mounts  
-    useEffect(() => {
-      if (showMobileSavedPosts) {
-        loadSavedPosts();
-      }
-    }, [showMobileSavedPosts]); // Only load when this page is shown
-
-    const loadSavedPosts = async () => {
-      setSavedPostsLoading(true);
-      setSavedPostsError('');
-      
-      try {
-        // Use the same listBookmarks function as web app but handle errors properly
-        const { listBookmarks } = await import('../lib/engagement');
-        const { data, error } = await listBookmarks({ limit: 50 });
-        
-        if (error) {
-          setSavedPostsError((error as any).message || 'Failed to load saved posts');
-        } else {
-          const bookmarkedPosts = data || [];
-          setSavedPosts(bookmarkedPosts);
-          
-          // Load author profiles for saved posts
-          if (Array.isArray(bookmarkedPosts) && bookmarkedPosts.length > 0) {
-            const { getProfilesByIds } = await import('../lib/profiles');
-            const authorIds = bookmarkedPosts.map((post: any) => post.author_id || post.author).filter(Boolean);
-            const profilesResult = await getProfilesByIds(authorIds);
-            
-            // Update the profiles map
-            if (profilesResult.data && !profilesResult.error) {
-              setProfiles(prev => {
-                const newProfiles = new Map(prev);
-                if (Array.isArray(profilesResult.data)) {
-                  profilesResult.data.forEach((profile: any) => {
-                    newProfiles.set(profile.id, profile);
-                  });
-                } else {
-                  // Handle Map format
-                  Array.from(profilesResult.data).forEach(([id, profile]) => {
-                    newProfiles.set(id, profile);
-                  });
-                }
-                return newProfiles;
-              });
-            }
-          }
-        }
-      } catch (err) {
-        console.error('Error loading saved posts:', err);
-        setSavedPostsError((err as any).message || 'Failed to load saved posts');
-      }
-      
-      setSavedPostsLoading(false);
-    };
+  // Mobile Saved Posts removed - now redirects to web version
 
     return (
       <div style={{ background: '#ffffff', minHeight: '100vh' }}>
@@ -4201,46 +4175,7 @@ const MobileApp = () => {
         Sign Out
       </button>
     </div>
-  );
-
-  // Loading state
-  if (authLoading) {
-    return (
-      <div style={styles.container}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
-          <div style={{ fontSize: '20px', color: '#8e8e8e' }}>Loading...</div>
-        </div>
-      </div>
-    );
-  }
-
-  // Handle prayer detail view
-  if (selectedPrayerId && selectedPrayerDetail) {
-    return (
-      <PrayerDetailView 
-        prayer={selectedPrayerDetail} 
-        onBack={() => {
-          setSelectedPrayerId(null);
-          setSelectedPrayerDetail(null);
-        }} 
-      />
-    );
-  }
-
-  // Handle full leaderboard view
-  if (showFullLeaderboard) {
-    return (
-      <FullLeaderboardView 
-        onBack={() => setShowFullLeaderboard(false)} 
-      />
-    );
-  }
-
-  // Render main component
-  return (
-    <div style={styles.container}>
-      {/* Header */}
-      <div style={styles.header}>
+  ); // End ProfileComponent
         <div style={{ fontSize: '24px', fontWeight: 700, color: '#262626', letterSpacing: '-0.5px' }}>
           {!user ? 'Gospel Era' :
            activeTab === 0 ? 'Gospel Era' :
@@ -4340,7 +4275,10 @@ const MobileApp = () => {
                     ':hover': { background: '#f9f9f9' }, cursor: 'pointer'
                   }}
                 >
-                  👤 Profile
+                  <svg style={{ width: '16px', height: '16px', marginRight: '12px', color: '#666' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                  Profile
                 </button>
                 
                 <button 
@@ -4444,22 +4382,9 @@ const MobileApp = () => {
                 </button>
                 
                 
-                {isAdmin && (
+                {(userProfile?.role === 'admin' || isAdmin) && (
                   <>
                     <div style={{ borderTop: '1px solid #f0f0f0', marginTop: '4px' }} />
-                    <button 
-                      onClick={() => {
-                        setShowUserDropdown(false);
-                        window.location.href = '/admin/dashboard';
-                      }}
-                      style={{
-                        width: '100%', padding: '12px 16px', border: 'none', background: 'none',
-                        textAlign: 'left', fontSize: '14px', color: '#dc2626',
-                        ':hover': { background: '#f9f9f9' }, cursor: 'pointer'
-                      }}
-                    >
-                      🛡️ Admin Dashboard
-                    </button>
                     <button 
                       onClick={() => {
                         setShowUserDropdown(false);
@@ -4467,11 +4392,20 @@ const MobileApp = () => {
                       }}
                       style={{
                         width: '100%', padding: '12px 16px', border: 'none', background: 'none',
-                        textAlign: 'left', fontSize: '14px', color: '#dc2626',
-                        ':hover': { background: '#f9f9f9' }, cursor: 'pointer'
+                        textAlign: 'left', fontSize: '14px', color: '#333', display: 'flex', alignItems: 'center',
+                        cursor: 'pointer'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = '#f9f9f9';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = 'none';
                       }}
                     >
-                      🚨 Review Reports
+                      <svg style={{ width: '16px', height: '16px', marginRight: '12px', color: '#666' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                      </svg>
+                      Admin Reports
                     </button>
                     <button 
                       onClick={() => {
@@ -4480,24 +4414,42 @@ const MobileApp = () => {
                       }}
                       style={{
                         width: '100%', padding: '12px 16px', border: 'none', background: 'none',
-                        textAlign: 'left', fontSize: '14px', color: '#dc2626',
-                        ':hover': { background: '#f9f9f9' }, cursor: 'pointer'
+                        textAlign: 'left', fontSize: '14px', color: '#333', display: 'flex', alignItems: 'center',
+                        cursor: 'pointer'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = '#f9f9f9';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = 'none';
                       }}
                     >
-                      📂 Media Requests
+                      <svg style={{ width: '16px', height: '16px', marginRight: '12px', color: '#666' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                      </svg>
+                      Media Requests
                     </button>
                     <button 
                       onClick={() => {
                         setShowUserDropdown(false);
-                        window.location.href = '/admin/users';
+                        window.location.href = '/admin/support';
                       }}
                       style={{
                         width: '100%', padding: '12px 16px', border: 'none', background: 'none',
-                        textAlign: 'left', fontSize: '14px', color: '#dc2626',
-                        ':hover': { background: '#f9f9f9' }, cursor: 'pointer'
+                        textAlign: 'left', fontSize: '14px', color: '#333', display: 'flex', alignItems: 'center',
+                        cursor: 'pointer'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = '#f9f9f9';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = 'none';
                       }}
                     >
-                      👥 Manage Users
+                      <svg style={{ width: '16px', height: '16px', marginRight: '12px', color: '#666' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                      </svg>
+                      Admin Support
                     </button>
                   </>
                 )}
@@ -4532,8 +4484,8 @@ const MobileApp = () => {
           <MobileProfilePage />
         ) : showMobileSettings ? (
           <MobileSettingsPage />
-        ) : showMobileSavedPosts ? (
-          <MobileSavedPostsPage />
+        ) : false ? (
+          null
         ) : showMobileCommunityGuidelines ? (
           <MobileCommunityGuidelinesPage />
         ) : showMobileSupporter ? (
@@ -4708,6 +4660,19 @@ const MobileApp = () => {
       )}
     </div>
   );
-};
+  
+  // Render main component - this should be inside the MobileApp function
+  return (
+    <div style={styles.container}>
+      {/* Header */}
+      <div style={styles.header}>
+        <div style={{ fontSize: '24px', fontWeight: 700, color: '#262626', letterSpacing: '-0.5px' }}>
+          {!user ? 'Gospel Era' :
+           activeTab === 0 ? 'Gospel Era' :
+           activeTab === 1 ? 'Search' :
+           activeTab === 2 ? 'Create' :
+           activeTab === 3 ? 'Prayer' :
+           'Profile'}
+        </div>
 
 export default MobileApp;
