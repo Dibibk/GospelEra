@@ -341,6 +341,10 @@ const MobileApp = () => {
   // User profile and dropdown state
   const [userProfile, setUserProfile] = useState<{display_name?: string, avatar_url?: string} | null>(null);
   const [showUserDropdown, setShowUserDropdown] = useState(false);
+  // Mobile page states
+  const [showMobileSettings, setShowMobileSettings] = useState(false);
+  const [showMobileSavedPosts, setShowMobileSavedPosts] = useState(false);
+  const [showMobileCommunityGuidelines, setShowMobileCommunityGuidelines] = useState(false);
 
   // Fetch leaderboard data and user profile
   useEffect(() => {
@@ -1230,42 +1234,6 @@ const MobileApp = () => {
             </div>
           </div>
 
-          {/* Top Prayer Warriors Section */}
-          <div style={{ background: '#f8f9fa', padding: '16px', borderBottom: '1px solid #dbdbdb' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-              <div style={{ fontWeight: 600, fontSize: '16px', color: '#262626' }}>🏆 Top Prayer Warriors</div>
-              <button 
-                onClick={() => setShowFullLeaderboard(true)}
-                style={{ 
-                  background: 'none', border: 'none', color: '#4a4a4a', 
-                  fontSize: '14px', cursor: 'pointer', textDecoration: 'underline'
-                }}
-              >
-                View All
-              </button>
-            </div>
-            <div style={{ display: 'flex', gap: '8px', overflowX: 'auto' }}>
-              {leaderboard.slice(0, 3).map((warrior, index) => (
-                <div key={warrior.warrior} style={{
-                  background: '#ffffff', borderRadius: '8px', padding: '12px',
-                  minWidth: '100px', textAlign: 'center', border: '1px solid #dbdbdb'
-                }}>
-                  <div style={{ fontSize: '20px', marginBottom: '4px' }}>
-                    {index === 0 ? '🥇' : index === 1 ? '🥈' : '🥉'}
-                  </div>
-                  <div style={{ fontSize: '12px', fontWeight: 600, color: '#262626', marginBottom: '2px' }}>
-                    {warrior.display_name}
-                  </div>
-                  <div style={{ fontSize: '10px', color: '#8e8e8e' }}>
-                    {warrior.count_prayed} prayers
-                  </div>
-                  <div style={{ fontSize: '10px', color: '#8e8e8e' }}>
-                    {warrior.current_streak || 0} day streak
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
 
           {/* Create Prayer Request - enhanced with all features */}
       <div style={{ padding: '16px', borderBottom: '1px solid #dbdbdb' }}>
@@ -1776,6 +1744,223 @@ const MobileApp = () => {
     </div>
   );
 
+  // Mobile Settings Component
+  const MobileSettingsPage = () => (
+    <div style={{ padding: '16px', background: '#ffffff', minHeight: '100vh' }}>
+      {/* Header */}
+      <div style={{ 
+        display: 'flex', alignItems: 'center', marginBottom: '24px',
+        paddingBottom: '16px', borderBottom: '1px solid #dbdbdb'
+      }}>
+        <button 
+          onClick={() => setShowMobileSettings(false)}
+          style={{
+            background: 'none', border: 'none', fontSize: '18px',
+            color: '#262626', cursor: 'pointer', marginRight: '16px'
+          }}
+        >
+          ←
+        </button>
+        <div style={{ fontSize: '18px', fontWeight: 600, color: '#262626' }}>Settings</div>
+      </div>
+
+      {/* Profile Section */}
+      <div style={{ marginBottom: '24px' }}>
+        <div style={{ fontSize: '16px', fontWeight: 600, color: '#262626', marginBottom: '16px' }}>
+          Profile Settings
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', marginBottom: '16px' }}>
+          <div style={{
+            width: '60px', height: '60px', borderRadius: '50%',
+            background: userProfile?.avatar_url ? 'none' : '#dbdbdb',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            marginRight: '16px', overflow: 'hidden'
+          }}>
+            {userProfile?.avatar_url ? (
+              <img 
+                src={userProfile.avatar_url.startsWith('/') ? userProfile.avatar_url : `/public-objects/${userProfile.avatar_url}`} 
+                alt="Profile" 
+                style={{ width: '60px', height: '60px', borderRadius: '50%', objectFit: 'cover' }}
+              />
+            ) : (
+              <span style={{ fontSize: '24px', color: '#8e8e8e' }}>👤</span>
+            )}
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: '16px', fontWeight: 600, color: '#262626' }}>
+              {userProfile?.display_name || user?.email?.split('@')[0] || 'Gospel User'}
+            </div>
+            <div style={{ fontSize: '14px', color: '#8e8e8e' }}>
+              {user?.email}
+            </div>
+          </div>
+        </div>
+        
+        <button style={{
+          width: '100%', background: '#f2f2f2', border: 'none', padding: '12px',
+          borderRadius: '8px', fontSize: '14px', fontWeight: 600, color: '#262626',
+          cursor: 'pointer', marginBottom: '8px'
+        }}>
+          Edit Profile Information
+        </button>
+        
+        <button style={{
+          width: '100%', background: '#f2f2f2', border: 'none', padding: '12px',
+          borderRadius: '8px', fontSize: '14px', fontWeight: 600, color: '#262626',
+          cursor: 'pointer'
+        }}>
+          Change Profile Picture
+        </button>
+      </div>
+
+      {/* Account Section */}
+      <div style={{ marginBottom: '24px' }}>
+        <div style={{ fontSize: '16px', fontWeight: 600, color: '#262626', marginBottom: '16px' }}>
+          Account
+        </div>
+        
+        <button style={{
+          width: '100%', background: '#f2f2f2', border: 'none', padding: '12px',
+          borderRadius: '8px', fontSize: '14px', fontWeight: 600, color: '#262626',
+          cursor: 'pointer', marginBottom: '8px', textAlign: 'left'
+        }}>
+          🔔 Notification Settings
+        </button>
+        
+        <button style={{
+          width: '100%', background: '#f2f2f2', border: 'none', padding: '12px',
+          borderRadius: '8px', fontSize: '14px', fontWeight: 600, color: '#262626',
+          cursor: 'pointer', marginBottom: '8px', textAlign: 'left'
+        }}>
+          🔒 Privacy Settings
+        </button>
+        
+        <button style={{
+          width: '100%', background: '#f2f2f2', border: 'none', padding: '12px',
+          borderRadius: '8px', fontSize: '14px', fontWeight: 600, color: '#262626',
+          cursor: 'pointer', textAlign: 'left'
+        }}>
+          🛡️ Security Settings
+        </button>
+      </div>
+
+      {/* Logout */}
+      <button
+        onClick={signOut}
+        style={{
+          width: '100%', background: '#dc2626', color: '#ffffff',
+          border: 'none', padding: '12px', borderRadius: '8px',
+          fontSize: '16px', fontWeight: 600, cursor: 'pointer'
+        }}
+      >
+        Sign Out
+      </button>
+    </div>
+  );
+
+  // Mobile Saved Posts Component
+  const MobileSavedPostsPage = () => (
+    <div style={{ padding: '16px', background: '#ffffff', minHeight: '100vh' }}>
+      {/* Header */}
+      <div style={{ 
+        display: 'flex', alignItems: 'center', marginBottom: '24px',
+        paddingBottom: '16px', borderBottom: '1px solid #dbdbdb'
+      }}>
+        <button 
+          onClick={() => setShowMobileSavedPosts(false)}
+          style={{
+            background: 'none', border: 'none', fontSize: '18px',
+            color: '#262626', cursor: 'pointer', marginRight: '16px'
+          }}
+        >
+          ←
+        </button>
+        <div style={{ fontSize: '18px', fontWeight: 600, color: '#262626' }}>Saved Posts</div>
+      </div>
+
+      {/* Content */}
+      <div style={{ textAlign: 'center', color: '#8e8e8e', fontSize: '14px', padding: '40px 20px' }}>
+        <div style={{ fontSize: '48px', marginBottom: '16px' }}>🔖</div>
+        <div style={{ marginBottom: '8px' }}>No saved posts yet</div>
+        <div>Save posts you want to read later by tapping the bookmark icon</div>
+      </div>
+    </div>
+  );
+
+  // Mobile Community Guidelines Component
+  const MobileCommunityGuidelinesPage = () => (
+    <div style={{ padding: '16px', background: '#ffffff', minHeight: '100vh' }}>
+      {/* Header */}
+      <div style={{ 
+        display: 'flex', alignItems: 'center', marginBottom: '24px',
+        paddingBottom: '16px', borderBottom: '1px solid #dbdbdb'
+      }}>
+        <button 
+          onClick={() => setShowMobileCommunityGuidelines(false)}
+          style={{
+            background: 'none', border: 'none', fontSize: '18px',
+            color: '#262626', cursor: 'pointer', marginRight: '16px'
+          }}
+        >
+          ←
+        </button>
+        <div style={{ fontSize: '18px', fontWeight: 600, color: '#262626' }}>Community Guidelines</div>
+      </div>
+
+      {/* Content */}
+      <div style={{ lineHeight: 1.6, color: '#262626' }}>
+        <div style={{ fontSize: '16px', fontWeight: 600, marginBottom: '16px', color: '#7c3aed' }}>
+          ✝️ Gospel Era Community Guidelines
+        </div>
+        
+        <div style={{ marginBottom: '20px' }}>
+          <div style={{ fontSize: '14px', fontWeight: 600, marginBottom: '8px' }}>
+            🙏 Our Mission
+          </div>
+          <div style={{ fontSize: '14px', marginBottom: '16px' }}>
+            Gospel Era is a Christ-centered community dedicated to sharing faith, hope, and love through prayer and Gospel messages.
+          </div>
+        </div>
+
+        <div style={{ marginBottom: '20px' }}>
+          <div style={{ fontSize: '14px', fontWeight: 600, marginBottom: '8px' }}>
+            📖 Content Guidelines
+          </div>
+          <ul style={{ fontSize: '14px', marginLeft: '16px' }}>
+            <li style={{ marginBottom: '4px' }}>Share content that glorifies Jesus Christ</li>
+            <li style={{ marginBottom: '4px' }}>Focus on faith, hope, love, and encouragement</li>
+            <li style={{ marginBottom: '4px' }}>Be respectful and kind to all members</li>
+            <li style={{ marginBottom: '4px' }}>Avoid controversial or divisive topics</li>
+          </ul>
+        </div>
+
+        <div style={{ marginBottom: '20px' }}>
+          <div style={{ fontSize: '14px', fontWeight: 600, marginBottom: '8px' }}>
+            🚫 What's Not Allowed
+          </div>
+          <ul style={{ fontSize: '14px', marginLeft: '16px' }}>
+            <li style={{ marginBottom: '4px' }}>Hate speech or discrimination</li>
+            <li style={{ marginBottom: '4px' }}>Inappropriate or offensive content</li>
+            <li style={{ marginBottom: '4px' }}>Spam or promotional content</li>
+            <li style={{ marginBottom: '4px' }}>Content promoting other religions</li>
+          </ul>
+        </div>
+
+        <div style={{ 
+          background: '#f8f9fa', padding: '16px', borderRadius: '8px',
+          border: '1px solid #e1e5e9', marginTop: '24px'
+        }}>
+          <div style={{ fontSize: '14px', fontWeight: 600, marginBottom: '8px' }}>
+            💝 Remember
+          </div>
+          <div style={{ fontSize: '14px', fontStyle: 'italic' }}>
+            "Let your conversation be always full of grace, seasoned with salt, so that you may know how to answer everyone." - Colossians 4:6
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
   // Profile Component
   const ProfilePage = () => (
     <div style={{ padding: '16px' }}>
@@ -1807,7 +1992,7 @@ const MobileApp = () => {
           </div>
         </div>
         <button 
-          onClick={() => window.location.href = '/settings'}
+          onClick={() => setShowMobileSettings(true)}
           style={{
             background: 'none', border: 'none', fontSize: '20px',
             color: '#262626', cursor: 'pointer', padding: '8px'
@@ -1852,7 +2037,7 @@ const MobileApp = () => {
       {/* Action buttons */}
       <div style={{ display: 'flex', gap: '12px', marginBottom: '24px' }}>
         <button 
-          onClick={() => window.location.href = '/settings'}
+          onClick={() => setShowMobileSettings(true)}
           style={{
             flex: 1, background: '#f2f2f2', border: 'none', padding: '10px',
             borderRadius: '6px', fontSize: '14px', fontWeight: 600, color: '#262626',
@@ -1862,7 +2047,7 @@ const MobileApp = () => {
           Edit Profile
         </button>
         <button 
-          onClick={() => window.location.href = '/saved-posts'}
+          onClick={() => setShowMobileSavedPosts(true)}
           style={{
             background: '#f2f2f2', border: 'none', padding: '10px 16px',
             borderRadius: '6px', fontSize: '16px', color: '#262626', cursor: 'pointer'
@@ -2024,7 +2209,7 @@ const MobileApp = () => {
                 <button 
                   onClick={() => {
                     setShowUserDropdown(false);
-                    window.location.href = '/settings';
+                    setShowMobileSettings(true);
                   }}
                   style={{
                     width: '100%', padding: '12px 16px', border: 'none', background: 'none',
@@ -2038,7 +2223,7 @@ const MobileApp = () => {
                 <button 
                   onClick={() => {
                     setShowUserDropdown(false);
-                    window.location.href = '/saved-posts';
+                    setShowMobileSavedPosts(true);
                   }}
                   style={{
                     width: '100%', padding: '12px 16px', border: 'none', background: 'none',
@@ -2052,7 +2237,7 @@ const MobileApp = () => {
                 <button 
                   onClick={() => {
                     setShowUserDropdown(false);
-                    window.location.href = '/community-guidelines';
+                    setShowMobileCommunityGuidelines(true);
                   }}
                   style={{
                     width: '100%', padding: '12px 16px', border: 'none', background: 'none',
@@ -2160,6 +2345,12 @@ const MobileApp = () => {
       <div style={styles.content}>
         {!user ? (
           <LoginPage />
+        ) : showMobileSettings ? (
+          <MobileSettingsPage />
+        ) : showMobileSavedPosts ? (
+          <MobileSavedPostsPage />
+        ) : showMobileCommunityGuidelines ? (
+          <MobileCommunityGuidelinesPage />
         ) : (
           <>
             {activeTab === 0 && <HomeFeed />}
@@ -2171,8 +2362,8 @@ const MobileApp = () => {
         )}
       </div>
 
-      {/* Bottom Navigation - Only show when logged in */}
-      {user && (
+      {/* Bottom Navigation - Only show when logged in and not on mobile pages */}
+      {user && !showMobileSettings && !showMobileSavedPosts && !showMobileCommunityGuidelines && (
         <nav style={styles.bottomNav}>
           <div onClick={() => setActiveTab(0)} style={{
             display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
