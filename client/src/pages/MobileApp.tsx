@@ -3351,9 +3351,12 @@ const MobileApp = () => {
       setSavedPostsError('');
       
       try {
+        console.log('Starting to load saved posts...');
         // Use the same listBookmarks function as web app but handle errors properly
         const { listBookmarks } = await import('../lib/engagement');
+        console.log('Import successful, calling listBookmarks...');
         const { data, error } = await listBookmarks({ limit: 50 });
+        console.log('listBookmarks result:', { data, error });
         
         if (error) {
           setSavedPostsError((error as any).message || 'Failed to load saved posts');
