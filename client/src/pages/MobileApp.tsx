@@ -11,6 +11,7 @@ import { validateAndNormalizeYouTubeUrl } from '../../../shared/youtube';
 import { validateFaithContent } from '../../../shared/moderation';
 import { useRole } from '@/hooks/useRole';
 import { getTopPrayerWarriors } from '@/lib/leaderboard';
+import { updateUserSettings, getUserSettings } from '@/lib/profiles';
 
 // Complete Instagram-style Gospel Era Mobile App with Real API Integration
 const MobileApp = () => {
@@ -1746,139 +1747,505 @@ const MobileApp = () => {
   );
 
   // Mobile Settings Component
-  const MobileSettingsPage = () => (
-    <div style={{ padding: '16px', background: '#ffffff', minHeight: '100vh' }}>
-      {/* Header */}
-      <div style={{ 
-        display: 'flex', alignItems: 'center', marginBottom: '24px',
-        paddingBottom: '16px', borderBottom: '1px solid #dbdbdb'
-      }}>
-        <button 
-          onClick={() => setShowMobileSettings(false)}
-          style={{
-            background: 'none', border: 'none', fontSize: '18px',
-            color: '#262626', cursor: 'pointer', marginRight: '16px'
-          }}
-        >
-          ←
-        </button>
-        <div style={{ fontSize: '18px', fontWeight: 600, color: '#262626' }}>Settings</div>
-      </div>
+  const MobileSettingsPage = () => {
+    const [darkMode, setDarkMode] = useState(() => {
+      return localStorage.getItem('gospel-era-dark-mode') === 'true';
+    });
+    const [scriptureOfDay, setScriptureOfDay] = useState(() => {
+      return localStorage.getItem('gospel-era-scripture-enabled') !== 'false';
+    });
+    const [prayerNotifications, setPrayerNotifications] = useState(() => {
+      return localStorage.getItem('gospel-era-prayer-notifications') !== 'false';
+    });
+    const [contentFilter, setContentFilter] = useState(() => {
+      return localStorage.getItem('gospel-era-content-filter') || 'standard';
+    });
+    const [showHelpDrawer, setShowHelpDrawer] = useState(false);
 
-      {/* Profile Section */}
-      <div style={{ marginBottom: '24px' }}>
-        <div style={{ fontSize: '16px', fontWeight: 600, color: '#262626', marginBottom: '16px' }}>
-          Profile Settings
+    const handleToggle = async (setting: string, value: boolean) => {
+      // Haptic feedback simulation
+      if (navigator.vibrate) {
+        navigator.vibrate(50);
+      }
+      
+      // Update local state and localStorage immediately for responsiveness
+      switch (setting) {
+        case 'darkMode':
+          setDarkMode(value);
+          localStorage.setItem('gospel-era-dark-mode', value.toString());
+          if (value) {
+            document.documentElement.classList.add('dark');
+          } else {
+            document.documentElement.classList.remove('dark');
+          }
+          break;
+        case 'scriptureOfDay':
+          setScriptureOfDay(value);
+          localStorage.setItem('gospel-era-scripture-enabled', value.toString());
+          break;
+        case 'prayerNotifications':
+          setPrayerNotifications(value);
+          localStorage.setItem('gospel-era-prayer-notifications', value.toString());
+          break;
+      }
+
+      // Sync to Supabase (non-blocking)
+      try {
+        const currentSettings = {
+          darkMode: setting === 'darkMode' ? value : darkMode,
+          scriptureOfDay: setting === 'scriptureOfDay' ? value : scriptureOfDay,
+          prayerNotifications: setting === 'prayerNotifications' ? value : prayerNotifications,
+          contentFilter
+        };
+        await updateUserSettings(currentSettings);
+      } catch (error) {
+        console.warn('Failed to sync settings to server:', error);
+        // Settings are still preserved in localStorage
+      }
+    };
+
+    const handleContentFilterChange = async (filter: string) => {
+      setContentFilter(filter);
+      localStorage.setItem('gospel-era-content-filter', filter);
+      // Haptic feedback
+      if (navigator.vibrate) {
+        navigator.vibrate(50);
+      }
+
+      // Sync to Supabase (non-blocking)
+      try {
+        const currentSettings = {
+          darkMode,
+          scriptureOfDay,
+          prayerNotifications,
+          contentFilter: filter
+        };
+        await updateUserSettings(currentSettings);
+      } catch (error) {
+        console.warn('Failed to sync content filter to server:', error);
+        // Settings are still preserved in localStorage
+      }
+    };
+
+    const copyEmailToClipboard = () => {
+      navigator.clipboard.writeText('ridibi.service@gmail.com');
+      alert('Email copied to clipboard!');
+    };
+
+    return (
+      <div style={{ background: '#ffffff', minHeight: '100vh' }}>
+        {/* Sticky Header */}
+        <div style={{ 
+          position: 'sticky', top: 0, zIndex: 10, background: '#ffffff',
+          borderBottom: '1px solid #e5e5e5', padding: '16px'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <button 
+              onClick={() => setShowMobileSettings(false)}
+              style={{
+                background: 'none', border: 'none', fontSize: '20px',
+                color: '#000000', cursor: 'pointer', marginRight: '16px',
+                minHeight: '44px', minWidth: '44px', display: 'flex',
+                alignItems: 'center', justifyContent: 'center'
+              }}
+            >
+              ←
+            </button>
+            <div style={{ fontSize: '20px', fontWeight: 600, color: '#000000' }}>Settings</div>
+          </div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', marginBottom: '16px' }}>
-          <div style={{
-            width: '60px', height: '60px', borderRadius: '50%',
-            background: userProfile?.avatar_url ? 'none' : '#dbdbdb',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            marginRight: '16px', overflow: 'hidden'
+
+        <div style={{ padding: '0 16px 16px' }}>
+          {/* Account Section */}
+          <div style={{ 
+            background: '#ffffff', borderRadius: '12px', border: '1px solid #e5e5e5',
+            marginBottom: '24px', overflow: 'hidden'
           }}>
-            {userProfile?.avatar_url ? (
-              <img 
-                src={userProfile.avatar_url.startsWith('/') ? userProfile.avatar_url : `/public-objects/${userProfile.avatar_url}`} 
-                alt="Profile" 
-                style={{ width: '60px', height: '60px', borderRadius: '50%', objectFit: 'cover' }}
-              />
-            ) : (
-              <span style={{ fontSize: '24px', color: '#8e8e8e' }}>👤</span>
-            )}
-          </div>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: '16px', fontWeight: 600, color: '#262626' }}>
-              {userProfile?.display_name || user?.email?.split('@')[0] || 'Gospel User'}
+            <div style={{ 
+              padding: '16px 16px 8px', fontSize: '13px', fontWeight: 600, 
+              color: '#8e8e8e', textTransform: 'uppercase', letterSpacing: '0.5px'
+            }}>
+              ACCOUNT
             </div>
-            <div style={{ fontSize: '14px', color: '#8e8e8e' }}>
-              {user?.email}
+            
+            <button
+              onClick={() => alert('Edit Profile functionality - coming soon!')}
+              style={{
+                width: '100%', minHeight: '48px', background: 'none', border: 'none',
+                borderTop: '1px solid #e5e5e5', padding: '16px', textAlign: 'left',
+                cursor: 'pointer', display: 'flex', alignItems: 'center',
+                justifyContent: 'space-between'
+              }}
+            >
+              <div style={{ fontSize: '16px', color: '#000000' }}>Edit Profile</div>
+              <div style={{ fontSize: '16px', color: '#c7c7cc' }}>›</div>
+            </button>
+            
+            <div style={{
+              minHeight: '48px', borderTop: '1px solid #e5e5e5', 
+              padding: '16px', display: 'flex', alignItems: 'center'
+            }}>
+              <div style={{ fontSize: '16px', color: '#8e8e8e' }}>
+                {user?.email || 'No email set'}
+              </div>
+            </div>
+            
+            <button
+              onClick={() => alert('Change Password - coming soon!')}
+              style={{
+                width: '100%', minHeight: '48px', background: 'none', border: 'none',
+                borderTop: '1px solid #e5e5e5', padding: '16px', textAlign: 'left',
+                cursor: 'pointer', display: 'flex', alignItems: 'center',
+                justifyContent: 'space-between'
+              }}
+            >
+              <div style={{ fontSize: '16px', color: '#000000' }}>Change Password</div>
+              <div style={{ fontSize: '16px', color: '#c7c7cc' }}>›</div>
+            </button>
+          </div>
+
+          {/* Preferences Section */}
+          <div style={{ 
+            background: '#ffffff', borderRadius: '12px', border: '1px solid #e5e5e5',
+            marginBottom: '24px', overflow: 'hidden'
+          }}>
+            <div style={{ 
+              padding: '16px 16px 8px', fontSize: '13px', fontWeight: 600, 
+              color: '#8e8e8e', textTransform: 'uppercase', letterSpacing: '0.5px'
+            }}>
+              PREFERENCES
+            </div>
+            
+            <div style={{
+              minHeight: '48px', borderTop: '1px solid #e5e5e5', 
+              padding: '16px', display: 'flex', alignItems: 'center',
+              justifyContent: 'space-between'
+            }}>
+              <div style={{ fontSize: '16px', color: '#000000' }}>Dark Mode</div>
+              <label style={{
+                position: 'relative', display: 'inline-block', width: '51px', height: '31px'
+              }}>
+                <input
+                  type="checkbox"
+                  checked={darkMode}
+                  onChange={(e) => handleToggle('darkMode', e.target.checked)}
+                  style={{ opacity: 0, width: 0, height: 0 }}
+                />
+                <span style={{
+                  position: 'absolute', cursor: 'pointer', top: 0, left: 0,
+                  right: 0, bottom: 0, background: darkMode ? '#34c759' : '#e5e5e5',
+                  borderRadius: '31px', transition: '0.3s'
+                }}>
+                  <span style={{
+                    position: 'absolute', content: '', height: '27px', width: '27px',
+                    left: darkMode ? '22px' : '2px', bottom: '2px', background: '#ffffff',
+                    borderRadius: '50%', transition: '0.3s'
+                  }} />
+                </span>
+              </label>
+            </div>
+            
+            <div style={{
+              minHeight: '48px', borderTop: '1px solid #e5e5e5', 
+              padding: '16px', display: 'flex', alignItems: 'center',
+              justifyContent: 'space-between'
+            }}>
+              <div style={{ fontSize: '16px', color: '#000000' }}>Scripture of the Day</div>
+              <label style={{
+                position: 'relative', display: 'inline-block', width: '51px', height: '31px'
+              }}>
+                <input
+                  type="checkbox"
+                  checked={scriptureOfDay}
+                  onChange={(e) => handleToggle('scriptureOfDay', e.target.checked)}
+                  style={{ opacity: 0, width: 0, height: 0 }}
+                />
+                <span style={{
+                  position: 'absolute', cursor: 'pointer', top: 0, left: 0,
+                  right: 0, bottom: 0, background: scriptureOfDay ? '#34c759' : '#e5e5e5',
+                  borderRadius: '31px', transition: '0.3s'
+                }}>
+                  <span style={{
+                    position: 'absolute', content: '', height: '27px', width: '27px',
+                    left: scriptureOfDay ? '22px' : '2px', bottom: '2px', background: '#ffffff',
+                    borderRadius: '50%', transition: '0.3s'
+                  }} />
+                </span>
+              </label>
+            </div>
+            
+            <div style={{
+              minHeight: '48px', borderTop: '1px solid #e5e5e5', 
+              padding: '16px', display: 'flex', alignItems: 'center',
+              justifyContent: 'space-between'
+            }}>
+              <div style={{ fontSize: '16px', color: '#000000' }}>Prayer Notifications</div>
+              <label style={{
+                position: 'relative', display: 'inline-block', width: '51px', height: '31px'
+              }}>
+                <input
+                  type="checkbox"
+                  checked={prayerNotifications}
+                  onChange={(e) => handleToggle('prayerNotifications', e.target.checked)}
+                  style={{ opacity: 0, width: 0, height: 0 }}
+                />
+                <span style={{
+                  position: 'absolute', cursor: 'pointer', top: 0, left: 0,
+                  right: 0, bottom: 0, background: prayerNotifications ? '#34c759' : '#e5e5e5',
+                  borderRadius: '31px', transition: '0.3s'
+                }}>
+                  <span style={{
+                    position: 'absolute', content: '', height: '27px', width: '27px',
+                    left: prayerNotifications ? '22px' : '2px', bottom: '2px', background: '#ffffff',
+                    borderRadius: '50%', transition: '0.3s'
+                  }} />
+                </span>
+              </label>
             </div>
           </div>
-        </div>
-        
-        <button 
-          onClick={() => {
-            // Navigate to profile editing - can implement modal or inline editing later
-            alert('Profile editing functionality - coming soon!');
-          }}
-          style={{
-            width: '100%', background: '#f2f2f2', border: 'none', padding: '12px',
-            borderRadius: '8px', fontSize: '14px', fontWeight: 600, color: '#262626',
-            cursor: 'pointer', marginBottom: '8px'
-          }}
-        >
-          Edit Profile Information
-        </button>
-        
-        <button 
-          onClick={() => {
-            // Navigate to avatar upload - can implement ObjectUploader later
-            alert('Profile picture upload - coming soon!');
-          }}
-          style={{
-            width: '100%', background: '#f2f2f2', border: 'none', padding: '12px',
-            borderRadius: '8px', fontSize: '14px', fontWeight: 600, color: '#262626',
-            cursor: 'pointer'
-          }}
-        >
-          Change Profile Picture
-        </button>
-      </div>
 
-      {/* Account Section */}
-      <div style={{ marginBottom: '24px' }}>
-        <div style={{ fontSize: '16px', fontWeight: 600, color: '#262626', marginBottom: '16px' }}>
-          Account
-        </div>
-        
-        <button 
-          onClick={() => alert('Notification settings - coming soon!')}
-          style={{
-            width: '100%', background: '#f2f2f2', border: 'none', padding: '12px',
-            borderRadius: '8px', fontSize: '14px', fontWeight: 600, color: '#262626',
-            cursor: 'pointer', marginBottom: '8px', textAlign: 'left'
-          }}
-        >
-          🔔 Notification Settings
-        </button>
-        
-        <button 
-          onClick={() => alert('Privacy settings - coming soon!')}
-          style={{
-            width: '100%', background: '#f2f2f2', border: 'none', padding: '12px',
-            borderRadius: '8px', fontSize: '14px', fontWeight: 600, color: '#262626',
-            cursor: 'pointer', marginBottom: '8px', textAlign: 'left'
-          }}
-        >
-          🔒 Privacy Settings
-        </button>
-        
-        <button 
-          onClick={() => alert('Security settings - coming soon!')}
-          style={{
-            width: '100%', background: '#f2f2f2', border: 'none', padding: '12px',
-            borderRadius: '8px', fontSize: '14px', fontWeight: 600, color: '#262626',
-            cursor: 'pointer', textAlign: 'left'
-          }}
-        >
-          🛡️ Security Settings
-        </button>
-      </div>
+          {/* Privacy & Safety Section */}
+          <div style={{ 
+            background: '#ffffff', borderRadius: '12px', border: '1px solid #e5e5e5',
+            marginBottom: '24px', overflow: 'hidden'
+          }}>
+            <div style={{ 
+              padding: '16px 16px 8px', fontSize: '13px', fontWeight: 600, 
+              color: '#8e8e8e', textTransform: 'uppercase', letterSpacing: '0.5px'
+            }}>
+              PRIVACY & SAFETY
+            </div>
+            
+            <button
+              onClick={() => alert('Blocked users management - coming soon!')}
+              style={{
+                width: '100%', minHeight: '48px', background: 'none', border: 'none',
+                borderTop: '1px solid #e5e5e5', padding: '16px', textAlign: 'left',
+                cursor: 'pointer', display: 'flex', alignItems: 'center',
+                justifyContent: 'space-between'
+              }}
+            >
+              <div style={{ fontSize: '16px', color: '#000000' }}>Blocked Users</div>
+              <div style={{ fontSize: '16px', color: '#c7c7cc' }}>›</div>
+            </button>
+            
+            <div style={{
+              borderTop: '1px solid #e5e5e5', padding: '16px'
+            }}>
+              <div style={{ fontSize: '16px', color: '#000000', marginBottom: '12px' }}>
+                Content Filters
+              </div>
+              <div style={{ fontSize: '14px', color: '#8e8e8e', marginBottom: '16px' }}>
+                Controls what content appears in your feed
+              </div>
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                  <input
+                    type="radio"
+                    name="contentFilter"
+                    value="standard"
+                    checked={contentFilter === 'standard'}
+                    onChange={() => handleContentFilterChange('standard')}
+                    style={{ marginRight: '12px' }}
+                  />
+                  <div>
+                    <div style={{ fontSize: '16px', color: '#000000' }}>Standard</div>
+                    <div style={{ fontSize: '14px', color: '#8e8e8e' }}>Family-friendly content</div>
+                  </div>
+                </label>
+                
+                <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                  <input
+                    type="radio"
+                    name="contentFilter"
+                    value="strict"
+                    checked={contentFilter === 'strict'}
+                    onChange={() => handleContentFilterChange('strict')}
+                    style={{ marginRight: '12px' }}
+                  />
+                  <div>
+                    <div style={{ fontSize: '16px', color: '#000000' }}>Strict</div>
+                    <div style={{ fontSize: '14px', color: '#8e8e8e' }}>More restrictive filtering</div>
+                  </div>
+                </label>
+              </div>
+            </div>
+          </div>
 
-      {/* Logout */}
-      <button
-        onClick={signOut}
-        style={{
-          width: '100%', background: '#dc2626', color: '#ffffff',
-          border: 'none', padding: '12px', borderRadius: '8px',
-          fontSize: '16px', fontWeight: 600, cursor: 'pointer'
-        }}
-      >
-        Sign Out
-      </button>
-    </div>
-  );
+          {/* Support Section */}
+          <div style={{ 
+            background: '#ffffff', borderRadius: '12px', border: '1px solid #e5e5e5',
+            marginBottom: '24px', overflow: 'hidden'
+          }}>
+            <div style={{ 
+              padding: '16px 16px 8px', fontSize: '13px', fontWeight: 600, 
+              color: '#8e8e8e', textTransform: 'uppercase', letterSpacing: '0.5px'
+            }}>
+              SUPPORT
+            </div>
+            
+            <button
+              onClick={() => setShowMobileCommunityGuidelines(true)}
+              style={{
+                width: '100%', minHeight: '48px', background: 'none', border: 'none',
+                borderTop: '1px solid #e5e5e5', padding: '16px', textAlign: 'left',
+                cursor: 'pointer', display: 'flex', alignItems: 'center',
+                justifyContent: 'space-between'
+              }}
+            >
+              <div style={{ fontSize: '16px', color: '#000000' }}>Community Guidelines</div>
+              <div style={{ fontSize: '16px', color: '#c7c7cc' }}>›</div>
+            </button>
+            
+            <button
+              onClick={() => setShowHelpDrawer(true)}
+              style={{
+                width: '100%', minHeight: '48px', background: 'none', border: 'none',
+                borderTop: '1px solid #e5e5e5', padding: '16px', textAlign: 'left',
+                cursor: 'pointer', display: 'flex', alignItems: 'center',
+                justifyContent: 'space-between'
+              }}
+            >
+              <div style={{ fontSize: '16px', color: '#000000' }}>Help & Contact</div>
+              <div style={{ fontSize: '16px', color: '#c7c7cc' }}>›</div>
+            </button>
+          </div>
+
+          {/* About Section */}
+          <div style={{ 
+            background: '#ffffff', borderRadius: '12px', border: '1px solid #e5e5e5',
+            marginBottom: '24px', overflow: 'hidden'
+          }}>
+            <div style={{ 
+              padding: '16px 16px 8px', fontSize: '13px', fontWeight: 600, 
+              color: '#8e8e8e', textTransform: 'uppercase', letterSpacing: '0.5px'
+            }}>
+              ABOUT
+            </div>
+            
+            <div style={{
+              borderTop: '1px solid #e5e5e5', padding: '16px'
+            }}>
+              <div style={{ fontSize: '16px', color: '#000000', marginBottom: '4px' }}>
+                Gospel Era Mobile
+              </div>
+              <div style={{ fontSize: '14px', color: '#8e8e8e', marginBottom: '8px' }}>
+                Version 1.0.0
+              </div>
+              <div style={{ fontSize: '14px', color: '#8e8e8e', marginBottom: '12px' }}>
+                Built {new Date().toLocaleDateString()}
+              </div>
+              <button
+                onClick={() => alert('Open source licenses - coming soon!')}
+                style={{
+                  background: 'none', border: 'none', fontSize: '14px',
+                  color: '#007aff', cursor: 'pointer', padding: 0
+                }}
+              >
+                View Licenses
+              </button>
+            </div>
+          </div>
+
+          {/* Sign Out Button */}
+          <button
+            onClick={async () => {
+              if (confirm('Are you sure you want to sign out?')) {
+                await signOut();
+              }
+            }}
+            style={{
+              width: '100%', minHeight: '48px', background: '#ffffff',
+              border: '2px solid #ff3b30', borderRadius: '12px',
+              fontSize: '16px', fontWeight: 600, color: '#ff3b30',
+              cursor: 'pointer', marginBottom: '32px'
+            }}
+          >
+            Sign Out
+          </button>
+        </div>
+
+        {/* Help & Contact Drawer */}
+        {showHelpDrawer && (
+          <div style={{
+            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+            background: 'rgba(0,0,0,0.5)', zIndex: 1000
+          }}>
+            <div style={{
+              position: 'absolute', right: 0, top: 0, bottom: 0, width: '80%',
+              maxWidth: '320px', background: '#ffffff', padding: '20px',
+              boxShadow: '-2px 0 10px rgba(0,0,0,0.1)'
+            }}>
+              <div style={{
+                display: 'flex', alignItems: 'center', marginBottom: '24px'
+              }}>
+                <button
+                  onClick={() => setShowHelpDrawer(false)}
+                  style={{
+                    background: 'none', border: 'none', fontSize: '18px',
+                    color: '#000000', cursor: 'pointer', marginRight: '16px'
+                  }}
+                >
+                  ×
+                </button>
+                <div style={{ fontSize: '18px', fontWeight: 600, color: '#000000' }}>
+                  Help & Contact
+                </div>
+              </div>
+              
+              <div style={{ marginBottom: '20px' }}>
+                <div style={{ fontSize: '16px', fontWeight: 600, color: '#000000', marginBottom: '8px' }}>
+                  Get Support
+                </div>
+                <div style={{ fontSize: '14px', color: '#8e8e8e', marginBottom: '16px' }}>
+                  For technical support or questions about Gospel Era
+                </div>
+                
+                <div style={{
+                  background: '#f8f9fa', padding: '16px', borderRadius: '8px',
+                  marginBottom: '16px'
+                }}>
+                  <div style={{ fontSize: '14px', color: '#000000', marginBottom: '8px' }}>
+                    Support Email
+                  </div>
+                  <div style={{
+                    fontSize: '16px', color: '#007aff', fontFamily: 'monospace',
+                    marginBottom: '12px'
+                  }}>
+                    ridibi.service@gmail.com
+                  </div>
+                  
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button
+                      onClick={() => window.open('mailto:ridibi.service@gmail.com')}
+                      style={{
+                        padding: '8px 16px', background: '#007aff', color: '#ffffff',
+                        border: 'none', borderRadius: '6px', fontSize: '14px',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Send Email
+                    </button>
+                    <button
+                      onClick={copyEmailToClipboard}
+                      style={{
+                        padding: '8px 16px', background: '#f0f0f0', color: '#000000',
+                        border: 'none', borderRadius: '6px', fontSize: '14px',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Copy
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
 
   // Mobile Saved Posts Component
   const MobileSavedPostsPage = () => (

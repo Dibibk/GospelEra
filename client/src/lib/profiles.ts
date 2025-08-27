@@ -215,3 +215,76 @@ export async function ensureMyProfile() {
     return { data: null, error: err }
   }
 }
+
+/**
+ * Updates user settings in the profile
+ * @param {Object} settings - The settings object to save
+ * @returns {Promise<{data: any|null, error: Error|null}>}
+ */
+export async function updateUserSettings(settings: Record<string, any>) {
+  try {
+    // Get current user
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    
+    if (userError) {
+      throw new Error(`Authentication error: ${userError.message}`)
+    }
+    
+    if (!user) {
+      throw new Error('User must be authenticated to update settings')
+    }
+
+    // Update settings in profile
+    const { data, error } = await supabase
+      .from('profiles')
+      .update({ 
+        settings: settings,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', user.id)
+      .select()
+      .single()
+
+    if (error) {
+      throw new Error(`Failed to update settings: ${error.message}`)
+    }
+
+    return { data, error: null }
+  } catch (err) {
+    return { data: null, error: err }
+  }
+}
+
+/**
+ * Gets user settings from the profile
+ * @returns {Promise<{data: Record<string, any>|null, error: Error|null}>}
+ */
+export async function getUserSettings() {
+  try {
+    // Get current user
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    
+    if (userError) {
+      throw new Error(`Authentication error: ${userError.message}`)
+    }
+    
+    if (!user) {
+      throw new Error('User must be authenticated to get settings')
+    }
+
+    // Fetch settings from profile
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('settings')
+      .eq('id', user.id)
+      .single()
+
+    if (error) {
+      throw new Error(`Failed to fetch settings: ${error.message}`)
+    }
+
+    return { data: data?.settings || {}, error: null }
+  } catch (err) {
+    return { data: null, error: err }
+  }
+}

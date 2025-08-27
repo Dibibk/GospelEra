@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, timestamp, integer, boolean, bigserial, bigint, primaryKey, uuid } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, timestamp, integer, boolean, bigserial, bigint, primaryKey, uuid, json } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -29,6 +29,7 @@ export const profiles = pgTable("profiles", {
   show_name_on_prayers: boolean("show_name_on_prayers").default(true).notNull(),
   private_profile: boolean("private_profile").default(false).notNull(),
   media_enabled: boolean("media_enabled").default(false).notNull(),
+  settings: json("settings").default({}).notNull(), // JSON object for user preferences
   created_at: timestamp("created_at").defaultNow().notNull(),
   updated_at: timestamp("updated_at").defaultNow().notNull(),
 });
