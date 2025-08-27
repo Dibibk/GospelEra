@@ -2222,13 +2222,40 @@ const MobileApp = () => {
               >
                 ←
               </button>
-              <div style={{ fontSize: '20px', fontWeight: 600, color: '#000000' }}>Edit Profile</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                {/* Profile Picture in Header */}
+                <div style={{
+                  width: '32px', height: '32px', borderRadius: '50%',
+                  background: profile?.avatar_url ? 'none' : '#e5e5e5',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  overflow: 'hidden'
+                }}>
+                  {profile?.avatar_url ? (
+                    <img 
+                      src={profile.avatar_url.startsWith('/objects/') 
+                        ? profile.avatar_url 
+                        : profile.avatar_url
+                      } 
+                      alt="Profile" 
+                      style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover' }}
+                    />
+                  ) : (
+                    <span style={{ fontSize: '16px', color: '#8e8e8e' }}>👤</span>
+                  )}
+                </div>
+                <div>
+                  <div style={{ fontSize: '20px', fontWeight: 600, color: '#000000' }}>Edit Profile</div>
+                  <div style={{ fontSize: '12px', color: '#8e8e8e' }}>
+                    {profile?.display_name || user?.email} • Member since {new Date(profile?.created_at || user?.created_at || new Date()).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+                  </div>
+                </div>
+              </div>
             </div>
             <button 
               onClick={handleSaveMobileProfile}
               disabled={profileSaving}
               style={{
-                background: '#000000', color: '#ffffff', border: 'none', 
+                background: '#d1d5db', color: '#374151', border: 'none', 
                 padding: '8px 16px', borderRadius: '8px', fontSize: '14px',
                 cursor: profileSaving ? 'not-allowed' : 'pointer',
                 opacity: profileSaving ? 0.7 : 1
@@ -2277,7 +2304,12 @@ const MobileApp = () => {
               onComplete={handleProfileUploadComplete}
               buttonClassName="w-full"
             >
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+              <div style={{ 
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                background: '#d1d5db', color: '#374151', border: 'none',
+                padding: '12px 24px', borderRadius: '8px', fontSize: '14px',
+                cursor: 'pointer', width: '100%'
+              }}>
                 <span>📷</span>
                 <span>Change Photo</span>
               </div>
