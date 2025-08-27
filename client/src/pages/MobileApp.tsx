@@ -345,6 +345,8 @@ const MobileApp = () => {
   const [showMobileSettings, setShowMobileSettings] = useState(false);
   const [showMobileSavedPosts, setShowMobileSavedPosts] = useState(false);
   const [showMobileCommunityGuidelines, setShowMobileCommunityGuidelines] = useState(false);
+  const [showMobileSupporter, setShowMobileSupporter] = useState(false);
+  const [showMobileHelp, setShowMobileHelp] = useState(false);
 
   // Fetch leaderboard data and user profile
   useEffect(() => {
@@ -1796,19 +1798,31 @@ const MobileApp = () => {
           </div>
         </div>
         
-        <button style={{
-          width: '100%', background: '#f2f2f2', border: 'none', padding: '12px',
-          borderRadius: '8px', fontSize: '14px', fontWeight: 600, color: '#262626',
-          cursor: 'pointer', marginBottom: '8px'
-        }}>
+        <button 
+          onClick={() => {
+            // Navigate to profile editing - can implement modal or inline editing later
+            alert('Profile editing functionality - coming soon!');
+          }}
+          style={{
+            width: '100%', background: '#f2f2f2', border: 'none', padding: '12px',
+            borderRadius: '8px', fontSize: '14px', fontWeight: 600, color: '#262626',
+            cursor: 'pointer', marginBottom: '8px'
+          }}
+        >
           Edit Profile Information
         </button>
         
-        <button style={{
-          width: '100%', background: '#f2f2f2', border: 'none', padding: '12px',
-          borderRadius: '8px', fontSize: '14px', fontWeight: 600, color: '#262626',
-          cursor: 'pointer'
-        }}>
+        <button 
+          onClick={() => {
+            // Navigate to avatar upload - can implement ObjectUploader later
+            alert('Profile picture upload - coming soon!');
+          }}
+          style={{
+            width: '100%', background: '#f2f2f2', border: 'none', padding: '12px',
+            borderRadius: '8px', fontSize: '14px', fontWeight: 600, color: '#262626',
+            cursor: 'pointer'
+          }}
+        >
           Change Profile Picture
         </button>
       </div>
@@ -1819,27 +1833,36 @@ const MobileApp = () => {
           Account
         </div>
         
-        <button style={{
-          width: '100%', background: '#f2f2f2', border: 'none', padding: '12px',
-          borderRadius: '8px', fontSize: '14px', fontWeight: 600, color: '#262626',
-          cursor: 'pointer', marginBottom: '8px', textAlign: 'left'
-        }}>
+        <button 
+          onClick={() => alert('Notification settings - coming soon!')}
+          style={{
+            width: '100%', background: '#f2f2f2', border: 'none', padding: '12px',
+            borderRadius: '8px', fontSize: '14px', fontWeight: 600, color: '#262626',
+            cursor: 'pointer', marginBottom: '8px', textAlign: 'left'
+          }}
+        >
           🔔 Notification Settings
         </button>
         
-        <button style={{
-          width: '100%', background: '#f2f2f2', border: 'none', padding: '12px',
-          borderRadius: '8px', fontSize: '14px', fontWeight: 600, color: '#262626',
-          cursor: 'pointer', marginBottom: '8px', textAlign: 'left'
-        }}>
+        <button 
+          onClick={() => alert('Privacy settings - coming soon!')}
+          style={{
+            width: '100%', background: '#f2f2f2', border: 'none', padding: '12px',
+            borderRadius: '8px', fontSize: '14px', fontWeight: 600, color: '#262626',
+            cursor: 'pointer', marginBottom: '8px', textAlign: 'left'
+          }}
+        >
           🔒 Privacy Settings
         </button>
         
-        <button style={{
-          width: '100%', background: '#f2f2f2', border: 'none', padding: '12px',
-          borderRadius: '8px', fontSize: '14px', fontWeight: 600, color: '#262626',
-          cursor: 'pointer', textAlign: 'left'
-        }}>
+        <button 
+          onClick={() => alert('Security settings - coming soon!')}
+          style={{
+            width: '100%', background: '#f2f2f2', border: 'none', padding: '12px',
+            borderRadius: '8px', fontSize: '14px', fontWeight: 600, color: '#262626',
+            cursor: 'pointer', textAlign: 'left'
+          }}
+        >
           🛡️ Security Settings
         </button>
       </div>
@@ -1960,6 +1983,322 @@ const MobileApp = () => {
       </div>
     </div>
   );
+
+  // Mobile Be a Supporter Component
+  const MobileSupporterPage = () => {
+    const [selectedAmount, setSelectedAmount] = useState<number | null>(null);
+    const [customAmount, setCustomAmount] = useState('');
+    const [message, setMessage] = useState('');
+    const [isProcessing, setIsProcessing] = useState(false);
+    const [error, setError] = useState('');
+
+    const predefinedAmounts = [5, 10, 25, 50, 100];
+
+    const handleAmountSelect = (amount: number) => {
+      setSelectedAmount(amount);
+      setCustomAmount('');
+      setError('');
+    };
+
+    const handleCustomAmountChange = (value: string) => {
+      setCustomAmount(value);
+      setSelectedAmount(null);
+      setError('');
+    };
+
+    const getSelectedAmount = () => {
+      return selectedAmount || (customAmount ? parseFloat(customAmount) : 0);
+    };
+
+    const handleSupport = () => {
+      const amount = getSelectedAmount();
+      if (amount < 2) {
+        setError('Minimum donation is $2');
+        return;
+      }
+      if (amount > 200) {
+        setError('Maximum donation is $200');
+        return;
+      }
+      
+      alert(`Thank you for wanting to support with $${amount}! Payment processing will be implemented soon.`);
+    };
+
+    return (
+      <div style={{ padding: '16px', background: '#ffffff', minHeight: '100vh' }}>
+        {/* Header */}
+        <div style={{ 
+          display: 'flex', alignItems: 'center', marginBottom: '24px',
+          paddingBottom: '16px', borderBottom: '1px solid #dbdbdb'
+        }}>
+          <button 
+            onClick={() => setShowMobileSupporter(false)}
+            style={{
+              background: 'none', border: 'none', fontSize: '18px',
+              color: '#262626', cursor: 'pointer', marginRight: '16px'
+            }}
+          >
+            ←
+          </button>
+          <div style={{ fontSize: '18px', fontWeight: 600, color: '#262626' }}>Be a Supporter</div>
+        </div>
+
+        {/* Support Notice */}
+        <div style={{
+          background: 'linear-gradient(135deg, #7c3aed 0%, #3b82f6 100%)',
+          borderRadius: '12px', padding: '20px', marginBottom: '24px', color: '#ffffff'
+        }}>
+          <div style={{ fontSize: '18px', fontWeight: 600, marginBottom: '8px' }}>
+            Support Gospel Era
+          </div>
+          <div style={{ fontSize: '14px', opacity: 0.9 }}>
+            Your contribution supports hosting, development, and moderation. Contributions are not tax-deductible.
+          </div>
+        </div>
+
+        {/* Amount Selection */}
+        <div style={{ marginBottom: '24px' }}>
+          <div style={{ fontSize: '16px', fontWeight: 600, color: '#262626', marginBottom: '12px' }}>
+            Choose Amount
+          </div>
+          
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '16px' }}>
+            {predefinedAmounts.map(amount => (
+              <button
+                key={amount}
+                onClick={() => handleAmountSelect(amount)}
+                style={{
+                  padding: '12px 16px', borderRadius: '8px', border: '1px solid #dbdbdb',
+                  background: selectedAmount === amount ? '#7c3aed' : '#ffffff',
+                  color: selectedAmount === amount ? '#ffffff' : '#262626',
+                  fontSize: '14px', fontWeight: 600, cursor: 'pointer'
+                }}
+              >
+                ${amount}
+              </button>
+            ))}
+          </div>
+
+          <div style={{ marginBottom: '8px' }}>
+            <input
+              type="number"
+              placeholder="Custom amount"
+              value={customAmount}
+              onChange={(e) => handleCustomAmountChange(e.target.value)}
+              style={{
+                width: '100%', padding: '12px', border: '1px solid #dbdbdb',
+                borderRadius: '8px', fontSize: '14px'
+              }}
+              min="2"
+              max="200"
+            />
+          </div>
+        </div>
+
+        {/* Message */}
+        <div style={{ marginBottom: '24px' }}>
+          <div style={{ fontSize: '16px', fontWeight: 600, color: '#262626', marginBottom: '8px' }}>
+            Optional Message
+          </div>
+          <textarea
+            placeholder="Add a message (optional)"
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            style={{
+              width: '100%', padding: '12px', border: '1px solid #dbdbdb',
+              borderRadius: '8px', fontSize: '14px', minHeight: '80px', resize: 'vertical'
+            }}
+          />
+        </div>
+
+        {/* Error */}
+        {error && (
+          <div style={{
+            background: '#fee', border: '1px solid #fcc', color: '#c00',
+            padding: '12px', borderRadius: '8px', marginBottom: '16px',
+            fontSize: '14px', textAlign: 'center'
+          }}>
+            {error}
+          </div>
+        )}
+
+        {/* Support Button */}
+        <button
+          onClick={handleSupport}
+          disabled={!getSelectedAmount() || isProcessing}
+          style={{
+            width: '100%', background: getSelectedAmount() ? '#7c3aed' : '#dbdbdb',
+            color: getSelectedAmount() ? '#ffffff' : '#8e8e8e',
+            border: 'none', padding: '16px', borderRadius: '8px',
+            fontSize: '16px', fontWeight: 600, cursor: getSelectedAmount() ? 'pointer' : 'default'
+          }}
+        >
+          {isProcessing ? 'Processing...' : `Support with $${getSelectedAmount() || 0}`}
+        </button>
+
+        {/* Info */}
+        <div style={{ 
+          marginTop: '24px', padding: '16px', background: '#f8f9fa',
+          borderRadius: '8px', fontSize: '12px', color: '#8e8e8e', textAlign: 'center'
+        }}>
+          Payment processing will be implemented soon. Thank you for your interest in supporting Gospel Era!
+        </div>
+      </div>
+    );
+  };
+
+  // Mobile Help Component
+  const MobileHelpPage = () => {
+    const SUPPORT_EMAIL = 'ridibi.service@gmail.com';
+
+    const copyEmail = async () => {
+      try {
+        await navigator.clipboard.writeText(SUPPORT_EMAIL);
+        alert('Email copied to clipboard!');
+      } catch (err) {
+        alert('Failed to copy email. Please copy manually: ' + SUPPORT_EMAIL);
+      }
+    };
+
+    const openEmail = () => {
+      window.location.href = `mailto:${SUPPORT_EMAIL}?subject=Gospel Era Support Request`;
+    };
+
+    return (
+      <div style={{ padding: '16px', background: '#ffffff', minHeight: '100vh' }}>
+        {/* Header */}
+        <div style={{ 
+          display: 'flex', alignItems: 'center', marginBottom: '24px',
+          paddingBottom: '16px', borderBottom: '1px solid #dbdbdb'
+        }}>
+          <button 
+            onClick={() => setShowMobileHelp(false)}
+            style={{
+              background: 'none', border: 'none', fontSize: '18px',
+              color: '#262626', cursor: 'pointer', marginRight: '16px'
+            }}
+          >
+            ←
+          </button>
+          <div style={{ fontSize: '18px', fontWeight: 600, color: '#262626' }}>Help & Support</div>
+        </div>
+
+        {/* Contact Section */}
+        <div style={{ marginBottom: '32px' }}>
+          <div style={{ fontSize: '16px', fontWeight: 600, color: '#262626', marginBottom: '16px' }}>
+            📧 Contact Support
+          </div>
+          
+          <div style={{ 
+            background: '#f8f9fa', borderRadius: '12px', padding: '20px',
+            border: '1px solid #e1e5e9', marginBottom: '16px'
+          }}>
+            <div style={{ fontSize: '14px', color: '#8e8e8e', marginBottom: '8px' }}>
+              Support Email
+            </div>
+            <div style={{ fontSize: '16px', fontWeight: 600, color: '#262626', marginBottom: '16px' }}>
+              {SUPPORT_EMAIL}
+            </div>
+            
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button
+                onClick={copyEmail}
+                style={{
+                  flex: 1, background: '#7c3aed', color: '#ffffff',
+                  border: 'none', padding: '12px', borderRadius: '8px',
+                  fontSize: '14px', fontWeight: 600, cursor: 'pointer'
+                }}
+              >
+                📋 Copy Email
+              </button>
+              
+              <button
+                onClick={openEmail}
+                style={{
+                  flex: 1, background: '#ffffff', color: '#262626',
+                  border: '1px solid #dbdbdb', padding: '12px', borderRadius: '8px',
+                  fontSize: '14px', fontWeight: 600, cursor: 'pointer'
+                }}
+              >
+                ✉️ Open Mail App
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* FAQ Section */}
+        <div style={{ marginBottom: '32px' }}>
+          <div style={{ fontSize: '16px', fontWeight: 600, color: '#262626', marginBottom: '16px' }}>
+            ❓ Frequently Asked Questions
+          </div>
+          
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div style={{ 
+              background: '#f8f9fa', borderRadius: '8px', padding: '16px',
+              border: '1px solid #e1e5e9'
+            }}>
+              <div style={{ fontSize: '14px', fontWeight: 600, color: '#262626', marginBottom: '4px' }}>
+                How do I create a prayer request?
+              </div>
+              <div style={{ fontSize: '13px', color: '#8e8e8e' }}>
+                Go to the Prayer tab and use the "Create Prayer Request" section at the top.
+              </div>
+            </div>
+            
+            <div style={{ 
+              background: '#f8f9fa', borderRadius: '8px', padding: '16px',
+              border: '1px solid #e1e5e9'
+            }}>
+              <div style={{ fontSize: '14px', fontWeight: 600, color: '#262626', marginBottom: '4px' }}>
+                How do I report inappropriate content?
+              </div>
+              <div style={{ fontSize: '13px', color: '#8e8e8e' }}>
+                Tap the three dots (⋯) on any post or comment and select "Report".
+              </div>
+            </div>
+            
+            <div style={{ 
+              background: '#f8f9fa', borderRadius: '8px', padding: '16px',
+              border: '1px solid #e1e5e9'
+            }}>
+              <div style={{ fontSize: '14px', fontWeight: 600, color: '#262626', marginBottom: '4px' }}>
+                How do I change my profile picture?
+              </div>
+              <div style={{ fontSize: '13px', color: '#8e8e8e' }}>
+                Go to Settings and tap "Change Profile Picture" in the Profile Settings section.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Community Guidelines Link */}
+        <div style={{ 
+          background: '#f0f8ff', borderRadius: '12px', padding: '16px',
+          border: '1px solid #b3d9ff', textAlign: 'center'
+        }}>
+          <div style={{ fontSize: '14px', fontWeight: 600, color: '#1e40af', marginBottom: '8px' }}>
+            📖 Community Guidelines
+          </div>
+          <div style={{ fontSize: '13px', color: '#1e40af', marginBottom: '12px' }}>
+            Learn about our Christ-centered community standards
+          </div>
+          <button
+            onClick={() => {
+              setShowMobileHelp(false);
+              setShowMobileCommunityGuidelines(true);
+            }}
+            style={{
+              background: '#1e40af', color: '#ffffff', border: 'none',
+              padding: '8px 16px', borderRadius: '6px', fontSize: '13px',
+              fontWeight: 600, cursor: 'pointer'
+            }}
+          >
+            View Guidelines
+          </button>
+        </div>
+      </div>
+    );
+  };
 
   // Profile Component
   const ProfilePage = () => (
@@ -2251,6 +2590,34 @@ const MobileApp = () => {
                 <button 
                   onClick={() => {
                     setShowUserDropdown(false);
+                    setShowMobileSupporter(true);
+                  }}
+                  style={{
+                    width: '100%', padding: '12px 16px', border: 'none', background: 'none',
+                    textAlign: 'left', fontSize: '14px', color: '#262626',
+                    ':hover': { background: '#f9f9f9' }, cursor: 'pointer'
+                  }}
+                >
+                  💖 Be a Supporter
+                </button>
+                
+                <button 
+                  onClick={() => {
+                    setShowUserDropdown(false);
+                    setShowMobileHelp(true);
+                  }}
+                  style={{
+                    width: '100%', padding: '12px 16px', border: 'none', background: 'none',
+                    textAlign: 'left', fontSize: '14px', color: '#262626',
+                    ':hover': { background: '#f9f9f9' }, cursor: 'pointer'
+                  }}
+                >
+                  ❓ Help
+                </button>
+                
+                <button 
+                  onClick={() => {
+                    setShowUserDropdown(false);
                     setShowDonationPage(true);
                   }}
                   style={{
@@ -2351,6 +2718,10 @@ const MobileApp = () => {
           <MobileSavedPostsPage />
         ) : showMobileCommunityGuidelines ? (
           <MobileCommunityGuidelinesPage />
+        ) : showMobileSupporter ? (
+          <MobileSupporterPage />
+        ) : showMobileHelp ? (
+          <MobileHelpPage />
         ) : (
           <>
             {activeTab === 0 && <HomeFeed />}
@@ -2363,7 +2734,7 @@ const MobileApp = () => {
       </div>
 
       {/* Bottom Navigation - Only show when logged in and not on mobile pages */}
-      {user && !showMobileSettings && !showMobileSavedPosts && !showMobileCommunityGuidelines && (
+      {user && !showMobileSettings && !showMobileSavedPosts && !showMobileCommunityGuidelines && !showMobileSupporter && !showMobileHelp && (
         <nav style={styles.bottomNav}>
           <div onClick={() => setActiveTab(0)} style={{
             display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
