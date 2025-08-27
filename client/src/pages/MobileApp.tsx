@@ -3233,10 +3233,10 @@ const MobileApp = () => {
     const [savedPostsLoading, setSavedPostsLoading] = useState(true);
     const [savedPostsError, setSavedPostsError] = useState('');
 
-    // Load saved posts when component mounts
+    // Load saved posts when component mounts  
     useEffect(() => {
       loadSavedPosts();
-    }, []);
+    }, []); // Empty dependency array to run only once
 
     const loadSavedPosts = async () => {
       setSavedPostsLoading(true);
@@ -3245,17 +3245,12 @@ const MobileApp = () => {
       try {
         // Use the same listBookmarks function as web app but handle errors properly
         const { listBookmarks } = await import('../lib/engagement');
-        console.log('Loading saved posts...');
-        
         const { data, error } = await listBookmarks({ limit: 50 });
-        console.log('Bookmarks result:', { data, error });
         
         if (error) {
-          console.error('Bookmarks error:', error);
           setSavedPostsError((error as any).message || 'Failed to load saved posts');
         } else {
           const bookmarkedPosts = data || [];
-          console.log('Setting saved posts:', bookmarkedPosts);
           setSavedPosts(bookmarkedPosts);
           
           // Load author profiles for saved posts
@@ -3320,7 +3315,7 @@ const MobileApp = () => {
               Try Again
             </button>
           </div>
-        ) : savedPosts.length === 0 ? (
+        ) : !Array.isArray(savedPosts) || savedPosts.length === 0 ? (
           <div style={{ textAlign: 'center', color: '#8e8e8e', fontSize: '14px', padding: '40px 20px' }}>
             <div style={{ fontSize: '48px', marginBottom: '16px' }}>🔖</div>
             <div style={{ marginBottom: '8px' }}>No saved posts yet</div>
