@@ -73,6 +73,9 @@ const MobileApp = () => {
   
   // Daily scripture state
   const [dailyVerse, setDailyVerse] = useState<{reference: string, text: string} | null>(null);
+  
+  // Three dots menu state
+  const [showPostMenu, setShowPostMenu] = useState<{[postId: number]: boolean}>({});
 
   useEffect(() => {
     if (user) {
@@ -92,6 +95,36 @@ const MobileApp = () => {
     } catch (error) {
       console.error('Failed to load daily verse:', error);
     }
+  };
+
+  // Toggle post menu dropdown
+  const togglePostMenu = (postId: number) => {
+    setShowPostMenu(prev => ({
+      ...prev,
+      [postId]: !prev[postId]
+    }));
+  };
+
+  // Close all post menus when clicking outside
+  useEffect(() => {
+    const handleClickOutside = () => {
+      setShowPostMenu({});
+    };
+    
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, []);
+
+  // Open report modal for post
+  const openReportModal = (postId: number) => {
+    setReportModal({
+      isOpen: true,
+      targetType: 'post',
+      targetId: postId.toString(),
+      reason: '',
+      selectedReason: ''
+    });
+    setShowPostMenu({}); // Close all menus
   };
 
   // Check media permission for current user
@@ -1101,7 +1134,82 @@ const MobileApp = () => {
                   {formatTimeAgo(post.created_at)}
                 </div>
               </div>
-              <div style={{ fontSize: '16px', color: '#262626', cursor: 'pointer', padding: '8px' }}>⋯</div>
+              {/* Three dots menu */}
+              <div style={{ position: 'relative' }}>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    togglePostMenu(post.id);
+                  }}
+                  style={{ 
+                    background: 'none', border: 'none', fontSize: '16px', 
+                    color: '#262626', cursor: 'pointer', padding: '8px',
+                    borderRadius: '50%'
+                  }}
+                >
+                  ⋯
+                </button>
+                
+                {/* Dropdown menu */}
+                {showPostMenu[post.id] && (
+                  <div 
+                    onClick={(e) => e.stopPropagation()}
+                    style={{
+                      position: 'absolute', top: '100%', right: '0',
+                      background: '#ffffff', border: '1px solid #dbdbdb',
+                      borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                      zIndex: 1000, minWidth: '120px'
+                    }}>
+                    <button
+                      onClick={() => openReportModal(post.id)}
+                      style={{
+                        width: '100%', padding: '12px 16px', border: 'none',
+                        background: 'none', textAlign: 'left', fontSize: '14px',
+                        color: '#262626', cursor: 'pointer',
+                        borderBottom: '1px solid #f0f0f0'
+                      }}
+                    >
+                      🚨 Report
+                    </button>
+                    
+                    {/* Edit option for post owner only */}
+                    {post.author_id === user?.id && (
+                      <button
+                        onClick={() => {
+                          setShowPostMenu({});
+                          handleEditPost(post.id);
+                        }}
+                        style={{
+                          width: '100%', padding: '12px 16px', border: 'none',
+                          background: 'none', textAlign: 'left', fontSize: '14px',
+                          color: '#0095f6', cursor: 'pointer',
+                          borderBottom: '1px solid #f0f0f0'
+                        }}
+                      >
+                        ✏️ Edit
+                      </button>
+                    )}
+                    
+                    {/* Delete option for post owner or admin */}
+                    {(post.author_id === user?.id || isAdmin) && (
+                      <button
+                        onClick={() => {
+                          setShowPostMenu({});
+                          handleDeletePost(post.id);
+                        }}
+                        disabled={deletingPostId === post.id}
+                        style={{
+                          width: '100%', padding: '12px 16px', border: 'none',
+                          background: 'none', textAlign: 'left', fontSize: '14px',
+                          color: '#ef4444', cursor: 'pointer'
+                        }}
+                      >
+                        {deletingPostId === post.id ? '⏳ Deleting...' : '🗑️ Delete'}
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Post content */}
@@ -1256,39 +1364,6 @@ const MobileApp = () => {
                   <span style={{ fontSize: '20px', color: '#8e8e8e' }}>⚠</span>
                 </button>
                 
-                {/* Edit button (show for user's own posts only) */}
-                {post.author_id === user?.id && (
-                  <button 
-                    onClick={() => handleEditPost(post.id)}
-                    style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '8px' }}
-                    title="Edit"
-                  >
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style={{ color: '#0095f6' }}>
-                      <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
-                    </svg>
-                  </button>
-                )}
-                
-                {/* Delete button (show for user's own posts OR admin for all posts) */}
-                {(post.author_id === user?.id || isAdmin) && (
-                  <button 
-                    onClick={() => handleDeletePost(post.id)}
-                    disabled={deletingPostId === post.id}
-                    style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '8px' }}
-                    title="Delete"
-                  >
-                    {deletingPostId === post.id ? (
-                      <div style={{ width: '18px', height: '18px', border: '2px solid #f3f4f6', borderTop: '2px solid #ef4444', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
-                    ) : (
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: '#ef4444' }}>
-                        <polyline points="3,6 5,6 21,6"></polyline>
-                        <path d="m19,6v14a2,2 0 0,1-2,2H7a2,2 0 0,1-2-2V6m3,0V4a2,2 0 0,1,2-2h4a2,2 0 0,1,2,2v2"></path>
-                        <line x1="10" y1="11" x2="10" y2="17"></line>
-                        <line x1="14" y1="11" x2="14" y2="17"></line>
-                      </svg>
-                    )}
-                  </button>
-                )}
               </div>
             </div>
 
