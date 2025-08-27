@@ -982,7 +982,7 @@ const MobileApp = () => {
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginBottom: '8px' }}>
                   {post.tags.map((tag: string, tagIndex: number) => (
                     <span key={tagIndex} style={{
-                      background: '#f2f2f2', color: '#7c3aed', 
+                      background: '#f2f2f2', color: '#4285f4', 
                       padding: '2px 8px', borderRadius: '12px', 
                       fontSize: '12px', fontWeight: 500
                     }}>
@@ -1590,7 +1590,7 @@ const MobileApp = () => {
                 padding: '12px 8px', borderRadius: '12px', border: '1px solid #e1e5e9'
               }}>
                 <div style={{
-                  width: '48px', height: '48px', borderRadius: '50%', background: '#7c3aed',
+                  width: '48px', height: '48px', borderRadius: '50%', background: '#4285f4',
                   margin: '0 auto 8px', display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontSize: '20px', color: '#ffffff'
                 }}>
@@ -2255,7 +2255,7 @@ const MobileApp = () => {
               onClick={handleSaveMobileProfile}
               disabled={profileSaving}
               style={{
-                background: '#d1d5db', color: '#374151', border: 'none', 
+                background: '#4285f4', color: '#ffffff', border: 'none', 
                 padding: '8px 16px', borderRadius: '8px', fontSize: '14px',
                 cursor: profileSaving ? 'not-allowed' : 'pointer',
                 opacity: profileSaving ? 0.7 : 1
@@ -2306,7 +2306,7 @@ const MobileApp = () => {
             >
               <div style={{ 
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-                background: '#d1d5db', color: '#374151', border: 'none',
+                background: '#4285f4', color: '#ffffff', border: 'none',
                 padding: '12px 24px', borderRadius: '8px', fontSize: '14px',
                 cursor: 'pointer', width: '100%'
               }}>
@@ -2530,7 +2530,7 @@ const MobileApp = () => {
               borderTop: '1px solid #e5e5e5', padding: '16px'
             }}>
               <div style={{ fontSize: '16px', color: '#000000', marginBottom: '8px' }}>
-                Media Upload Access
+                Request link share
               </div>
               <div style={{ fontSize: '14px', color: '#8e8e8e', marginBottom: '16px' }}>
                 Manage your ability to upload images and videos to posts, comments, and prayers
@@ -3205,7 +3205,7 @@ const MobileApp = () => {
                 onClick={() => handleAmountSelect(amount)}
                 style={{
                   padding: '12px 16px', borderRadius: '8px', border: '1px solid #dbdbdb',
-                  background: selectedAmount === amount ? '#7c3aed' : '#ffffff',
+                  background: selectedAmount === amount ? '#4285f4' : '#ffffff',
                   color: selectedAmount === amount ? '#ffffff' : '#262626',
                   fontSize: '14px', fontWeight: 600, cursor: 'pointer'
                 }}
@@ -3375,7 +3375,7 @@ const MobileApp = () => {
               <button
                 onClick={copyEmail}
                 style={{
-                  flex: 1, background: '#7c3aed', color: '#ffffff',
+                  flex: 1, background: '#4285f4', color: '#ffffff',
                   border: 'none', padding: '12px', borderRadius: '8px',
                   fontSize: '14px', fontWeight: 600, cursor: 'pointer'
                 }}
@@ -3705,6 +3705,12 @@ const MobileApp = () => {
                 <button 
                   onClick={() => {
                     setShowUserDropdown(false);
+                    setShowMobileEditProfile(false);
+                    setShowMobileSettings(false);
+                    setShowMobileSavedPosts(false);
+                    setShowMobileCommunityGuidelines(false);
+                    setShowMobileSupporter(false);
+                    setShowMobileHelp(false);
                     setShowMobileProfile(true);
                     loadMobileProfile();
                   }}
@@ -3720,6 +3726,12 @@ const MobileApp = () => {
                 <button 
                   onClick={() => {
                     setShowUserDropdown(false);
+                    setShowMobileProfile(false);
+                    setShowMobileEditProfile(false);
+                    setShowMobileSavedPosts(false);
+                    setShowMobileCommunityGuidelines(false);
+                    setShowMobileSupporter(false);
+                    setShowMobileHelp(false);
                     setShowMobileSettings(true);
                   }}
                   style={{
@@ -3734,6 +3746,12 @@ const MobileApp = () => {
                 <button 
                   onClick={() => {
                     setShowUserDropdown(false);
+                    setShowMobileProfile(false);
+                    setShowMobileEditProfile(false);
+                    setShowMobileSettings(false);
+                    setShowMobileCommunityGuidelines(false);
+                    setShowMobileSupporter(false);
+                    setShowMobileHelp(false);
                     setShowMobileSavedPosts(true);
                   }}
                   style={{
@@ -3748,6 +3766,12 @@ const MobileApp = () => {
                 <button 
                   onClick={() => {
                     setShowUserDropdown(false);
+                    setShowMobileProfile(false);
+                    setShowMobileEditProfile(false);
+                    setShowMobileSettings(false);
+                    setShowMobileSavedPosts(false);
+                    setShowMobileSupporter(false);
+                    setShowMobileHelp(false);
                     setShowMobileCommunityGuidelines(true);
                   }}
                   style={{
@@ -3762,6 +3786,12 @@ const MobileApp = () => {
                 <button 
                   onClick={() => {
                     setShowUserDropdown(false);
+                    setShowMobileProfile(false);
+                    setShowMobileEditProfile(false);
+                    setShowMobileSettings(false);
+                    setShowMobileSavedPosts(false);
+                    setShowMobileCommunityGuidelines(false);
+                    setShowMobileHelp(false);
                     setShowMobileSupporter(true);
                   }}
                   style={{
@@ -3776,6 +3806,12 @@ const MobileApp = () => {
                 <button 
                   onClick={() => {
                     setShowUserDropdown(false);
+                    setShowMobileProfile(false);
+                    setShowMobileEditProfile(false);
+                    setShowMobileSettings(false);
+                    setShowMobileSavedPosts(false);
+                    setShowMobileCommunityGuidelines(false);
+                    setShowMobileSupporter(false);
                     setShowMobileHelp(true);
                   }}
                   style={{
@@ -3882,12 +3918,12 @@ const MobileApp = () => {
         )}
       </div>
 
-      {/* Bottom Navigation - Only show when logged in and not on mobile pages */}
-      {user && !showMobileProfile && !showMobileEditProfile && !showMobileSettings && !showMobileSavedPosts && !showMobileCommunityGuidelines && !showMobileSupporter && !showMobileHelp && (
+      {/* Bottom Navigation - Always show when logged in */}
+      {user && (
         <nav style={styles.bottomNav}>
           <div onClick={() => setActiveTab(0)} style={{
             display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-            color: activeTab === 0 ? '#7c3aed' : '#8e8e8e', fontSize: '20px',
+            color: activeTab === 0 ? '#4285f4' : '#8e8e8e', fontSize: '20px',
             padding: '8px 12px', cursor: 'pointer'
           }}>
             🏠
@@ -3895,7 +3931,7 @@ const MobileApp = () => {
           </div>
           <div onClick={() => setActiveTab(1)} style={{
             display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-            color: activeTab === 1 ? '#7c3aed' : '#8e8e8e', fontSize: '20px',
+            color: activeTab === 1 ? '#4285f4' : '#8e8e8e', fontSize: '20px',
             padding: '8px 12px', cursor: 'pointer'
           }}>
             🔍
@@ -3903,7 +3939,7 @@ const MobileApp = () => {
           </div>
           <div onClick={() => setActiveTab(2)} style={{
             display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-            color: activeTab === 2 ? '#7c3aed' : '#8e8e8e', fontSize: '20px',
+            color: activeTab === 2 ? '#4285f4' : '#8e8e8e', fontSize: '20px',
             padding: '8px 12px', cursor: 'pointer'
           }}>
             ➕
@@ -3911,7 +3947,7 @@ const MobileApp = () => {
           </div>
           <div onClick={() => setActiveTab(3)} style={{
             display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-            color: activeTab === 3 ? '#7c3aed' : '#8e8e8e', fontSize: '20px',
+            color: activeTab === 3 ? '#4285f4' : '#8e8e8e', fontSize: '20px',
             padding: '8px 12px', cursor: 'pointer'
           }}>
             🙏
@@ -3919,7 +3955,7 @@ const MobileApp = () => {
           </div>
           <div onClick={() => setActiveTab(4)} style={{
             display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-            color: activeTab === 4 ? '#7c3aed' : '#8e8e8e', fontSize: '20px',
+            color: activeTab === 4 ? '#4285f4' : '#8e8e8e', fontSize: '20px',
             padding: '8px 12px', cursor: 'pointer'
           }}>
             👤
