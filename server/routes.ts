@@ -24,6 +24,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     apiVersion: "2025-07-30.basil",
   }) : null;
 
+  // Health check endpoint for deployment
+  app.get("/health", (req, res) => {
+    res.status(200).json({ status: "healthy", timestamp: new Date().toISOString() });
+  });
+
+  // Root endpoint
+  app.get("/api", (req, res) => {
+    res.json({ message: "Gospel Era API", version: "1.0.0" });
+  });
+
   // Storage status endpoint for debugging
   app.get("/api/storage/status", (req, res) => {
     res.json(hybridStorage.getStorageInfo());
