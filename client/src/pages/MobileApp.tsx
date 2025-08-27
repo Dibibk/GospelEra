@@ -13,6 +13,7 @@ import { useRole } from '@/hooks/useRole';
 import { getTopPrayerWarriors } from '@/lib/leaderboard';
 import { updateUserSettings, getUserSettings, upsertMyProfile, ensureMyProfile } from '@/lib/profiles';
 import { ObjectUploader } from '@/components/ObjectUploader';
+import { getDailyVerse } from '@/lib/scripture';
 
 // Complete Instagram-style Gospel Era Mobile App with Real API Integration
 const MobileApp = () => {
@@ -69,15 +70,29 @@ const MobileApp = () => {
   const [deletingCommentId, setDeletingCommentId] = useState<number | null>(null);
   const [reportModal, setReportModal] = useState<{isOpen: boolean, targetType: 'post'|'comment', targetId: string, reason: string, selectedReason: string}>({isOpen: false, targetType: 'post', targetId: '', reason: '', selectedReason: ''});
   const [submittingReport, setSubmittingReport] = useState(false);
+  
+  // Daily scripture state
+  const [dailyVerse, setDailyVerse] = useState<{reference: string, text: string} | null>(null);
 
   useEffect(() => {
     if (user) {
       fetchData();
       checkUserMediaPermission();
+      loadDailyVerse();
     } else {
       setLoading(false);
     }
   }, [user]);
+
+  // Load daily scripture verse
+  const loadDailyVerse = async () => {
+    try {
+      const verse = await getDailyVerse();
+      setDailyVerse(verse);
+    } catch (error) {
+      console.error('Failed to load daily verse:', error);
+    }
+  };
 
   // Check media permission for current user
   const checkUserMediaPermission = async () => {
@@ -1018,10 +1033,28 @@ const MobileApp = () => {
 
       {/* Daily scripture */}
       <div style={{
-        background: '#ffffff', padding: '8px 16px', borderBottom: '1px solid #dbdbdb',
-        fontSize: '12px', color: '#8e8e8e', textAlign: 'center'
+        background: '#ffffff', padding: '12px 16px', borderBottom: '1px solid #dbdbdb',
+        textAlign: 'center'
       }}>
-        "For I know the plans I have for you" - Jeremiah 29:11
+        {dailyVerse ? (
+          <>
+            <div style={{ 
+              fontSize: '13px', color: '#262626', fontStyle: 'italic', 
+              lineHeight: 1.4, marginBottom: '4px' 
+            }}>
+              "{dailyVerse.text}"
+            </div>
+            <div style={{ 
+              fontSize: '11px', color: '#8e8e8e', fontWeight: 600 
+            }}>
+              - {dailyVerse.reference}
+            </div>
+          </>
+        ) : (
+          <div style={{ fontSize: '12px', color: '#8e8e8e' }}>
+            Loading daily verse...
+          </div>
+        )}
       </div>
 
       {/* Posts feed */}
@@ -4250,6 +4283,19 @@ const MobileApp = () => {
                       }}
                     >
                       🚨 Review Reports
+                    </button>
+                    <button 
+                      onClick={() => {
+                        setShowUserDropdown(false);
+                        window.location.href = '/admin/media-requests';
+                      }}
+                      style={{
+                        width: '100%', padding: '12px 16px', border: 'none', background: 'none',
+                        textAlign: 'left', fontSize: '14px', color: '#dc2626',
+                        ':hover': { background: '#f9f9f9' }, cursor: 'pointer'
+                      }}
+                    >
+                      📂 Media Requests
                     </button>
                     <button 
                       onClick={() => {
