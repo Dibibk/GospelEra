@@ -4176,386 +4176,12 @@ const MobileApp = () => {
       </button>
     </div>
   ); // End ProfileComponent
-        <div style={{ fontSize: '24px', fontWeight: 700, color: '#262626', letterSpacing: '-0.5px' }}>
-          {!user ? 'Gospel Era' :
-           activeTab === 0 ? 'Gospel Era' :
-           activeTab === 1 ? 'Search' :
-           activeTab === 2 ? 'Create' :
-           activeTab === 3 ? 'Prayer' :
-           'Profile'}
-        </div>
-        {user && (
-          <div className="user-dropdown-container" style={{ display: 'flex', alignItems: 'center', gap: '16px', position: 'relative' }}>
+
+  // Main component renders at the end of MobileApp function (at line ~4650)
             {/* User Name and Avatar */}
             <button 
-              onClick={() => setShowUserDropdown(!showUserDropdown)}
-              style={{
-                display: 'flex', alignItems: 'center', gap: '8px',
-                background: 'none', border: 'none', cursor: 'pointer',
-                padding: '4px 8px', borderRadius: '20px',
-                ':hover': { background: '#f0f0f0' }
-              }}
-            >
-              <div style={{
-                width: '28px', height: '28px', borderRadius: '50%',
-                background: userProfile?.avatar_url ? 'none' : '#dbdbdb',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                overflow: 'hidden'
-              }}>
-                {userProfile?.avatar_url ? (
-                  <img 
-                    src={userProfile.avatar_url.startsWith('/objects/') ? userProfile.avatar_url : (userProfile.avatar_url.startsWith('/') ? userProfile.avatar_url : `/public-objects/${userProfile.avatar_url}`)} 
-                    alt="Profile" 
-                    style={{ width: '28px', height: '28px', borderRadius: '50%', objectFit: 'cover' }}
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).style.display = 'none';
-                      const parent = (e.target as HTMLImageElement).parentElement;
-                      if (parent) {
-                        parent.innerHTML = '<span style="fontSize: 14px; color: #8e8e8e">👤</span>';
-                      }
-                    }}
-                  />
-                ) : (
-                  <span style={{ fontSize: '14px', color: '#8e8e8e' }}>👤</span>
-                )}
-              </div>
-              <span style={{ fontSize: '14px', fontWeight: 600, color: '#262626' }}>
-                {userProfile?.display_name || user?.email?.split('@')[0] || 'User'}
-              </span>
-              <span style={{ fontSize: '12px', color: '#8e8e8e' }}>▼</span>
-            </button>
-
-            {/* Dropdown Menu */}
-            {showUserDropdown && (
-              <div style={{
-                position: 'absolute', top: '100%', right: 0, marginTop: '8px',
-                background: '#ffffff', borderRadius: '12px', boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
-                border: '1px solid #dbdbdb', minWidth: '200px', zIndex: 1000
-              }}>
-                <div style={{ padding: '12px 16px', borderBottom: '1px solid #f0f0f0' }}>
-                  <div style={{ fontSize: '14px', fontWeight: 600, color: '#262626' }}>
-                    {userProfile?.display_name || 'Gospel User'}
-                  </div>
-                  <div style={{ fontSize: '12px', color: '#8e8e8e' }}>
-                    {user?.email}
-                  </div>
-                </div>
-                
-                <button 
-                  onClick={() => {
-                    setShowUserDropdown(false);
-                    setShowMobileEditProfile(false);
-                    setShowMobileSettings(false);
-                    setShowMobileSavedPosts(false);
-                    setShowMobileCommunityGuidelines(false);
-                    setShowMobileSupporter(false);
-                    setShowMobileHelp(false);
-                    setShowMobileProfile(true);
-                    // Set profile immediately instead of loading
-                    if (userProfile) {
-                      setProfile({
-                        id: user?.id || '',
-                        display_name: userProfile.display_name || user?.email || 'Gospel User',
-                        bio: userProfile.bio || '',
-                        avatar_url: userProfile.avatar_url || '',
-                        created_at: new Date().toISOString(),
-                        updated_at: new Date().toISOString()
-                      });
-                      setEditDisplayName(userProfile.display_name || user?.email || 'Gospel User');
-                      setEditBio(userProfile.bio || '');
-                      setEditAvatarUrl(userProfile.avatar_url || '');
-                      setProfileLoading(false);
-                    } else {
-                      loadMobileProfile();
-                    }
-                  }}
-                  style={{
-                    width: '100%', padding: '12px 16px', border: 'none', background: 'none',
-                    textAlign: 'left', fontSize: '14px', color: '#262626',
-                    ':hover': { background: '#f9f9f9' }, cursor: 'pointer'
-                  }}
-                >
-                  <svg style={{ width: '16px', height: '16px', marginRight: '12px', color: '#666' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                  </svg>
-                  Profile
-                </button>
-                
-                <button 
-                  onClick={() => {
-                    setShowUserDropdown(false);
-                    setShowMobileProfile(false);
-                    setShowMobileEditProfile(false);
-                    setShowMobileSavedPosts(false);
-                    setShowMobileCommunityGuidelines(false);
-                    setShowMobileSupporter(false);
-                    setShowMobileHelp(false);
-                    setShowMobileSettings(true);
-                  }}
-                  style={{
-                    width: '100%', padding: '12px 16px', border: 'none', background: 'none',
-                    textAlign: 'left', fontSize: '14px', color: '#262626',
-                    ':hover': { background: '#f9f9f9' }, cursor: 'pointer'
-                  }}
-                >
-                  ⚙️ Settings
-                </button>
-                
-                <button 
-                  onClick={() => {
-                    setShowUserDropdown(false);
-                    setShowMobileProfile(false);
-                    setShowMobileEditProfile(false);
-                    setShowMobileSettings(false);
-                    setShowMobileCommunityGuidelines(false);
-                    setShowMobileSupporter(false);
-                    setShowMobileHelp(false);
-                    setShowMobileSavedPosts(true);
-                  }}
-                  style={{
-                    width: '100%', padding: '12px 16px', border: 'none', background: 'none',
-                    textAlign: 'left', fontSize: '14px', color: '#262626',
-                    ':hover': { background: '#f9f9f9' }, cursor: 'pointer'
-                  }}
-                >
-                  🔖 Saved Posts
-                </button>
-                
-                <button 
-                  onClick={() => {
-                    setShowUserDropdown(false);
-                    setShowMobileProfile(false);
-                    setShowMobileEditProfile(false);
-                    setShowMobileSettings(false);
-                    setShowMobileSavedPosts(false);
-                    setShowMobileSupporter(false);
-                    setShowMobileHelp(false);
-                    setShowMobileCommunityGuidelines(true);
-                  }}
-                  style={{
-                    width: '100%', padding: '12px 16px', border: 'none', background: 'none',
-                    textAlign: 'left', fontSize: '14px', color: '#262626',
-                    ':hover': { background: '#f9f9f9' }, cursor: 'pointer'
-                  }}
-                >
-                  📖 Community Guidelines
-                </button>
-                
-                <button 
-                  onClick={() => {
-                    setShowUserDropdown(false);
-                    setShowMobileProfile(false);
-                    setShowMobileEditProfile(false);
-                    setShowMobileSettings(false);
-                    setShowMobileSavedPosts(false);
-                    setShowMobileCommunityGuidelines(false);
-                    setShowMobileHelp(false);
-                    setShowMobileSupporter(true);
-                  }}
-                  style={{
-                    width: '100%', padding: '12px 16px', border: 'none', background: 'none',
-                    textAlign: 'left', fontSize: '14px', color: '#262626',
-                    ':hover': { background: '#f9f9f9' }, cursor: 'pointer'
-                  }}
-                >
-                  💖 Be a Supporter
-                </button>
-                
-                <button 
-                  onClick={() => {
-                    setShowUserDropdown(false);
-                    setShowMobileProfile(false);
-                    setShowMobileEditProfile(false);
-                    setShowMobileSettings(false);
-                    setShowMobileSavedPosts(false);
-                    setShowMobileCommunityGuidelines(false);
-                    setShowMobileSupporter(false);
-                    setShowMobileHelp(true);
-                  }}
-                  style={{
-                    width: '100%', padding: '12px 16px', border: 'none', background: 'none',
-                    textAlign: 'left', fontSize: '14px', color: '#262626',
-                    ':hover': { background: '#f9f9f9' }, cursor: 'pointer'
-                  }}
-                >
-                  ❓ Help
-                </button>
-                
-                
-                {(userProfile?.role === 'admin' || isAdmin) && (
-                  <>
-                    <div style={{ borderTop: '1px solid #f0f0f0', marginTop: '4px' }} />
-                    <button 
-                      onClick={() => {
-                        setShowUserDropdown(false);
-                        window.location.href = '/admin/reports';
-                      }}
-                      style={{
-                        width: '100%', padding: '12px 16px', border: 'none', background: 'none',
-                        textAlign: 'left', fontSize: '14px', color: '#333', display: 'flex', alignItems: 'center',
-                        cursor: 'pointer'
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.background = '#f9f9f9';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.background = 'none';
-                      }}
-                    >
-                      <svg style={{ width: '16px', height: '16px', marginRight: '12px', color: '#666' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                      </svg>
-                      Admin Reports
-                    </button>
-                    <button 
-                      onClick={() => {
-                        setShowUserDropdown(false);
-                        window.location.href = '/admin/media-requests';
-                      }}
-                      style={{
-                        width: '100%', padding: '12px 16px', border: 'none', background: 'none',
-                        textAlign: 'left', fontSize: '14px', color: '#333', display: 'flex', alignItems: 'center',
-                        cursor: 'pointer'
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.background = '#f9f9f9';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.background = 'none';
-                      }}
-                    >
-                      <svg style={{ width: '16px', height: '16px', marginRight: '12px', color: '#666' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                      </svg>
-                      Media Requests
-                    </button>
-                    <button 
-                      onClick={() => {
-                        setShowUserDropdown(false);
-                        window.location.href = '/admin/support';
-                      }}
-                      style={{
-                        width: '100%', padding: '12px 16px', border: 'none', background: 'none',
-                        textAlign: 'left', fontSize: '14px', color: '#333', display: 'flex', alignItems: 'center',
-                        cursor: 'pointer'
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.background = '#f9f9f9';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.background = 'none';
-                      }}
-                    >
-                      <svg style={{ width: '16px', height: '16px', marginRight: '12px', color: '#666' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
-                      </svg>
-                      Admin Support
-                    </button>
-                  </>
-                )}
-                
-                <button 
-                  onClick={() => {
-                    setShowUserDropdown(false);
-                    signOut();
-                  }}
-                  style={{
-                    width: '100%', padding: '12px 16px', border: 'none', background: 'none',
-                    textAlign: 'left', fontSize: '14px', color: '#dc2626',
-                    ':hover': { background: '#f9f9f9' }, cursor: 'pointer',
-                    borderTop: '1px solid #f0f0f0'
-                  }}
-                >
-                  🚪 Sign Out
-                </button>
-              </div>
-            )}
           </div>
-        )}
-      </div>
-
-      {/* Content */}
-      <div style={styles.content}>
-        {!user ? (
-          <LoginPage />
-        ) : showMobileEditProfile ? (
-          <MobileEditProfilePage />
-        ) : showMobileProfile ? (
-          <MobileProfilePage />
-        ) : showMobileSettings ? (
-          <MobileSettingsPage />
-        ) : false ? (
-          null
-        ) : showMobileCommunityGuidelines ? (
-          <MobileCommunityGuidelinesPage />
-        ) : showMobileSupporter ? (
-          <MobileSupporterPage />
-        ) : showMobileHelp ? (
-          <MobileHelpPage />
-        ) : (
-          <>
-            {activeTab === 0 && <HomeFeed />}
-            {activeTab === 1 && <SearchPage />}
-            {activeTab === 2 && <CreatePage />}
-            {activeTab === 3 && <PrayerPage />}
-            {activeTab === 4 && <ProfilePage />}
-          </>
-        )}
-      </div>
-
-      {/* Bottom Navigation - Always show when logged in */}
-      {user && (
-        <nav style={styles.bottomNav}>
-          <div onClick={() => setActiveTab(0)} style={{
-            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-            color: activeTab === 0 ? '#4285f4' : '#8e8e8e', fontSize: '20px',
-            padding: '8px 12px', cursor: 'pointer'
-          }}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
-            </svg>
-            <span style={{ fontSize: '10px', marginTop: '2px' }}>Home</span>
-          </div>
-          <div onClick={() => setActiveTab(1)} style={{
-            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-            color: activeTab === 1 ? '#4285f4' : '#8e8e8e', fontSize: '20px',
-            padding: '8px 12px', cursor: 'pointer'
-          }}>
-            🔍
-            <span style={{ fontSize: '10px', marginTop: '2px' }}>Search</span>
-          </div>
-          <div onClick={() => setActiveTab(2)} style={{
-            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-            color: activeTab === 2 ? '#4285f4' : '#8e8e8e', fontSize: '20px',
-            padding: '8px 12px', cursor: 'pointer'
-          }}>
-            ➕
-            <span style={{ fontSize: '10px', marginTop: '2px' }}>Post</span>
-          </div>
-          <div onClick={() => setActiveTab(3)} style={{
-            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-            color: activeTab === 3 ? '#4285f4' : '#8e8e8e', fontSize: '20px',
-            padding: '8px 12px', cursor: 'pointer'
-          }}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={activeTab === 3 ? '#4285f4' : '#333333'} strokeWidth="2">
-              <path d="M14 2v6a2 2 0 01-2 2 2 2 0 01-2-2V2"/>
-              <path d="M10 2C8 2 8 4 10 6c0 1 0 2-2 2s-4-1-4-4"/>
-              <path d="M14 2c2 0 2 2 0 4 0 1 0 2 2 2s4-1 4-4"/>
-              <path d="M9 16v3a1 1 0 002 0v-3"/>
-              <path d="M13 16v3a1 1 0 002 0v-3"/>
-              <path d="M9 16h6"/>
-            </svg>
-            <span style={{ fontSize: '10px', marginTop: '2px' }}>Prayer</span>
-          </div>
-          <div onClick={() => setActiveTab(4)} style={{
-            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-            color: activeTab === 4 ? '#4285f4' : '#8e8e8e', fontSize: '20px',
-            padding: '8px 12px', cursor: 'pointer'
-          }}>
-            👤
-            <span style={{ fontSize: '10px', marginTop: '2px' }}>Profile</span>
-          </div>
-        </nav>
+        </div>
       )}
 
       {/* Report Modal */}
@@ -4563,52 +4189,33 @@ const MobileApp = () => {
         <div style={{
           position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
           background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-          zIndex: 1000, padding: '20px'
+          zIndex: 1000
         }}>
           <div style={{
-            background: 'white', borderRadius: '12px', padding: '24px',
-            maxWidth: '90%', width: '400px', maxHeight: '80vh', overflow: 'auto'
+            background: '#ffffff', padding: '20px', borderRadius: '12px',
+            minWidth: '300px', maxWidth: '400px'
           }}>
-            <h3 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '16px', color: '#262626' }}>
-              Report Content
-            </h3>
-            <p style={{ fontSize: '14px', color: '#8e8e8e', marginBottom: '20px' }}>
-              Why are you reporting this {reportTarget?.type}?
+            <h3 style={{ margin: '0 0 16px 0', fontSize: '18px', fontWeight: 600 }}>Report Content</h3>
+            <p style={{ margin: '0 0 16px 0', fontSize: '14px', color: '#6c757d' }}>
+              {reportModal.selectedReason || reportModal.reason}
             </p>
-            
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '24px' }}>
-              {[
-                'Inappropriate content',
-                'Spam or misleading',
-                'Not Christ-Centered (prayer not to Jesus)',
-                'Harassment or hate speech',
-                'Violence or dangerous content',
-                'Other'
-              ].map((reason) => (
-                <button
-                  key={reason}
-                  onClick={() => handleSubmitReport(reason)}
-                  style={{
-                    padding: '12px 16px', textAlign: 'left', border: '1px solid #dbdbdb',
-                    borderRadius: '8px', background: 'white', cursor: 'pointer',
-                    fontSize: '14px', color: '#262626'
-                  }}
-                >
-                  {reason}
-                </button>
-              ))}
-            </div>
-            
             <div style={{ display: 'flex', gap: '12px' }}>
               <button
                 onClick={() => setReportModalOpen(false)}
                 style={{
-                  flex: 1, padding: '12px 16px', border: '1px solid #dbdbdb',
-                  borderRadius: '8px', background: 'white', cursor: 'pointer',
-                  fontSize: '14px', fontWeight: 600, color: '#262626'
+                  flex: 1, padding: '10px', border: '1px solid #ddd',
+                  borderRadius: '6px', background: '#ffffff', cursor: 'pointer'
                 }}
               >
                 Cancel
+              </button>
+              <button
+                style={{
+                  flex: 1, padding: '10px', border: 'none',
+                  borderRadius: '6px', background: '#dc3545', color: '#ffffff', cursor: 'pointer'
+                }}
+              >
+                Submit Report
               </button>
             </div>
           </div>
@@ -4619,18 +4226,18 @@ const MobileApp = () => {
       {showMediaRequestModal && (
         <div style={{
           position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-          backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1000,
-          display: 'flex', alignItems: 'center', justifyContent: 'center'
+          background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          zIndex: 1000
         }}>
           <div style={{
-            background: '#ffffff', padding: '24px', borderRadius: '12px',
-            maxWidth: '300px', margin: '16px', textAlign: 'center'
+            background: '#ffffff', padding: '20px', borderRadius: '12px',
+            minWidth: '300px', maxWidth: '400px'
           }}>
             <h3 style={{ margin: '0 0 16px 0', fontSize: '18px', fontWeight: 600 }}>
-              Request Link Sharing
+              Request Media Sharing Permission
             </h3>
             <p style={{ margin: '0 0 20px 0', fontSize: '14px', color: '#6c757d' }}>
-              Link sharing permissions allow you to embed YouTube videos and upload media files to enhance your posts.
+              To share links and media in your posts, you need permission from our admin team. This helps us maintain a safe and uplifting community.
             </p>
             <div style={{ display: 'flex', gap: '8px' }}>
               <button
@@ -4660,19 +4267,6 @@ const MobileApp = () => {
       )}
     </div>
   );
-  
-  // Render main component - this should be inside the MobileApp function
-  return (
-    <div style={styles.container}>
-      {/* Header */}
-      <div style={styles.header}>
-        <div style={{ fontSize: '24px', fontWeight: 700, color: '#262626', letterSpacing: '-0.5px' }}>
-          {!user ? 'Gospel Era' :
-           activeTab === 0 ? 'Gospel Era' :
-           activeTab === 1 ? 'Search' :
-           activeTab === 2 ? 'Create' :
-           activeTab === 3 ? 'Prayer' :
-           'Profile'}
-        </div>
+};
 
 export default MobileApp;
