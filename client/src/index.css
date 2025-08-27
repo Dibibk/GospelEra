@@ -48,11 +48,25 @@
   
   /* Native mobile input styling */
   input, textarea, select {
-    -webkit-appearance: none;
-    appearance: none;
-    font-size: 16px; /* Prevents zoom on iOS */
+    -webkit-appearance: none !important;
+    appearance: none !important;
+    font-size: 16px !important; /* Prevents zoom on iOS */
     border-radius: var(--radius);
     min-height: var(--mobile-input-height);
+    touch-action: manipulation !important;
+    -webkit-touch-callout: none;
+    -webkit-user-select: text;
+    user-select: text;
+    transform: translateZ(0);
+  }
+  
+  /* Fix keyboard flickering */
+  input:focus, textarea:focus {
+    position: relative !important;
+    z-index: 1000 !important;
+    outline: none !important;
+    border: 2px solid #5A31F4 !important;
+    background: white !important;
   }
 }
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { listPosts, createPost, updatePost, softDeletePost } from '@/lib/posts';
 import { listPrayerRequests, createPrayerRequest, commitToPray, confirmPrayed, getMyCommitments, getPrayerRequest } from '@/lib/prayer';
@@ -78,15 +78,16 @@ const MobileApp = () => {
   
   // Three dots menu state
   const [showPostMenu, setShowPostMenu] = useState<{[postId: number]: boolean}>({});
+  const isLoading = useRef(false);
 
   useEffect(() => {
     let isMounted = true;
     
-    if (user && isMounted) {
+    if (user && isMounted && posts.length === 0) {
       fetchData();
       checkUserMediaPermission();
       loadDailyVerse();
-    } else {
+    } else if (!user) {
       setLoading(false);
     }
     
@@ -4467,7 +4468,7 @@ const MobileApp = () => {
                     <button 
                       onClick={() => {
                         setShowUserDropdown(false);
-                        window.location.href = '/admin/dashboard';
+                        alert('Admin Dashboard - Feature coming to mobile soon!');
                       }}
                       style={{
                         width: '100%', padding: '12px 16px', border: 'none', background: 'none',
@@ -4480,7 +4481,7 @@ const MobileApp = () => {
                     <button 
                       onClick={() => {
                         setShowUserDropdown(false);
-                        window.location.href = '/admin/reports';
+                        alert('Review Reports - Feature coming to mobile soon!');
                       }}
                       style={{
                         width: '100%', padding: '12px 16px', border: 'none', background: 'none',
@@ -4493,7 +4494,7 @@ const MobileApp = () => {
                     <button 
                       onClick={() => {
                         setShowUserDropdown(false);
-                        window.location.href = '/admin/media-requests';
+                        alert('Media Requests - Feature coming to mobile soon!');
                       }}
                       style={{
                         width: '100%', padding: '12px 16px', border: 'none', background: 'none',
@@ -4506,7 +4507,7 @@ const MobileApp = () => {
                     <button 
                       onClick={() => {
                         setShowUserDropdown(false);
-                        window.location.href = '/admin/users';
+                        alert('Manage Users - Feature coming to mobile soon!');
                       }}
                       style={{
                         width: '100%', padding: '12px 16px', border: 'none', background: 'none',
@@ -4519,7 +4520,7 @@ const MobileApp = () => {
                     <button 
                       onClick={() => {
                         setShowUserDropdown(false);
-                        window.location.href = '/admin/donations';
+                        alert('Admin Donations - Feature coming to mobile soon!');
                       }}
                       style={{
                         width: '100%', padding: '12px 16px', border: 'none', background: 'none',
@@ -4532,7 +4533,7 @@ const MobileApp = () => {
                     <button 
                       onClick={() => {
                         setShowUserDropdown(false);
-                        window.location.href = '/admin/support';
+                        alert('Admin Support - Feature coming to mobile soon!');
                       }}
                       style={{
                         width: '100%', padding: '12px 16px', border: 'none', background: 'none',
