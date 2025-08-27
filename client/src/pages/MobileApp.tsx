@@ -1917,7 +1917,7 @@ const MobileApp = () => {
             {/* Tags if available */}
             {request.tags && request.tags.length > 0 && (
               <div style={{ marginBottom: '12px' }}>
-                {request.tags.map((tag, index) => (
+                {request.tags.map((tag: string, index: number) => (
                   <span key={`${request.id}-tag-${index}`} style={{
                     background: '#f0f0f0', padding: '2px 8px', borderRadius: '12px',
                     fontSize: '12px', color: '#666', marginRight: '6px'
@@ -3244,7 +3244,7 @@ const MobileApp = () => {
       
       try {
         // Import the function dynamically to avoid issues
-        const { listBookmarks } = await import('../lib/engagement.js');
+        const { listBookmarks } = await import('../lib/engagement');
         const { getProfilesByIds } = await import('../lib/profiles');
         
         const { data, error } = await listBookmarks({ limit: 50 });
