@@ -1,0 +1,175 @@
+Symptoms: On iOS/Android, tapping any text field moves the page (flicker) and the caret won’t stay; keystrokes don’t show. Previous fixes (remove touchAction/WebkitAppearance, replace 100vh, disable route animations on mobile, update viewport) helped partially but not enough.
+
+Root causes we’re hunting down now (apply ALL items):
+
+Inputs inside transformed ancestors (transform, filter, perspective, backdrop-filter, or any motion.div applying transforms) → iOS cursor bugs.
+
+Overlays (loaders/sheets/toasts) or wrappers that set pointer-events, position: fixed, or overflow: hidden on body/root when focusing → clicks blur inputs.
+
+Resize/visualViewport listeners that set state in parents during focus → remount/re-render loops.
+
+onFocus/onBlur handlers that toggle route/tab/view or re-key containers.
+
+1) Strip transforms from ancestors of form pages (mobile only)
+
+Find all CSS/inline styles that set transform, filter, perspective, backdropFilter, translateZ, will-change: transform on containers around Post/Prayer/EditProfile/Contact forms (including page cards and motion.divs).
+
+For mobile ≤ 768px, ensure no transform on any ancestor of form content. Where transforms are used for animation, short-circuit on mobile.
+
+Concrete edits
+
+In any page wrapper component that hosts a form (e.g., MobileApp.tsx or page wrappers), add a class on the root of form pages:
+
+<div className="form-page">{children}</div>
+
+
+In index.css (or global stylesheet), add:
+
+@media (max-width: 768px) {
+  .form-page,
+  .form-page * {
+    transform: none !important;
+    filter: none !important;
+    perspective: none !important;
+    backface-visibility: visible !important;
+    will-change: auto !important;
+  }
+}
+
+
+For any motion.div wrapping a form page, on mobile render a plain div (no variants that translate/scale/opacity with transforms). You can keep opacity (no transform):
+
+- <motion.div initial={{opacity:0, y:8}} animate={{opacity:1, y:0}} exit={{opacity:0, y:-8}}>
++ {isMobile ? <div> : <motion.div initial={false} animate={{opacity:1}} exit={{opacity:1}}>
+    {children}
+- </motion.div>
++ {isMobile ? </div> : </motion.div>}
+
+2) Neutralize overlays and “body locks” while an input is focused
+
+Search the codebase for anything that sets document.body.style.overflow = 'hidden' or position: fixed or adds a full-screen overlay (pointer-events: auto) during focus.
+
+Remove body locks on focus; if you need to prevent scroll, scope it to the scroll container not body.
+
+Ensure any loading/spinner/toast overlay uses pointer-events: none by default, or hides while an input is focused.
+
+Concrete CSS
+
+/* Overlays shouldn’t steal taps while typing */
+.overlay-global {
+  pointer-events: none;
+}
+
+
+If you need clickable overlays (modals), make sure they’re not mounted during normal typing on forms.
+
+3) Stop resize/visualViewport loops during focus (no parent state churn)
+
+Search for listeners:
+
+window.addEventListener('resize', ...)
+
+window.visualViewport.addEventListener(...)
+
+keyboardDidShow/Hide (capacitor/cordova/expo)
+
+Wrap them with a guard: if an input/textarea is focused, do nothing unless the change is very large (e.g., > 120 px).
+
+Patch utility
+
+// src/utils/keyboardGuards.ts
+export function isTextInputFocused(): boolean {
+  const ae = document.activeElement as HTMLElement | null;
+  return !!ae && (ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA' || ae.isContentEditable);
+}
+export function guardedResize(handler: () => void) {
+  let last = window.innerHeight;
+  return () => {
+    if (isTextInputFocused()) {
+      const now = window.innerHeight;
+      if (Math.abs(now - last) < 120) return; // ignore jitter while typing
+      last = now;
+    }
+    handler();
+  };
+}
+
+
+Apply
+
+- window.addEventListener('resize', onResize);
++ window.addEventListener('resize', guardedResize(onResize));
+
+
+And for visualViewport if used:
+
+- visualViewport.addEventListener('resize', onVvResize);
++ visualViewport.addEventListener('resize', guardedResize(onVvResize as any));
+
+4) Make focus stable: no re-keying, no view swaps, no state resets on focus
+
+Remove any key={...} props on containers wrapping form subtrees on mobile (we already disabled route keys; also check tab keys, width/height keys).
+
+Grep and patch any onFocus/onBlur handlers that:
+
+navigate routes/tabs,
+
+toggle “compact vs expanded” layouts by conditionally unmounting form content,
+
+call setState high up in the tree with focus/blur → comment out or guard for mobile.
+
+Search & show
+
+grep -Rn --line-number --include=\*.{ts,tsx} "onFocus|onBlur|key={" client/src
+
+
+Then:
+
+- <FormWrapper key={tab} onFocus={() => setKeyboardOpen(true)} ...>
++ <FormWrapper /* no key on mobile; avoid global state on focus */ ...>
+
+5) Ensure inputs are not wrapped by clickable labels/containers that steal focus
+
+If an input is inside a clickable parent (e.g., onClick on a row), ensure it doesn’t e.preventDefault() or immediately refocus something else.
+
+Patch patterns like:
+
+- <div onClick={(e)=>{ e.preventDefault(); something(); }}>
++ <div onClick={(e)=>{ /* don’t prevent default on input clicks */ if((e.target as HTMLElement).closest('input,textarea')) return; something(); }}>
+
+6) Final CSS/HTML sanity (in addition to previous prompts)
+
+Keep:
+
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+
+min-height: 100dvh; (with -webkit-fill-available fallback)
+
+Remove any global:
+
+input, textarea { touch-action: manipulation; transform: translateZ(0); }
+
+body { position: fixed; overflow: hidden; }
+
+7) Add one tiny runtime guard to stabilize input value updates
+
+Where you do onChange={e => setX(e.target.value)}, replace with rAF micro-batching (if not already done):
+
+const rafSet = (setter: (v: string) => void) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const v = e.target.value;
+  requestAnimationFrame(() => setter(v));
+};
+
+What to modify & show me
+
+CSS: global styles where transforms/filters are applied to page wrappers; add the .form-page anti-transform block.
+
+Components: any motion.* or transform styles on ancestors of form pages → no transform on mobile.
+
+Overlays/body locks: remove body overflow:hidden/position:fixed; set overlays to pointer-events:none unless in a modal.
+
+Resize/visualViewport listeners: wrap with guardedResize.
+
+Remove mobile keys on containers; neuter focus/blur handlers that toggle views.
+
+Return diffs for the touched files and a short summary.

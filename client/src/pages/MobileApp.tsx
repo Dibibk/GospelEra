@@ -4606,11 +4606,11 @@ const MobileApp = () => {
         {!user ? (
           <LoginPage />
         ) : showMobileEditProfile ? (
-          <MobileEditProfilePage />
+          <div className="form-page"><MobileEditProfilePage /></div>
         ) : showMobileProfile ? (
           <MobileProfilePage />
         ) : showMobileSettings ? (
-          <MobileSettingsPage />
+          <div className="form-page"><MobileSettingsPage /></div>
         ) : showMobileSavedPosts ? (
           <MobileSavedPostsPage />
         ) : showMobileCommunityGuidelines ? (
@@ -4624,10 +4624,10 @@ const MobileApp = () => {
             <div style={{ display: activeTab === 0 ? 'flex' : 'none', flex: 1, flexDirection: 'column' }}>
               <HomeFeed />
             </div>
-            <div style={{ display: activeTab === 1 ? 'flex' : 'none', flex: 1, flexDirection: 'column' }}>
+            <div className="form-page" style={{ display: activeTab === 1 ? 'flex' : 'none', flex: 1, flexDirection: 'column' }}>
               <CreatePage />
             </div>
-            <div style={{ display: activeTab === 2 ? 'flex' : 'none', flex: 1, flexDirection: 'column' }}>
+            <div className="form-page" style={{ display: activeTab === 2 ? 'flex' : 'none', flex: 1, flexDirection: 'column' }}>
               <PrayerPage />
             </div>
             <div style={{ display: activeTab === 3 ? 'flex' : 'none', flex: 1, flexDirection: 'column' }}>

@@ -10,8 +10,7 @@ input, textarea {
   border-radius: 0 !important;
   touch-action: manipulation;
   font-size: 16px !important; /* Prevents zoom on iOS */
-  transform: translateZ(0); /* Force hardware acceleration */
-  -webkit-transform: translateZ(0);
+  /* Removed transforms to prevent iOS cursor bugs */
 }
 
 input:focus, textarea:focus {
@@ -36,10 +35,4 @@ input:focus, textarea:focus {
   height: 100%;
 }
 
-/* Prevent iOS Safari bounce */
-body {
-  position: fixed;
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-}
+/* Prevent iOS Safari bounce - removed body locks that interfere with input focus */

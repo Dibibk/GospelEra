@@ -71,6 +71,21 @@ html, body, #root {
   input:focus, textarea:focus {
     outline: 2px solid #5A31F4;
   }
+  
+  /* Anti-transform for form pages - prevents iOS cursor bugs */
+  .form-page,
+  .form-page * {
+    transform: none !important;
+    filter: none !important;
+    perspective: none !important;
+    backface-visibility: visible !important;
+    will-change: auto !important;
+  }
+  
+  /* Overlays shouldn't steal taps while typing */
+  .overlay-global {
+    pointer-events: none;
+  }
 }
 
 :root {

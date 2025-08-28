@@ -19,25 +19,17 @@ export function HelpDrawer({ isOpen, onClose, helpTriggerRef }: HelpDrawerProps)
   // Focus management for accessibility
   useEffect(() => {
     if (isOpen) {
-      // Prevent body scroll
-      document.body.style.overflow = 'hidden'
+      // Removed body scroll lock to prevent mobile input focus issues
       
       // Focus the close button when drawer opens
       setTimeout(() => {
         closeButtonRef.current?.focus()
       }, 100)
     } else {
-      // Restore body scroll
-      document.body.style.overflow = ''
-      
       // Return focus to Help menu item
       if (helpTriggerRef?.current) {
         helpTriggerRef.current.focus()
       }
-    }
-
-    return () => {
-      document.body.style.overflow = ''
     }
   }, [isOpen, helpTriggerRef])
 
