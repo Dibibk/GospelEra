@@ -191,7 +191,11 @@ export default function Profile() {
               </>
             ) : (
               <Button 
-                onClick={() => setIsEditing(true)}
+                onClick={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  setIsEditing(true)
+                }}
                 variant="outline" 
                 size="sm"
               >
