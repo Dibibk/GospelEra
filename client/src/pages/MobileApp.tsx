@@ -964,10 +964,10 @@ const MobileApp = () => {
       paddingBottom: '60px'
     },
     bottomNav: {
-      position: 'sticky' as const,
+      position: 'fixed' as const,
       bottom: 0,
-      left: '50%',
-      transform: 'translateX(-50%)',
+      left: 0,
+      right: 0,
       width: '100%',
       maxWidth: '414px',
       height: '50px',
@@ -976,7 +976,9 @@ const MobileApp = () => {
       display: 'flex',
       justifyContent: 'space-around',
       alignItems: 'center',
-      padding: '0 16px'
+      padding: '0 16px',
+      margin: '0 auto',
+      zIndex: 100
     }
   };
 
