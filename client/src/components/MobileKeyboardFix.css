@@ -1,45 +1,9 @@
-/* Mobile keyboard and touch optimization fixes */
+/* Minimal mobile fixes - inputs should work normally */
 * {
   -webkit-tap-highlight-color: transparent;
 }
 
+/* Only font size fix to prevent iOS zoom - nothing else */
 input, textarea {
-  -webkit-appearance: none !important;
-  -moz-appearance: none !important;
-  appearance: none !important;
-  touch-action: manipulation;
-  font-size: 16px !important; /* Prevents zoom on iOS */
-  /* Removed transforms to prevent iOS cursor bugs */
-  /* Allow normal input behavior */
-  pointer-events: auto;
-  -webkit-user-select: text;
-  user-select: text;
+  font-size: 16px !important;
 }
-
-input:focus, textarea:focus {
-  -webkit-user-select: text !important;
-  user-select: text !important;
-  outline: none;
-  border: 2px solid #5A31F4 !important;
-  box-shadow: 0 0 0 3px rgba(90, 49, 244, 0.1) !important;
-  /* Ensure inputs can receive events */
-  pointer-events: auto !important;
-  /* Allow text editing */
-  -webkit-user-modify: read-write-plaintext-only;
-}
-
-/* Prevent viewport shifts */
-.mobile-app {
-  position: fixed;
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-}
-
-.mobile-content {
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-  height: 100%;
-}
-
-/* Prevent iOS Safari bounce - removed body locks that interfere with input focus */

@@ -22,10 +22,9 @@ const MobileApp = () => {
   // Use stable typing hook for mobile form stability
   useStableTyping();
 
-  // Micro-debounced input handler to prevent layout thrash
-  const rafSet = (setter: (v: string) => void) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const v = e.target.value;
-    requestAnimationFrame(() => setter(v));
+  // Simple input handler - no debouncing to ensure immediate response
+  const handleInput = (setter: (v: string) => void) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setter(e.target.value);
   };
   const { user, loading: authLoading, signIn, signUp, signOut } = useAuth();
   const { isBanned, isAdmin } = useRole();
@@ -1017,7 +1016,7 @@ const MobileApp = () => {
           type="email"
           placeholder="Email"
           value={email}
-          onChange={rafSet(setEmail)}
+          onChange={handleInput(setEmail)}
           style={{
             width: '100%', padding: '12px 16px', border: '1px solid #dbdbdb',
             borderRadius: '8px', fontSize: '16px', marginBottom: '12px', outline: 'none'
@@ -1031,7 +1030,7 @@ const MobileApp = () => {
           type="password"
           placeholder="Password"
           value={password}
-          onChange={rafSet(setPassword)}
+          onChange={handleInput(setPassword)}
           style={{
             width: '100%', padding: '12px 16px', border: '1px solid #dbdbdb',
             borderRadius: '8px', fontSize: '16px', outline: 'none'
@@ -1105,7 +1104,7 @@ const MobileApp = () => {
           type="text" 
           placeholder="Search Gospel Era"
           value={searchText}
-          onChange={rafSet(setSearchText)}
+          onChange={handleInput(setSearchText)}
           inputMode="search"
           autoCapitalize="none"
           autoCorrect="off"
