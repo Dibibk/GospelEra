@@ -480,6 +480,7 @@ const MobileApp = () => {
   const [showMobileSupporter, setShowMobileSupporter] = useState(false);
   const [showMobileHelp, setShowMobileHelp] = useState(false);
   const [showMobileAdminReports, setShowMobileAdminReports] = useState(false);
+  const [showMobileMediaRequests, setShowMobileMediaRequests] = useState(false);
 
   // Fetch leaderboard data and user profile
   useEffect(() => {
@@ -4229,9 +4230,9 @@ const MobileApp = () => {
 
     return (
       <div style={{ background: '#ffffff', minHeight: '100dvh' }}>
-        {/* Header */}
+        {/* Header - Dark Gray */}
         <div style={{ 
-          background: '#000000', color: '#ffffff', padding: '16px',
+          background: '#495057', color: '#ffffff', padding: '16px',
           display: 'flex', alignItems: 'center', borderBottom: '1px solid #e1e5e9'
         }}>
           <button 
@@ -4431,6 +4432,308 @@ const MobileApp = () => {
                 </div>
               </div>
             )}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // Mobile Media Requests Component
+  const MobileMediaRequestsPage = () => {
+    const [loading, setLoading] = useState(true);
+    const [requests, setRequests] = useState<any[]>([]);
+    const [error, setError] = useState('');
+    const [success, setSuccess] = useState('');
+    const [processingId, setProcessingId] = useState<number | null>(null);
+
+    useEffect(() => {
+      loadRequests();
+    }, []);
+
+    const loadRequests = async () => {
+      try {
+        setError('');
+        setLoading(true);
+        
+        // Use existing media requests library function
+        const { listAllRequests } = await import('../lib/mediaRequests');
+        const { data, error: loadError } = await listAllRequests();
+
+        if (loadError) {
+          setError(loadError.message || 'Failed to load requests');
+        } else {
+          setRequests(data || []);
+        }
+
+      } catch (err: any) {
+        setError(err.message || 'Failed to load media requests');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    const handleApprove = async (requestId: number) => {
+      setProcessingId(requestId);
+      
+      try {
+        const { approveMediaRequest } = await import('../lib/mediaRequests');
+        const { error: approveError } = await approveMediaRequest(requestId);
+
+        if (approveError) {
+          setError(approveError.message || 'Failed to approve request');
+        } else {
+          setSuccess('Request approved successfully!');
+          // Update local state
+          setRequests(prev => prev.map(req => 
+            req.id === requestId 
+              ? { ...req, status: 'approved', admin_id: user?.id || null }
+              : req
+          ));
+          setTimeout(() => setSuccess(''), 3000);
+        }
+      } catch (err: any) {
+        setError(err.message);
+      } finally {
+        setProcessingId(null);
+      }
+    };
+
+    const handleDeny = async (requestId: number) => {
+      if (!confirm('Are you sure you want to deny this media access request?')) {
+        return;
+      }
+
+      setProcessingId(requestId);
+      
+      try {
+        const { denyMediaRequest } = await import('../lib/mediaRequests');
+        const { error: denyError } = await denyMediaRequest(requestId);
+
+        if (denyError) {
+          setError(denyError.message || 'Failed to deny request');
+        } else {
+          setSuccess('Request denied successfully.');
+          // Update local state
+          setRequests(prev => prev.map(req => 
+            req.id === requestId 
+              ? { ...req, status: 'denied', admin_id: user?.id || null }
+              : req
+          ));
+          setTimeout(() => setSuccess(''), 3000);
+        }
+      } catch (err: any) {
+        setError(err.message);
+      } finally {
+        setProcessingId(null);
+      }
+    };
+
+    const getStatusColor = (status: string) => {
+      switch (status) {
+        case 'approved': return '#28a745';
+        case 'denied': return '#dc3545';
+        case 'pending':
+        default: return '#ffc107';
+      }
+    };
+
+    const formatDate = (dateString: string) => {
+      return new Date(dateString).toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    };
+
+    return (
+      <div style={{ background: '#ffffff', minHeight: '100dvh' }}>
+        {/* Header - Dark Gray */}
+        <div style={{ 
+          background: '#495057', color: '#ffffff', padding: '16px',
+          display: 'flex', alignItems: 'center', borderBottom: '1px solid #e1e5e9'
+        }}>
+          <button 
+            onClick={() => setShowMobileMediaRequests(false)}
+            style={{
+              background: 'none', border: 'none', fontSize: '18px',
+              color: '#ffffff', cursor: 'pointer', marginRight: '16px'
+            }}
+          >
+            ←
+          </button>
+          <div style={{ fontSize: '18px', fontWeight: 600 }}>Media Requests</div>
+        </div>
+
+        {/* Success/Error Messages */}
+        {success && (
+          <div style={{ 
+            background: '#d4edda', color: '#155724', padding: '12px 16px',
+            borderBottom: '1px solid #c3e6cb', fontSize: '14px'
+          }}>
+            {success}
+          </div>
+        )}
+        {error && (
+          <div style={{ 
+            background: '#fee', color: '#c00', padding: '12px 16px',
+            borderBottom: '1px solid #fcc', fontSize: '14px'
+          }}>
+            {error}
+          </div>
+        )}
+
+        {/* Stats Cards */}
+        <div style={{ 
+          display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
+          gap: '12px', padding: '16px'
+        }}>
+          <div style={{ 
+            background: '#fff3cd', border: '1px solid #ffeaa7',
+            borderRadius: '8px', padding: '12px', textAlign: 'center'
+          }}>
+            <div style={{ fontSize: '20px', fontWeight: 600, color: '#856404' }}>
+              {requests.filter(r => r.status === 'pending').length}
+            </div>
+            <div style={{ fontSize: '12px', color: '#856404' }}>Pending</div>
+          </div>
+          
+          <div style={{ 
+            background: '#d4edda', border: '1px solid #c3e6cb',
+            borderRadius: '8px', padding: '12px', textAlign: 'center'
+          }}>
+            <div style={{ fontSize: '20px', fontWeight: 600, color: '#155724' }}>
+              {requests.filter(r => r.status === 'approved').length}
+            </div>
+            <div style={{ fontSize: '12px', color: '#155724' }}>Approved</div>
+          </div>
+          
+          <div style={{ 
+            background: '#f8d7da', border: '1px solid #f5c6cb',
+            borderRadius: '8px', padding: '12px', textAlign: 'center'
+          }}>
+            <div style={{ fontSize: '20px', fontWeight: 600, color: '#721c24' }}>
+              {requests.filter(r => r.status === 'denied').length}
+            </div>
+            <div style={{ fontSize: '12px', color: '#721c24' }}>Denied</div>
+          </div>
+          
+          <div style={{ 
+            background: '#e2e3e5', border: '1px solid #d6d8db',
+            borderRadius: '8px', padding: '12px', textAlign: 'center'
+          }}>
+            <div style={{ fontSize: '20px', fontWeight: 600, color: '#383d41' }}>
+              {requests.length}
+            </div>
+            <div style={{ fontSize: '12px', color: '#383d41' }}>Total</div>
+          </div>
+        </div>
+
+        {loading ? (
+          <div style={{ 
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: '40px 16px', color: '#6c757d'
+          }}>
+            Loading media requests...
+          </div>
+        ) : (
+          <div style={{ padding: '16px' }}>
+            {/* Requests List */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {requests.length === 0 ? (
+                <div style={{ 
+                  textAlign: 'center', padding: '40px 16px',
+                  color: '#6c757d', fontSize: '14px'
+                }}>
+                  No media requests found
+                </div>
+              ) : (
+                requests.map((request) => (
+                  <div
+                    key={request.id}
+                    style={{
+                      background: '#ffffff', border: '1px solid #e1e5e9',
+                      borderRadius: '8px', padding: '16px'
+                    }}
+                  >
+                    {/* Request Header */}
+                    <div style={{ 
+                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                      marginBottom: '8px'
+                    }}>
+                      <div style={{ 
+                        fontSize: '12px', fontWeight: 600, padding: '4px 8px',
+                        borderRadius: '12px', color: '#ffffff',
+                        background: getStatusColor(request.status)
+                      }}>
+                        {request.status.toUpperCase()}
+                      </div>
+                      <div style={{ fontSize: '12px', color: '#6c757d' }}>
+                        {formatDate(request.created_at)}
+                      </div>
+                    </div>
+
+                    {/* User Info */}
+                    <div style={{ marginBottom: '12px' }}>
+                      <div style={{ fontSize: '14px', fontWeight: 600, color: '#000000', marginBottom: '4px' }}>
+                        👤 {request.user?.display_name || 'Anonymous'}
+                      </div>
+                      <div style={{ fontSize: '12px', color: '#6c757d' }}>
+                        {request.user?.email}
+                      </div>
+                    </div>
+
+                    {/* Request Reason */}
+                    <div style={{ marginBottom: '12px' }}>
+                      <div style={{ fontSize: '13px', color: '#6c757d', marginBottom: '4px' }}>
+                        Reason:
+                      </div>
+                      <div style={{ 
+                        fontSize: '14px', color: '#495057', 
+                        background: '#f8f9fa', padding: '8px', borderRadius: '4px'
+                      }}>
+                        {request.reason}
+                      </div>
+                    </div>
+
+                    {/* Admin Info */}
+                    {request.admin?.display_name && (
+                      <div style={{ fontSize: '12px', color: '#6c757d', marginBottom: '12px' }}>
+                        Reviewed by: {request.admin.display_name}
+                      </div>
+                    )}
+
+                    {/* Action Buttons */}
+                    {request.status === 'pending' && (
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <button
+                          onClick={() => handleApprove(request.id)}
+                          disabled={processingId === request.id}
+                          style={{
+                            flex: 1, background: '#28a745', color: '#ffffff',
+                            border: 'none', padding: '10px 12px', borderRadius: '4px',
+                            fontSize: '13px', fontWeight: 600, cursor: 'pointer'
+                          }}
+                        >
+                          {processingId === request.id ? '...' : '✓ Approve'}
+                        </button>
+                        <button
+                          onClick={() => handleDeny(request.id)}
+                          disabled={processingId === request.id}
+                          style={{
+                            flex: 1, background: '#dc3545', color: '#ffffff',
+                            border: 'none', padding: '10px 12px', borderRadius: '4px',
+                            fontSize: '13px', fontWeight: 600, cursor: 'pointer'
+                          }}
+                        >
+                          {processingId === request.id ? '...' : '✗ Deny'}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
           </div>
         )}
       </div>
@@ -4838,7 +5141,15 @@ const MobileApp = () => {
                     <button 
                       onClick={() => {
                         setShowUserDropdown(false);
-                        alert('Media Requests - Feature coming to mobile soon!');
+                        setShowMobileProfile(false);
+                        setShowMobileEditProfile(false);
+                        setShowMobileSettings(false);
+                        setShowMobileSavedPosts(false);
+                        setShowMobileCommunityGuidelines(false);
+                        setShowMobileSupporter(false);
+                        setShowMobileHelp(false);
+                        setShowMobileAdminReports(false);
+                        setShowMobileMediaRequests(true);
                       }}
                       style={{
                         width: '100%', padding: '12px 16px', border: 'none', background: 'none',
@@ -4904,6 +5215,8 @@ const MobileApp = () => {
           <MobileHelpPage />
         ) : showMobileAdminReports ? (
           <MobileAdminReportsPage />
+        ) : showMobileMediaRequests ? (
+          <MobileMediaRequestsPage />
         ) : (
           <div style={{ display: 'flex', flex: 1, flexDirection: 'column' }}>
             <div style={{ display: activeTab === 0 ? 'flex' : 'none', flex: 1, flexDirection: 'column' }}>
