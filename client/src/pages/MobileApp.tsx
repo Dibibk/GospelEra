@@ -479,6 +479,7 @@ const MobileApp = () => {
   const [showMobileSavedPosts, setShowMobileSavedPosts] = useState(false);
   const [showMobileSupporter, setShowMobileSupporter] = useState(false);
   const [showMobileHelp, setShowMobileHelp] = useState(false);
+  const [showMobileAdminReports, setShowMobileAdminReports] = useState(false);
 
   // Fetch leaderboard data and user profile
   useEffect(() => {
@@ -4133,6 +4134,309 @@ const MobileApp = () => {
     );
   };
 
+  // Mobile Admin Reports Component
+  const MobileAdminReportsPage = () => {
+    const [loading, setLoading] = useState(true);
+    const [reports, setReports] = useState<any[]>([]);
+    const [prayerRequests, setPrayerRequests] = useState<any[]>([]);
+    const [bannedUsers, setBannedUsers] = useState<any[]>([]);
+    const [currentFilter, setCurrentFilter] = useState('open');
+    const [activeTab, setActiveTab] = useState('reports');
+    const [error, setError] = useState('');
+    const [actionLoading, setActionLoading] = useState<Set<string>>(new Set());
+
+    useEffect(() => {
+      loadData();
+    }, [currentFilter]);
+
+    const loadData = async () => {
+      try {
+        setError('');
+        setLoading(true);
+        
+        // Use existing admin library functions
+        const { listReports, getBannedUsers } = await import('../lib/admin');
+        
+        // Load reports using existing admin library
+        const reportsResult = await listReports({ status: currentFilter, limit: 100 });
+        setReports(reportsResult.items || []);
+
+        // Load banned users using existing admin library
+        const bannedUsersResult = await getBannedUsers();
+        setBannedUsers(bannedUsersResult || []);
+
+        // Load prayer requests from Supabase
+        const { supabase } = await import('../lib/supabaseClient');
+        const { data: prayerData } = await supabase
+          .from('prayer_requests')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(50);
+        setPrayerRequests(prayerData || []);
+
+      } catch (err: any) {
+        setError(err.message || 'Failed to load admin data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    const handleStatusChange = async (reportId: string, newStatus: string) => {
+      if (actionLoading.has(reportId)) return;
+      
+      setActionLoading(prev => new Set(prev).add(reportId));
+      
+      try {
+        // Use existing admin library function
+        const { updateReportStatus } = await import('../lib/admin');
+        await updateReportStatus(reportId, newStatus);
+        
+        // Update local state
+        setReports(prev => prev.map(report => 
+          report.id === reportId ? { ...report, status: newStatus } : report
+        ));
+        
+        alert(`Report ${newStatus} successfully!`);
+        
+      } catch (err: any) {
+        alert(`Error: ${err.message}`);
+      } finally {
+        setActionLoading(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(reportId);
+          return newSet;
+        });
+      }
+    };
+
+    const formatDate = (dateString: string) => {
+      return new Date(dateString).toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    };
+
+    const getStatusColor = (status: string) => {
+      switch (status) {
+        case 'open': return '#dc3545';
+        case 'resolved': return '#28a745';
+        case 'dismissed': return '#6c757d';
+        default: return '#6c757d';
+      }
+    };
+
+    return (
+      <div style={{ background: '#ffffff', minHeight: '100dvh' }}>
+        {/* Header */}
+        <div style={{ 
+          background: '#000000', color: '#ffffff', padding: '16px',
+          display: 'flex', alignItems: 'center', borderBottom: '1px solid #e1e5e9'
+        }}>
+          <button 
+            onClick={() => setShowMobileAdminReports(false)}
+            style={{
+              background: 'none', border: 'none', fontSize: '18px',
+              color: '#ffffff', cursor: 'pointer', marginRight: '16px'
+            }}
+          >
+            ←
+          </button>
+          <div style={{ fontSize: '18px', fontWeight: 600 }}>Admin Reports</div>
+        </div>
+
+        {/* Error Display */}
+        {error && (
+          <div style={{ 
+            background: '#fee', color: '#c00', padding: '12px 16px',
+            borderBottom: '1px solid #fcc', fontSize: '14px'
+          }}>
+            {error}
+          </div>
+        )}
+
+        {/* Tab Navigation */}
+        <div style={{ 
+          background: '#f8f9fa', borderBottom: '1px solid #e1e5e9',
+          display: 'flex', overflowX: 'auto'
+        }}>
+          {['reports', 'prayer', 'banned-users'].map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              style={{
+                flex: 1, padding: '12px 16px', border: 'none',
+                background: activeTab === tab ? '#ffffff' : 'transparent',
+                color: activeTab === tab ? '#000000' : '#6c757d',
+                fontSize: '14px', fontWeight: 600,
+                borderBottom: activeTab === tab ? '2px solid #000000' : '2px solid transparent',
+                cursor: 'pointer'
+              }}
+            >
+              {tab === 'reports' ? 'Reports' : 
+               tab === 'prayer' ? 'Prayer Requests' : 'Banned Users'}
+            </button>
+          ))}
+        </div>
+
+        {loading ? (
+          <div style={{ 
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: '40px 16px', color: '#6c757d'
+          }}>
+            Loading...
+          </div>
+        ) : (
+          <div style={{ padding: '16px' }}>
+            {/* Reports Tab */}
+            {activeTab === 'reports' && (
+              <div>
+                {/* Filter Buttons */}
+                <div style={{ 
+                  display: 'flex', gap: '8px', marginBottom: '16px',
+                  overflowX: 'auto', paddingBottom: '4px'
+                }}>
+                  {['open', 'resolved', 'dismissed'].map((status) => (
+                    <button
+                      key={status}
+                      onClick={() => setCurrentFilter(status)}
+                      style={{
+                        padding: '8px 16px', borderRadius: '20px', border: 'none',
+                        background: currentFilter === status ? '#000000' : '#f8f9fa',
+                        color: currentFilter === status ? '#ffffff' : '#6c757d',
+                        fontSize: '14px', fontWeight: 600, cursor: 'pointer',
+                        whiteSpace: 'nowrap'
+                      }}
+                    >
+                      {status.charAt(0).toUpperCase() + status.slice(1)}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Reports List */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  {reports.length === 0 ? (
+                    <div style={{ 
+                      textAlign: 'center', padding: '40px 16px',
+                      color: '#6c757d', fontSize: '14px'
+                    }}>
+                      No {currentFilter} reports found
+                    </div>
+                  ) : (
+                    reports.map((report) => (
+                      <div
+                        key={report.id}
+                        style={{
+                          background: '#ffffff', border: '1px solid #e1e5e9',
+                          borderRadius: '8px', padding: '16px'
+                        }}
+                      >
+                        {/* Report Header */}
+                        <div style={{ 
+                          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                          marginBottom: '8px'
+                        }}>
+                          <div style={{ 
+                            fontSize: '12px', fontWeight: 600,
+                            color: getStatusColor(report.status)
+                          }}>
+                            {report.status.toUpperCase()}
+                          </div>
+                          <div style={{ fontSize: '12px', color: '#6c757d' }}>
+                            {formatDate(report.created_at)}
+                          </div>
+                        </div>
+
+                        {/* Report Content */}
+                        <div style={{ marginBottom: '12px' }}>
+                          <div style={{ fontSize: '14px', fontWeight: 600, color: '#000000', marginBottom: '4px' }}>
+                            {report.target_type === 'post' ? '📝 Post' : '💬 Comment'} Report
+                          </div>
+                          <div style={{ fontSize: '13px', color: '#6c757d', marginBottom: '8px' }}>
+                            Reason: {report.reason || 'No reason provided'}
+                          </div>
+                          {report.target?.content && (
+                            <div style={{ 
+                              fontSize: '12px', color: '#495057', 
+                              background: '#f8f9fa', padding: '8px', borderRadius: '4px',
+                              fontStyle: 'italic'
+                            }}>
+                              "{report.target.content.substring(0, 100)}..."
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Reporter Info */}
+                        <div style={{ fontSize: '12px', color: '#6c757d', marginBottom: '12px' }}>
+                          Reported by: {report.reporter?.display_name || 'Anonymous'}
+                        </div>
+
+                        {/* Action Buttons */}
+                        {report.status === 'open' && (
+                          <div style={{ display: 'flex', gap: '8px' }}>
+                            <button
+                              onClick={() => handleStatusChange(report.id, 'resolved')}
+                              disabled={actionLoading.has(report.id)}
+                              style={{
+                                flex: 1, background: '#28a745', color: '#ffffff',
+                                border: 'none', padding: '8px 12px', borderRadius: '4px',
+                                fontSize: '12px', fontWeight: 600, cursor: 'pointer'
+                              }}
+                            >
+                              {actionLoading.has(report.id) ? '...' : 'Resolve'}
+                            </button>
+                            <button
+                              onClick={() => handleStatusChange(report.id, 'dismissed')}
+                              disabled={actionLoading.has(report.id)}
+                              style={{
+                                flex: 1, background: '#6c757d', color: '#ffffff',
+                                border: 'none', padding: '8px 12px', borderRadius: '4px',
+                                fontSize: '12px', fontWeight: 600, cursor: 'pointer'
+                              }}
+                            >
+                              {actionLoading.has(report.id) ? '...' : 'Dismiss'}
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Prayer Requests Tab */}
+            {activeTab === 'prayer' && (
+              <div>
+                <div style={{ 
+                  textAlign: 'center', padding: '40px 16px',
+                  color: '#6c757d', fontSize: '14px'
+                }}>
+                  Prayer requests management ({prayerRequests.length} total)
+                  <br />Feature coming soon
+                </div>
+              </div>
+            )}
+
+            {/* Banned Users Tab */}
+            {activeTab === 'banned-users' && (
+              <div>
+                <div style={{ 
+                  textAlign: 'center', padding: '40px 16px',
+                  color: '#6c757d', fontSize: '14px'
+                }}>
+                  Banned users management ({bannedUsers.length} total)
+                  <br />Feature coming soon
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   // Profile Component
   const ProfilePage = () => (
     <div style={{ padding: '16px' }}>
@@ -4514,7 +4818,14 @@ const MobileApp = () => {
                     <button 
                       onClick={() => {
                         setShowUserDropdown(false);
-                        alert('Admin Reports - Feature coming to mobile soon!');
+                        setShowMobileProfile(false);
+                        setShowMobileEditProfile(false);
+                        setShowMobileSettings(false);
+                        setShowMobileSavedPosts(false);
+                        setShowMobileCommunityGuidelines(false);
+                        setShowMobileSupporter(false);
+                        setShowMobileHelp(false);
+                        setShowMobileAdminReports(true);
                       }}
                       style={{
                         width: '100%', padding: '12px 16px', border: 'none', background: 'none',
@@ -4591,6 +4902,8 @@ const MobileApp = () => {
           <MobileSupporterPage />
         ) : showMobileHelp ? (
           <MobileHelpPage />
+        ) : showMobileAdminReports ? (
+          <MobileAdminReportsPage />
         ) : (
           <div style={{ display: 'flex', flex: 1, flexDirection: 'column' }}>
             <div style={{ display: activeTab === 0 ? 'flex' : 'none', flex: 1, flexDirection: 'column' }}>
