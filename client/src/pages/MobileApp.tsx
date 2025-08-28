@@ -481,6 +481,7 @@ const MobileApp = () => {
   const [showMobileHelp, setShowMobileHelp] = useState(false);
   const [showMobileAdminReports, setShowMobileAdminReports] = useState(false);
   const [showMobileMediaRequests, setShowMobileMediaRequests] = useState(false);
+  const [showMobileAdminSupport, setShowMobileAdminSupport] = useState(false);
 
   // Fetch leaderboard data and user profile
   useEffect(() => {
@@ -4740,6 +4741,464 @@ const MobileApp = () => {
     );
   };
 
+  // Mobile Admin Support Component
+  const MobileAdminSupportPage = () => {
+    const [loading, setLoading] = useState(true);
+    const [users, setUsers] = useState<any[]>([]);
+    const [bannedUsers, setBannedUsers] = useState<any[]>([]);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [error, setError] = useState('');
+    const [success, setSuccess] = useState('');
+    const [processingUserId, setProcessingUserId] = useState<string | null>(null);
+    const [activeTab, setActiveTab] = useState('users');
+
+    useEffect(() => {
+      loadData();
+    }, []);
+
+    const loadData = async () => {
+      try {
+        setError('');
+        setLoading(true);
+
+        // Load all users
+        const { supabase } = await import('../lib/supabaseClient');
+        const { data: usersData, error: usersError } = await supabase
+          .from('profiles')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(100);
+
+        if (usersError) {
+          setError(usersError.message || 'Failed to load users');
+        } else {
+          setUsers(usersData || []);
+        }
+
+        // Load banned users using admin library
+        const { getBannedUsers } = await import('../lib/admin');
+        const bannedUsersData = await getBannedUsers();
+        setBannedUsers(bannedUsersData);
+
+      } catch (err: any) {
+        setError(err.message || 'Failed to load data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    const handleBanUser = async (userId: string) => {
+      if (!confirm('Are you sure you want to ban this user?')) {
+        return;
+      }
+
+      setProcessingUserId(userId);
+      try {
+        const { banUser } = await import('../lib/admin');
+        await banUser(userId);
+        setSuccess('User banned successfully');
+        loadData();
+        setTimeout(() => setSuccess(''), 3000);
+      } catch (err: any) {
+        setError(err.message);
+      } finally {
+        setProcessingUserId(null);
+      }
+    };
+
+    const handleUnbanUser = async (userId: string) => {
+      setProcessingUserId(userId);
+      try {
+        const { unbanUser } = await import('../lib/admin');
+        await unbanUser(userId);
+        setSuccess('User unbanned successfully');
+        loadData();
+        setTimeout(() => setSuccess(''), 3000);
+      } catch (err: any) {
+        setError(err.message);
+      } finally {
+        setProcessingUserId(null);
+      }
+    };
+
+    const getRoleBadgeColor = (role: string) => {
+      switch (role) {
+        case 'admin': return '#7c3aed';
+        case 'banned': return '#dc2626';
+        case 'user':
+        default: return '#059669';
+      }
+    };
+
+    const formatDate = (dateString: string) => {
+      return new Date(dateString).toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    };
+
+    const filteredUsers = users.filter(user => 
+      user.display_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      user.email?.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+
+    const getStatsData = () => {
+      const totalUsers = users.length;
+      const activeUsers = users.filter(u => u.role !== 'banned').length;
+      const bannedCount = bannedUsers.length;
+      const adminCount = users.filter(u => u.role === 'admin').length;
+      return { totalUsers, activeUsers, bannedCount, adminCount };
+    };
+
+    const stats = getStatsData();
+
+    return (
+      <div style={{ background: '#ffffff', minHeight: '100dvh' }}>
+        {/* Header - Dark Gray */}
+        <div style={{ 
+          background: '#495057', color: '#ffffff', padding: '16px',
+          display: 'flex', alignItems: 'center', borderBottom: '1px solid #e1e5e9'
+        }}>
+          <button 
+            onClick={() => setShowMobileAdminSupport(false)}
+            style={{
+              background: 'none', border: 'none', fontSize: '18px',
+              color: '#ffffff', cursor: 'pointer', marginRight: '16px'
+            }}
+          >
+            ←
+          </button>
+          <div style={{ fontSize: '18px', fontWeight: 600 }}>Admin Support</div>
+        </div>
+
+        {/* Success/Error Messages */}
+        {success && (
+          <div style={{ 
+            background: '#d4edda', color: '#155724', padding: '12px 16px',
+            borderBottom: '1px solid #c3e6cb', fontSize: '14px'
+          }}>
+            {success}
+          </div>
+        )}
+        {error && (
+          <div style={{ 
+            background: '#fee', color: '#c00', padding: '12px 16px',
+            borderBottom: '1px solid #fcc', fontSize: '14px'
+          }}>
+            {error}
+          </div>
+        )}
+
+        {/* Stats Cards */}
+        <div style={{ 
+          display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
+          gap: '12px', padding: '16px'
+        }}>
+          <div style={{ 
+            background: '#e3f2fd', border: '1px solid #bbdefb',
+            borderRadius: '8px', padding: '12px', textAlign: 'center'
+          }}>
+            <div style={{ fontSize: '20px', fontWeight: 600, color: '#1565c0' }}>
+              {stats.totalUsers}
+            </div>
+            <div style={{ fontSize: '12px', color: '#1565c0' }}>Total</div>
+          </div>
+          
+          <div style={{ 
+            background: '#e8f5e8', border: '1px solid #c8e6c9',
+            borderRadius: '8px', padding: '12px', textAlign: 'center'
+          }}>
+            <div style={{ fontSize: '20px', fontWeight: 600, color: '#2e7d32' }}>
+              {stats.activeUsers}
+            </div>
+            <div style={{ fontSize: '12px', color: '#2e7d32' }}>Active</div>
+          </div>
+          
+          <div style={{ 
+            background: '#ffebee', border: '1px solid #ffcdd2',
+            borderRadius: '8px', padding: '12px', textAlign: 'center'
+          }}>
+            <div style={{ fontSize: '20px', fontWeight: 600, color: '#c62828' }}>
+              {stats.bannedCount}
+            </div>
+            <div style={{ fontSize: '12px', color: '#c62828' }}>Banned</div>
+          </div>
+          
+          <div style={{ 
+            background: '#f3e5f5', border: '1px solid #e1bee7',
+            borderRadius: '8px', padding: '12px', textAlign: 'center'
+          }}>
+            <div style={{ fontSize: '20px', fontWeight: 600, color: '#7b1fa2' }}>
+              {stats.adminCount}
+            </div>
+            <div style={{ fontSize: '12px', color: '#7b1fa2' }}>Admins</div>
+          </div>
+        </div>
+
+        {loading ? (
+          <div style={{ 
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: '40px 16px', color: '#6c757d'
+          }}>
+            Loading admin support...
+          </div>
+        ) : (
+          <div style={{ padding: '16px' }}>
+            {/* Search */}
+            <div style={{ marginBottom: '16px' }}>
+              <input
+                type="text"
+                placeholder="Search users..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                style={{
+                  width: '100%', padding: '10px 12px', border: '1px solid #e1e5e9',
+                  borderRadius: '4px', fontSize: '14px'
+                }}
+              />
+            </div>
+
+            {/* Tab Navigation */}
+            <div style={{ 
+              display: 'flex', gap: '8px', marginBottom: '16px',
+              borderBottom: '1px solid #e1e5e9'
+            }}>
+              <button
+                onClick={() => setActiveTab('users')}
+                style={{
+                  padding: '8px 16px', border: 'none', background: 'none',
+                  borderBottom: activeTab === 'users' ? '2px solid #495057' : '2px solid transparent',
+                  fontSize: '14px', fontWeight: 600, cursor: 'pointer',
+                  color: activeTab === 'users' ? '#495057' : '#6c757d'
+                }}
+              >
+                All Users
+              </button>
+              <button
+                onClick={() => setActiveTab('banned')}
+                style={{
+                  padding: '8px 16px', border: 'none', background: 'none',
+                  borderBottom: activeTab === 'banned' ? '2px solid #495057' : '2px solid transparent',
+                  fontSize: '14px', fontWeight: 600, cursor: 'pointer',
+                  color: activeTab === 'banned' ? '#495057' : '#6c757d'
+                }}
+              >
+                Banned
+              </button>
+              <button
+                onClick={() => setActiveTab('recommendations')}
+                style={{
+                  padding: '8px 16px', border: 'none', background: 'none',
+                  borderBottom: activeTab === 'recommendations' ? '2px solid #495057' : '2px solid transparent',
+                  fontSize: '14px', fontWeight: 600, cursor: 'pointer',
+                  color: activeTab === 'recommendations' ? '#495057' : '#6c757d'
+                }}
+              >
+                Tips
+              </button>
+            </div>
+
+            {/* Tab Content */}
+            {activeTab === 'users' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {filteredUsers.length === 0 ? (
+                  <div style={{ 
+                    textAlign: 'center', padding: '40px 16px',
+                    color: '#6c757d', fontSize: '14px'
+                  }}>
+                    No users found
+                  </div>
+                ) : (
+                  filteredUsers.map((userProfile) => (
+                    <div
+                      key={userProfile.id}
+                      style={{
+                        background: '#ffffff', border: '1px solid #e1e5e9',
+                        borderRadius: '8px', padding: '16px'
+                      }}
+                    >
+                      {/* User Header */}
+                      <div style={{ 
+                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                        marginBottom: '8px'
+                      }}>
+                        <div style={{ 
+                          fontSize: '12px', fontWeight: 600, padding: '4px 8px',
+                          borderRadius: '12px', color: '#ffffff',
+                          background: getRoleBadgeColor(userProfile.role || 'user')
+                        }}>
+                          {(userProfile.role || 'user').toUpperCase()}
+                        </div>
+                        <div style={{ fontSize: '12px', color: '#6c757d' }}>
+                          {formatDate(userProfile.created_at)}
+                        </div>
+                      </div>
+
+                      {/* User Info */}
+                      <div style={{ marginBottom: '12px' }}>
+                        <div style={{ fontSize: '14px', fontWeight: 600, color: '#000000', marginBottom: '4px' }}>
+                          👤 {userProfile.display_name || 'Anonymous'}
+                        </div>
+                        <div style={{ fontSize: '12px', color: '#6c757d' }}>
+                          {userProfile.email}
+                        </div>
+                      </div>
+
+                      {/* Action Buttons */}
+                      {userProfile.role !== 'admin' && userProfile.role !== 'banned' && (
+                        <button
+                          onClick={() => handleBanUser(userProfile.id)}
+                          disabled={processingUserId === userProfile.id}
+                          style={{
+                            background: '#dc3545', color: '#ffffff',
+                            border: 'none', padding: '8px 12px', borderRadius: '4px',
+                            fontSize: '12px', fontWeight: 600, cursor: 'pointer',
+                            width: '100%'
+                          }}
+                        >
+                          {processingUserId === userProfile.id ? '...' : '🚫 Ban User'}
+                        </button>
+                      )}
+                      {userProfile.role === 'banned' && (
+                        <button
+                          onClick={() => handleUnbanUser(userProfile.id)}
+                          disabled={processingUserId === userProfile.id}
+                          style={{
+                            background: '#28a745', color: '#ffffff',
+                            border: 'none', padding: '8px 12px', borderRadius: '4px',
+                            fontSize: '12px', fontWeight: 600, cursor: 'pointer',
+                            width: '100%'
+                          }}
+                        >
+                          {processingUserId === userProfile.id ? '...' : '✅ Unban User'}
+                        </button>
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+
+            {activeTab === 'banned' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {bannedUsers.length === 0 ? (
+                  <div style={{ 
+                    textAlign: 'center', padding: '40px 16px',
+                    color: '#6c757d', fontSize: '14px'
+                  }}>
+                    No banned users
+                  </div>
+                ) : (
+                  bannedUsers.map((userProfile) => (
+                    <div
+                      key={userProfile.id}
+                      style={{
+                        background: '#ffffff', border: '1px solid #e1e5e9',
+                        borderRadius: '8px', padding: '16px'
+                      }}
+                    >
+                      <div style={{ marginBottom: '12px' }}>
+                        <div style={{ fontSize: '14px', fontWeight: 600, color: '#000000', marginBottom: '4px' }}>
+                          🚫 {userProfile.display_name || 'Anonymous'}
+                        </div>
+                        <div style={{ fontSize: '12px', color: '#6c757d' }}>
+                          {userProfile.email}
+                        </div>
+                        <div style={{ fontSize: '12px', color: '#6c757d', marginTop: '4px' }}>
+                          Banned: {formatDate(userProfile.updated_at || userProfile.created_at)}
+                        </div>
+                      </div>
+
+                      <button
+                        onClick={() => handleUnbanUser(userProfile.id)}
+                        disabled={processingUserId === userProfile.id}
+                        style={{
+                          background: '#28a745', color: '#ffffff',
+                          border: 'none', padding: '8px 12px', borderRadius: '4px',
+                          fontSize: '12px', fontWeight: 600, cursor: 'pointer',
+                          width: '100%'
+                        }}
+                      >
+                        {processingUserId === userProfile.id ? '...' : '✅ Unban User'}
+                      </button>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+
+            {activeTab === 'recommendations' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div style={{ 
+                  background: '#e3f2fd', border: '1px solid #bbdefb',
+                  borderRadius: '8px', padding: '16px'
+                }}>
+                  <div style={{ fontSize: '14px', fontWeight: 600, color: '#1565c0', marginBottom: '8px' }}>
+                    📈 Community Growth
+                  </div>
+                  <div style={{ fontSize: '13px', color: '#1976d2', marginBottom: '8px' }}>
+                    With {stats.totalUsers} users, encourage engagement through featured content.
+                  </div>
+                  <div style={{ fontSize: '12px', color: '#1976d2' }}>
+                    Tip: Review reports regularly to maintain community standards.
+                  </div>
+                </div>
+
+                <div style={{ 
+                  background: '#e8f5e8', border: '1px solid #c8e6c9',
+                  borderRadius: '8px', padding: '16px'
+                }}>
+                  <div style={{ fontSize: '14px', fontWeight: 600, color: '#2e7d32', marginBottom: '8px' }}>
+                    🛡️ Moderation Health
+                  </div>
+                  <div style={{ fontSize: '13px', color: '#388e3c', marginBottom: '8px' }}>
+                    {stats.bannedCount < 5 ? 'Low' : stats.bannedCount < 15 ? 'Moderate' : 'High'} moderation activity.
+                    {stats.bannedCount < 5 ? ' Community is healthy!' : ' Monitor for issues.'}
+                  </div>
+                  <div style={{ fontSize: '12px', color: '#388e3c' }}>
+                    Tip: Check media requests for user uploads.
+                  </div>
+                </div>
+
+                <div style={{ 
+                  background: '#f3e5f5', border: '1px solid #e1bee7',
+                  borderRadius: '8px', padding: '16px'
+                }}>
+                  <div style={{ fontSize: '14px', fontWeight: 600, color: '#7b1fa2', marginBottom: '8px' }}>
+                    🙏 Prayer Community
+                  </div>
+                  <div style={{ fontSize: '13px', color: '#8e24aa', marginBottom: '8px' }}>
+                    Encourage prayer requests and commitments to strengthen spiritual bonds.
+                  </div>
+                  <div style={{ fontSize: '12px', color: '#8e24aa' }}>
+                    Tip: Feature inspiring prayer testimonies.
+                  </div>
+                </div>
+
+                <div style={{ 
+                  background: '#fff3e0', border: '1px solid #ffcc02',
+                  borderRadius: '8px', padding: '16px'
+                }}>
+                  <div style={{ fontSize: '14px', fontWeight: 600, color: '#f57c00', marginBottom: '8px' }}>
+                    👥 User Engagement
+                  </div>
+                  <div style={{ fontSize: '13px', color: '#fb8c00', marginBottom: '8px' }}>
+                    {Math.round((stats.activeUsers / stats.totalUsers) * 100)}% of users are active.
+                  </div>
+                  <div style={{ fontSize: '12px', color: '#fb8c00' }}>
+                    Tip: Host community events to boost participation.
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   // Profile Component
   const ProfilePage = () => (
     <div style={{ padding: '16px' }}>
@@ -5162,7 +5621,16 @@ const MobileApp = () => {
                     <button 
                       onClick={() => {
                         setShowUserDropdown(false);
-                        alert('Admin Support - Feature coming to mobile soon!');
+                        setShowMobileProfile(false);
+                        setShowMobileEditProfile(false);
+                        setShowMobileSettings(false);
+                        setShowMobileSavedPosts(false);
+                        setShowMobileCommunityGuidelines(false);
+                        setShowMobileSupporter(false);
+                        setShowMobileHelp(false);
+                        setShowMobileAdminReports(false);
+                        setShowMobileMediaRequests(false);
+                        setShowMobileAdminSupport(true);
                       }}
                       style={{
                         width: '100%', padding: '12px 16px', border: 'none', background: 'none',
@@ -5217,6 +5685,8 @@ const MobileApp = () => {
           <MobileAdminReportsPage />
         ) : showMobileMediaRequests ? (
           <MobileMediaRequestsPage />
+        ) : showMobileAdminSupport ? (
+          <MobileAdminSupportPage />
         ) : (
           <div style={{ display: 'flex', flex: 1, flexDirection: 'column' }}>
             <div style={{ display: activeTab === 0 ? 'flex' : 'none', flex: 1, flexDirection: 'column' }}>

@@ -11,6 +11,7 @@ import Settings from "../pages/Settings";
 import SavedPosts from "../pages/SavedPosts";
 import AdminReports from "../pages/AdminReports";
 import AdminMediaRequests from "../pages/AdminMediaRequests";
+import AdminSupport from "../pages/AdminSupport";
 import PrayerNew from "../pages/PrayerNew";
 import PrayerBrowse from "../pages/PrayerBrowse";
 import PrayerDetail from "../pages/PrayerDetail";
@@ -132,6 +133,16 @@ export function AnimatedRoutes() {
             <ProtectedRoute>
               <PageTransition>
                 <AdminMediaRequests />
+              </PageTransition>
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/admin/users" 
+          element={
+            <ProtectedRoute>
+              <PageTransition>
+                <AdminSupport />
               </PageTransition>
             </ProtectedRoute>
           } 
@@ -341,6 +352,16 @@ export function AnimatedRoutes() {
             <ProtectedRoute>
               <PageTransition>
                 <AdminMediaRequests />
+              </PageTransition>
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/admin/users" 
+          element={
+            <ProtectedRoute>
+              <PageTransition>
+                <AdminSupport />
               </PageTransition>
             </ProtectedRoute>
           } 
