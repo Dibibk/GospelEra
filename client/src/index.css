@@ -53,20 +53,13 @@
     font-size: 16px !important; /* Prevents zoom on iOS */
     border-radius: var(--radius);
     min-height: var(--mobile-input-height);
-    touch-action: manipulation !important;
-    -webkit-touch-callout: none;
     -webkit-user-select: text;
     user-select: text;
-    transform: translateZ(0);
   }
   
   /* Fix keyboard flickering */
   input:focus, textarea:focus {
-    position: relative !important;
-    z-index: 1000 !important;
-    outline: none !important;
-    border: 2px solid #5A31F4 !important;
-    background: white !important;
+    outline: 2px solid #5A31F4;
   }
 }
 
