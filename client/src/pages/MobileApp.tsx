@@ -933,7 +933,7 @@ const MobileApp = () => {
       fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
       background: '#ffffff',
       color: '#262626',
-      height: '100vh',
+      minHeight: '100dvh',
       maxWidth: '414px',
       margin: '0 auto',
       display: 'flex',
@@ -1005,9 +1005,12 @@ const MobileApp = () => {
           onChange={(e) => setEmail(e.target.value)}
           style={{
             width: '100%', padding: '12px 16px', border: '1px solid #dbdbdb',
-            borderRadius: '8px', fontSize: '16px', marginBottom: '12px', outline: 'none',
-            WebkitAppearance: 'none', touchAction: 'manipulation'
+            borderRadius: '8px', fontSize: '16px', marginBottom: '12px', outline: 'none'
           }}
+          inputMode="email"
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
         />
         <input
           type="password"
@@ -1016,9 +1019,12 @@ const MobileApp = () => {
           onChange={(e) => setPassword(e.target.value)}
           style={{
             width: '100%', padding: '12px 16px', border: '1px solid #dbdbdb',
-            borderRadius: '8px', fontSize: '16px', outline: 'none',
-            WebkitAppearance: 'none', touchAction: 'manipulation'
+            borderRadius: '8px', fontSize: '16px', outline: 'none'
           }}
+          inputMode="text"
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
         />
       </div>
 
@@ -1085,6 +1091,10 @@ const MobileApp = () => {
           placeholder="Search Gospel Era"
           value={searchText}
           onChange={(e) => setSearchText(e.target.value)}
+          inputMode="search"
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
           style={{
             width: '100%', height: '36px', background: '#f2f2f2', border: 'none',
             borderRadius: '18px', padding: '0 16px', fontSize: '14px',
@@ -1399,6 +1409,10 @@ const MobileApp = () => {
                     value={commentTexts[post.id] || ''}
                     onChange={(e) => setCommentTexts(prev => ({...prev, [post.id]: e.target.value}))}
                     disabled={isBanned}
+                    inputMode="text"
+                    autoCapitalize="sentences"
+                    autoCorrect="on"
+                    spellCheck={true}
                     style={{
                       flex: 1, padding: '8px 12px', border: '1px solid #dbdbdb',
                       borderRadius: '20px', fontSize: '14px', outline: 'none', marginRight: '8px',
@@ -1535,6 +1549,10 @@ const MobileApp = () => {
         value={createTitle}
         onChange={(e) => setCreateTitle(e.target.value)}
         disabled={isBanned}
+        inputMode="text"
+        autoCapitalize="sentences"
+        autoCorrect="on"
+        spellCheck={true}
         style={{
           width: '100%', padding: '12px 16px', border: '1px solid #dbdbdb',
           borderRadius: '8px', fontSize: '16px', marginBottom: '12px', outline: 'none',
@@ -1551,6 +1569,10 @@ const MobileApp = () => {
         onChange={(e) => setCreateContent(e.target.value)}
         rows={6}
         disabled={isBanned}
+        inputMode="text"
+        autoCapitalize="sentences"
+        autoCorrect="on"
+        spellCheck={true}
         style={{
           width: '100%', padding: '12px 16px', border: '1px solid #dbdbdb',
           borderRadius: '8px', fontSize: '16px', resize: 'none', outline: 'none',
@@ -1568,6 +1590,10 @@ const MobileApp = () => {
         value={createTags}
         onChange={(e) => setCreateTags(e.target.value)}
         disabled={isBanned}
+        inputMode="text"
+        autoCapitalize="none"
+        autoCorrect="off"
+        spellCheck={false}
         style={{
           width: '100%', padding: '12px 16px', border: '1px solid #dbdbdb',
           borderRadius: '8px', fontSize: '16px', marginBottom: '12px', outline: 'none',
@@ -1586,6 +1612,10 @@ const MobileApp = () => {
             value={createYouTubeUrl}
             onChange={(e) => setCreateYouTubeUrl(e.target.value)}
             disabled={isBanned}
+            inputMode="url"
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
             style={{
               width: '100%', padding: '12px 16px', border: '1px solid #dbdbdb',
               borderRadius: '8px', fontSize: '16px', outline: 'none',
@@ -1744,6 +1774,10 @@ const MobileApp = () => {
           value={prayerTitle}
           onChange={(e) => setPrayerTitle(e.target.value)}
           disabled={isBanned}
+          inputMode="text"
+          autoCapitalize="sentences"
+          autoCorrect="on"
+          spellCheck={true}
           style={{
             width: '100%', padding: '12px 16px', border: '1px solid #dbdbdb',
             borderRadius: '8px', fontSize: '16px', marginBottom: '12px', outline: 'none',
@@ -1760,6 +1794,10 @@ const MobileApp = () => {
           onChange={(e) => setPrayerDetails(e.target.value)}
           rows={4}
           disabled={isBanned}
+          inputMode="text"
+          autoCapitalize="sentences"
+          autoCorrect="on"
+          spellCheck={true}
           style={{
             width: '100%', padding: '12px 16px', border: '1px solid #dbdbdb',
             borderRadius: '8px', fontSize: '16px', resize: 'none', outline: 'none',
@@ -1777,6 +1815,10 @@ const MobileApp = () => {
           value={prayerTags}
           onChange={(e) => setPrayerTags(e.target.value)}
           disabled={isBanned}
+          inputMode="text"
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
           style={{
             width: '100%', padding: '12px 16px', border: '1px solid #dbdbdb',
             borderRadius: '8px', fontSize: '16px', marginBottom: '12px', outline: 'none',
@@ -2319,7 +2361,7 @@ const MobileApp = () => {
     if (profileLoading) {
       return (
         <div style={{ 
-          display: 'flex', flexDirection: 'column', height: '100vh', 
+          display: 'flex', flexDirection: 'column', minHeight: '100dvh', 
           background: '#ffffff', color: '#000000' 
         }}>
           {/* Header */}
@@ -2353,7 +2395,7 @@ const MobileApp = () => {
     if (profileError) {
       return (
         <div style={{ 
-          display: 'flex', flexDirection: 'column', height: '100vh', 
+          display: 'flex', flexDirection: 'column', minHeight: '100dvh', 
           background: '#ffffff', color: '#000000' 
         }}>
           {/* Header */}
@@ -2399,7 +2441,7 @@ const MobileApp = () => {
 
     return (
       <div style={{ 
-        display: 'flex', flexDirection: 'column', height: '100vh', 
+        display: 'flex', flexDirection: 'column', minHeight: '100dvh', 
         background: '#ffffff', color: '#000000' 
       }}>
         {/* Header */}
@@ -2563,7 +2605,7 @@ const MobileApp = () => {
   const MobileEditProfilePage = () => {
     return (
       <div style={{ 
-        display: 'flex', flexDirection: 'column', height: '100vh', 
+        display: 'flex', flexDirection: 'column', minHeight: '100dvh', 
         background: '#ffffff', color: '#000000' 
       }}>
         {/* Header */}
@@ -2731,6 +2773,10 @@ const MobileApp = () => {
                 value={editDisplayName}
                 onChange={(e) => setEditDisplayName(e.target.value)}
                 placeholder="Enter your display name"
+                inputMode="text"
+                autoCapitalize="words"
+                autoCorrect="on"
+                spellCheck={true}
                 style={{
                   width: '100%', padding: '12px 16px', border: '1px solid #dbdbdb',
                   borderRadius: '8px', fontSize: '14px', background: '#ffffff',
@@ -2751,6 +2797,10 @@ const MobileApp = () => {
                 onChange={(e) => setEditBio(e.target.value)}
                 placeholder="Tell us about yourself..."
                 rows={4}
+                inputMode="text"
+                autoCapitalize="sentences"
+                autoCorrect="on"
+                spellCheck={true}
                 style={{
                   width: '100%', padding: '12px 16px', border: '1px solid #dbdbdb',
                   borderRadius: '8px', fontSize: '14px', background: '#ffffff',
@@ -3807,6 +3857,10 @@ const MobileApp = () => {
               placeholder="Custom amount"
               value={customAmount}
               onChange={(e) => handleCustomAmountChange(e.target.value)}
+              inputMode="decimal"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
               style={{
                 width: '100%', padding: '12px', border: '1px solid #dbdbdb',
                 borderRadius: '8px', fontSize: '14px'
@@ -3826,6 +3880,10 @@ const MobileApp = () => {
             placeholder="Add a message (optional)"
             value={message}
             onChange={(e) => setMessage(e.target.value)}
+            inputMode="text"
+            autoCapitalize="sentences"
+            autoCorrect="on"
+            spellCheck={true}
             style={{
               width: '100%', padding: '12px', border: '1px solid #dbdbdb',
               borderRadius: '8px', fontSize: '14px', minHeight: '80px', resize: 'vertical'

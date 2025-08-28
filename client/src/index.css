@@ -3,6 +3,16 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Mobile viewport safety rules */
+html, body, #root {
+  height: 100%;
+}
+
+/* Safe bottom padding for mobile keyboards */
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
 /* Native mobile optimizations */
 @media (max-width: 767px) {
   html {
