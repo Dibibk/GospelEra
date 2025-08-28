@@ -17,6 +17,11 @@ import { getDailyVerse } from '@/lib/scripture';
 
 // Complete Instagram-style Gospel Era Mobile App with Real API Integration
 const MobileApp = () => {
+  // Micro-debounced input handler to prevent layout thrash
+  const rafSet = (setter: (v: string) => void) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const v = e.target.value;
+    requestAnimationFrame(() => setter(v));
+  };
   const { user, loading: authLoading, signIn, signUp, signOut } = useAuth();
   const { isBanned, isAdmin } = useRole();
   const [activeTab, setActiveTab] = useState(0);
@@ -1002,7 +1007,7 @@ const MobileApp = () => {
           type="email"
           placeholder="Email"
           value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          onChange={rafSet(setEmail)}
           style={{
             width: '100%', padding: '12px 16px', border: '1px solid #dbdbdb',
             borderRadius: '8px', fontSize: '16px', marginBottom: '12px', outline: 'none'
@@ -1016,7 +1021,7 @@ const MobileApp = () => {
           type="password"
           placeholder="Password"
           value={password}
-          onChange={(e) => setPassword(e.target.value)}
+          onChange={rafSet(setPassword)}
           style={{
             width: '100%', padding: '12px 16px', border: '1px solid #dbdbdb',
             borderRadius: '8px', fontSize: '16px', outline: 'none'
@@ -1090,7 +1095,7 @@ const MobileApp = () => {
           type="text" 
           placeholder="Search Gospel Era"
           value={searchText}
-          onChange={(e) => setSearchText(e.target.value)}
+          onChange={rafSet(setSearchText)}
           inputMode="search"
           autoCapitalize="none"
           autoCorrect="off"
@@ -2173,7 +2178,7 @@ const MobileApp = () => {
 
   // Prayer Detail View Component
   const PrayerDetailView = ({ prayer, onBack }: { prayer: any; onBack: () => void }) => (
-    <div style={{ background: '#ffffff', minHeight: '100vh' }}>
+    <div style={{ background: '#ffffff', minHeight: '100dvh' }}>
       {/* Header */}
       <div style={{ 
         padding: '16px', borderBottom: '1px solid #dbdbdb',
@@ -2295,7 +2300,7 @@ const MobileApp = () => {
 
   // Full Leaderboard View Component
   const FullLeaderboardView = ({ onBack }: { onBack: () => void }) => (
-    <div style={{ background: '#ffffff', minHeight: '100vh' }}>
+    <div style={{ background: '#ffffff', minHeight: '100dvh' }}>
       {/* Header */}
       <div style={{ 
         padding: '16px', borderBottom: '1px solid #dbdbdb',
@@ -2900,7 +2905,7 @@ const MobileApp = () => {
     };
 
     return (
-      <div style={{ background: '#ffffff', minHeight: '100vh' }}>
+      <div style={{ background: '#ffffff', minHeight: '100dvh' }}>
         {/* Sticky Header */}
         <div style={{ 
           position: 'sticky', top: 0, zIndex: 10, background: '#ffffff',
@@ -3436,7 +3441,7 @@ const MobileApp = () => {
     };
 
     return (
-      <div style={{ background: '#ffffff', minHeight: '100vh' }}>
+      <div style={{ background: '#ffffff', minHeight: '100dvh' }}>
         {/* Header */}
         <div style={{ 
           display: 'flex', alignItems: 'center', padding: '16px',
@@ -3599,7 +3604,7 @@ const MobileApp = () => {
 
   // Mobile Community Guidelines Component
   const MobileCommunityGuidelinesPage = () => (
-    <div style={{ padding: '16px', background: '#ffffff', minHeight: '100vh' }}>
+    <div style={{ padding: '16px', background: '#ffffff', minHeight: '100dvh' }}>
       {/* Header */}
       <div style={{ 
         display: 'flex', alignItems: 'center', marginBottom: '24px',
@@ -3785,7 +3790,7 @@ const MobileApp = () => {
     };
 
     return (
-      <div style={{ padding: '16px', background: '#ffffff', minHeight: '100vh' }}>
+      <div style={{ padding: '16px', background: '#ffffff', minHeight: '100dvh' }}>
         {/* Header */}
         <div style={{ 
           display: 'flex', alignItems: 'center', marginBottom: '24px',
@@ -3980,7 +3985,7 @@ const MobileApp = () => {
     };
 
     return (
-      <div style={{ padding: '16px', background: '#ffffff', minHeight: '100vh' }}>
+      <div style={{ padding: '16px', background: '#ffffff', minHeight: '100dvh' }}>
         {/* Header */}
         <div style={{ 
           display: 'flex', alignItems: 'center', marginBottom: '24px',

@@ -47,16 +47,17 @@ const mobilePageTransition = {
 }
 
 export function PageTransition({ children }: PageTransitionProps) {
-  // Check if we're on mobile (768px or less)
-  const isMobile = typeof window !== 'undefined' && window.innerWidth <= 768;
+  const isMobile = typeof window !== 'undefined' && window.matchMedia('(max-width: 768px)').matches;
+  
+  if (isMobile) return <>{children}</>;
   
   return (
     <motion.div
       initial="initial"
       animate="in"
       exit="out"
-      variants={isMobile ? mobilePageVariants : pageVariants}
-      transition={isMobile ? mobilePageTransition : pageTransition}
+      variants={pageVariants}
+      transition={pageTransition}
       className="w-full"
     >
       {children}

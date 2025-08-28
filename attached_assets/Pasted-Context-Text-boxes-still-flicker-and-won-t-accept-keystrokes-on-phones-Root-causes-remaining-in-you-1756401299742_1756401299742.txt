@@ -1,0 +1,157 @@
+Context
+Text boxes still flicker and won’t accept keystrokes on phones. Root causes remaining in your codebase:
+
+Inline style={{ WebkitAppearance: 'none', touchAction: 'manipulation' }} on text inputs (e.g., client/src/pages/MobileApp.tsx).
+
+Multiple inline height/minHeight: '100vh' in MobileApp.tsx (several places) and index.css.
+
+Page transitions (AnimatePresence / PageTransition) are still executing on mobile screens.
+
+The <meta name="viewport"> lacks viewport-fit=cover and interactive-widget=resizes-content.
+
+Make these exact edits:
+
+1) Remove inline blockers on inputs (ALL text inputs & textareas)
+
+File: client/src/pages/MobileApp.tsx
+
+Find every <input> / <textarea> with style={...} that includes:
+
+WebkitAppearance: 'none'
+
+touchAction: 'manipulation'
+
+Delete those two properties, keep the rest of the style the same.
+
+Add mobile-friendly attributes to each text input/textarea:
+
+inputMode="text" autoCapitalize="sentences" autoCorrect="on" spellCheck={true}
+
+2) Replace 100vh with 100dvh (to stop keyboard jump/flicker)
+
+File: client/src/pages/MobileApp.tsx
+
+Replace every occurrence of:
+
+height: '100vh' → minHeight: '100dvh'
+
+minHeight: '100vh' → minHeight: '100dvh'
+
+File: client/src/index.css
+
+If there’s any height: 100vh; on page containers, replace with:
+
+min-height: 100dvh;
+min-height: -webkit-fill-available; /* iOS fallback */
+
+
+Ensure:
+
+html, body, #root { height: 100%; }
+
+3) Disable page transitions on mobile (≤768px) to prevent remount thrash
+
+File: client/src/components/PageTransition.tsx
+
+Short-circuit animations on mobile:
+
++ const isMobile = typeof window !== 'undefined' && window.matchMedia('(max-width: 768px)').matches;
+  export function PageTransition({ children }: PageTransitionProps) {
+-   return (
++   if (isMobile) return <>{children}</>;
++   return (
+      <motion.div
+        initial="initial"
+        animate="in"
+        exit="out"
+        variants={pageVariants}
+        transition={pageTransition}
+        className="w-full"
+      >
+        {children}
+      </motion.div>
+    )
+  }
+
+
+File: client/src/components/AnimatedRoutes.tsx
+
+Keep desktop behavior the same, but avoid remount keys on mobile:
+
+  export function AnimatedRoutes() {
+    const location = useLocation();
++   const isMobile = typeof window !== 'undefined' && window.matchMedia('(max-width: 768px)').matches;
+
+-   return (
+-     <AnimatePresence mode="wait" initial={false}>
+-       <Routes location={location} key={location.pathname}>
++   if (isMobile) {
++     // No AnimatePresence, no key={location.pathname} on mobile
++     return (
++       <Routes location={location}>
+          {/* routes unchanged */}
+-       </Routes>
+-     </AnimatePresence>
+-   );
++       </Routes>
++     );
++   }
++   return (
++     <AnimatePresence mode="wait" initial={false}>
++       <Routes location={location} key={location.pathname}>
+          {/* routes unchanged */}
+        </Routes>
+      </AnimatePresence>
+    );
+  }
+
+4) Update the viewport meta for mobile keyboards
+
+File: client/index.html
+
+Replace the existing viewport meta with:
+
+- <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
++ <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content" />
+
+5) (Optional) Make input state updates micro-debounced to avoid layout thrash
+
+In MobileApp.tsx where you call onChange={(e) => setX(e.target.value)}, replace with:
+
+const rafSet = (setter: (v: string) => void) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const v = e.target.value;
+  requestAnimationFrame(() => setter(v));
+};
+// usage:
+<input ... onChange={rafSet(setEmail)} />
+<input ... onChange={rafSet(setPassword)} />
+<textarea ... onChange={rafSet(v => setForm(prev => ({...prev, body: v})))} />
+
+
+Show me
+
+The diff hunks for:
+
+client/src/pages/MobileApp.tsx (removal of touchAction/WebkitAppearance, 100vh → 100dvh, added input attributes).
+
+client/src/components/PageTransition.tsx (mobile short-circuit).
+
+client/src/components/AnimatedRoutes.tsx (mobile branch without AnimatePresence and without key={location.pathname}).
+
+client/index.html (viewport line).
+
+Any index.css 100vh replacements if present.
+
+Acceptance tests (do manually on devices):
+
+iOS Safari & Android Chrome: tap each text field (Login, Create Post, Create Prayer, Edit Profile, Contact).
+
+No flicker.
+
+Keyboard opens; typed text appears immediately; cursor steady.
+
+Rotate device and type again — field retains value; no remount.
+
+Bottom bar doesn’t overlap the field; content scrolls under it if needed.
+
+Navigate between pages; form state does not vanish unexpectedly on mobile.
