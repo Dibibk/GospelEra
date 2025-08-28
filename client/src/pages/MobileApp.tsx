@@ -959,7 +959,7 @@ const MobileApp = () => {
       paddingBottom: '60px'
     },
     bottomNav: {
-      position: 'fixed' as const,
+      position: 'sticky' as const,
       bottom: 0,
       left: '50%',
       transform: 'translateX(-50%)',
@@ -2590,7 +2590,7 @@ const MobileApp = () => {
 
         {profileSuccess && (
           <div style={{ 
-            position: 'fixed', top: '80px', left: '20px', right: '20px',
+            position: 'absolute', top: '80px', left: '20px', right: '20px',
             background: '#000000', color: '#ffffff', padding: '12px 16px',
             borderRadius: '8px', fontSize: '14px', textAlign: 'center', zIndex: 1000
           }}>
@@ -2813,7 +2813,7 @@ const MobileApp = () => {
 
         {profileError && (
           <div style={{ 
-            position: 'fixed', top: '80px', left: '20px', right: '20px',
+            position: 'absolute', top: '80px', left: '20px', right: '20px',
             background: '#dc3545', color: '#ffffff', padding: '12px 16px',
             borderRadius: '8px', fontSize: '14px', textAlign: 'center', zIndex: 1000
           }}>
@@ -2823,7 +2823,7 @@ const MobileApp = () => {
 
         {profileSuccess && (
           <div style={{ 
-            position: 'fixed', top: '80px', left: '20px', right: '20px',
+            position: 'absolute', top: '80px', left: '20px', right: '20px',
             background: '#000000', color: '#ffffff', padding: '12px 16px',
             borderRadius: '8px', fontSize: '14px', textAlign: 'center', zIndex: 1000
           }}>
@@ -4613,12 +4613,20 @@ const MobileApp = () => {
         ) : showMobileHelp ? (
           <MobileHelpPage />
         ) : (
-          <>
-            {activeTab === 0 && <HomeFeed />}
-            {activeTab === 1 && <CreatePage />}
-            {activeTab === 2 && <PrayerPage />}
-            {activeTab === 3 && <ProfilePage />}
-          </>
+          <div style={{ display: 'flex', flex: 1, flexDirection: 'column' }}>
+            <div style={{ display: activeTab === 0 ? 'flex' : 'none', flex: 1, flexDirection: 'column' }}>
+              <HomeFeed />
+            </div>
+            <div style={{ display: activeTab === 1 ? 'flex' : 'none', flex: 1, flexDirection: 'column' }}>
+              <CreatePage />
+            </div>
+            <div style={{ display: activeTab === 2 ? 'flex' : 'none', flex: 1, flexDirection: 'column' }}>
+              <PrayerPage />
+            </div>
+            <div style={{ display: activeTab === 3 ? 'flex' : 'none', flex: 1, flexDirection: 'column' }}>
+              <ProfilePage />
+            </div>
+          </div>
         )}
       </div>
 
@@ -4690,7 +4698,7 @@ const MobileApp = () => {
       {/* Report Modal */}
       {reportModalOpen && (
         <div style={{
-          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
           background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center',
           zIndex: 1000, padding: '20px'
         }}>
@@ -4747,7 +4755,7 @@ const MobileApp = () => {
       {/* Simple Media Request Modal */}
       {showMediaRequestModal && (
         <div style={{
-          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
           backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1000,
           display: 'flex', alignItems: 'center', justifyContent: 'center'
         }}>
