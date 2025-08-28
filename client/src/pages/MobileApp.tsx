@@ -4514,7 +4514,7 @@ const MobileApp = () => {
                     <button 
                       onClick={() => {
                         setShowUserDropdown(false);
-                        alert('Admin Dashboard - Feature coming to mobile soon!');
+                        alert('Admin Reports - Feature coming to mobile soon!');
                       }}
                       style={{
                         width: '100%', padding: '12px 16px', border: 'none', background: 'none',
@@ -4522,20 +4522,7 @@ const MobileApp = () => {
                         ':hover': { background: '#f9f9f9' }, cursor: 'pointer'
                       }}
                     >
-                      🛡️ Admin Dashboard
-                    </button>
-                    <button 
-                      onClick={() => {
-                        setShowUserDropdown(false);
-                        alert('Review Reports - Feature coming to mobile soon!');
-                      }}
-                      style={{
-                        width: '100%', padding: '12px 16px', border: 'none', background: 'none',
-                        textAlign: 'left', fontSize: '14px', color: '#dc2626',
-                        ':hover': { background: '#f9f9f9' }, cursor: 'pointer'
-                      }}
-                    >
-                      🚨 Review Reports
+                      🚨 Admin Reports
                     </button>
                     <button 
                       onClick={() => {
@@ -4549,32 +4536,6 @@ const MobileApp = () => {
                       }}
                     >
                       📂 Media Requests
-                    </button>
-                    <button 
-                      onClick={() => {
-                        setShowUserDropdown(false);
-                        alert('Manage Users - Feature coming to mobile soon!');
-                      }}
-                      style={{
-                        width: '100%', padding: '12px 16px', border: 'none', background: 'none',
-                        textAlign: 'left', fontSize: '14px', color: '#dc2626',
-                        ':hover': { background: '#f9f9f9' }, cursor: 'pointer'
-                      }}
-                    >
-                      👥 Manage Users
-                    </button>
-                    <button 
-                      onClick={() => {
-                        setShowUserDropdown(false);
-                        alert('Admin Donations - Feature coming to mobile soon!');
-                      }}
-                      style={{
-                        width: '100%', padding: '12px 16px', border: 'none', background: 'none',
-                        textAlign: 'left', fontSize: '14px', color: '#dc2626',
-                        ':hover': { background: '#f9f9f9' }, cursor: 'pointer'
-                      }}
-                    >
-                      💰 Admin Donations
                     </button>
                     <button 
                       onClick={() => {
