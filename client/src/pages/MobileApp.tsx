@@ -1491,35 +1491,6 @@ const MobileApp = () => {
   );
 
   // Search Component
-  const SearchPage = () => (
-    <div style={{ padding: '16px' }}>
-      <input 
-        type="text" 
-        placeholder="Search users, posts, topics..."
-        value={searchText}
-        onChange={(e) => setSearchText(e.target.value)}
-        autoFocus
-        style={{
-          width: '100%', height: '40px', background: '#f2f2f2', border: 'none',
-          borderRadius: '20px', padding: '0 16px', fontSize: '16px', outline: 'none'
-        }}
-      />
-
-      <div style={{ marginTop: '16px' }}>
-        <div style={{ fontWeight: 600, marginBottom: '12px', color: '#262626' }}>Recent Posts</div>
-        {posts.slice(0, 5).map((post, index) => (
-          <div key={post.id} style={{ borderBottom: '1px solid #f2f2f2', padding: '12px 0' }}>
-            <div style={{ fontWeight: 600, fontSize: '14px', color: '#262626', marginBottom: '4px' }}>
-              {post.title}
-            </div>
-            <div style={{ fontSize: '12px', color: '#8e8e8e' }}>
-              {post.content?.substring(0, 100)}...
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
 
   // Create Post Component  
   const CreatePage = () => (
@@ -4262,9 +4233,8 @@ const MobileApp = () => {
         <div style={{ fontSize: '24px', fontWeight: 700, color: '#262626', letterSpacing: '-0.5px' }}>
           {!user ? 'Gospel Era' :
            activeTab === 0 ? 'Gospel Era' :
-           activeTab === 1 ? 'Search' :
-           activeTab === 2 ? 'Create' :
-           activeTab === 3 ? 'Prayer' :
+           activeTab === 1 ? 'Create' :
+           activeTab === 2 ? 'Prayer' :
            'Profile'}
         </div>
         {user && (
@@ -4587,10 +4557,9 @@ const MobileApp = () => {
         ) : (
           <>
             {activeTab === 0 && <HomeFeed />}
-            {activeTab === 1 && <SearchPage />}
-            {activeTab === 2 && <CreatePage />}
-            {activeTab === 3 && <PrayerPage />}
-            {activeTab === 4 && <ProfilePage />}
+            {activeTab === 1 && <CreatePage />}
+            {activeTab === 2 && <PrayerPage />}
+            {activeTab === 3 && <ProfilePage />}
           </>
         )}
       </div>
@@ -4608,28 +4577,38 @@ const MobileApp = () => {
             </svg>
             <span style={{ fontSize: '10px', marginTop: '2px' }}>Home</span>
           </div>
+          <div onClick={() => {
+            setActiveTab(0);
+            // Focus on search input in home page
+            setTimeout(() => {
+              const searchInput = document.querySelector('input[placeholder*="Search"]') as HTMLInputElement;
+              if (searchInput) {
+                searchInput.focus();
+                searchInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              }
+            }, 100);
+          }} style={{
+            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+            color: '#8e8e8e', fontSize: '20px',
+            padding: '8px 12px', cursor: 'pointer'
+          }}>
+            🔍
+            <span style={{ fontSize: '10px', marginTop: '2px' }}>Search</span>
+          </div>
           <div onClick={() => setActiveTab(1)} style={{
             display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
             color: activeTab === 1 ? '#4285f4' : '#8e8e8e', fontSize: '20px',
             padding: '8px 12px', cursor: 'pointer'
           }}>
-            🔍
-            <span style={{ fontSize: '10px', marginTop: '2px' }}>Search</span>
+            ➕
+            <span style={{ fontSize: '10px', marginTop: '2px' }}>Post</span>
           </div>
           <div onClick={() => setActiveTab(2)} style={{
             display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
             color: activeTab === 2 ? '#4285f4' : '#8e8e8e', fontSize: '20px',
             padding: '8px 12px', cursor: 'pointer'
           }}>
-            ➕
-            <span style={{ fontSize: '10px', marginTop: '2px' }}>Post</span>
-          </div>
-          <div onClick={() => setActiveTab(3)} style={{
-            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-            color: activeTab === 3 ? '#4285f4' : '#8e8e8e', fontSize: '20px',
-            padding: '8px 12px', cursor: 'pointer'
-          }}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={activeTab === 3 ? '#4285f4' : '#333333'} strokeWidth="2">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={activeTab === 2 ? '#4285f4' : '#333333'} strokeWidth="2">
               <path d="M14 2v6a2 2 0 01-2 2 2 2 0 01-2-2V2"/>
               <path d="M10 2C8 2 8 4 10 6c0 1 0 2-2 2s-4-1-4-4"/>
               <path d="M14 2c2 0 2 2 0 4 0 1 0 2 2 2s4-1 4-4"/>
@@ -4639,9 +4618,9 @@ const MobileApp = () => {
             </svg>
             <span style={{ fontSize: '10px', marginTop: '2px' }}>Prayer</span>
           </div>
-          <div onClick={() => setActiveTab(4)} style={{
+          <div onClick={() => setActiveTab(3)} style={{
             display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-            color: activeTab === 4 ? '#4285f4' : '#8e8e8e', fontSize: '20px',
+            color: activeTab === 3 ? '#4285f4' : '#8e8e8e', fontSize: '20px',
             padding: '8px 12px', cursor: 'pointer'
           }}>
             👤
