@@ -831,6 +831,7 @@ html, body, #root {
   --purple-600: hsl(270 80% 80%);
   --purple-700: hsl(270 85% 85%);
 }
+}
 
 /* Custom scrollbar styles for Guidelines modal */
 .scrollbar-thin {
@@ -862,4 +863,26 @@ html, body, #root {
 .scrollbar-thin {
   overflow-y: scroll !important;
 }
+
+/* Ensure mobile form portal and children have no transforms */
+@media (max-width: 768px) {
+  #mobile-form-portal,
+  #mobile-form-portal * {
+    transform: none !important;
+    filter: none !important;
+    perspective: none !important;
+    backface-visibility: visible !important;
+    will-change: auto !important;
+  }
+
+  /* Avoid 100vh jump on keyboard open */
+  .form-page {
+    min-height: 100dvh;
+    min-height: -webkit-fill-available;
+  }
+}
+
+/* iOS can require this for reliable caret & selection */
+input, textarea {
+  -webkit-user-select: text;
 }

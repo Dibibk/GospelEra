@@ -14,9 +14,14 @@ import { getTopPrayerWarriors } from '@/lib/leaderboard';
 import { updateUserSettings, getUserSettings, upsertMyProfile, ensureMyProfile } from '@/lib/profiles';
 import { ObjectUploader } from '@/components/ObjectUploader';
 import { getDailyVerse } from '@/lib/scripture';
+import MobileFormPortal from '@/components/MobileFormPortal';
+import { useStableTyping } from '@/utils/useStableTyping';
 
 // Complete Instagram-style Gospel Era Mobile App with Real API Integration
 const MobileApp = () => {
+  // Use stable typing hook for mobile form stability
+  useStableTyping();
+
   // Micro-debounced input handler to prevent layout thrash
   const rafSet = (setter: (v: string) => void) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const v = e.target.value;
@@ -1515,7 +1520,8 @@ const MobileApp = () => {
 
   // Create Post Component  
   const CreatePage = () => (
-    <div style={{ padding: '16px' }}>
+    <MobileFormPortal>
+      <div className="form-page" style={{ padding: '16px' }}>
       {/* Simple header like before */}
       <div style={{ display: 'flex', alignItems: 'center', marginBottom: '16px' }}>
         <div style={{
@@ -1675,7 +1681,8 @@ const MobileApp = () => {
       >
         {editingPostId ? 'Update Post' : 'Share Post'}
       </button>
-    </div>
+      </div>
+    </MobileFormPortal>
   );
 
   // Prayer Page Component
@@ -1740,7 +1747,8 @@ const MobileApp = () => {
 
 
           {/* Create Prayer Request - enhanced with all features */}
-      <div style={{ padding: '16px', borderBottom: '1px solid #dbdbdb' }}>
+      <MobileFormPortal>
+        <div className="form-page" style={{ padding: '16px', borderBottom: '1px solid #dbdbdb' }}>
         {/* Simple header like create post */}
         <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
           <div style={{
@@ -1869,7 +1877,8 @@ const MobileApp = () => {
         >
           Submit Prayer Request
         </button>
-      </div>
+        </div>
+      </MobileFormPortal>
 
       {/* Top Prayer Warriors Section - Added after Submit Prayer button */}
       <div style={{ background: '#f8f9fa', padding: '16px', borderBottom: '1px solid #dbdbdb' }}>
@@ -2611,10 +2620,11 @@ const MobileApp = () => {
   // Mobile Edit Profile Component
   const MobileEditProfilePage = () => {
     return (
-      <div style={{ 
-        display: 'flex', flexDirection: 'column', minHeight: '100dvh', 
-        background: '#ffffff', color: '#000000' 
-      }}>
+      <MobileFormPortal>
+        <div className="form-page" style={{ 
+          display: 'flex', flexDirection: 'column', minHeight: '100dvh', 
+          background: '#ffffff', color: '#000000' 
+        }}>
         {/* Header */}
         <div style={{ 
           padding: '16px 20px', borderBottom: '1px solid #e5e5e5',
@@ -2837,7 +2847,8 @@ const MobileApp = () => {
             {profileSuccess}
           </div>
         )}
-      </div>
+        </div>
+      </MobileFormPortal>
     );
   };
 
