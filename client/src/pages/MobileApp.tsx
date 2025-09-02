@@ -19,8 +19,8 @@ import { useStableTyping } from '@/utils/useStableTyping';
 
 // Complete Instagram-style Gospel Era Mobile App with Real API Integration
 const MobileApp = () => {
-  // Use stable typing hook for mobile form stability
-  useStableTyping();
+  // TEMPORARILY DISABLED - Use stable typing hook for mobile form stability
+  // useStableTyping();
 
   // Simple input handler - no debouncing to ensure immediate response
   const handleInput = (setter: (v: string) => void) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -121,20 +121,15 @@ const MobileApp = () => {
     }));
   };
 
-  // Close all post menus when clicking outside (but not on input fields)
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as Element;
-      // Don't close menus if clicking on input, textarea, or contentEditable elements
-      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
-        return;
-      }
-      setShowPostMenu({});
-    };
-    
-    document.addEventListener('click', handleClickOutside);
-    return () => document.removeEventListener('click', handleClickOutside);
-  }, []);
+  // TEMPORARILY DISABLED - Close all post menus when clicking outside
+  // useEffect(() => {
+  //   const handleClickOutside = (event: MouseEvent) => {
+  //     const target = event.target as Element;
+  //     setShowPostMenu({});
+  //   };
+  //   document.addEventListener('click', handleClickOutside);
+  //   return () => document.removeEventListener('click', handleClickOutside);
+  // }, []);
 
   // Open report modal for post
   const openReportModal = (postId: number) => {
@@ -719,21 +714,17 @@ const MobileApp = () => {
     });
   };
 
-  // Close dropdown when clicking outside (but not on input fields)
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as Element;
-      // Don't close dropdown if clicking on input, textarea, or contentEditable elements
-      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
-        return;
-      }
-      if (showUserDropdown && !target.closest('.user-dropdown-container')) {
-        setShowUserDropdown(false);
-      }
-    };
-    document.addEventListener('click', handleClickOutside);
-    return () => document.removeEventListener('click', handleClickOutside);
-  }, [showUserDropdown]);
+  // TEMPORARILY DISABLED - Close dropdown when clicking outside
+  // useEffect(() => {
+  //   const handleClickOutside = (event: MouseEvent) => {
+  //     const target = event.target as Element;
+  //     if (showUserDropdown && !target.closest('.user-dropdown-container')) {
+  //       setShowUserDropdown(false);
+  //     }
+  //   };
+  //   document.addEventListener('click', handleClickOutside);
+  //   return () => document.removeEventListener('click', handleClickOutside);
+  // }, [showUserDropdown]);
 
   const handleToggleAmen = async (postId: number) => {
     try {
@@ -5728,14 +5719,14 @@ const MobileApp = () => {
           </div>
           <div onClick={() => {
             setActiveTab(0);
-            // Focus on search input in home page
-            setTimeout(() => {
-              const searchInput = document.querySelector('input[placeholder*="Search"]') as HTMLInputElement;
-              if (searchInput) {
-                searchInput.focus();
-                searchInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
-              }
-            }, 100);
+            // TEMPORARILY DISABLED - Focus on search input
+            // setTimeout(() => {
+            //   const searchInput = document.querySelector('input[placeholder*="Search"]') as HTMLInputElement;
+            //   if (searchInput) {
+            //     searchInput.focus();
+            //     searchInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            //   }
+            // }, 100);
           }} style={{
             display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
             color: '#8e8e8e', fontSize: '20px',
