@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { listPosts, createPost, updatePost, softDeletePost } from '@/lib/posts';
 import { listPrayerRequests, createPrayerRequest, commitToPray, confirmPrayed, getMyCommitments, getPrayerRequest } from '@/lib/prayer';
@@ -26,9 +26,9 @@ const MobileApp = () => {
   };
 
   // Stable comment input handler - prevents focus loss on comment inputs
-  const handleCommentInput = (postId: number) => (e: React.ChangeEvent<HTMLInputElement>) => {
-    setCommentTexts(prev => ({...prev, [postId]: e.target.value}));
-  };
+  const handleCommentInput = useCallback((postId: number, value: string) => {
+    setCommentTexts(prev => ({...prev, [postId]: value}));
+  }, []);
   const { user, loading: authLoading, signIn, signUp, signOut } = useAuth();
   const { isBanned, isAdmin } = useRole();
   const [activeTab, setActiveTab] = useState(0);
@@ -1404,7 +1404,7 @@ const MobileApp = () => {
                     type="text"
                     placeholder={isBanned ? "Account limited - cannot comment" : "Add a comment..."}
                     value={commentTexts[post.id] || ''}
-                    onChange={handleCommentInput(post.id)}
+                    onChange={(e) => handleCommentInput(post.id, e.target.value)}
                     disabled={isBanned}
                     inputMode="text"
                     autoCapitalize="sentences"
@@ -1608,7 +1608,7 @@ const MobileApp = () => {
             type="text"
             placeholder="YouTube URL (optional)"
             value={createYouTubeUrl}
-            onChange={(e) => setCreateYouTubeUrl(e.target.value)}
+            onChange={handleInput(setCreateYouTubeUrl)}
             disabled={isBanned}
             inputMode="url"
             autoCapitalize="none"
