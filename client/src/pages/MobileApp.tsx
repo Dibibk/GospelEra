@@ -21,13 +21,60 @@ import { useStableTyping } from '@/utils/useStableTyping';
 const MobileApp = () => {
 
   // Simple input handler - no debouncing to ensure immediate response
-  const handleInput = (setter: (v: string) => void) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleInput = useCallback((setter: (v: string) => void) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setter(e.target.value);
-  };
+  }, []);
 
   // Stable comment input handler - prevents focus loss on comment inputs
   const handleCommentInput = useCallback((postId: number, value: string) => {
     setCommentTexts(prev => ({...prev, [postId]: value}));
+  }, []);
+
+  // Stable handlers for specific inputs to prevent re-render focus loss
+  const handleCreateTitleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setCreateTitle(e.target.value);
+  }, []);
+
+  const handleCreateContentChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setCreateContent(e.target.value);
+  }, []);
+
+  const handleCreateTagsChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setCreateTags(e.target.value);
+  }, []);
+
+  const handleCreateYouTubeChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setCreateYouTubeUrl(e.target.value);
+  }, []);
+
+  const handlePrayerTitleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setPrayerTitle(e.target.value);
+  }, []);
+
+  const handlePrayerDetailsChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setPrayerDetails(e.target.value);
+  }, []);
+
+  const handlePrayerTagsChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setPrayerTags(e.target.value);
+  }, []);
+
+  // Login form handlers
+  const handleEmailChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setEmail(e.target.value);
+  }, []);
+
+  const handlePasswordChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setPassword(e.target.value);
+  }, []);
+
+  // Profile edit handlers
+  const handleEditDisplayNameChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setEditDisplayName(e.target.value);
+  }, []);
+
+  const handleEditBioChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setEditBio(e.target.value);
   }, []);
   const { user, loading: authLoading, signIn, signUp, signOut } = useAuth();
   const { isBanned, isAdmin } = useRole();
@@ -999,7 +1046,7 @@ const MobileApp = () => {
           type="email"
           placeholder="Email"
           value={email}
-          onChange={handleInput(setEmail)}
+          onChange={handleEmailChange}
           style={{
             width: '100%', padding: '12px 16px', border: '1px solid #dbdbdb',
             borderRadius: '8px', fontSize: '16px', marginBottom: '12px', outline: 'none'
@@ -1013,7 +1060,7 @@ const MobileApp = () => {
           type="password"
           placeholder="Password"
           value={password}
-          onChange={handleInput(setPassword)}
+          onChange={handlePasswordChange}
           style={{
             width: '100%', padding: '12px 16px', border: '1px solid #dbdbdb',
             borderRadius: '8px', fontSize: '16px', outline: 'none'
@@ -1514,7 +1561,7 @@ const MobileApp = () => {
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           marginRight: '12px', color: '#8e8e8e'
         }}>
-          •
+          ✍️
         </div>
         <div style={{ fontWeight: 600, color: '#262626' }}>Create Post</div>
       </div>
@@ -1545,7 +1592,7 @@ const MobileApp = () => {
         type="text"
         placeholder="Post title..."
         value={createTitle}
-        onChange={handleInput(setCreateTitle)}
+        onChange={handleCreateTitleChange}
         disabled={isBanned}
         inputMode="text"
         autoCapitalize="sentences"
@@ -1564,7 +1611,7 @@ const MobileApp = () => {
       <textarea
         placeholder="Share your faith, testimony, or encouragement..."
         value={createContent}
-        onChange={handleInput(setCreateContent)}
+        onChange={handleCreateContentChange}
         rows={6}
         disabled={isBanned}
         inputMode="text"
@@ -1586,7 +1633,7 @@ const MobileApp = () => {
         type="text"
         placeholder="Tags (prayer, testimony, scripture...)"
         value={createTags}
-        onChange={handleInput(setCreateTags)}
+        onChange={handleCreateTagsChange}
         disabled={isBanned}
         inputMode="text"
         autoCapitalize="none"
@@ -1608,7 +1655,7 @@ const MobileApp = () => {
             type="text"
             placeholder="YouTube URL (optional)"
             value={createYouTubeUrl}
-            onChange={handleInput(setCreateYouTubeUrl)}
+            onChange={handleCreateYouTubeChange}
             disabled={isBanned}
             inputMode="url"
             autoCapitalize="none"
@@ -1772,7 +1819,7 @@ const MobileApp = () => {
           type="text"
           placeholder="Prayer request title..."
           value={prayerTitle}
-          onChange={handleInput(setPrayerTitle)}
+          onChange={handlePrayerTitleChange}
           disabled={isBanned}
           inputMode="text"
           autoCapitalize="sentences"
@@ -1791,7 +1838,7 @@ const MobileApp = () => {
         <textarea
           placeholder="Share your prayer need..."
           value={prayerDetails}
-          onChange={handleInput(setPrayerDetails)}
+          onChange={handlePrayerDetailsChange}
           rows={4}
           disabled={isBanned}
           inputMode="text"
@@ -1813,7 +1860,7 @@ const MobileApp = () => {
           type="text"
           placeholder="Tags (healing, family, guidance...)"
           value={prayerTags}
-          onChange={handleInput(setPrayerTags)}
+          onChange={handlePrayerTagsChange}
           disabled={isBanned}
           inputMode="text"
           autoCapitalize="none"
@@ -2773,7 +2820,7 @@ const MobileApp = () => {
               <input
                 type="text"
                 value={editDisplayName}
-                onChange={handleInput(setEditDisplayName)}
+                onChange={handleEditDisplayNameChange}
                 placeholder="Enter your display name"
                 inputMode="text"
                 autoCapitalize="words"
@@ -2796,7 +2843,7 @@ const MobileApp = () => {
               </label>
               <textarea
                 value={editBio}
-                onChange={handleInput(setEditBio)}
+                onChange={handleEditBioChange}
                 placeholder="Tell us about yourself..."
                 rows={4}
                 inputMode="text"
