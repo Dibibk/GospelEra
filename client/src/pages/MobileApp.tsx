@@ -1028,9 +1028,13 @@ const MobileApp = () => {
           value={email}
           onChange={handleInput(setEmail)}
           style={{
-            width: '100%', padding: '12px 16px', border: '1px solid #dbdbdb',
-            borderRadius: '8px', fontSize: '16px', marginBottom: '12px', outline: 'none'
+            width: '100%', padding: '16px', fontSize: '17px', marginBottom: '12px',
+            border: '2px solid #333', borderRadius: '25px', backgroundColor: '#1a1a1a',
+            color: 'white', outline: 'none', WebkitAppearance: 'none',
+            transition: 'border-color 0.2s ease'
           }}
+          onFocus={(e) => e.target.style.borderColor = '#4285f4'}
+          onBlur={(e) => e.target.style.borderColor = '#333'}
           inputMode="email"
           autoCapitalize="none"
           autoCorrect="off"
@@ -1042,9 +1046,13 @@ const MobileApp = () => {
           value={password}
           onChange={handleInput(setPassword)}
           style={{
-            width: '100%', padding: '12px 16px', border: '1px solid #dbdbdb',
-            borderRadius: '8px', fontSize: '16px', outline: 'none'
+            width: '100%', padding: '16px', fontSize: '17px',
+            border: '2px solid #333', borderRadius: '25px', backgroundColor: '#1a1a1a',
+            color: 'white', outline: 'none', WebkitAppearance: 'none',
+            transition: 'border-color 0.2s ease'
           }}
+          onFocus={(e) => e.target.style.borderColor = '#4285f4'}
+          onBlur={(e) => e.target.style.borderColor = '#333'}
           inputMode="text"
           autoCapitalize="none"
           autoCorrect="off"
@@ -1120,10 +1128,13 @@ const MobileApp = () => {
           autoCorrect="off"
           spellCheck={false}
           style={{
-            width: '100%', height: '36px', background: '#f2f2f2', border: 'none',
-            borderRadius: '18px', padding: '0 16px', fontSize: '14px',
-            color: '#262626', outline: 'none'
+            width: '100%', padding: '16px', fontSize: '17px',
+            border: '2px solid #333', borderRadius: '25px', backgroundColor: '#1a1a1a',
+            color: 'white', outline: 'none', WebkitAppearance: 'none',
+            transition: 'border-color 0.2s ease'
           }}
+          onFocus={(e) => e.target.style.borderColor = '#4285f4'}
+          onBlur={(e) => e.target.style.borderColor = '#333'}
         />
       </div>
 
@@ -1438,12 +1449,15 @@ const MobileApp = () => {
                     autoCorrect="on"
                     spellCheck={true}
                     style={{
-                      flex: 1, padding: '8px 12px', border: '1px solid #dbdbdb',
-                      borderRadius: '20px', fontSize: '14px', outline: 'none', marginRight: '8px',
-                      backgroundColor: isBanned ? '#f5f5f5' : '#ffffff',
-                      color: isBanned ? '#8e8e8e' : '#262626',
+                      flex: 1, padding: '12px 16px', fontSize: '16px', marginRight: '8px',
+                      border: '2px solid #333', borderRadius: '25px',
+                      backgroundColor: isBanned ? '#333' : '#1a1a1a',
+                      color: isBanned ? '#666' : 'white', outline: 'none',
+                      WebkitAppearance: 'none', transition: 'border-color 0.2s ease',
                       cursor: isBanned ? 'not-allowed' : 'text'
                     }}
+                    onFocus={(e) => !isBanned && (e.target.style.borderColor = '#4285f4')}
+                    onBlur={(e) => !isBanned && (e.target.style.borderColor = '#333')}
                   />
                   <button
                     onClick={() => handleCreateComment(post.id)}
@@ -1579,11 +1593,15 @@ const MobileApp = () => {
         autoCorrect="on"
         spellCheck={true}
         style={{
-          width: '100%', padding: '12px 16px', border: '1px solid #dbdbdb',
-          borderRadius: '8px', fontSize: '16px', marginBottom: '12px', outline: 'none',
-          backgroundColor: isBanned ? '#f5f5f5' : '#ffffff',
-          color: isBanned ? '#8e8e8e' : '#262626'
+          width: '100%', padding: '16px', fontSize: '17px', marginBottom: '12px',
+          border: '2px solid #333', borderRadius: '25px',
+          backgroundColor: isBanned ? '#333' : '#1a1a1a',
+          color: isBanned ? '#666' : 'white', outline: 'none',
+          WebkitAppearance: 'none', transition: 'border-color 0.2s ease',
+          cursor: isBanned ? 'not-allowed' : 'text'
         }}
+        onFocus={(e) => !isBanned && (e.target.style.borderColor = '#4285f4')}
+        onBlur={(e) => !isBanned && (e.target.style.borderColor = '#333')}
         title={isBanned ? 'Account limited - cannot create posts' : ''}
       />
 
@@ -1599,12 +1617,16 @@ const MobileApp = () => {
         autoCorrect="on"
         spellCheck={true}
         style={{
-          width: '100%', padding: '12px 16px', border: '1px solid #dbdbdb',
-          borderRadius: '8px', fontSize: '16px', resize: 'none', outline: 'none',
-          fontFamily: 'inherit', marginBottom: '12px',
-          backgroundColor: isBanned ? '#f5f5f5' : '#ffffff',
-          color: isBanned ? '#8e8e8e' : '#262626'
+          width: '100%', padding: '16px', fontSize: '17px', resize: 'none',
+          border: '2px solid #333', borderRadius: '16px', marginBottom: '12px',
+          backgroundColor: isBanned ? '#333' : '#1a1a1a',
+          color: isBanned ? '#666' : 'white', outline: 'none',
+          fontFamily: 'inherit', WebkitAppearance: 'none',
+          transition: 'border-color 0.2s ease',
+          cursor: isBanned ? 'not-allowed' : 'text'
         }}
+        onFocus={(e) => !isBanned && (e.target.style.borderColor = '#4285f4')}
+        onBlur={(e) => !isBanned && (e.target.style.borderColor = '#333')}
         title={isBanned ? 'Account limited - cannot create posts' : ''}
       />
 
@@ -1620,11 +1642,15 @@ const MobileApp = () => {
         autoCorrect="off"
         spellCheck={false}
         style={{
-          width: '100%', padding: '12px 16px', border: '1px solid #dbdbdb',
-          borderRadius: '8px', fontSize: '16px', marginBottom: '12px', outline: 'none',
-          backgroundColor: isBanned ? '#f5f5f5' : '#ffffff',
-          color: isBanned ? '#8e8e8e' : '#262626'
+          width: '100%', padding: '16px', fontSize: '17px', marginBottom: '12px',
+          border: '2px solid #333', borderRadius: '25px',
+          backgroundColor: isBanned ? '#333' : '#1a1a1a',
+          color: isBanned ? '#666' : 'white', outline: 'none',
+          WebkitAppearance: 'none', transition: 'border-color 0.2s ease',
+          cursor: isBanned ? 'not-allowed' : 'text'
         }}
+        onFocus={(e) => !isBanned && (e.target.style.borderColor = '#4285f4')}
+        onBlur={(e) => !isBanned && (e.target.style.borderColor = '#333')}
         title={isBanned ? 'Account limited - cannot create posts' : ''}
       />
 
@@ -1642,11 +1668,15 @@ const MobileApp = () => {
             autoCorrect="off"
             spellCheck={false}
             style={{
-              width: '100%', padding: '12px 16px', border: '1px solid #dbdbdb',
-              borderRadius: '8px', fontSize: '16px', outline: 'none',
-              backgroundColor: isBanned ? '#f5f5f5' : '#ffffff',
-              color: isBanned ? '#8e8e8e' : '#262626'
+              width: '100%', padding: '16px', fontSize: '17px',
+              border: '2px solid #333', borderRadius: '25px',
+              backgroundColor: isBanned ? '#333' : '#1a1a1a',
+              color: isBanned ? '#666' : 'white', outline: 'none',
+              WebkitAppearance: 'none', transition: 'border-color 0.2s ease',
+              cursor: isBanned ? 'not-allowed' : 'text'
             }}
+            onFocus={(e) => !isBanned && (e.target.style.borderColor = '#4285f4')}
+            onBlur={(e) => !isBanned && (e.target.style.borderColor = '#333')}
             title={isBanned ? 'Account limited - cannot create posts' : ''}
           />
           {youtubeError && (
@@ -1806,11 +1836,15 @@ const MobileApp = () => {
           autoCorrect="on"
           spellCheck={true}
           style={{
-            width: '100%', padding: '12px 16px', border: '1px solid #dbdbdb',
-            borderRadius: '8px', fontSize: '16px', marginBottom: '12px', outline: 'none',
-            backgroundColor: isBanned ? '#f5f5f5' : '#ffffff',
-            color: isBanned ? '#8e8e8e' : '#262626'
+            width: '100%', padding: '16px', fontSize: '17px', marginBottom: '12px',
+            border: '2px solid #333', borderRadius: '25px',
+            backgroundColor: isBanned ? '#333' : '#1a1a1a',
+            color: isBanned ? '#666' : 'white', outline: 'none',
+            WebkitAppearance: 'none', transition: 'border-color 0.2s ease',
+            cursor: isBanned ? 'not-allowed' : 'text'
           }}
+          onFocus={(e) => !isBanned && (e.target.style.borderColor = '#4285f4')}
+          onBlur={(e) => !isBanned && (e.target.style.borderColor = '#333')}
           title={isBanned ? 'Account limited - cannot create prayer requests' : ''}
         />
 
@@ -1826,12 +1860,16 @@ const MobileApp = () => {
           autoCorrect="on"
           spellCheck={true}
           style={{
-            width: '100%', padding: '12px 16px', border: '1px solid #dbdbdb',
-            borderRadius: '8px', fontSize: '16px', resize: 'none', outline: 'none',
-            fontFamily: 'inherit', marginBottom: '12px',
-            backgroundColor: isBanned ? '#f5f5f5' : '#ffffff',
-            color: isBanned ? '#8e8e8e' : '#262626'
+            width: '100%', padding: '16px', fontSize: '17px', resize: 'none',
+            border: '2px solid #333', borderRadius: '16px', marginBottom: '12px',
+            backgroundColor: isBanned ? '#333' : '#1a1a1a',
+            color: isBanned ? '#666' : 'white', outline: 'none',
+            fontFamily: 'inherit', WebkitAppearance: 'none',
+            transition: 'border-color 0.2s ease',
+            cursor: isBanned ? 'not-allowed' : 'text'
           }}
+          onFocus={(e) => !isBanned && (e.target.style.borderColor = '#4285f4')}
+          onBlur={(e) => !isBanned && (e.target.style.borderColor = '#333')}
           title={isBanned ? 'Account limited - cannot create prayer requests' : ''}
         />
 
@@ -1847,11 +1885,15 @@ const MobileApp = () => {
           autoCorrect="off"
           spellCheck={false}
           style={{
-            width: '100%', padding: '12px 16px', border: '1px solid #dbdbdb',
-            borderRadius: '8px', fontSize: '16px', marginBottom: '12px', outline: 'none',
-            backgroundColor: isBanned ? '#f5f5f5' : '#ffffff',
-            color: isBanned ? '#8e8e8e' : '#262626'
+            width: '100%', padding: '16px', fontSize: '17px', marginBottom: '12px',
+            border: '2px solid #333', borderRadius: '25px',
+            backgroundColor: isBanned ? '#333' : '#1a1a1a',
+            color: isBanned ? '#666' : 'white', outline: 'none',
+            WebkitAppearance: 'none', transition: 'border-color 0.2s ease',
+            cursor: isBanned ? 'not-allowed' : 'text'
           }}
+          onFocus={(e) => !isBanned && (e.target.style.borderColor = '#4285f4')}
+          onBlur={(e) => !isBanned && (e.target.style.borderColor = '#333')}
           title={isBanned ? 'Account limited - cannot create prayer requests' : ''}
         />
 
