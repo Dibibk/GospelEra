@@ -19,8 +19,6 @@ import { useStableTyping } from '@/utils/useStableTyping';
 
 // Complete Instagram-style Gospel Era Mobile App with Real API Integration
 const MobileApp = () => {
-  // TEMPORARILY DISABLED - Use stable typing hook for mobile form stability
-  // useStableTyping();
 
   // Simple input handler - no debouncing to ensure immediate response
   const handleInput = (setter: (v: string) => void) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -121,15 +119,6 @@ const MobileApp = () => {
     }));
   };
 
-  // TEMPORARILY DISABLED - Close all post menus when clicking outside
-  // useEffect(() => {
-  //   const handleClickOutside = (event: MouseEvent) => {
-  //     const target = event.target as Element;
-  //     setShowPostMenu({});
-  //   };
-  //   document.addEventListener('click', handleClickOutside);
-  //   return () => document.removeEventListener('click', handleClickOutside);
-  // }, []);
 
   // Open report modal for post
   const openReportModal = (postId: number) => {
@@ -714,17 +703,6 @@ const MobileApp = () => {
     });
   };
 
-  // TEMPORARILY DISABLED - Close dropdown when clicking outside
-  // useEffect(() => {
-  //   const handleClickOutside = (event: MouseEvent) => {
-  //     const target = event.target as Element;
-  //     if (showUserDropdown && !target.closest('.user-dropdown-container')) {
-  //       setShowUserDropdown(false);
-  //     }
-  //   };
-  //   document.addEventListener('click', handleClickOutside);
-  //   return () => document.removeEventListener('click', handleClickOutside);
-  // }, [showUserDropdown]);
 
   const handleToggleAmen = async (postId: number) => {
     try {
