@@ -16,16 +16,18 @@ import { ObjectUploader } from '@/components/ObjectUploader';
 import { getDailyVerse } from '@/lib/scripture';
 import MobileFormPortal from '@/components/MobileFormPortal';
 import { useStableTyping } from '@/utils/useStableTyping';
-import SearchPage from './SearchPage';
 
 // Complete Instagram-style Gospel Era Mobile App with Real API Integration
 const MobileApp = () => {
-  // TEMPORARILY DISABLED - Use stable typing hook for mobile form stability
-  // useStableTyping();
 
   // Simple input handler - no debouncing to ensure immediate response
   const handleInput = (setter: (v: string) => void) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setter(e.target.value);
+  };
+
+  // Stable comment input handler - prevents focus loss on comment inputs
+  const handleCommentInput = (postId: number) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    setCommentTexts(prev => ({...prev, [postId]: e.target.value}));
   };
   const { user, loading: authLoading, signIn, signUp, signOut } = useAuth();
   const { isBanned, isAdmin } = useRole();
@@ -122,20 +124,6 @@ const MobileApp = () => {
     }));
   };
 
-  // Close all post menus when clicking outside (but not on input fields)
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as Element;
-      // Don't close menus if clicking on input, textarea, or contentEditable elements
-      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
-        return;
-      }
-      setShowPostMenu({});
-    };
-    
-    document.addEventListener('click', handleClickOutside);
-    return () => document.removeEventListener('click', handleClickOutside);
-  }, []);
 
   // Open report modal for post
   const openReportModal = (postId: number) => {
@@ -720,21 +708,6 @@ const MobileApp = () => {
     });
   };
 
-  // Close dropdown when clicking outside (but not on input fields)
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as Element;
-      // Don't close dropdown if clicking on input, textarea, or contentEditable elements
-      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
-        return;
-      }
-      if (showUserDropdown && !target.closest('.user-dropdown-container')) {
-        setShowUserDropdown(false);
-      }
-    };
-    document.addEventListener('click', handleClickOutside);
-    return () => document.removeEventListener('click', handleClickOutside);
-  }, [showUserDropdown]);
 
   const handleToggleAmen = async (postId: number) => {
     try {
@@ -1028,13 +1001,9 @@ const MobileApp = () => {
           value={email}
           onChange={handleInput(setEmail)}
           style={{
-            width: '100%', padding: '16px', fontSize: '17px', marginBottom: '12px',
-            border: '2px solid #333', borderRadius: '25px', backgroundColor: '#1a1a1a',
-            color: 'white', outline: 'none', WebkitAppearance: 'none',
-            transition: 'border-color 0.2s ease'
+            width: '100%', padding: '12px 16px', border: '1px solid #dbdbdb',
+            borderRadius: '8px', fontSize: '16px', marginBottom: '12px', outline: 'none'
           }}
-          onFocus={(e) => e.target.style.borderColor = '#4285f4'}
-          onBlur={(e) => e.target.style.borderColor = '#333'}
           inputMode="email"
           autoCapitalize="none"
           autoCorrect="off"
@@ -1046,13 +1015,9 @@ const MobileApp = () => {
           value={password}
           onChange={handleInput(setPassword)}
           style={{
-            width: '100%', padding: '16px', fontSize: '17px',
-            border: '2px solid #333', borderRadius: '25px', backgroundColor: '#1a1a1a',
-            color: 'white', outline: 'none', WebkitAppearance: 'none',
-            transition: 'border-color 0.2s ease'
+            width: '100%', padding: '12px 16px', border: '1px solid #dbdbdb',
+            borderRadius: '8px', fontSize: '16px', outline: 'none'
           }}
-          onFocus={(e) => e.target.style.borderColor = '#4285f4'}
-          onBlur={(e) => e.target.style.borderColor = '#333'}
           inputMode="text"
           autoCapitalize="none"
           autoCorrect="off"
@@ -1128,13 +1093,10 @@ const MobileApp = () => {
           autoCorrect="off"
           spellCheck={false}
           style={{
-            width: '100%', padding: '16px', fontSize: '17px',
-            border: '2px solid #333', borderRadius: '25px', backgroundColor: '#1a1a1a',
-            color: 'white', outline: 'none', WebkitAppearance: 'none',
-            transition: 'border-color 0.2s ease'
+            width: '100%', height: '36px', background: '#f2f2f2', border: 'none',
+            borderRadius: '18px', padding: '0 16px', fontSize: '14px',
+            color: '#262626', outline: 'none'
           }}
-          onFocus={(e) => e.target.style.borderColor = '#4285f4'}
-          onBlur={(e) => e.target.style.borderColor = '#333'}
         />
       </div>
 
@@ -1442,22 +1404,19 @@ const MobileApp = () => {
                     type="text"
                     placeholder={isBanned ? "Account limited - cannot comment" : "Add a comment..."}
                     value={commentTexts[post.id] || ''}
-                    onChange={(e) => setCommentTexts(prev => ({...prev, [post.id]: e.target.value}))}
+                    onChange={handleCommentInput(post.id)}
                     disabled={isBanned}
                     inputMode="text"
                     autoCapitalize="sentences"
                     autoCorrect="on"
                     spellCheck={true}
                     style={{
-                      flex: 1, padding: '12px 16px', fontSize: '16px', marginRight: '8px',
-                      border: '2px solid #333', borderRadius: '25px',
-                      backgroundColor: isBanned ? '#333' : '#1a1a1a',
-                      color: isBanned ? '#666' : 'white', outline: 'none',
-                      WebkitAppearance: 'none', transition: 'border-color 0.2s ease',
+                      flex: 1, padding: '8px 12px', border: '1px solid #dbdbdb',
+                      borderRadius: '20px', fontSize: '14px', outline: 'none', marginRight: '8px',
+                      backgroundColor: isBanned ? '#f5f5f5' : '#ffffff',
+                      color: isBanned ? '#8e8e8e' : '#262626',
                       cursor: isBanned ? 'not-allowed' : 'text'
                     }}
-                    onFocus={(e) => !isBanned && (e.target.style.borderColor = '#4285f4')}
-                    onBlur={(e) => !isBanned && (e.target.style.borderColor = '#333')}
                   />
                   <button
                     onClick={() => handleCreateComment(post.id)}
@@ -1586,22 +1545,18 @@ const MobileApp = () => {
         type="text"
         placeholder="Post title..."
         value={createTitle}
-        onChange={(e) => setCreateTitle(e.target.value)}
+        onChange={handleInput(setCreateTitle)}
         disabled={isBanned}
         inputMode="text"
         autoCapitalize="sentences"
         autoCorrect="on"
         spellCheck={true}
         style={{
-          width: '100%', padding: '16px', fontSize: '17px', marginBottom: '12px',
-          border: '2px solid #333', borderRadius: '25px',
-          backgroundColor: isBanned ? '#333' : '#1a1a1a',
-          color: isBanned ? '#666' : 'white', outline: 'none',
-          WebkitAppearance: 'none', transition: 'border-color 0.2s ease',
-          cursor: isBanned ? 'not-allowed' : 'text'
+          width: '100%', padding: '12px 16px', border: '1px solid #dbdbdb',
+          borderRadius: '8px', fontSize: '16px', marginBottom: '12px', outline: 'none',
+          backgroundColor: isBanned ? '#f5f5f5' : '#ffffff',
+          color: isBanned ? '#8e8e8e' : '#262626'
         }}
-        onFocus={(e) => !isBanned && (e.target.style.borderColor = '#4285f4')}
-        onBlur={(e) => !isBanned && (e.target.style.borderColor = '#333')}
         title={isBanned ? 'Account limited - cannot create posts' : ''}
       />
 
@@ -1609,7 +1564,7 @@ const MobileApp = () => {
       <textarea
         placeholder="Share your faith, testimony, or encouragement..."
         value={createContent}
-        onChange={(e) => setCreateContent(e.target.value)}
+        onChange={handleInput(setCreateContent)}
         rows={6}
         disabled={isBanned}
         inputMode="text"
@@ -1617,16 +1572,12 @@ const MobileApp = () => {
         autoCorrect="on"
         spellCheck={true}
         style={{
-          width: '100%', padding: '16px', fontSize: '17px', resize: 'none',
-          border: '2px solid #333', borderRadius: '16px', marginBottom: '12px',
-          backgroundColor: isBanned ? '#333' : '#1a1a1a',
-          color: isBanned ? '#666' : 'white', outline: 'none',
-          fontFamily: 'inherit', WebkitAppearance: 'none',
-          transition: 'border-color 0.2s ease',
-          cursor: isBanned ? 'not-allowed' : 'text'
+          width: '100%', padding: '12px 16px', border: '1px solid #dbdbdb',
+          borderRadius: '8px', fontSize: '16px', resize: 'none', outline: 'none',
+          fontFamily: 'inherit', marginBottom: '12px',
+          backgroundColor: isBanned ? '#f5f5f5' : '#ffffff',
+          color: isBanned ? '#8e8e8e' : '#262626'
         }}
-        onFocus={(e) => !isBanned && (e.target.style.borderColor = '#4285f4')}
-        onBlur={(e) => !isBanned && (e.target.style.borderColor = '#333')}
         title={isBanned ? 'Account limited - cannot create posts' : ''}
       />
 
@@ -1635,22 +1586,18 @@ const MobileApp = () => {
         type="text"
         placeholder="Tags (prayer, testimony, scripture...)"
         value={createTags}
-        onChange={(e) => setCreateTags(e.target.value)}
+        onChange={handleInput(setCreateTags)}
         disabled={isBanned}
         inputMode="text"
         autoCapitalize="none"
         autoCorrect="off"
         spellCheck={false}
         style={{
-          width: '100%', padding: '16px', fontSize: '17px', marginBottom: '12px',
-          border: '2px solid #333', borderRadius: '25px',
-          backgroundColor: isBanned ? '#333' : '#1a1a1a',
-          color: isBanned ? '#666' : 'white', outline: 'none',
-          WebkitAppearance: 'none', transition: 'border-color 0.2s ease',
-          cursor: isBanned ? 'not-allowed' : 'text'
+          width: '100%', padding: '12px 16px', border: '1px solid #dbdbdb',
+          borderRadius: '8px', fontSize: '16px', marginBottom: '12px', outline: 'none',
+          backgroundColor: isBanned ? '#f5f5f5' : '#ffffff',
+          color: isBanned ? '#8e8e8e' : '#262626'
         }}
-        onFocus={(e) => !isBanned && (e.target.style.borderColor = '#4285f4')}
-        onBlur={(e) => !isBanned && (e.target.style.borderColor = '#333')}
         title={isBanned ? 'Account limited - cannot create posts' : ''}
       />
 
@@ -1668,15 +1615,11 @@ const MobileApp = () => {
             autoCorrect="off"
             spellCheck={false}
             style={{
-              width: '100%', padding: '16px', fontSize: '17px',
-              border: '2px solid #333', borderRadius: '25px',
-              backgroundColor: isBanned ? '#333' : '#1a1a1a',
-              color: isBanned ? '#666' : 'white', outline: 'none',
-              WebkitAppearance: 'none', transition: 'border-color 0.2s ease',
-              cursor: isBanned ? 'not-allowed' : 'text'
+              width: '100%', padding: '12px 16px', border: '1px solid #dbdbdb',
+              borderRadius: '8px', fontSize: '16px', outline: 'none',
+              backgroundColor: isBanned ? '#f5f5f5' : '#ffffff',
+              color: isBanned ? '#8e8e8e' : '#262626'
             }}
-            onFocus={(e) => !isBanned && (e.target.style.borderColor = '#4285f4')}
-            onBlur={(e) => !isBanned && (e.target.style.borderColor = '#333')}
             title={isBanned ? 'Account limited - cannot create posts' : ''}
           />
           {youtubeError && (
@@ -1829,22 +1772,18 @@ const MobileApp = () => {
           type="text"
           placeholder="Prayer request title..."
           value={prayerTitle}
-          onChange={(e) => setPrayerTitle(e.target.value)}
+          onChange={handleInput(setPrayerTitle)}
           disabled={isBanned}
           inputMode="text"
           autoCapitalize="sentences"
           autoCorrect="on"
           spellCheck={true}
           style={{
-            width: '100%', padding: '16px', fontSize: '17px', marginBottom: '12px',
-            border: '2px solid #333', borderRadius: '25px',
-            backgroundColor: isBanned ? '#333' : '#1a1a1a',
-            color: isBanned ? '#666' : 'white', outline: 'none',
-            WebkitAppearance: 'none', transition: 'border-color 0.2s ease',
-            cursor: isBanned ? 'not-allowed' : 'text'
+            width: '100%', padding: '12px 16px', border: '1px solid #dbdbdb',
+            borderRadius: '8px', fontSize: '16px', marginBottom: '12px', outline: 'none',
+            backgroundColor: isBanned ? '#f5f5f5' : '#ffffff',
+            color: isBanned ? '#8e8e8e' : '#262626'
           }}
-          onFocus={(e) => !isBanned && (e.target.style.borderColor = '#4285f4')}
-          onBlur={(e) => !isBanned && (e.target.style.borderColor = '#333')}
           title={isBanned ? 'Account limited - cannot create prayer requests' : ''}
         />
 
@@ -1852,7 +1791,7 @@ const MobileApp = () => {
         <textarea
           placeholder="Share your prayer need..."
           value={prayerDetails}
-          onChange={(e) => setPrayerDetails(e.target.value)}
+          onChange={handleInput(setPrayerDetails)}
           rows={4}
           disabled={isBanned}
           inputMode="text"
@@ -1860,16 +1799,12 @@ const MobileApp = () => {
           autoCorrect="on"
           spellCheck={true}
           style={{
-            width: '100%', padding: '16px', fontSize: '17px', resize: 'none',
-            border: '2px solid #333', borderRadius: '16px', marginBottom: '12px',
-            backgroundColor: isBanned ? '#333' : '#1a1a1a',
-            color: isBanned ? '#666' : 'white', outline: 'none',
-            fontFamily: 'inherit', WebkitAppearance: 'none',
-            transition: 'border-color 0.2s ease',
-            cursor: isBanned ? 'not-allowed' : 'text'
+            width: '100%', padding: '12px 16px', border: '1px solid #dbdbdb',
+            borderRadius: '8px', fontSize: '16px', resize: 'none', outline: 'none',
+            fontFamily: 'inherit', marginBottom: '12px',
+            backgroundColor: isBanned ? '#f5f5f5' : '#ffffff',
+            color: isBanned ? '#8e8e8e' : '#262626'
           }}
-          onFocus={(e) => !isBanned && (e.target.style.borderColor = '#4285f4')}
-          onBlur={(e) => !isBanned && (e.target.style.borderColor = '#333')}
           title={isBanned ? 'Account limited - cannot create prayer requests' : ''}
         />
 
@@ -1878,22 +1813,18 @@ const MobileApp = () => {
           type="text"
           placeholder="Tags (healing, family, guidance...)"
           value={prayerTags}
-          onChange={(e) => setPrayerTags(e.target.value)}
+          onChange={handleInput(setPrayerTags)}
           disabled={isBanned}
           inputMode="text"
           autoCapitalize="none"
           autoCorrect="off"
           spellCheck={false}
           style={{
-            width: '100%', padding: '16px', fontSize: '17px', marginBottom: '12px',
-            border: '2px solid #333', borderRadius: '25px',
-            backgroundColor: isBanned ? '#333' : '#1a1a1a',
-            color: isBanned ? '#666' : 'white', outline: 'none',
-            WebkitAppearance: 'none', transition: 'border-color 0.2s ease',
-            cursor: isBanned ? 'not-allowed' : 'text'
+            width: '100%', padding: '12px 16px', border: '1px solid #dbdbdb',
+            borderRadius: '8px', fontSize: '16px', marginBottom: '12px', outline: 'none',
+            backgroundColor: isBanned ? '#f5f5f5' : '#ffffff',
+            color: isBanned ? '#8e8e8e' : '#262626'
           }}
-          onFocus={(e) => !isBanned && (e.target.style.borderColor = '#4285f4')}
-          onBlur={(e) => !isBanned && (e.target.style.borderColor = '#333')}
           title={isBanned ? 'Account limited - cannot create prayer requests' : ''}
         />
 
@@ -2842,7 +2773,7 @@ const MobileApp = () => {
               <input
                 type="text"
                 value={editDisplayName}
-                onChange={(e) => setEditDisplayName(e.target.value)}
+                onChange={handleInput(setEditDisplayName)}
                 placeholder="Enter your display name"
                 inputMode="text"
                 autoCapitalize="words"
@@ -2865,7 +2796,7 @@ const MobileApp = () => {
               </label>
               <textarea
                 value={editBio}
-                onChange={(e) => setEditBio(e.target.value)}
+                onChange={handleInput(setEditBio)}
                 placeholder="Tell us about yourself..."
                 rows={4}
                 inputMode="text"
@@ -5743,16 +5674,13 @@ const MobileApp = () => {
             <div style={{ display: activeTab === 0 ? 'flex' : 'none', flex: 1, flexDirection: 'column' }}>
               <HomeFeed />
             </div>
-            <div style={{ display: activeTab === 1 ? 'flex' : 'none', flex: 1, flexDirection: 'column' }}>
-              <SearchPage />
-            </div>
-            <div className="form-page" style={{ display: activeTab === 2 ? 'flex' : 'none', flex: 1, flexDirection: 'column' }}>
+            <div className="form-page" style={{ display: activeTab === 1 ? 'flex' : 'none', flex: 1, flexDirection: 'column' }}>
               <CreatePage />
             </div>
-            <div className="form-page" style={{ display: activeTab === 3 ? 'flex' : 'none', flex: 1, flexDirection: 'column' }}>
+            <div className="form-page" style={{ display: activeTab === 2 ? 'flex' : 'none', flex: 1, flexDirection: 'column' }}>
               <PrayerPage />
             </div>
-            <div style={{ display: activeTab === 4 ? 'flex' : 'none', flex: 1, flexDirection: 'column' }}>
+            <div style={{ display: activeTab === 3 ? 'flex' : 'none', flex: 1, flexDirection: 'column' }}>
               <ProfilePage />
             </div>
           </div>
@@ -5772,28 +5700,38 @@ const MobileApp = () => {
             </svg>
             <span style={{ fontSize: '10px', marginTop: '2px' }}>Home</span>
           </div>
+          <div onClick={() => {
+            setActiveTab(0);
+            // TEMPORARILY DISABLED - Focus on search input
+            // setTimeout(() => {
+            //   const searchInput = document.querySelector('input[placeholder*="Search"]') as HTMLInputElement;
+            //   if (searchInput) {
+            //     searchInput.focus();
+            //     searchInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            //   }
+            // }, 100);
+          }} style={{
+            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+            color: '#8e8e8e', fontSize: '20px',
+            padding: '8px 12px', cursor: 'pointer'
+          }}>
+            🔍
+            <span style={{ fontSize: '10px', marginTop: '2px' }}>Search</span>
+          </div>
           <div onClick={() => setActiveTab(1)} style={{
             display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
             color: activeTab === 1 ? '#4285f4' : '#8e8e8e', fontSize: '20px',
             padding: '8px 12px', cursor: 'pointer'
           }}>
-            🔍
-            <span style={{ fontSize: '10px', marginTop: '2px' }}>Search</span>
+            ➕
+            <span style={{ fontSize: '10px', marginTop: '2px' }}>Post</span>
           </div>
           <div onClick={() => setActiveTab(2)} style={{
             display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
             color: activeTab === 2 ? '#4285f4' : '#8e8e8e', fontSize: '20px',
             padding: '8px 12px', cursor: 'pointer'
           }}>
-            ➕
-            <span style={{ fontSize: '10px', marginTop: '2px' }}>Post</span>
-          </div>
-          <div onClick={() => setActiveTab(3)} style={{
-            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-            color: activeTab === 3 ? '#4285f4' : '#8e8e8e', fontSize: '20px',
-            padding: '8px 12px', cursor: 'pointer'
-          }}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={activeTab === 3 ? '#4285f4' : '#333333'} strokeWidth="2">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={activeTab === 2 ? '#4285f4' : '#333333'} strokeWidth="2">
               <path d="M14 2v6a2 2 0 01-2 2 2 2 0 01-2-2V2"/>
               <path d="M10 2C8 2 8 4 10 6c0 1 0 2-2 2s-4-1-4-4"/>
               <path d="M14 2c2 0 2 2 0 4 0 1 0 2 2 2s4-1 4-4"/>
@@ -5803,9 +5741,9 @@ const MobileApp = () => {
             </svg>
             <span style={{ fontSize: '10px', marginTop: '2px' }}>Prayer</span>
           </div>
-          <div onClick={() => setActiveTab(4)} style={{
+          <div onClick={() => setActiveTab(3)} style={{
             display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-            color: activeTab === 4 ? '#4285f4' : '#8e8e8e', fontSize: '20px',
+            color: activeTab === 3 ? '#4285f4' : '#8e8e8e', fontSize: '20px',
             padding: '8px 12px', cursor: 'pointer'
           }}>
             👤
