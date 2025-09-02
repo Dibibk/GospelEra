@@ -19,15 +19,12 @@ import { useStableTyping } from '@/utils/useStableTyping';
 
 // Complete Instagram-style Gospel Era Mobile App with Real API Integration
 const MobileApp = () => {
+  // TEMPORARILY DISABLED - Use stable typing hook for mobile form stability
+  // useStableTyping();
 
   // Simple input handler - no debouncing to ensure immediate response
   const handleInput = (setter: (v: string) => void) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setter(e.target.value);
-  };
-
-  // Stable comment input handler - prevents focus loss on comment inputs
-  const handleCommentInput = (postId: number) => (e: React.ChangeEvent<HTMLInputElement>) => {
-    setCommentTexts(prev => ({...prev, [postId]: e.target.value}));
   };
   const { user, loading: authLoading, signIn, signUp, signOut } = useAuth();
   const { isBanned, isAdmin } = useRole();
@@ -124,6 +121,15 @@ const MobileApp = () => {
     }));
   };
 
+  // TEMPORARILY DISABLED - Close all post menus when clicking outside
+  // useEffect(() => {
+  //   const handleClickOutside = (event: MouseEvent) => {
+  //     const target = event.target as Element;
+  //     setShowPostMenu({});
+  //   };
+  //   document.addEventListener('click', handleClickOutside);
+  //   return () => document.removeEventListener('click', handleClickOutside);
+  // }, []);
 
   // Open report modal for post
   const openReportModal = (postId: number) => {
@@ -708,6 +714,17 @@ const MobileApp = () => {
     });
   };
 
+  // TEMPORARILY DISABLED - Close dropdown when clicking outside
+  // useEffect(() => {
+  //   const handleClickOutside = (event: MouseEvent) => {
+  //     const target = event.target as Element;
+  //     if (showUserDropdown && !target.closest('.user-dropdown-container')) {
+  //       setShowUserDropdown(false);
+  //     }
+  //   };
+  //   document.addEventListener('click', handleClickOutside);
+  //   return () => document.removeEventListener('click', handleClickOutside);
+  // }, [showUserDropdown]);
 
   const handleToggleAmen = async (postId: number) => {
     try {
@@ -1404,7 +1421,7 @@ const MobileApp = () => {
                     type="text"
                     placeholder={isBanned ? "Account limited - cannot comment" : "Add a comment..."}
                     value={commentTexts[post.id] || ''}
-                    onChange={handleCommentInput(post.id)}
+                    onChange={(e) => setCommentTexts(prev => ({...prev, [post.id]: e.target.value}))}
                     disabled={isBanned}
                     inputMode="text"
                     autoCapitalize="sentences"
@@ -1545,7 +1562,7 @@ const MobileApp = () => {
         type="text"
         placeholder="Post title..."
         value={createTitle}
-        onChange={handleInput(setCreateTitle)}
+        onChange={(e) => setCreateTitle(e.target.value)}
         disabled={isBanned}
         inputMode="text"
         autoCapitalize="sentences"
@@ -1564,7 +1581,7 @@ const MobileApp = () => {
       <textarea
         placeholder="Share your faith, testimony, or encouragement..."
         value={createContent}
-        onChange={handleInput(setCreateContent)}
+        onChange={(e) => setCreateContent(e.target.value)}
         rows={6}
         disabled={isBanned}
         inputMode="text"
@@ -1586,7 +1603,7 @@ const MobileApp = () => {
         type="text"
         placeholder="Tags (prayer, testimony, scripture...)"
         value={createTags}
-        onChange={handleInput(setCreateTags)}
+        onChange={(e) => setCreateTags(e.target.value)}
         disabled={isBanned}
         inputMode="text"
         autoCapitalize="none"
@@ -1772,7 +1789,7 @@ const MobileApp = () => {
           type="text"
           placeholder="Prayer request title..."
           value={prayerTitle}
-          onChange={handleInput(setPrayerTitle)}
+          onChange={(e) => setPrayerTitle(e.target.value)}
           disabled={isBanned}
           inputMode="text"
           autoCapitalize="sentences"
@@ -1791,7 +1808,7 @@ const MobileApp = () => {
         <textarea
           placeholder="Share your prayer need..."
           value={prayerDetails}
-          onChange={handleInput(setPrayerDetails)}
+          onChange={(e) => setPrayerDetails(e.target.value)}
           rows={4}
           disabled={isBanned}
           inputMode="text"
@@ -1813,7 +1830,7 @@ const MobileApp = () => {
           type="text"
           placeholder="Tags (healing, family, guidance...)"
           value={prayerTags}
-          onChange={handleInput(setPrayerTags)}
+          onChange={(e) => setPrayerTags(e.target.value)}
           disabled={isBanned}
           inputMode="text"
           autoCapitalize="none"
@@ -2773,7 +2790,7 @@ const MobileApp = () => {
               <input
                 type="text"
                 value={editDisplayName}
-                onChange={handleInput(setEditDisplayName)}
+                onChange={(e) => setEditDisplayName(e.target.value)}
                 placeholder="Enter your display name"
                 inputMode="text"
                 autoCapitalize="words"
@@ -2796,7 +2813,7 @@ const MobileApp = () => {
               </label>
               <textarea
                 value={editBio}
-                onChange={handleInput(setEditBio)}
+                onChange={(e) => setEditBio(e.target.value)}
                 placeholder="Tell us about yourself..."
                 rows={4}
                 inputMode="text"
