@@ -16,6 +16,7 @@ import { ObjectUploader } from '@/components/ObjectUploader';
 import { getDailyVerse } from '@/lib/scripture';
 import MobileFormPortal from '@/components/MobileFormPortal';
 import { useStableTyping } from '@/utils/useStableTyping';
+import SearchPage from './SearchPage';
 
 // Complete Instagram-style Gospel Era Mobile App with Real API Integration
 const MobileApp = () => {
@@ -5717,38 +5718,28 @@ const MobileApp = () => {
             </svg>
             <span style={{ fontSize: '10px', marginTop: '2px' }}>Home</span>
           </div>
-          <div onClick={() => {
-            setActiveTab(0);
-            // TEMPORARILY DISABLED - Focus on search input
-            // setTimeout(() => {
-            //   const searchInput = document.querySelector('input[placeholder*="Search"]') as HTMLInputElement;
-            //   if (searchInput) {
-            //     searchInput.focus();
-            //     searchInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            //   }
-            // }, 100);
-          }} style={{
-            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-            color: '#8e8e8e', fontSize: '20px',
-            padding: '8px 12px', cursor: 'pointer'
-          }}>
-            🔍
-            <span style={{ fontSize: '10px', marginTop: '2px' }}>Search</span>
-          </div>
           <div onClick={() => setActiveTab(1)} style={{
             display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
             color: activeTab === 1 ? '#4285f4' : '#8e8e8e', fontSize: '20px',
             padding: '8px 12px', cursor: 'pointer'
           }}>
-            ➕
-            <span style={{ fontSize: '10px', marginTop: '2px' }}>Post</span>
+            🔍
+            <span style={{ fontSize: '10px', marginTop: '2px' }}>Search</span>
           </div>
           <div onClick={() => setActiveTab(2)} style={{
             display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
             color: activeTab === 2 ? '#4285f4' : '#8e8e8e', fontSize: '20px',
             padding: '8px 12px', cursor: 'pointer'
           }}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={activeTab === 2 ? '#4285f4' : '#333333'} strokeWidth="2">
+            ➕
+            <span style={{ fontSize: '10px', marginTop: '2px' }}>Post</span>
+          </div>
+          <div onClick={() => setActiveTab(3)} style={{
+            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+            color: activeTab === 3 ? '#4285f4' : '#8e8e8e', fontSize: '20px',
+            padding: '8px 12px', cursor: 'pointer'
+          }}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={activeTab === 3 ? '#4285f4' : '#333333'} strokeWidth="2">
               <path d="M14 2v6a2 2 0 01-2 2 2 2 0 01-2-2V2"/>
               <path d="M10 2C8 2 8 4 10 6c0 1 0 2-2 2s-4-1-4-4"/>
               <path d="M14 2c2 0 2 2 0 4 0 1 0 2 2 2s4-1 4-4"/>
@@ -5758,9 +5749,9 @@ const MobileApp = () => {
             </svg>
             <span style={{ fontSize: '10px', marginTop: '2px' }}>Prayer</span>
           </div>
-          <div onClick={() => setActiveTab(3)} style={{
+          <div onClick={() => setActiveTab(4)} style={{
             display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-            color: activeTab === 3 ? '#4285f4' : '#8e8e8e', fontSize: '20px',
+            color: activeTab === 4 ? '#4285f4' : '#8e8e8e', fontSize: '20px',
             padding: '8px 12px', cursor: 'pointer'
           }}>
             👤
