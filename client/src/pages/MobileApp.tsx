@@ -122,15 +122,20 @@ const MobileApp = () => {
     }));
   };
 
-  // TEMPORARILY DISABLED - Close all post menus when clicking outside
-  // useEffect(() => {
-  //   const handleClickOutside = (event: MouseEvent) => {
-  //     const target = event.target as Element;
-  //     setShowPostMenu({});
-  //   };
-  //   document.addEventListener('click', handleClickOutside);
-  //   return () => document.removeEventListener('click', handleClickOutside);
-  // }, []);
+  // Close all post menus when clicking outside (but not on input fields)
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+      // Don't close menus if clicking on input, textarea, or contentEditable elements
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
+        return;
+      }
+      setShowPostMenu({});
+    };
+    
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, []);
 
   // Open report modal for post
   const openReportModal = (postId: number) => {
@@ -715,17 +720,21 @@ const MobileApp = () => {
     });
   };
 
-  // TEMPORARILY DISABLED - Close dropdown when clicking outside
-  // useEffect(() => {
-  //   const handleClickOutside = (event: MouseEvent) => {
-  //     const target = event.target as Element;
-  //     if (showUserDropdown && !target.closest('.user-dropdown-container')) {
-  //       setShowUserDropdown(false);
-  //     }
-  //   };
-  //   document.addEventListener('click', handleClickOutside);
-  //   return () => document.removeEventListener('click', handleClickOutside);
-  // }, [showUserDropdown]);
+  // Close dropdown when clicking outside (but not on input fields)
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+      // Don't close dropdown if clicking on input, textarea, or contentEditable elements
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
+        return;
+      }
+      if (showUserDropdown && !target.closest('.user-dropdown-container')) {
+        setShowUserDropdown(false);
+      }
+    };
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, [showUserDropdown]);
 
   const handleToggleAmen = async (postId: number) => {
     try {

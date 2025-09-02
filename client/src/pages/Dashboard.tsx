@@ -39,17 +39,21 @@ export default function Dashboard() {
   const [showHelpDrawer, setShowHelpDrawer] = useState(false)
   const helpTriggerRef = useRef<HTMLButtonElement>(null)
   
-  // TEMPORARILY DISABLED - Close user menu when clicking outside
-  // useEffect(() => {
-  //   const handleClickOutside = (event: MouseEvent) => {
-  //     const target = event.target as Element
-  //     if (userMenuOpen && !target.closest('.user-menu-container')) {
-  //       setUserMenuOpen(false)
-  //     }
-  //   }
-  //   document.addEventListener('click', handleClickOutside)
-  //   return () => document.removeEventListener('click', handleClickOutside)
-  // }, [userMenuOpen])
+  // Close user menu when clicking outside (but not on input fields)
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element
+      // Don't close menu if clicking on input, textarea, or contentEditable elements
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
+        return
+      }
+      if (userMenuOpen && !target.closest('.user-menu-container')) {
+        setUserMenuOpen(false)
+      }
+    }
+    document.addEventListener('click', handleClickOutside)
+    return () => document.removeEventListener('click', handleClickOutside)
+  }, [userMenuOpen])
   
   // Post creation modal state
   const [showCreateModal, setShowCreateModal] = useState(false)

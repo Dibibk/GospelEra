@@ -1,7 +1,5 @@
 import React, { useState } from 'react';
-import { Input } from '@/components/ui/input';
-import { Card } from '@/components/ui/card';
-import { Search } from 'lucide-react';
+import { Search, TrendingUp, Users, BookOpen } from 'lucide-react';
 
 const SearchPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -11,88 +9,183 @@ const SearchPage = () => {
       flex: 1,
       display: 'flex',
       flexDirection: 'column',
-      backgroundColor: '#f8f9fa',
-      minHeight: '100vh'
+      backgroundColor: '#000000',
+      minHeight: '100vh',
+      color: 'white'
     }}>
-      {/* Header */}
+      {/* Mobile Native Header */}
       <div style={{
-        backgroundColor: 'white',
-        padding: '16px',
-        borderBottom: '1px solid #e9ecef',
+        backgroundColor: '#1a1a1a',
+        padding: '16px 20px',
+        borderBottom: '1px solid #333',
         position: 'sticky',
         top: 0,
         zIndex: 10
       }}>
         <h1 style={{
-          fontSize: '24px',
-          fontWeight: 'bold',
-          color: '#333',
+          fontSize: '28px',
+          fontWeight: '700',
+          color: 'white',
           textAlign: 'center',
-          margin: 0
+          margin: 0,
+          letterSpacing: '-0.02em'
         }}>
           Search
         </h1>
       </div>
 
-      {/* Search Content */}
+      {/* Search Input - Mobile Optimized */}
+      <div style={{
+        padding: '20px',
+        backgroundColor: '#000000'
+      }}>
+        <div style={{
+          position: 'relative',
+          display: 'flex',
+          alignItems: 'center'
+        }}>
+          <Search 
+            size={20} 
+            color="#888" 
+            style={{
+              position: 'absolute',
+              left: '16px',
+              zIndex: 2
+            }}
+          />
+          <input
+            data-testid="input-search"
+            type="text"
+            placeholder="Search posts, people, topics..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            style={{
+              width: '100%',
+              padding: '16px 16px 16px 50px',
+              fontSize: '17px',
+              border: '2px solid #333',
+              borderRadius: '25px',
+              backgroundColor: '#1a1a1a',
+              color: 'white',
+              outline: 'none',
+              WebkitAppearance: 'none',
+              transition: 'border-color 0.2s ease'
+            }}
+            onFocus={(e) => {
+              e.target.style.borderColor = '#4285f4';
+            }}
+            onBlur={(e) => {
+              e.target.style.borderColor = '#333';
+            }}
+          />
+        </div>
+      </div>
+
+      {/* Search Results/Content */}
       <div style={{
         flex: 1,
-        padding: '20px'
+        padding: '0 20px 20px'
       }}>
-        <Card style={{
-          padding: '20px',
-          backgroundColor: 'white',
-          borderRadius: '12px',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-        }}>
+        {searchQuery ? (
           <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '12px',
-            marginBottom: '16px'
+            backgroundColor: '#1a1a1a',
+            borderRadius: '16px',
+            padding: '24px',
+            textAlign: 'center',
+            border: '1px solid #333'
           }}>
-            <Search size={24} color="#666" />
-            <Input
-              data-testid="input-search"
-              type="text"
-              placeholder="Search posts, people, and topics..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              style={{
-                flex: 1,
-                padding: '12px 16px',
-                fontSize: '16px',
-                border: '2px solid #e9ecef',
-                borderRadius: '8px',
-                backgroundColor: '#f8f9fa'
-              }}
-            />
+            <Search size={32} color="#4285f4" style={{ marginBottom: '12px' }} />
+            <p style={{ 
+              fontSize: '16px', 
+              color: '#ccc',
+              margin: 0
+            }}>
+              Search results for "{searchQuery}"
+            </p>
+            <p style={{ 
+              fontSize: '14px', 
+              color: '#888',
+              marginTop: '8px',
+              margin: 0
+            }}>
+              Results would appear here
+            </p>
           </div>
-
-          {searchQuery && (
-            <div style={{
-              padding: '16px',
-              backgroundColor: '#f8f9fa',
-              borderRadius: '8px',
-              textAlign: 'center',
-              color: '#666'
-            }}>
-              <p>Search results for "{searchQuery}" would appear here</p>
-            </div>
-          )}
-
-          {!searchQuery && (
+        ) : (
+          <>
+            {/* Empty State */}
             <div style={{
               textAlign: 'center',
-              color: '#999',
-              padding: '40px 20px'
+              padding: '40px 20px',
+              backgroundColor: '#1a1a1a',
+              borderRadius: '16px',
+              marginBottom: '20px',
+              border: '1px solid #333'
             }}>
-              <Search size={48} color="#ccc" style={{ marginBottom: '16px' }} />
-              <p style={{ fontSize: '18px', marginBottom: '8px' }}>Search Gospel Era</p>
-              <p style={{ fontSize: '14px' }}>Find posts, people, and topics in our community</p>
+              <Search size={48} color="#4285f4" style={{ marginBottom: '16px' }} />
+              <h2 style={{ 
+                fontSize: '22px', 
+                fontWeight: '600',
+                color: 'white',
+                marginBottom: '8px',
+                margin: 0
+              }}>
+                Discover Gospel Era
+              </h2>
+              <p style={{ 
+                fontSize: '16px',
+                color: '#999',
+                margin: 0
+              }}>
+                Search for posts, people, and faith topics
+              </p>
             </div>
-          )}
-        </Card>
+
+            {/* Quick Actions */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: '1fr 1fr',
+              gap: '12px'
+            }}>
+              <div style={{
+                backgroundColor: '#1a1a1a',
+                borderRadius: '12px',
+                padding: '20px',
+                textAlign: 'center',
+                border: '1px solid #333',
+                cursor: 'pointer'
+              }}>
+                <TrendingUp size={24} color="#4285f4" style={{ marginBottom: '8px' }} />
+                <p style={{ 
+                  fontSize: '14px',
+                  color: 'white',
+                  fontWeight: '500',
+                  margin: 0
+                }}>
+                  Trending
+                </p>
+              </div>
+              <div style={{
+                backgroundColor: '#1a1a1a',
+                borderRadius: '12px',
+                padding: '20px',
+                textAlign: 'center',
+                border: '1px solid #333',
+                cursor: 'pointer'
+              }}>
+                <Users size={24} color="#4285f4" style={{ marginBottom: '8px' }} />
+                <p style={{ 
+                  fontSize: '14px',
+                  color: 'white',
+                  fontWeight: '500',
+                  margin: 0
+                }}>
+                  People
+                </p>
+              </div>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
