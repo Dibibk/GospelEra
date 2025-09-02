@@ -39,10 +39,14 @@ export default function Dashboard() {
   const [showHelpDrawer, setShowHelpDrawer] = useState(false)
   const helpTriggerRef = useRef<HTMLButtonElement>(null)
   
-  // Close user menu when clicking outside
+  // Close user menu when clicking outside (but not on input fields)
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Element
+      // Don't close menu if clicking on input, textarea, or contentEditable elements
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
+        return
+      }
       if (userMenuOpen && !target.closest('.user-menu-container')) {
         setUserMenuOpen(false)
       }

@@ -121,9 +121,14 @@ const MobileApp = () => {
     }));
   };
 
-  // Close all post menus when clicking outside
+  // Close all post menus when clicking outside (but not on input fields)
   useEffect(() => {
-    const handleClickOutside = () => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+      // Don't close menus if clicking on input, textarea, or contentEditable elements
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
+        return;
+      }
       setShowPostMenu({});
     };
     
@@ -714,10 +719,14 @@ const MobileApp = () => {
     });
   };
 
-  // Close dropdown when clicking outside
+  // Close dropdown when clicking outside (but not on input fields)
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Element;
+      // Don't close dropdown if clicking on input, textarea, or contentEditable elements
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
+        return;
+      }
       if (showUserDropdown && !target.closest('.user-dropdown-container')) {
         setShowUserDropdown(false);
       }
