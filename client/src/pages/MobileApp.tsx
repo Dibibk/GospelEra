@@ -7337,14 +7337,12 @@ export default function MobileApp() {
     const paymentsEnabled = stripeEnabled; // PayPal not implemented yet
 
     const handleAmountSelect = (amount: number) => {
-      console.log('Amount selected:', amount);
       setSelectedAmount(amount);
       setCustomAmount("");
       setError("");
     };
 
     const handleCustomAmountChange = (value: string) => {
-      console.log('Custom amount changed:', value);
       setCustomAmount(value);
       setSelectedAmount(null);
       setError("");
@@ -7431,7 +7429,6 @@ export default function MobileApp() {
     };
 
     const handleSupport = () => {
-      console.log('Support button clicked! Amount:', getSelectedAmount());
       if (paymentsEnabled && activeTab === "stripe") {
         handleStripePayment();
       } else {
@@ -7550,15 +7547,18 @@ export default function MobileApp() {
                 style={{
                   padding: "12px 16px",
                   borderRadius: "8px",
-                  border: "1px solid #dbdbdb",
+                  border: selectedAmount === amount ? "2px solid #4285f4" : "1px solid #dbdbdb",
                   background: selectedAmount === amount ? "#4285f4" : "#ffffff",
                   color: selectedAmount === amount ? "#ffffff" : "#262626",
                   fontSize: "14px",
-                  fontWeight: 600,
+                  fontWeight: selectedAmount === amount ? 700 : 600,
                   cursor: "pointer",
                   touchAction: "manipulation",
                   userSelect: "none",
                   WebkitTapHighlightColor: "rgba(0,0,0,0)",
+                  transform: selectedAmount === amount ? "scale(1.02)" : "scale(1)",
+                  transition: "all 0.2s ease",
+                  boxShadow: selectedAmount === amount ? "0 2px 8px rgba(66, 133, 244, 0.3)" : "none",
                 }}
               >
                 ${amount}
@@ -7572,7 +7572,6 @@ export default function MobileApp() {
               placeholder="Custom amount"
               value={customAmount}
               onChange={(e) => handleCustomAmountChange(e.target.value)}
-              onFocus={() => console.log('Custom amount input focused')}
               inputMode="decimal"
               autoCapitalize="none"
               autoCorrect="off"
@@ -7580,12 +7579,14 @@ export default function MobileApp() {
               style={{
                 width: "100%",
                 padding: "12px",
-                border: "1px solid #dbdbdb",
+                border: customAmount ? "2px solid #4285f4" : "1px solid #dbdbdb",
                 borderRadius: "8px",
                 fontSize: "16px", // 16px prevents zoom on iOS
                 touchAction: "manipulation",
                 WebkitAppearance: "none",
                 boxSizing: "border-box",
+                transition: "all 0.2s ease",
+                boxShadow: customAmount ? "0 2px 8px rgba(66, 133, 244, 0.2)" : "none",
               }}
               min="2"
               max="200"
@@ -7609,7 +7610,6 @@ export default function MobileApp() {
             placeholder="Add a message (optional)"
             value={message}
             onChange={(e) => setMessage(e.target.value)}
-            onFocus={() => console.log('Message textarea focused')}
             inputMode="text"
             autoCapitalize="sentences"
             autoCorrect="on"
@@ -7617,7 +7617,7 @@ export default function MobileApp() {
             style={{
               width: "100%",
               padding: "12px",
-              border: "1px solid #dbdbdb",
+              border: message ? "2px solid #4285f4" : "1px solid #dbdbdb",
               borderRadius: "8px",
               fontSize: "16px", // 16px prevents zoom on iOS
               minHeight: "80px",
@@ -7625,6 +7625,8 @@ export default function MobileApp() {
               touchAction: "manipulation",
               WebkitAppearance: "none",
               boxSizing: "border-box",
+              transition: "all 0.2s ease",
+              boxShadow: message ? "0 2px 8px rgba(66, 133, 244, 0.2)" : "none",
             }}
           />
         </div>
@@ -7704,7 +7706,7 @@ export default function MobileApp() {
           disabled={!getSelectedAmount() || isProcessing}
           style={{
             width: "100%",
-            background: getSelectedAmount() ? "#262626" : "#dbdbdb",
+            background: getSelectedAmount() ? "#4285f4" : "#dbdbdb",
             color: getSelectedAmount() ? "#ffffff" : "#8e8e8e",
             border: "none",
             padding: "16px",
@@ -7716,6 +7718,8 @@ export default function MobileApp() {
             userSelect: "none",
             WebkitTapHighlightColor: "rgba(0,0,0,0)",
             boxSizing: "border-box",
+            transition: "all 0.2s ease",
+            boxShadow: getSelectedAmount() ? "0 2px 8px rgba(66, 133, 244, 0.3)" : "none",
           }}
         >
           {isProcessing
