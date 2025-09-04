@@ -606,7 +606,7 @@ export default function MobileApp() {
     setShowMobileCommunityGuidelines(false);
     setShowMobileSupporter(false);
     setShowMobileHelp(false);
-    setShowMobileReports(false);
+    setShowMobileReviewReports(false);
     setShowMobileMediaRequests(false);
     setShowMobileAdminSupport(false);
     setShowUserDropdown(false);
