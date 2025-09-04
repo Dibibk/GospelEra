@@ -21,6 +21,7 @@ import { createReport } from "@/lib/reports";
 import { checkMediaPermission } from "@/lib/mediaRequests";
 import { validateAndNormalizeYouTubeUrl } from "../../../shared/youtube";
 import { validateFaithContent } from "../../../shared/moderation";
+import { supabase } from "@/lib/supabaseClient";
 import { useRole } from "@/hooks/useRole";
 import { getTopPrayerWarriors } from "@/lib/leaderboard";
 import {
