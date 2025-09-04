@@ -7337,6 +7337,7 @@ export default function MobileApp() {
     const paymentsEnabled = stripeEnabled; // PayPal not implemented yet
 
     const handleAmountSelect = (amount: number) => {
+      console.log('Amount button clicked:', amount);
       setSelectedAmount(amount);
       setCustomAmount("");
       setError("");
@@ -7447,7 +7448,14 @@ export default function MobileApp() {
 
     return (
       <div
-        style={{ padding: "16px", background: "#ffffff", minHeight: "100vh" }}
+        style={{ 
+          padding: "16px", 
+          background: "#ffffff", 
+          minHeight: "100vh",
+          position: "relative",
+          zIndex: 1,
+          pointerEvents: "auto"
+        }}
       >
         {/* Header */}
         <div
@@ -7542,8 +7550,15 @@ export default function MobileApp() {
             {predefinedAmounts.map((amount) => (
               <button
                 key={amount}
-                onClick={() => handleAmountSelect(amount)}
-                onTouchStart={() => {}} // Enable touch events
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleAmountSelect(amount);
+                }}
+                onTouchStart={(e) => {
+                  e.preventDefault();
+                  console.log('Touch start on amount button:', amount);
+                }}
                 style={{
                   padding: "12px 16px",
                   borderRadius: "8px",
