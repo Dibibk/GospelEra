@@ -95,7 +95,7 @@ export function MediaAccessRequestModal({ isOpen, onClose, onSuccess }: MediaAcc
             You can request permission to share YouTube links. We don't host uploads.
           </div>
           <div className="text-xs text-gray-500 dark:text-gray-500">
-            ✝️ All content is reviewed to align with Gospel truth and community standards
+            All content is reviewed to align with Gospel truth and community standards
           </div>
         </div>
 
