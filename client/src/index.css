@@ -4,7 +4,9 @@
 @tailwind utilities;
 
 /* Mobile viewport safety rules */
-html, body, #root {
+html,
+body,
+#root {
   height: 100%;
 }
 
@@ -20,25 +22,25 @@ html, body, #root {
     -ms-text-size-adjust: 100%;
     text-size-adjust: 100%;
   }
-  
+
   body {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     font-feature-settings: 'rlig' 1, 'calt' 1;
     overscroll-behavior-y: none;
   }
-  
+
   /* Native mobile scrolling */
   * {
     -webkit-overflow-scrolling: touch;
   }
-  
+
   /* Remove tap highlights */
   * {
     -webkit-tap-highlight-color: transparent;
     -webkit-touch-callout: none;
   }
-  
+
   /* Focus styles for mobile */
   button:focus,
   input:focus,
@@ -47,31 +49,37 @@ html, body, #root {
     outline: 2px solid hsl(var(--ring));
     outline-offset: 2px;
   }
-  
+
   /* Native mobile button styling */
-  button, input[type="button"], input[type="submit"] {
+  button,
+  input[type="button"],
+  input[type="submit"] {
     -webkit-appearance: none;
     appearance: none;
     border-radius: var(--radius);
     min-height: var(--mobile-touch-target);
   }
-  
+
   /* Native mobile input styling */
-  input, textarea, select {
+  input,
+  textarea,
+  select {
     -webkit-appearance: none !important;
     appearance: none !important;
-    font-size: 16px !important; /* Prevents zoom on iOS */
+    font-size: 16px !important;
+    /* Prevents zoom on iOS */
     border-radius: var(--radius);
     min-height: var(--mobile-input-height);
     -webkit-user-select: text;
     user-select: text;
   }
-  
+
   /* Fix keyboard flickering */
-  input:focus, textarea:focus {
+  input:focus,
+  textarea:focus {
     outline: 2px solid #5A31F4;
   }
-  
+
   /* Anti-transform for form pages - prevents iOS cursor bugs */
   .form-page,
   .form-page * {
@@ -81,7 +89,7 @@ html, body, #root {
     backface-visibility: visible !important;
     will-change: auto !important;
   }
-  
+
   /* Overlays shouldn't steal taps while typing */
   .overlay-global {
     pointer-events: none;
@@ -90,15 +98,20 @@ html, body, #root {
 
 :root {
   /* Faith-centered color palette */
-  --background: hsl(35 30% 97%); /* Warm light ivory */
-  --foreground: hsl(235 45% 20%); /* Dark navy */
-  --card: hsl(0 0% 100%); /* Clean white */
+  --background: hsl(35 30% 97%);
+  /* Warm light ivory */
+  --foreground: hsl(235 45% 20%);
+  /* Dark navy */
+  --card: hsl(0 0% 100%);
+  /* Clean white */
   --card-foreground: hsl(235 45% 20%);
   --popover: hsl(0 0% 100%);
   --popover-foreground: hsl(235 45% 20%);
-  --primary: hsl(253 77% 58%); /* Deep royal purple */
+  --primary: hsl(253 77% 58%);
+  /* Deep royal purple */
   --primary-foreground: hsl(0 0% 100%);
-  --secondary: hsl(45 100% 75%); /* Soft gold */
+  --secondary: hsl(45 100% 75%);
+  /* Soft gold */
   --secondary-foreground: hsl(235 45% 20%);
   --muted: hsl(35 20% 94%);
   --muted-foreground: hsl(235 25% 45%);
@@ -126,28 +139,41 @@ html, body, #root {
   --font-serif: -apple-system-ui-serif, ui-serif, 'Times New Roman', serif;
   --font-mono: 'SF Mono', Monaco, Inconsolata, 'Roboto Mono', 'Source Code Pro', monospace;
   --radius: 0.75rem;
-  
+
   /* Native mobile spacing */
-  --mobile-spacing-xs: 0.25rem; /* 4px */
-  --mobile-spacing-sm: 0.5rem;  /* 8px */
-  --mobile-spacing-md: 1rem;    /* 16px */
-  --mobile-spacing-lg: 1.5rem;  /* 24px */
-  --mobile-spacing-xl: 2rem;    /* 32px */
-  
+  --mobile-spacing-xs: 0.25rem;
+  /* 4px */
+  --mobile-spacing-sm: 0.5rem;
+  /* 8px */
+  --mobile-spacing-md: 1rem;
+  /* 16px */
+  --mobile-spacing-lg: 1.5rem;
+  /* 24px */
+  --mobile-spacing-xl: 2rem;
+  /* 32px */
+
   /* Native mobile typography */
-  --mobile-text-xs: 0.75rem;   /* 12px */
-  --mobile-text-sm: 0.875rem;  /* 14px */
-  --mobile-text-base: 1rem;    /* 16px */
-  --mobile-text-lg: 1.125rem;  /* 18px */
-  --mobile-text-xl: 1.25rem;   /* 20px */
-  --mobile-text-2xl: 1.5rem;   /* 24px */
-  --mobile-text-3xl: 1.875rem; /* 30px */
-  
+  --mobile-text-xs: 0.75rem;
+  /* 12px */
+  --mobile-text-sm: 0.875rem;
+  /* 14px */
+  --mobile-text-base: 1rem;
+  /* 16px */
+  --mobile-text-lg: 1.125rem;
+  /* 18px */
+  --mobile-text-xl: 1.25rem;
+  /* 20px */
+  --mobile-text-2xl: 1.5rem;
+  /* 24px */
+  --mobile-text-3xl: 1.875rem;
+  /* 30px */
+
   /* Mobile touch targets */
-  --mobile-touch-target: 2.75rem; /* 44px - iOS minimum */
+  --mobile-touch-target: 2.75rem;
+  /* 44px - iOS minimum */
   --mobile-button-height: 2.75rem;
   --mobile-input-height: 2.75rem;
-  
+
   /* Mobile safe areas */
   --mobile-safe-top: env(safe-area-inset-top, 0px);
   --mobile-safe-bottom: env(safe-area-inset-bottom, 0px);
@@ -163,7 +189,7 @@ html, body, #root {
   --shadow-2xl: 0px 2px 0px 0px hsl(202.8169 89.1213% 53.1373% / 0.00);
   --tracking-normal: 0em;
   --spacing: 0.25rem;
-  
+
   /* Faith-centered custom variables */
   --faith-beige: hsl(35 25% 92%);
   --faith-ivory: hsl(35 30% 97%);
@@ -173,7 +199,7 @@ html, body, #root {
   --faith-light-purple: hsl(253 77% 95%);
   --faith-gradient-start: hsl(35 25% 92%);
   --faith-gradient-end: hsl(35 30% 97%);
-  
+
   /* Primary color variants for matching design */
   --primary-50: hsl(253 77% 95%);
   --primary-100: hsl(220 100% 94%);
@@ -185,7 +211,7 @@ html, body, #root {
   --primary-700: hsl(220 83% 35%);
   --primary-800: hsl(220 83% 27%);
   --primary-900: hsl(220 83% 19%);
-  
+
   /* Divine Gold */
   --gold-50: hsl(45 100% 96%);
   --gold-100: hsl(45 100% 91%);
@@ -195,7 +221,7 @@ html, body, #root {
   --gold-500: hsl(45 83% 47%);
   --gold-600: hsl(45 75% 39%);
   --gold-700: hsl(45 75% 31%);
-  
+
   /* Spiritual Purple */
   --purple-50: hsl(270 100% 98%);
   --purple-100: hsl(270 100% 95%);
@@ -205,7 +231,7 @@ html, body, #root {
   --purple-500: hsl(270 79% 59%);
   --purple-600: hsl(270 75% 49%);
   --purple-700: hsl(270 75% 39%);
-  
+
   /* Sacred Sage */
   --sage-50: hsl(150 20% 97%);
   --sage-100: hsl(150 20% 93%);
@@ -221,32 +247,39 @@ html, body, #root {
 
 .theme-heavenly {
   /* Heavenly Light theme - Divine palette with Royal Blue, Pure White, Golden Amber, Sky Blue */
-  --background: #8EC9F2; /* Sky Blue */
-  --foreground: #1A1A1A; /* Dark text for readability */
-  --card: #FFFFFF; /* Pure White */
+  --background: #8EC9F2;
+  /* Sky Blue */
+  --foreground: #1A1A1A;
+  /* Dark text for readability */
+  --card: #FFFFFF;
+  /* Pure White */
   --card-foreground: #1A1A1A;
   --popover: #FFFFFF;
   --popover-foreground: #1A1A1A;
-  --primary: #3B4CCA; /* Royal Blue */
+  --primary: #3B4CCA;
+  /* Royal Blue */
   --primary-foreground: #FFFFFF;
-  --secondary: #FFD662; /* Golden Amber */
+  --secondary: #FFD662;
+  /* Golden Amber */
   --secondary-foreground: #1A1A1A;
-  --muted: #E6F3FF; /* Light sky blue tint */
+  --muted: #E6F3FF;
+  /* Light sky blue tint */
   --muted-foreground: #4A5568;
-  --accent: #FFD662; /* Golden Amber */
+  --accent: #FFD662;
+  /* Golden Amber */
   --accent-foreground: #1A1A1A;
   --destructive: #E53E3E;
   --destructive-foreground: #FFFFFF;
   --border: #D1E7F5;
   --input: #FFFFFF;
   --ring: #3B4CCA;
-  
+
   /* Heavenly Light specific variables using new colors */
   --heavenly-pure-white: #FFFFFF;
   --heavenly-sky-blue: #8EC9F2;
   --heavenly-royal-blue: #3B4CCA;
   --heavenly-golden-amber: #FFD662;
-  
+
   /* Override all primary color variants for Heavenly Light */
   --primary-50: #E6F3FF;
   --primary-100: #CCE7FF;
@@ -258,7 +291,7 @@ html, body, #root {
   --primary-700: #1F2D9E;
   --primary-800: #152085;
   --primary-900: #0D166B;
-  
+
   /* Override all purple variants to use Royal Blue for Heavenly Light */
   --purple-50: #E6F3FF;
   --purple-100: #CCE7FF;
@@ -270,7 +303,7 @@ html, body, #root {
   --purple-700: #1F2D9E;
   --purple-800: #152085;
   --purple-900: #0D166B;
-  
+
   /* Override gold variants for Heavenly Light */
   --gold-50: #FFFBEB;
   --gold-100: #FFF3C4;
@@ -280,20 +313,20 @@ html, body, #root {
   --gold-500: #FFB800;
   --gold-600: #E6A500;
   --gold-700: #CC9400;
-  
+
   /* Custom spiritual gradients for Heavenly Light */
   --heavenly-gradient-bg: linear-gradient(135deg, #FFFFFF 0%, #8EC9F2 50%, #E6F3FF 100%);
   --heavenly-card-gradient: linear-gradient(145deg, #FFFFFF 0%, #F0F8FF 100%);
   --heavenly-button-gradient: linear-gradient(135deg, #3B4CCA 0%, #2A3BB8 100%);
   --heavenly-accent-gradient: linear-gradient(135deg, #FFD662 0%, #FFFFFF 100%);
-  
+
   /* Chart colors for Heavenly Light */
   --chart-1: hsl(215 50% 75%);
   --chart-2: hsl(45 60% 85%);
   --chart-3: hsl(215 30% 88%);
   --chart-4: hsl(215 60% 95%);
   --chart-5: hsl(0 0% 100%);
-  
+
   /* Sidebar colors for Heavenly Light */
   --sidebar: var(--heavenly-sky-blue);
   --sidebar-foreground: hsl(220 20% 25%);
@@ -317,520 +350,524 @@ html, body, #root {
     min-height: 100vh;
   }
 
-/* Primary color utilities */
-.bg-primary-50 {
-  background-color: var(--primary-50);
-}
-
-.bg-primary-500 {
-  background-color: var(--primary-500);
-}
-
-.bg-primary-600 {
-  background-color: var(--primary-600);
-}
-
-.bg-primary-700 {
-  background-color: var(--primary-700);
-}
-
-.text-primary-500 {
-  color: var(--primary-500);
-}
-
-.text-primary-600 {
-  color: var(--primary-600);
-}
-
-.hover\:bg-primary-700:hover {
-  background-color: var(--primary-700);
-}
-
-/* Faith-centered typography and styles */
-.font-serif {
-  font-family: 'Playfair Display', Georgia, serif;
-}
-
-.font-sans {
-  font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
-}
-
-/* Faith-inspired animations */
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
+  /* Primary color utilities */
+  .bg-primary-50 {
+    background-color: var(--primary-50);
   }
-  to {
-    opacity: 1;
-    transform: translateY(0);
+
+  .bg-primary-500 {
+    background-color: var(--primary-500);
   }
-}
 
-@keyframes glow {
-  0%, 100% {
-    box-shadow: 0 0 10px rgba(90, 49, 244, 0.2);
+  .bg-primary-600 {
+    background-color: var(--primary-600);
   }
-  50% {
-    box-shadow: 0 0 20px rgba(90, 49, 244, 0.4), 0 0 30px rgba(90, 49, 244, 0.2);
+
+  .bg-primary-700 {
+    background-color: var(--primary-700);
   }
-}
 
-@keyframes lightRays {
-  0% {
-    background-position: 0% 50%;
+  .text-primary-500 {
+    color: var(--primary-500);
   }
-  50% {
-    background-position: 100% 50%;
+
+  .text-primary-600 {
+    color: var(--primary-600);
   }
-  100% {
-    background-position: 0% 50%;
+
+  .hover\:bg-primary-700:hover {
+    background-color: var(--primary-700);
   }
-}
-
-.animate-fadeInUp {
-  animation: fadeInUp 0.6s ease-out;
-}
-
-.animate-glow {
-  animation: glow 2s infinite;
-}
-
-.light-rays {
-  background: linear-gradient(
-    45deg,
-    transparent 30%,
-    rgba(255, 217, 125, 0.1) 50%,
-    transparent 70%
-  );
-  background-size: 200% 200%;
-  animation: lightRays 4s ease-in-out infinite;
-}
-
-/* Scripture quote styling */
-.scripture-quote {
-  position: relative;
-  font-style: italic;
-  text-align: center;
-  color: hsl(var(--faith-navy));
-}
-
-.scripture-quote::before,
-.scripture-quote::after {
-  content: '"';
-  font-size: 1.5em;
-  color: hsl(var(--faith-gold));
-  opacity: 0.7;
-}
-
-/* Faith-inspired gradient backgrounds */
-.faith-gradient-bg {
-  background: linear-gradient(135deg, hsl(var(--faith-gradient-start)), hsl(var(--faith-gradient-end)));
-}
-
-.faith-card-gradient {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7));
-  backdrop-filter: blur(10px);
-}
-
-/* Modern button with faith styling */
-.faith-button {
-  background: linear-gradient(135deg, hsl(var(--faith-purple)), hsl(253, 77%, 68%));
-  border: none;
-  border-radius: 1rem;
-  padding: 0.75rem 2rem;
-  color: white;
-  font-weight: 600;
-  font-family: 'Inter', sans-serif;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(90, 49, 244, 0.2);
-}
-
-.faith-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(90, 49, 244, 0.3);
-  animation: glow 1s ease-in-out;
-}
-
-/* Bible silhouette watermark for scripture cards */
-.scripture-watermark {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  opacity: 0.05;
-  z-index: 0;
-  font-size: 8rem;
-  color: hsl(var(--faith-purple));
-  pointer-events: none;
-}
-
-.hover\:text-primary-500:hover {
-  color: var(--primary-500);
-}
-
-.focus\:ring-primary-500:focus {
-  --tw-ring-color: var(--primary-500);
-}
-
-/* Theme-specific body backgrounds */
-.theme-light body {
-  background: linear-gradient(135deg, hsl(35 25% 92%) 0%, hsl(35 30% 97%) 100%) !important;
-  background-attachment: fixed;
-}
-
-.theme-heavenly body {
-  background: linear-gradient(135deg, #FFFFFF 0%, #8EC9F2 50%, #E6F3FF 100%) !important;
-  background-attachment: fixed;
-}
-
-/* Heavenly Light theme specific overrides */
-
-.theme-heavenly .faith-card-gradient {
-  background: linear-gradient(145deg, #FFFFFF 0%, #F0F8FF 100%) !important;
-  border: 1px solid #D1E7F5 !important;
-  box-shadow: 0 4px 16px rgba(59, 76, 202, 0.1), 0 8px 32px rgba(142, 201, 242, 0.1) !important;
-}
-
-.theme-heavenly .bg-gradient-to-r.from-purple-600,
-.theme-heavenly .bg-gradient-to-r.from-purple-700,
-.theme-heavenly .bg-gradient-to-br.from-purple-600 {
-  background: var(--heavenly-button-gradient) !important;
-}
-
-.theme-heavenly .bg-gradient-to-r.from-gold-500 {
-  background: var(--heavenly-accent-gradient) !important;
-}
-
-/* Comprehensive color overrides for Heavenly Light theme */
-.theme-heavenly .text-primary-800,
-.theme-heavenly .text-purple-800 {
-  color: #1A1A1A !important;
-}
-
-.theme-heavenly .text-primary-600,
-.theme-heavenly .text-purple-600 {
-  color: #3B4CCA !important;
-}
-
-.theme-heavenly .text-primary-700,
-.theme-heavenly .text-purple-700 {
-  color: #1F2D9E !important;
-}
-
-.theme-heavenly .text-primary-500,
-.theme-heavenly .text-purple-500 {
-  color: #3B4CCA !important;
-}
-
-.theme-heavenly .border-purple-200,
-.theme-heavenly .border-primary-200 {
-  border-color: #D1E7F5 !important;
-}
-
-.theme-heavenly .bg-white {
-  background-color: #FFFFFF !important;
-}
-
-.theme-heavenly .bg-primary-50,
-.theme-heavenly .bg-purple-50 {
-  background-color: #E6F3FF !important;
-}
-
-.theme-heavenly .bg-primary-100,
-.theme-heavenly .bg-purple-100 {
-  background-color: #CCE7FF !important;
-}
-
-.theme-heavenly .bg-primary-500,
-.theme-heavenly .bg-purple-500 {
-  background-color: #3B4CCA !important;
-}
-
-.theme-heavenly .bg-primary-600,
-.theme-heavenly .bg-purple-600 {
-  background-color: #2A3BB8 !important;
-}
-
-.theme-heavenly .bg-primary-700,
-.theme-heavenly .bg-purple-700 {
-  background-color: #1F2D9E !important;
-}
-
-.theme-heavenly .hover\:bg-primary-700:hover,
-.theme-heavenly .hover\:bg-purple-700:hover {
-  background: #1F2D9E !important;
-}
-
-/* Fix all gradient backgrounds in Heavenly Light */
-.theme-heavenly .bg-gradient-to-br.from-purple-600.to-blue-600,
-.theme-heavenly .bg-gradient-to-br.from-purple-600,
-.theme-heavenly .bg-gradient-to-r.from-purple-600,
-.theme-heavenly .bg-gradient-to-r.from-purple-700 {
-  background: var(--heavenly-button-gradient) !important;
-}
-
-.theme-heavenly .bg-gradient-to-r.from-gold-500,
-.theme-heavenly .bg-gradient-to-r.from-gold-600 {
-  background: var(--heavenly-accent-gradient) !important;
-}
-
-/* Override hover states for Heavenly Light */
-.theme-heavenly .hover\:bg-gradient-to-r.hover\:from-primary-50.hover\:to-purple-50:hover {
-  background: linear-gradient(to right, #E6F3FF 0%, #CCE7FF 100%) !important;
-}
-
-/* Remove any remaining purple/pink colors */
-.theme-heavenly .from-purple-50,
-.theme-heavenly .to-purple-50,
-.theme-heavenly .via-purple-500,
-.theme-heavenly .from-purple-100,
-.theme-heavenly .to-purple-100 {
-  background: linear-gradient(to right, #E6F3FF 0%, #CCE7FF 100%) !important;
-}
-
-.border-primary-500 {
-  border-color: var(--primary-500);
-}
-
-.focus\:border-primary-500:focus {
-  border-color: var(--primary-500);
-}
-
-/* Gold color utilities */
-.bg-gold-50 {
-  background-color: var(--gold-50);
-}
-
-.bg-gold-100 {
-  background-color: var(--gold-100);
-}
-
-.bg-gold-500 {
-  background-color: var(--gold-500);
-}
-
-.bg-gold-600 {
-  background-color: var(--gold-600);
-}
-
-.text-gold-500 {
-  color: var(--gold-500);
-}
-
-.text-gold-600 {
-  color: var(--gold-600);
-}
-
-.text-gold-700 {
-  color: var(--gold-700);
-}
-
-.text-gold-800 {
-  color: var(--gold-800);
-}
-
-.border-gold-300 {
-  border-color: var(--gold-300);
-}
-
-.border-gold-500 {
-  border-color: var(--gold-500);
-}
-
-.focus\:ring-gold-500:focus {
-  --tw-ring-color: var(--gold-500);
-}
-
-.focus\:border-gold-500:focus {
-  border-color: var(--gold-500);
-}
-
-.from-gold-100 {
-  --tw-gradient-from: var(--gold-100);
-}
-
-.to-gold-200 {
-  --tw-gradient-to: var(--gold-200);
-}
-
-.via-gold-50 {
-  --tw-gradient-via: var(--gold-50);
-}
-
-.via-gold-500 {
-  --tw-gradient-via: var(--gold-500);
-}
-
-.from-gold-200 {
-  --tw-gradient-from: var(--gold-200);
-}
-
-.to-gold-200 {
-  --tw-gradient-to: var(--gold-200);
-}
-
-/* Purple color utilities */
-.bg-purple-50 {
-  background-color: var(--purple-50);
-}
-
-.bg-purple-100 {
-  background-color: var(--purple-100);
-}
-
-.bg-purple-500 {
-  background-color: var(--purple-500);
-}
-
-.bg-purple-600 {
-  background-color: var(--purple-600);
-}
-
-.text-purple-600 {
-  color: var(--purple-600);
-}
-
-.text-purple-700 {
-  color: var(--purple-700);
-}
-
-.from-purple-50 {
-  --tw-gradient-from: var(--purple-50);
-}
-
-.to-purple-50 {
-  --tw-gradient-to: var(--purple-50);
-}
-
-.via-purple-500 {
-  --tw-gradient-via: var(--purple-500);
-}
-
-.from-purple-600 {
-  --tw-gradient-from: var(--purple-600);
-}
-
-.to-purple-600 {
-  --tw-gradient-to: var(--purple-600);
-}
-
-.via-purple-600 {
-  --tw-gradient-via: var(--purple-600);
-}
-
-.via-purple-700 {
-  --tw-gradient-via: var(--purple-700);
-}
-
-.from-purple-100 {
-  --tw-gradient-from: var(--purple-100);
-}
-
-.to-purple-100 {
-  --tw-gradient-to: var(--purple-100);
-}
-
-.from-purple-200 {
-  --tw-gradient-from: var(--purple-200);
-}
-
-.to-purple-200 {
-  --tw-gradient-to: var(--purple-200);
-}
-
-/* Sage color utilities */
-.bg-sage-50 {
-  background-color: var(--sage-50);
-}
-
-.bg-sage-100 {
-  background-color: var(--sage-100);
-}
-
-.text-sage-600 {
-  color: var(--sage-600);
-}
-
-.text-sage-700 {
-  color: var(--sage-700);
-}
-
-.border-sage-200 {
-  border-color: var(--sage-200);
-}
-
-.from-sage-100 {
-  --tw-gradient-from: var(--sage-100);
-}
-
-.to-sage-50 {
-  --tw-gradient-to: var(--sage-50);
-}
-
-.from-sage-200 {
-  --tw-gradient-from: var(--sage-200);
-}
-
-.to-sage-100 {
-  --tw-gradient-to: var(--sage-100);
-}
-
-.border-sage-200 {
-  border-color: var(--sage-200);
-}
-
-/* Theme-specific overrides */
-.theme-light {
-  --primary: hsl(262.1 83.3% 57.8%);
-  --secondary: hsl(45 83% 47%);
-  --background: hsl(0 0% 100%);
-  --foreground: hsl(220 83% 19%);
-}
-
-.theme-dark {
-  --background: hsl(222.2 84% 4.9%);
-  --foreground: hsl(210 40% 98%);
-  --primary: hsl(217.2 91.2% 69.8%);
-  --primary-foreground: hsl(222.2 84% 4.9%);
-  --secondary: hsl(217.2 32.6% 80%);
-  --secondary-foreground: hsl(222.2 84% 4.9%);
-  --card: hsl(222.2 84% 8%);
-  --card-foreground: hsl(210 40% 98%);
-  --border: hsl(217.2 32.6% 25%);
-  --input: hsl(217.2 32.6% 17.5%);
-  --ring: hsl(217.2 91.2% 69.8%);
-  --muted: hsl(217.2 32.6% 17.5%);
-  --muted-foreground: hsl(215 20.2% 65.1%);
-  --accent: hsl(217.2 32.6% 17.5%);
-  --accent-foreground: hsl(210 40% 98%);
-  --popover: hsl(222.2 84% 4.9%);
-  --popover-foreground: hsl(210 40% 98%);
-  --destructive: hsl(0 62.8% 50.6%);
-  --destructive-foreground: hsl(210 40% 98%);
-  
-  /* Primary color variants for dark mode */
-  --primary-50: hsl(217.2 32.6% 17.5%);
-  --primary-100: hsl(217.2 32.6% 25%);
-  --primary-200: hsl(217.2 32.6% 35%);
-  --primary-300: hsl(217.2 50% 45%);
-  --primary-400: hsl(217.2 70% 55%);
-  --primary-500: hsl(217.2 91.2% 69.8%);
-  --primary-600: hsl(217.2 91.2% 75%);
-  --primary-700: hsl(217.2 91.2% 80%);
-  --primary-800: hsl(217.2 91.2% 85%);
-  --primary-900: hsl(217.2 91.2% 90%);
-  
-  /* Purple variants for dark mode */
-  --purple-50: hsl(270 20% 20%);
-  --purple-100: hsl(270 30% 30%);
-  --purple-200: hsl(270 40% 40%);
-  --purple-300: hsl(270 50% 50%);
-  --purple-400: hsl(270 60% 60%);
-  --purple-500: hsl(270 70% 70%);
-  --purple-600: hsl(270 80% 80%);
-  --purple-700: hsl(270 85% 85%);
-}
+
+  /* Faith-centered typography and styles */
+  .font-serif {
+    font-family: 'Playfair Display', Georgia, serif;
+  }
+
+  .font-sans {
+    font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  }
+
+  /* Faith-inspired animations */
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes glow {
+
+    0%,
+    100% {
+      box-shadow: 0 0 10px rgba(90, 49, 244, 0.2);
+    }
+
+    50% {
+      box-shadow: 0 0 20px rgba(90, 49, 244, 0.4), 0 0 30px rgba(90, 49, 244, 0.2);
+    }
+  }
+
+  @keyframes lightRays {
+    0% {
+      background-position: 0% 50%;
+    }
+
+    50% {
+      background-position: 100% 50%;
+    }
+
+    100% {
+      background-position: 0% 50%;
+    }
+  }
+
+  .animate-fadeInUp {
+    animation: fadeInUp 0.6s ease-out;
+  }
+
+  .animate-glow {
+    animation: glow 2s infinite;
+  }
+
+  .light-rays {
+    background: linear-gradient(45deg,
+        transparent 30%,
+        rgba(255, 217, 125, 0.1) 50%,
+        transparent 70%);
+    background-size: 200% 200%;
+    animation: lightRays 4s ease-in-out infinite;
+  }
+
+  /* Scripture quote styling */
+  .scripture-quote {
+    position: relative;
+    font-style: italic;
+    text-align: center;
+    color: hsl(var(--faith-navy));
+  }
+
+  .scripture-quote::before,
+  .scripture-quote::after {
+    content: '"';
+    font-size: 1.5em;
+    color: hsl(var(--faith-gold));
+    opacity: 0.7;
+  }
+
+  /* Faith-inspired gradient backgrounds */
+  .faith-gradient-bg {
+    background: linear-gradient(135deg, hsl(var(--faith-gradient-start)), hsl(var(--faith-gradient-end)));
+  }
+
+  .faith-card-gradient {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7));
+    backdrop-filter: blur(10px);
+  }
+
+  /* Modern button with faith styling */
+  .faith-button {
+    background: linear-gradient(135deg, hsl(var(--faith-purple)), hsl(253, 77%, 68%));
+    border: none;
+    border-radius: 1rem;
+    padding: 0.75rem 2rem;
+    color: white;
+    font-weight: 600;
+    font-family: 'Inter', sans-serif;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(90, 49, 244, 0.2);
+  }
+
+  .faith-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(90, 49, 244, 0.3);
+    animation: glow 1s ease-in-out;
+  }
+
+  /* Bible silhouette watermark for scripture cards */
+  .scripture-watermark {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    opacity: 0.05;
+    z-index: 0;
+    font-size: 8rem;
+    color: hsl(var(--faith-purple));
+    pointer-events: none;
+  }
+
+  .hover\:text-primary-500:hover {
+    color: var(--primary-500);
+  }
+
+  .focus\:ring-primary-500:focus {
+    --tw-ring-color: var(--primary-500);
+  }
+
+  /* Theme-specific body backgrounds */
+  .theme-light body {
+    background: linear-gradient(135deg, hsl(35 25% 92%) 0%, hsl(35 30% 97%) 100%) !important;
+    background-attachment: fixed;
+  }
+
+  .theme-heavenly body {
+    background: linear-gradient(135deg, #FFFFFF 0%, #8EC9F2 50%, #E6F3FF 100%) !important;
+    background-attachment: fixed;
+  }
+
+  /* Heavenly Light theme specific overrides */
+
+  .theme-heavenly .faith-card-gradient {
+    background: linear-gradient(145deg, #FFFFFF 0%, #F0F8FF 100%) !important;
+    border: 1px solid #D1E7F5 !important;
+    box-shadow: 0 4px 16px rgba(59, 76, 202, 0.1), 0 8px 32px rgba(142, 201, 242, 0.1) !important;
+  }
+
+  .theme-heavenly .bg-gradient-to-r.from-purple-600,
+  .theme-heavenly .bg-gradient-to-r.from-purple-700,
+  .theme-heavenly .bg-gradient-to-br.from-purple-600 {
+    background: var(--heavenly-button-gradient) !important;
+  }
+
+  .theme-heavenly .bg-gradient-to-r.from-gold-500 {
+    background: var(--heavenly-accent-gradient) !important;
+  }
+
+  /* Comprehensive color overrides for Heavenly Light theme */
+  .theme-heavenly .text-primary-800,
+  .theme-heavenly .text-purple-800 {
+    color: #1A1A1A !important;
+  }
+
+  .theme-heavenly .text-primary-600,
+  .theme-heavenly .text-purple-600 {
+    color: #3B4CCA !important;
+  }
+
+  .theme-heavenly .text-primary-700,
+  .theme-heavenly .text-purple-700 {
+    color: #1F2D9E !important;
+  }
+
+  .theme-heavenly .text-primary-500,
+  .theme-heavenly .text-purple-500 {
+    color: #3B4CCA !important;
+  }
+
+  .theme-heavenly .border-purple-200,
+  .theme-heavenly .border-primary-200 {
+    border-color: #D1E7F5 !important;
+  }
+
+  .theme-heavenly .bg-white {
+    background-color: #FFFFFF !important;
+  }
+
+  .theme-heavenly .bg-primary-50,
+  .theme-heavenly .bg-purple-50 {
+    background-color: #E6F3FF !important;
+  }
+
+  .theme-heavenly .bg-primary-100,
+  .theme-heavenly .bg-purple-100 {
+    background-color: #CCE7FF !important;
+  }
+
+  .theme-heavenly .bg-primary-500,
+  .theme-heavenly .bg-purple-500 {
+    background-color: #3B4CCA !important;
+  }
+
+  .theme-heavenly .bg-primary-600,
+  .theme-heavenly .bg-purple-600 {
+    background-color: #2A3BB8 !important;
+  }
+
+  .theme-heavenly .bg-primary-700,
+  .theme-heavenly .bg-purple-700 {
+    background-color: #1F2D9E !important;
+  }
+
+  .theme-heavenly .hover\:bg-primary-700:hover,
+  .theme-heavenly .hover\:bg-purple-700:hover {
+    background: #1F2D9E !important;
+  }
+
+  /* Fix all gradient backgrounds in Heavenly Light */
+  .theme-heavenly .bg-gradient-to-br.from-purple-600.to-blue-600,
+  .theme-heavenly .bg-gradient-to-br.from-purple-600,
+  .theme-heavenly .bg-gradient-to-r.from-purple-600,
+  .theme-heavenly .bg-gradient-to-r.from-purple-700 {
+    background: var(--heavenly-button-gradient) !important;
+  }
+
+  .theme-heavenly .bg-gradient-to-r.from-gold-500,
+  .theme-heavenly .bg-gradient-to-r.from-gold-600 {
+    background: var(--heavenly-accent-gradient) !important;
+  }
+
+  /* Override hover states for Heavenly Light */
+  .theme-heavenly .hover\:bg-gradient-to-r.hover\:from-primary-50.hover\:to-purple-50:hover {
+    background: linear-gradient(to right, #E6F3FF 0%, #CCE7FF 100%) !important;
+  }
+
+  /* Remove any remaining purple/pink colors */
+  .theme-heavenly .from-purple-50,
+  .theme-heavenly .to-purple-50,
+  .theme-heavenly .via-purple-500,
+  .theme-heavenly .from-purple-100,
+  .theme-heavenly .to-purple-100 {
+    background: linear-gradient(to right, #E6F3FF 0%, #CCE7FF 100%) !important;
+  }
+
+  .border-primary-500 {
+    border-color: var(--primary-500);
+  }
+
+  .focus\:border-primary-500:focus {
+    border-color: var(--primary-500);
+  }
+
+  /* Gold color utilities */
+  .bg-gold-50 {
+    background-color: var(--gold-50);
+  }
+
+  .bg-gold-100 {
+    background-color: var(--gold-100);
+  }
+
+  .bg-gold-500 {
+    background-color: var(--gold-500);
+  }
+
+  .bg-gold-600 {
+    background-color: var(--gold-600);
+  }
+
+  .text-gold-500 {
+    color: var(--gold-500);
+  }
+
+  .text-gold-600 {
+    color: var(--gold-600);
+  }
+
+  .text-gold-700 {
+    color: var(--gold-700);
+  }
+
+  .text-gold-800 {
+    color: var(--gold-800);
+  }
+
+  .border-gold-300 {
+    border-color: var(--gold-300);
+  }
+
+  .border-gold-500 {
+    border-color: var(--gold-500);
+  }
+
+  .focus\:ring-gold-500:focus {
+    --tw-ring-color: var(--gold-500);
+  }
+
+  .focus\:border-gold-500:focus {
+    border-color: var(--gold-500);
+  }
+
+  .from-gold-100 {
+    --tw-gradient-from: var(--gold-100);
+  }
+
+  .to-gold-200 {
+    --tw-gradient-to: var(--gold-200);
+  }
+
+  .via-gold-50 {
+    --tw-gradient-via: var(--gold-50);
+  }
+
+  .via-gold-500 {
+    --tw-gradient-via: var(--gold-500);
+  }
+
+  .from-gold-200 {
+    --tw-gradient-from: var(--gold-200);
+  }
+
+  .to-gold-200 {
+    --tw-gradient-to: var(--gold-200);
+  }
+
+  /* Purple color utilities */
+  .bg-purple-50 {
+    background-color: var(--purple-50);
+  }
+
+  .bg-purple-100 {
+    background-color: var(--purple-100);
+  }
+
+  .bg-purple-500 {
+    background-color: var(--purple-500);
+  }
+
+  .bg-purple-600 {
+    background-color: var(--purple-600);
+  }
+
+  .text-purple-600 {
+    color: var(--purple-600);
+  }
+
+  .text-purple-700 {
+    color: var(--purple-700);
+  }
+
+  .from-purple-50 {
+    --tw-gradient-from: var(--purple-50);
+  }
+
+  .to-purple-50 {
+    --tw-gradient-to: var(--purple-50);
+  }
+
+  .via-purple-500 {
+    --tw-gradient-via: var(--purple-500);
+  }
+
+  .from-purple-600 {
+    --tw-gradient-from: var(--purple-600);
+  }
+
+  .to-purple-600 {
+    --tw-gradient-to: var(--purple-600);
+  }
+
+  .via-purple-600 {
+    --tw-gradient-via: var(--purple-600);
+  }
+
+  .via-purple-700 {
+    --tw-gradient-via: var(--purple-700);
+  }
+
+  .from-purple-100 {
+    --tw-gradient-from: var(--purple-100);
+  }
+
+  .to-purple-100 {
+    --tw-gradient-to: var(--purple-100);
+  }
+
+  .from-purple-200 {
+    --tw-gradient-from: var(--purple-200);
+  }
+
+  .to-purple-200 {
+    --tw-gradient-to: var(--purple-200);
+  }
+
+  /* Sage color utilities */
+  .bg-sage-50 {
+    background-color: var(--sage-50);
+  }
+
+  .bg-sage-100 {
+    background-color: var(--sage-100);
+  }
+
+  .text-sage-600 {
+    color: var(--sage-600);
+  }
+
+  .text-sage-700 {
+    color: var(--sage-700);
+  }
+
+  .border-sage-200 {
+    border-color: var(--sage-200);
+  }
+
+  .from-sage-100 {
+    --tw-gradient-from: var(--sage-100);
+  }
+
+  .to-sage-50 {
+    --tw-gradient-to: var(--sage-50);
+  }
+
+  .from-sage-200 {
+    --tw-gradient-from: var(--sage-200);
+  }
+
+  .to-sage-100 {
+    --tw-gradient-to: var(--sage-100);
+  }
+
+  .border-sage-200 {
+    border-color: var(--sage-200);
+  }
+
+  /* Theme-specific overrides */
+  .theme-light {
+    --primary: hsl(262.1 83.3% 57.8%);
+    --secondary: hsl(45 83% 47%);
+    --background: hsl(0 0% 100%);
+    --foreground: hsl(220 83% 19%);
+  }
+
+  .theme-dark {
+    --background: hsl(222.2 84% 4.9%);
+    --foreground: hsl(210 40% 98%);
+    --primary: hsl(217.2 91.2% 69.8%);
+    --primary-foreground: hsl(222.2 84% 4.9%);
+    --secondary: hsl(217.2 32.6% 80%);
+    --secondary-foreground: hsl(222.2 84% 4.9%);
+    --card: hsl(222.2 84% 8%);
+    --card-foreground: hsl(210 40% 98%);
+    --border: hsl(217.2 32.6% 25%);
+    --input: hsl(217.2 32.6% 17.5%);
+    --ring: hsl(217.2 91.2% 69.8%);
+    --muted: hsl(217.2 32.6% 17.5%);
+    --muted-foreground: hsl(215 20.2% 65.1%);
+    --accent: hsl(217.2 32.6% 17.5%);
+    --accent-foreground: hsl(210 40% 98%);
+    --popover: hsl(222.2 84% 4.9%);
+    --popover-foreground: hsl(210 40% 98%);
+    --destructive: hsl(0 62.8% 50.6%);
+    --destructive-foreground: hsl(210 40% 98%);
+
+    /* Primary color variants for dark mode */
+    --primary-50: hsl(217.2 32.6% 17.5%);
+    --primary-100: hsl(217.2 32.6% 25%);
+    --primary-200: hsl(217.2 32.6% 35%);
+    --primary-300: hsl(217.2 50% 45%);
+    --primary-400: hsl(217.2 70% 55%);
+    --primary-500: hsl(217.2 91.2% 69.8%);
+    --primary-600: hsl(217.2 91.2% 75%);
+    --primary-700: hsl(217.2 91.2% 80%);
+    --primary-800: hsl(217.2 91.2% 85%);
+    --primary-900: hsl(217.2 91.2% 90%);
+
+    /* Purple variants for dark mode */
+    --purple-50: hsl(270 20% 20%);
+    --purple-100: hsl(270 30% 30%);
+    --purple-200: hsl(270 40% 40%);
+    --purple-300: hsl(270 50% 50%);
+    --purple-400: hsl(270 60% 60%);
+    --purple-500: hsl(270 70% 70%);
+    --purple-600: hsl(270 80% 80%);
+    --purple-700: hsl(270 85% 85%);
+  }
 }
 
 /* Custom scrollbar styles for Guidelines modal */
@@ -866,6 +903,7 @@ html, body, #root {
 
 /* Ensure mobile form portal and children have no transforms */
 @media (max-width: 768px) {
+
   #mobile-form-portal,
   #mobile-form-portal * {
     transform: none !important;
@@ -883,6 +921,14 @@ html, body, #root {
 }
 
 /* iOS can require this for reliable caret & selection */
-input, textarea {
+input,
+textarea {
   -webkit-user-select: text;
+}
+
+/* Prevent hidden/closed overlays from eating clicks */
+[aria-hidden="true"],
+[hidden],
+[data-state="closed"] {
+  pointer-events: none !important;
 }

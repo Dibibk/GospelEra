@@ -27,443 +27,438 @@ import MobileApp from "../pages/MobileApp";
 
 export function AnimatedRoutes() {
   const location = useLocation();
-  const isMobile = typeof window !== 'undefined' && window.matchMedia('(max-width: 768px)').matches;
+  const isMobile =
+    typeof window !== "undefined" &&
+    window.matchMedia("(max-width: 768px)").matches;
 
   if (isMobile) {
     // No AnimatePresence, no key={location.pathname} on mobile
     return (
       <Routes location={location}>
-        <Route 
-          path="/login" 
+        <Route
+          path="/login"
           element={
             <PageTransition>
               <Login />
             </PageTransition>
-          } 
+          }
         />
-        <Route 
-          path="/forgot-password" 
+        <Route
+          path="/forgot-password"
           element={
             <PageTransition>
               <ForgotPassword />
             </PageTransition>
-          } 
+          }
         />
-        <Route 
-          path="/reset-password" 
+        <Route
+          path="/reset-password"
           element={
             <PageTransition>
               <ResetPassword />
             </PageTransition>
-          } 
+          }
         />
-        <Route 
-          path="/" 
+        <Route
+          path="/"
           element={
             <ProtectedRoute>
               <PageTransition>
                 <Dashboard />
               </PageTransition>
             </ProtectedRoute>
-          } 
+          }
         />
-        <Route 
-          path="/dashboard" 
+        <Route
+          path="/dashboard"
           element={
             <ProtectedRoute>
               <PageTransition>
                 <Dashboard />
               </PageTransition>
             </ProtectedRoute>
-          } 
+          }
         />
-        <Route 
-          path="/profile" 
+        <Route
+          path="/profile"
           element={
             <ProtectedRoute>
               <PageTransition>
                 <Profile />
               </PageTransition>
             </ProtectedRoute>
-          } 
+          }
         />
-        <Route 
-          path="/profile/:id" 
+        <Route
+          path="/profile/:id"
           element={
             <ProtectedRoute>
               <PageTransition>
                 <PublicProfile />
               </PageTransition>
             </ProtectedRoute>
-          } 
+          }
         />
-        <Route 
-          path="/settings" 
+        <Route
+          path="/settings"
           element={
             <ProtectedRoute>
               <PageTransition>
                 <Settings />
               </PageTransition>
             </ProtectedRoute>
-          } 
+          }
         />
-        <Route 
-          path="/saved" 
+        <Route
+          path="/saved"
           element={
             <ProtectedRoute>
               <PageTransition>
                 <SavedPosts />
               </PageTransition>
             </ProtectedRoute>
-          } 
+          }
         />
-        <Route 
-          path="/admin/reports" 
+        <Route
+          path="/admin/reports"
           element={
             <ProtectedRoute>
               <PageTransition>
                 <AdminReports />
               </PageTransition>
             </ProtectedRoute>
-          } 
+          }
         />
-        <Route 
-          path="/admin/media-requests" 
+        <Route
+          path="/admin/media-requests"
           element={
             <ProtectedRoute>
               <PageTransition>
                 <AdminMediaRequests />
               </PageTransition>
             </ProtectedRoute>
-          } 
+          }
         />
-        <Route 
-          path="/admin/users" 
+        <Route
+          path="/admin/users"
           element={
             <ProtectedRoute>
               <PageTransition>
                 <AdminSupport />
               </PageTransition>
             </ProtectedRoute>
-          } 
+          }
         />
-        <Route 
-          path="/guidelines" 
+        <Route
+          path="/guidelines"
           element={
             <ProtectedRoute>
               <PageTransition>
                 <Guidelines />
               </PageTransition>
             </ProtectedRoute>
-          } 
+          }
         />
-        <Route 
-          path="/support" 
+        <Route
+          path="/support"
           element={
             <ProtectedRoute>
               <PageTransition>
                 <Donate />
               </PageTransition>
             </ProtectedRoute>
-          } 
+          }
         />
-        <Route 
-          path="/support/thanks" 
+        <Route
+          path="/support/thanks"
           element={
             <ProtectedRoute>
               <PageTransition>
                 <DonateThanks />
               </PageTransition>
             </ProtectedRoute>
-          } 
+          }
         />
-        <Route 
-          path="/admin/support" 
+        <Route
+          path="/admin/support"
           element={
             <ProtectedRoute>
               <PageTransition>
                 <AdminDonations />
               </PageTransition>
             </ProtectedRoute>
-          } 
+          }
         />
-        <Route 
-          path="/prayer/new" 
+        <Route
+          path="/prayer/new"
           element={
             <ProtectedRoute>
               <PageTransition>
                 <PrayerNew />
               </PageTransition>
             </ProtectedRoute>
-          } 
+          }
         />
-        <Route 
-          path="/prayer/browse" 
+        <Route
+          path="/prayer/browse"
           element={
             <ProtectedRoute>
               <PageTransition>
                 <PrayerBrowse />
               </PageTransition>
             </ProtectedRoute>
-          } 
+          }
         />
-        <Route 
-          path="/prayer/:id" 
+        <Route
+          path="/prayer/:id"
           element={
             <ProtectedRoute>
               <PageTransition>
                 <PrayerDetail />
               </PageTransition>
             </ProtectedRoute>
-          } 
+          }
         />
-        <Route 
-          path="/prayer/my" 
+        <Route
+          path="/prayer/my"
           element={
             <ProtectedRoute>
               <PageTransition>
                 <PrayerMy />
               </PageTransition>
             </ProtectedRoute>
-          } 
+          }
         />
-        <Route 
-          path="/prayer/leaderboard" 
+        <Route
+          path="/prayer/leaderboard"
           element={
             <ProtectedRoute>
               <PageTransition>
                 <PrayerLeaderboard />
               </PageTransition>
             </ProtectedRoute>
-          } 
+          }
         />
-        <Route 
-          path="/mobile" 
+        <Route
+          path="/mobile"
           element={
             <PageTransition>
               <MobileApp />
             </PageTransition>
-          } 
+          }
         />
       </Routes>
     );
   }
-  
+
   return (
     <AnimatePresence mode="wait" initial={false}>
       <Routes location={location} key={location.pathname}>
-        <Route 
-          path="/login" 
+        <Route
+          path="/login"
           element={
             <PageTransition>
               <Login />
             </PageTransition>
-          } 
+          }
         />
-        <Route 
-          path="/forgot-password" 
+        <Route
+          path="/forgot-password"
           element={
             <PageTransition>
               <ForgotPassword />
             </PageTransition>
-          } 
+          }
         />
-        <Route 
-          path="/reset-password" 
+        <Route
+          path="/reset-password"
           element={
             <PageTransition>
               <ResetPassword />
             </PageTransition>
-          } 
+          }
         />
-        <Route 
-          path="/" 
+        <Route
+          path="/"
           element={
             <ProtectedRoute>
               <PageTransition>
                 <Dashboard />
               </PageTransition>
             </ProtectedRoute>
-          } 
+          }
         />
-        <Route 
-          path="/dashboard" 
+        <Route
+          path="/dashboard"
           element={
             <ProtectedRoute>
               <PageTransition>
                 <Dashboard />
               </PageTransition>
             </ProtectedRoute>
-          } 
+          }
         />
-        <Route 
-          path="/profile" 
+        <Route
+          path="/profile"
           element={
             <ProtectedRoute>
               <PageTransition>
                 <Profile />
               </PageTransition>
             </ProtectedRoute>
-          } 
+          }
         />
-        <Route 
-          path="/profile/:id" 
+        <Route
+          path="/profile/:id"
           element={
             <ProtectedRoute>
               <PageTransition>
                 <PublicProfile />
               </PageTransition>
             </ProtectedRoute>
-          } 
+          }
         />
-        <Route 
-          path="/settings" 
+        <Route
+          path="/settings"
           element={
             <ProtectedRoute>
               <PageTransition>
                 <Settings />
               </PageTransition>
             </ProtectedRoute>
-          } 
+          }
         />
-        <Route 
-          path="/saved" 
+        <Route
+          path="/saved"
           element={
             <ProtectedRoute>
               <PageTransition>
                 <SavedPosts />
               </PageTransition>
             </ProtectedRoute>
-          } 
+          }
         />
-        <Route 
-          path="/admin/reports" 
+        <Route
+          path="/admin/reports"
           element={
             <ProtectedRoute>
               <PageTransition>
                 <AdminReports />
               </PageTransition>
             </ProtectedRoute>
-          } 
+          }
         />
-        <Route 
-          path="/admin/media-requests" 
+        <Route
+          path="/admin/media-requests"
           element={
             <ProtectedRoute>
               <PageTransition>
                 <AdminMediaRequests />
               </PageTransition>
             </ProtectedRoute>
-          } 
+          }
         />
-        <Route 
-          path="/admin/users" 
+        <Route
+          path="/admin/users"
           element={
             <ProtectedRoute>
               <PageTransition>
                 <AdminSupport />
               </PageTransition>
             </ProtectedRoute>
-          } 
+          }
         />
-        <Route 
-          path="/guidelines" 
+        <Route
+          path="/guidelines"
           element={
             <ProtectedRoute>
               <PageTransition>
                 <Guidelines />
               </PageTransition>
             </ProtectedRoute>
-          } 
+          }
         />
-        <Route 
-          path="/support" 
+        <Route
+          path="/support"
           element={
             <ProtectedRoute>
               <PageTransition>
                 <Donate />
               </PageTransition>
             </ProtectedRoute>
-          } 
+          }
         />
-        <Route 
-          path="/support/thanks" 
+        <Route
+          path="/support/thanks"
           element={
             <ProtectedRoute>
               <PageTransition>
                 <DonateThanks />
               </PageTransition>
             </ProtectedRoute>
-          } 
+          }
         />
-        <Route 
-          path="/admin/support" 
+        <Route
+          path="/admin/support"
           element={
             <ProtectedRoute>
               <PageTransition>
                 <AdminDonations />
               </PageTransition>
             </ProtectedRoute>
-          } 
+          }
         />
-        <Route 
-          path="/prayer/new" 
+        <Route
+          path="/prayer/new"
           element={
             <ProtectedRoute>
               <PageTransition>
                 <PrayerNew />
               </PageTransition>
             </ProtectedRoute>
-          } 
+          }
         />
-        <Route 
-          path="/prayer/browse" 
+        <Route
+          path="/prayer/browse"
           element={
             <ProtectedRoute>
               <PageTransition>
                 <PrayerBrowse />
               </PageTransition>
             </ProtectedRoute>
-          } 
+          }
         />
-        <Route 
-          path="/prayer/:id" 
+        <Route
+          path="/prayer/:id"
           element={
             <ProtectedRoute>
               <PageTransition>
                 <PrayerDetail />
               </PageTransition>
             </ProtectedRoute>
-          } 
+          }
         />
-        <Route 
-          path="/prayer/my" 
+        <Route
+          path="/prayer/my"
           element={
             <ProtectedRoute>
               <PageTransition>
                 <PrayerMy />
               </PageTransition>
             </ProtectedRoute>
-          } 
+          }
         />
-        <Route 
-          path="/prayer/leaderboard" 
+        <Route
+          path="/prayer/leaderboard"
           element={
             <ProtectedRoute>
               <PageTransition>
                 <PrayerLeaderboard />
               </PageTransition>
             </ProtectedRoute>
-          } 
+          }
         />
-        <Route 
-          path="/mobile" 
-          element={
-            <PageTransition>
-              <MobileApp />
-            </PageTransition>
-          } 
-        />
+        <Route path="/mobile" element={<MobileApp />} />
       </Routes>
     </AnimatePresence>
   );
