@@ -7480,7 +7480,7 @@ export default function MobileApp() {
         {/* Support Notice */}
         <div
           style={{
-            background: "#262626",
+            background: "#0095f6",
             borderRadius: "12px",
             padding: "20px",
             marginBottom: "24px",
@@ -7672,7 +7672,7 @@ export default function MobileApp() {
                   border: "1px solid #dbdbdb",
                   fontSize: "14px",
                   fontWeight: 600,
-                  background: activeTab === "stripe" ? "#262626" : "#ffffff",
+                  background: activeTab === "stripe" ? "#0095f6" : "#ffffff",
                   color: activeTab === "stripe" ? "#ffffff" : "#262626",
                   cursor: "pointer",
                 }}
@@ -7706,7 +7706,7 @@ export default function MobileApp() {
           disabled={!getSelectedAmount() || isProcessing}
           style={{
             width: "100%",
-            background: getSelectedAmount() ? "#4285f4" : "#dbdbdb",
+            background: getSelectedAmount() ? "#0095f6" : "#dbdbdb",
             color: getSelectedAmount() ? "#ffffff" : "#8e8e8e",
             border: "none",
             padding: "16px",
