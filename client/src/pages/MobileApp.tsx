@@ -587,6 +587,14 @@ export default function MobileApp() {
   const [showMobileSavedPosts, setShowMobileSavedPosts] = useState(false);
   const [showMobileSupporter, setShowMobileSupporter] = useState(false);
   const [showMobileHelp, setShowMobileHelp] = useState(false);
+  
+  // Admin page states
+  const [showMobileAdminDashboard, setShowMobileAdminDashboard] = useState(false);
+  const [showMobileReviewReports, setShowMobileReviewReports] = useState(false);
+  const [showMobileMediaRequests, setShowMobileMediaRequests] = useState(false);
+  const [showMobileManageUsers, setShowMobileManageUsers] = useState(false);
+  const [showMobileAdminSupport, setShowMobileAdminSupport] = useState(false);
+  const [showMobileAdminDonations, setShowMobileAdminDonations] = useState(false);
 
   // Fetch leaderboard data and user profile
   useEffect(() => {
@@ -1128,22 +1136,25 @@ export default function MobileApp() {
       flex: 1,
       overflowY: "auto" as const,
       background: "#ffffff",
-      paddingBottom: "20px",
+      // leave room for the fixed nav + iOS safe area
+      paddingBottom: "calc(64px + env(safe-area-inset-bottom,     0px))",
     },
+
     bottomNav: {
-      position: "sticky" as const,
-      bottom: 0,
+      position: "fixed" as const, // <— was sticky
+      bottom: "env(safe-area-inset-bottom, 0px)",
       left: "50%",
       transform: "translateX(-50%)",
       width: "100%",
       maxWidth: "414px",
-      height: "50px",
+      height: "56px",
       background: "#ffffff",
       borderTop: "1px solid #dbdbdb",
       display: "flex",
       justifyContent: "space-around",
       alignItems: "center",
       padding: "0 16px",
+      zIndex: 50, // make sure it stays above content
     },
   };
   // ——— Focus safety helpers ———
@@ -7189,9 +7200,7 @@ export default function MobileApp() {
                     <button
                       onClick={() => {
                         setShowUserDropdown(false);
-                        alert(
-                          "Admin Dashboard - Feature coming to mobile soon!",
-                        );
+                        setShowMobileAdminDashboard(true);
                       }}
                       style={{
                         width: "100%",
@@ -7210,9 +7219,7 @@ export default function MobileApp() {
                     <button
                       onClick={() => {
                         setShowUserDropdown(false);
-                        alert(
-                          "Review Reports - Feature coming to mobile soon!",
-                        );
+                        setShowMobileReviewReports(true);
                       }}
                       style={{
                         width: "100%",
@@ -7231,9 +7238,7 @@ export default function MobileApp() {
                     <button
                       onClick={() => {
                         setShowUserDropdown(false);
-                        alert(
-                          "Media Requests - Feature coming to mobile soon!",
-                        );
+                        setShowMobileMediaRequests(true);
                       }}
                       style={{
                         width: "100%",
@@ -7252,7 +7257,7 @@ export default function MobileApp() {
                     <button
                       onClick={() => {
                         setShowUserDropdown(false);
-                        alert("Manage Users - Feature coming to mobile soon!");
+                        setShowMobileManageUsers(true);
                       }}
                       style={{
                         width: "100%",
@@ -7271,9 +7276,7 @@ export default function MobileApp() {
                     <button
                       onClick={() => {
                         setShowUserDropdown(false);
-                        alert(
-                          "Admin Donations - Feature coming to mobile soon!",
-                        );
+                        setShowMobileAdminDonations(true);
                       }}
                       style={{
                         width: "100%",
@@ -7292,7 +7295,7 @@ export default function MobileApp() {
                     <button
                       onClick={() => {
                         setShowUserDropdown(false);
-                        alert("Admin Support - Feature coming to mobile soon!");
+                        setShowMobileAdminSupport(true);
                       }}
                       style={{
                         width: "100%",
@@ -7494,13 +7497,16 @@ export default function MobileApp() {
               if (userProfile) {
                 setProfile({
                   id: user?.id || "",
-                  display_name: userProfile.display_name || user?.email || "Gospel User",
+                  display_name:
+                    userProfile.display_name || user?.email || "Gospel User",
                   bio: userProfile.bio || "",
                   avatar_url: userProfile.avatar_url || "",
                   created_at: new Date().toISOString(),
                   updated_at: new Date().toISOString(),
                 });
-                setEditDisplayName(userProfile.display_name || user?.email || "Gospel User");
+                setEditDisplayName(
+                  userProfile.display_name || user?.email || "Gospel User",
+                );
                 setEditBio(userProfile.bio || "");
                 setEditAvatarUrl(userProfile.avatar_url || "");
                 setProfileLoading(false);
