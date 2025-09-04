@@ -587,8 +587,8 @@ export default function MobileApp() {
   const [showMobileSavedPosts, setShowMobileSavedPosts] = useState(false);
   const [showMobileSupporter, setShowMobileSupporter] = useState(false);
   const [showMobileHelp, setShowMobileHelp] = useState(false);
-  
-  // Admin page states  
+
+  // Admin page states
   const [showMobileReviewReports, setShowMobileReviewReports] = useState(false);
   const [showMobileMediaRequests, setShowMobileMediaRequests] = useState(false);
   const [showMobileAdminSupport, setShowMobileAdminSupport] = useState(false);
@@ -4090,11 +4090,11 @@ export default function MobileApp() {
     const [prayerRequests, setPrayerRequests] = useState<any[]>([]);
     const [bannedUsers, setBannedUsers] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState('');
-    const [success, setSuccess] = useState('');
-    const [searchQuery, setSearchQuery] = useState('');
-    const [activeTab, setActiveTab] = useState('reports');
-    const [statusFilter, setStatusFilter] = useState('open');
+    const [error, setError] = useState("");
+    const [success, setSuccess] = useState("");
+    const [searchQuery, setSearchQuery] = useState("");
+    const [activeTab, setActiveTab] = useState("reports");
+    const [statusFilter, setStatusFilter] = useState("open");
     const [processingId, setProcessingId] = useState<string | null>(null);
 
     // Load data when component mounts
@@ -4106,11 +4106,15 @@ export default function MobileApp() {
 
     const loadAllData = async () => {
       setLoading(true);
-      setError('');
+      setError("");
       try {
-        await Promise.all([loadReports(), loadPrayerRequests(), loadBannedUsers()]);
+        await Promise.all([
+          loadReports(),
+          loadPrayerRequests(),
+          loadBannedUsers(),
+        ]);
       } catch (err: any) {
-        setError(err.message || 'Failed to load data');
+        setError(err.message || "Failed to load data");
       } finally {
         setLoading(false);
       }
@@ -4119,72 +4123,79 @@ export default function MobileApp() {
     const loadReports = async () => {
       try {
         const { data, error } = await supabase
-          .from('reports')
-          .select(`
+          .from("reports")
+          .select(
+            `
             *,
             reporter:profiles!reports_reporter_id_fkey(display_name, email),
             post:posts(title, content),
             comment:comments(content)
-          `)
-          .order('created_at', { ascending: false })
+          `,
+          )
+          .order("created_at", { ascending: false })
           .limit(50);
 
         if (error) throw error;
         setReports(data || []);
       } catch (err: any) {
-        console.error('Error loading reports:', err);
+        console.error("Error loading reports:", err);
       }
     };
 
     const loadPrayerRequests = async () => {
       try {
         const { data, error } = await supabase
-          .from('prayer_requests')
-          .select(`
+          .from("prayer_requests")
+          .select(
+            `
             *,
             profiles!prayer_requests_requester_fkey(display_name, avatar_url, role)
-          `)
-          .order('created_at', { ascending: false })
+          `,
+          )
+          .order("created_at", { ascending: false })
           .limit(50);
 
         if (error) throw error;
         setPrayerRequests(data || []);
       } catch (err: any) {
-        console.error('Error loading prayer requests:', err);
+        console.error("Error loading prayer requests:", err);
       }
     };
 
     const loadBannedUsers = async () => {
       try {
         const { data, error } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('role', 'banned')
-          .order('created_at', { ascending: false });
+          .from("profiles")
+          .select("*")
+          .eq("role", "banned")
+          .order("created_at", { ascending: false });
 
         if (error) throw error;
         setBannedUsers(data || []);
       } catch (err: any) {
-        console.error('Error loading banned users:', err);
+        console.error("Error loading banned users:", err);
       }
     };
 
-    const handleReportAction = async (reportId: string, action: 'resolved' | 'dismissed') => {
+    const handleReportAction = async (
+      reportId: string,
+      action: "resolved" | "dismissed",
+    ) => {
       setProcessingId(reportId);
-      setError('');
-      setSuccess('');
+      setError("");
+      setSuccess("");
 
       try {
         const { error } = await supabase
-          .from('reports')
+          .from("reports")
           .update({ status: action, updated_at: new Date().toISOString() })
-          .eq('id', reportId);
+          .eq("id", reportId);
 
         if (error) throw error;
 
         setSuccess(`Report ${action} successfully`);
         loadReports();
-        setTimeout(() => setSuccess(''), 3000);
+        setTimeout(() => setSuccess(""), 3000);
       } catch (err: any) {
         setError(err.message || `Failed to ${action} report`);
       } finally {
@@ -4192,45 +4203,100 @@ export default function MobileApp() {
       }
     };
 
-    const filteredReports = reports.filter(report => {
-      const matchesStatus = statusFilter === 'all' || report.status === statusFilter;
-      const matchesSearch = !searchQuery || 
+    const filteredReports = reports.filter((report) => {
+      const matchesStatus =
+        statusFilter === "all" || report.status === statusFilter;
+      const matchesSearch =
+        !searchQuery ||
         report.reason?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        report.reporter?.display_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        report.reporter?.email?.toLowerCase().includes(searchQuery.toLowerCase());
+        report.reporter?.display_name
+          ?.toLowerCase()
+          .includes(searchQuery.toLowerCase()) ||
+        report.reporter?.email
+          ?.toLowerCase()
+          .includes(searchQuery.toLowerCase());
       return matchesStatus && matchesSearch;
     });
 
     const getStatusColor = (status: string) => {
       switch (status) {
-        case 'resolved': return '#28a745';
-        case 'dismissed': return '#6c757d';
-        case 'open':
-        default: return '#dc3545';
+        case "resolved":
+          return "#28a745";
+        case "dismissed":
+          return "#6c757d";
+        case "open":
+        default:
+          return "#dc3545";
       }
     };
 
     return (
-      <div style={{ display: "flex", flexDirection: "column", minHeight: "100dvh", background: "#ffffff" }}>
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          minHeight: "100dvh",
+          background: "#ffffff",
+        }}
+      >
         {/* Header */}
-        <div style={{ padding: "16px 20px", borderBottom: "1px solid #e5e5e5", position: "sticky", top: 0, background: "#ffffff", zIndex: 10 }}>
-          <div style={{ display: "flex", alignItems: "center", marginBottom: "16px" }}>
-            <button 
-              onClick={() => setShowMobileReviewReports(false)} 
-              style={{ background: "none", border: "none", fontSize: "20px", padding: "0", marginRight: "12px", cursor: "pointer", color: "#262626" }}
+        <div
+          style={{
+            padding: "16px 20px",
+            borderBottom: "1px solid #e5e5e5",
+            position: "sticky",
+            top: 0,
+            background: "#ffffff",
+            zIndex: 10,
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              marginBottom: "16px",
+            }}
+          >
+            <button
+              onClick={() => setShowMobileReviewReports(false)}
+              style={{
+                background: "none",
+                border: "none",
+                fontSize: "20px",
+                padding: "0",
+                marginRight: "12px",
+                cursor: "pointer",
+                color: "#262626",
+              }}
             >
               ←
             </button>
-            <div style={{ fontSize: "18px", fontWeight: 600, color: "#262626" }}>🚨 Admin Reports</div>
+            <div
+              style={{ fontSize: "18px", fontWeight: 600, color: "#262626" }}
+            >
+              Admin Reports
+            </div>
           </div>
 
           {/* Main Tabs */}
           <div style={{ display: "flex", gap: "4px", marginBottom: "16px" }}>
             {[
-              { id: 'reports', label: 'Reports', count: filteredReports.length },
-              { id: 'prayers', label: 'Prayer Requests', count: prayerRequests.length },
-              { id: 'banned', label: 'Banned Users', count: bannedUsers.length }
-            ].map(tab => (
+              {
+                id: "reports",
+                label: "Reports",
+                count: filteredReports.length,
+              },
+              {
+                id: "prayers",
+                label: "Prayer Requests",
+                count: prayerRequests.length,
+              },
+              {
+                id: "banned",
+                label: "Banned Users",
+                count: bannedUsers.length,
+              },
+            ].map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
@@ -4243,7 +4309,7 @@ export default function MobileApp() {
                   color: activeTab === tab.id ? "#ffffff" : "#262626",
                   fontSize: "12px",
                   fontWeight: 500,
-                  cursor: "pointer"
+                  cursor: "pointer",
                 }}
               >
                 {tab.label} ({tab.count})
@@ -4263,18 +4329,18 @@ export default function MobileApp() {
               border: "1px solid #e5e5e5",
               borderRadius: "6px",
               fontSize: "14px",
-              marginBottom: "12px"
+              marginBottom: "12px",
             }}
           />
 
           {/* Status Filter (only for reports tab) */}
-          {activeTab === 'reports' && (
+          {activeTab === "reports" && (
             <div style={{ display: "flex", gap: "4px" }}>
               {[
-                { value: 'open', label: 'Open' },
-                { value: 'resolved', label: 'Resolved' },
-                { value: 'dismissed', label: 'Dismissed' }
-              ].map(filter => (
+                { value: "open", label: "Open" },
+                { value: "resolved", label: "Resolved" },
+                { value: "dismissed", label: "Dismissed" },
+              ].map((filter) => (
                 <button
                   key={filter.value}
                   onClick={() => setStatusFilter(filter.value)}
@@ -4283,10 +4349,14 @@ export default function MobileApp() {
                     padding: "6px 12px",
                     border: "1px solid #e5e5e5",
                     borderRadius: "4px",
-                    background: statusFilter === filter.value ? getStatusColor(filter.value) : "#ffffff",
-                    color: statusFilter === filter.value ? "#ffffff" : "#262626",
+                    background:
+                      statusFilter === filter.value
+                        ? getStatusColor(filter.value)
+                        : "#ffffff",
+                    color:
+                      statusFilter === filter.value ? "#ffffff" : "#262626",
                     fontSize: "12px",
-                    cursor: "pointer"
+                    cursor: "pointer",
                   }}
                 >
                   {filter.label}
@@ -4294,6 +4364,566 @@ export default function MobileApp() {
               ))}
             </div>
           )}
+        </div>
+
+        {/* Status Messages */}
+        {error && (
+          <div
+            style={{
+              margin: "16px 20px",
+              padding: "12px",
+              background: "#fee",
+              borderRadius: "6px",
+              color: "#dc3545",
+              fontSize: "14px",
+            }}
+          >
+            {error}
+          </div>
+        )}
+        {success && (
+          <div
+            style={{
+              margin: "16px 20px",
+              padding: "12px",
+              background: "#efe",
+              borderRadius: "6px",
+              color: "#28a745",
+              fontSize: "14px",
+            }}
+          >
+            {success}
+          </div>
+        )}
+
+        {/* Content */}
+        <div style={{ padding: "0 20px 20px", flex: 1, overflowY: "auto" }}>
+          {loading ? (
+            <div style={{ textAlign: "center", padding: "40px 0" }}>
+              <div style={{ fontSize: "16px", color: "#8e8e8e" }}>
+                Loading {activeTab}...
+              </div>
+            </div>
+          ) : activeTab === "reports" ? (
+            <div
+              style={{ display: "flex", flexDirection: "column", gap: "12px" }}
+            >
+              <div
+                style={{
+                  fontSize: "16px",
+                  fontWeight: 600,
+                  color: "#262626",
+                  marginBottom: "8px",
+                }}
+              >
+                Reports ({filteredReports.length})
+              </div>
+              {filteredReports.map((report) => (
+                <div
+                  key={report.id}
+                  style={{
+                    padding: "16px",
+                    background: "#f8f9fa",
+                    border: "1px solid #e5e5e5",
+                    borderRadius: "8px",
+                  }}
+                >
+                  {/* Report Header */}
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "flex-start",
+                      marginBottom: "12px",
+                    }}
+                  >
+                    <div style={{ flex: 1 }}>
+                      <div
+                        style={{
+                          fontSize: "14px",
+                          fontWeight: 600,
+                          color: "#262626",
+                          marginBottom: "4px",
+                        }}
+                      >
+                        {report.reason || "No reason provided"}
+                      </div>
+                      <div style={{ fontSize: "12px", color: "#8e8e8e" }}>
+                        Reported by:{" "}
+                        {report.reporter?.display_name || "Unknown"}
+                      </div>
+                      <div style={{ fontSize: "12px", color: "#6c757d" }}>
+                        {new Date(report.created_at).toLocaleDateString()} at{" "}
+                        {new Date(report.created_at).toLocaleTimeString()}
+                      </div>
+                    </div>
+                    <div
+                      style={{
+                        padding: "4px 8px",
+                        borderRadius: "4px",
+                        background: getStatusColor(report.status),
+                        color: "#ffffff",
+                        fontSize: "12px",
+                        fontWeight: 500,
+                        textTransform: "capitalize",
+                      }}
+                    >
+                      {report.status || "open"}
+                    </div>
+                  </div>
+
+                  {/* Target Content */}
+                  <div
+                    style={{
+                      padding: "12px",
+                      background: "#ffffff",
+                      border: "1px solid #e5e5e5",
+                      borderRadius: "6px",
+                      marginBottom: "12px",
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: "12px",
+                        color: "#6c757d",
+                        marginBottom: "4px",
+                      }}
+                    >
+                      Target: {report.target_type} #{report.target_id}
+                    </div>
+                    <div style={{ fontSize: "13px", color: "#262626" }}>
+                      {report.post?.title ||
+                        report.comment?.content ||
+                        "Content unavailable"}
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  {report.status === "open" && (
+                    <div style={{ display: "flex", gap: "8px" }}>
+                      <button
+                        onClick={() =>
+                          handleReportAction(report.id, "resolved")
+                        }
+                        disabled={processingId === report.id}
+                        style={{
+                          flex: 1,
+                          padding: "8px 12px",
+                          background: "#28a745",
+                          color: "#ffffff",
+                          border: "none",
+                          borderRadius: "4px",
+                          fontSize: "12px",
+                          cursor:
+                            processingId === report.id
+                              ? "not-allowed"
+                              : "pointer",
+                          opacity: processingId === report.id ? 0.6 : 1,
+                        }}
+                      >
+                        {processingId === report.id ? "..." : "Resolve"}
+                      </button>
+                      <button
+                        onClick={() =>
+                          handleReportAction(report.id, "dismissed")
+                        }
+                        disabled={processingId === report.id}
+                        style={{
+                          flex: 1,
+                          padding: "8px 12px",
+                          background: "#6c757d",
+                          color: "#ffffff",
+                          border: "none",
+                          borderRadius: "4px",
+                          fontSize: "12px",
+                          cursor:
+                            processingId === report.id
+                              ? "not-allowed"
+                              : "pointer",
+                          opacity: processingId === report.id ? 0.6 : 1,
+                        }}
+                      >
+                        {processingId === report.id ? "..." : "Dismiss"}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))}
+
+              {filteredReports.length === 0 && (
+                <div style={{ textAlign: "center", padding: "40px 0" }}>
+                  <div
+                    style={{
+                      fontSize: "16px",
+                      color: "#8e8e8e",
+                      marginBottom: "8px",
+                    }}
+                  >
+                    No reports found
+                  </div>
+                  <div style={{ fontSize: "14px", color: "#6c757d" }}>
+                    {searchQuery
+                      ? "Try adjusting your search terms"
+                      : "All reports have been handled"}
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : activeTab === "prayers" ? (
+            <div
+              style={{ display: "flex", flexDirection: "column", gap: "8px" }}
+            >
+              <div
+                style={{
+                  fontSize: "16px",
+                  fontWeight: 600,
+                  color: "#262626",
+                  marginBottom: "8px",
+                }}
+              >
+                Prayer Requests ({prayerRequests.length})
+              </div>
+              {prayerRequests.map((prayer) => (
+                <div
+                  key={prayer.id}
+                  style={{
+                    padding: "12px",
+                    background: "#f8f9fa",
+                    border: "1px solid #e5e5e5",
+                    borderRadius: "8px",
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize: "14px",
+                      fontWeight: 600,
+                      color: "#262626",
+                      marginBottom: "4px",
+                    }}
+                  >
+                    {prayer.title}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: "13px",
+                      color: "#6c757d",
+                      marginBottom: "8px",
+                    }}
+                  >
+                    By: {prayer.profiles?.display_name || "Anonymous"} •{" "}
+                    {new Date(prayer.created_at).toLocaleDateString()}
+                  </div>
+                  <div style={{ fontSize: "13px", color: "#262626" }}>
+                    {prayer.content}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div
+              style={{ display: "flex", flexDirection: "column", gap: "8px" }}
+            >
+              <div
+                style={{
+                  fontSize: "16px",
+                  fontWeight: 600,
+                  color: "#262626",
+                  marginBottom: "8px",
+                }}
+              >
+                Banned Users ({bannedUsers.length})
+              </div>
+              {bannedUsers.map((user) => (
+                <div
+                  key={user.id}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    padding: "12px",
+                    background: "#f8f9fa",
+                    border: "1px solid #e5e5e5",
+                    borderRadius: "8px",
+                  }}
+                >
+                  <div
+                    style={{
+                      width: "32px",
+                      height: "32px",
+                      borderRadius: "50%",
+                      background: user.avatar_url ? "none" : "#dbdbdb",
+                      marginRight: "12px",
+                      overflow: "hidden",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    {user.avatar_url ? (
+                      <img
+                        src={
+                          user.avatar_url.startsWith("/")
+                            ? user.avatar_url
+                            : `/public-objects/${user.avatar_url}`
+                        }
+                        alt="Avatar"
+                        style={{
+                          width: "32px",
+                          height: "32px",
+                          borderRadius: "50%",
+                          objectFit: "cover",
+                        }}
+                      />
+                    ) : (
+                      <span style={{ fontSize: "14px", color: "#8e8e8e" }}>
+                        👤
+                      </span>
+                    )}
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div
+                      style={{
+                        fontSize: "14px",
+                        fontWeight: 600,
+                        color: "#262626",
+                      }}
+                    >
+                      {user.display_name || "No display name"}
+                    </div>
+                    <div style={{ fontSize: "12px", color: "#8e8e8e" }}>
+                      {user.email} • Banned:{" "}
+                      {new Date(
+                        user.updated_at || user.created_at,
+                      ).toLocaleDateString()}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  const MobileMediaRequestsPage = () => {
+    const [mediaRequests, setMediaRequests] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
+    const [success, setSuccess] = useState('');
+    const [searchQuery, setSearchQuery] = useState('');
+    const [statusFilter, setStatusFilter] = useState('all');
+    const [processingId, setProcessingId] = useState<number | null>(null);
+
+    // Load media requests when component mounts
+    useEffect(() => {
+      if (showMobileMediaRequests) {
+        loadMediaRequests();
+      }
+    }, [showMobileMediaRequests]);
+
+    const loadMediaRequests = async () => {
+      setLoading(true);
+      setError('');
+      try {
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        
+        if (authError || !user) {
+          throw new Error('Authentication required');
+        }
+
+        const response = await fetch('/api/admin/media-requests', {
+          headers: {
+            'Content-Type': 'application/json',
+            'x-user-id': user.id,
+          }
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to load media requests');
+        }
+
+        const data = await response.json();
+        setMediaRequests(data || []);
+      } catch (err: any) {
+        setError(err.message || 'Failed to load media requests');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    const handleApprove = async (requestId: number) => {
+      setProcessingId(requestId);
+      setError('');
+      setSuccess('');
+
+      try {
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        
+        if (authError || !user) {
+          throw new Error('Authentication required');
+        }
+
+        const response = await fetch(`/api/admin/media-requests/${requestId}/approve`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-user-id': user.id,
+          }
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to approve request');
+        }
+
+        setSuccess('Request approved successfully! User can now upload media.');
+        
+        // Update local state
+        setMediaRequests(prev => prev.map(req => 
+          req.id === requestId 
+            ? { ...req, status: 'approved', admin_id: user.id }
+            : req
+        ));
+        
+        setTimeout(() => setSuccess(''), 3000);
+      } catch (err: any) {
+        setError(err.message || 'Failed to approve request');
+      } finally {
+        setProcessingId(null);
+      }
+    };
+
+    const handleDeny = async (requestId: number) => {
+      if (!confirm('Are you sure you want to deny this media access request?')) {
+        return;
+      }
+
+      setProcessingId(requestId);
+      setError('');
+      setSuccess('');
+
+      try {
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        
+        if (authError || !user) {
+          throw new Error('Authentication required');
+        }
+
+        const response = await fetch(`/api/admin/media-requests/${requestId}/deny`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-user-id': user.id,
+          }
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to deny request');
+        }
+
+        setSuccess('Request denied successfully.');
+        
+        // Update local state
+        setMediaRequests(prev => prev.map(req => 
+          req.id === requestId 
+            ? { ...req, status: 'denied', admin_id: user.id }
+            : req
+        ));
+        
+        setTimeout(() => setSuccess(''), 3000);
+      } catch (err: any) {
+        setError(err.message || 'Failed to deny request');
+      } finally {
+        setProcessingId(null);
+      }
+    };
+
+    const filteredRequests = mediaRequests.filter(request => {
+      const matchesStatus = statusFilter === 'all' || request.status === statusFilter;
+      const matchesSearch = !searchQuery || 
+        request.user?.display_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        request.user?.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        request.reason?.toLowerCase().includes(searchQuery.toLowerCase());
+      return matchesStatus && matchesSearch;
+    });
+
+    const getStatusColor = (status: string) => {
+      switch (status) {
+        case 'approved': return '#28a745';
+        case 'denied': return '#dc3545';
+        case 'pending':
+        default: return '#ffc107';
+      }
+    };
+
+    const getStatusIcon = (status: string) => {
+      switch (status) {
+        case 'approved': return '✅';
+        case 'denied': return '❌';
+        case 'pending':
+        default: return '⏳';
+      }
+    };
+
+    return (
+      <div style={{ display: "flex", flexDirection: "column", minHeight: "100dvh", background: "#ffffff" }}>
+        {/* Header */}
+        <div style={{ padding: "16px 20px", borderBottom: "1px solid #e5e5e5", position: "sticky", top: 0, background: "#ffffff", zIndex: 10 }}>
+          <div style={{ display: "flex", alignItems: "center", marginBottom: "16px" }}>
+            <button 
+              onClick={() => setShowMobileMediaRequests(false)} 
+              style={{ background: "none", border: "none", fontSize: "20px", padding: "0", marginRight: "12px", cursor: "pointer", color: "#262626" }}
+            >
+              ←
+            </button>
+            <div style={{ fontSize: "18px", fontWeight: 600, color: "#262626" }}>📤 Media Requests</div>
+          </div>
+
+          {/* Search */}
+          <input
+            type="text"
+            placeholder="Search by user, email, or reason..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            style={{
+              width: "100%",
+              padding: "10px 12px",
+              border: "1px solid #e5e5e5",
+              borderRadius: "6px",
+              fontSize: "14px",
+              marginBottom: "12px"
+            }}
+          />
+
+          {/* Status Filter */}
+          <div style={{ display: "flex", gap: "4px" }}>
+            {[
+              { value: 'all', label: 'All', count: filteredRequests.length },
+              { value: 'pending', label: 'Pending', count: mediaRequests.filter(r => r.status === 'pending').length },
+              { value: 'approved', label: 'Approved', count: mediaRequests.filter(r => r.status === 'approved').length },
+              { value: 'denied', label: 'Denied', count: mediaRequests.filter(r => r.status === 'denied').length }
+            ].map(filter => (
+              <button
+                key={filter.value}
+                onClick={() => setStatusFilter(filter.value)}
+                style={{
+                  flex: 1,
+                  padding: "6px 8px",
+                  border: "1px solid #e5e5e5",
+                  borderRadius: "4px",
+                  background: statusFilter === filter.value ? "#007bff" : "#ffffff",
+                  color: statusFilter === filter.value ? "#ffffff" : "#262626",
+                  fontSize: "11px",
+                  fontWeight: 500,
+                  cursor: "pointer"
+                }}
+              >
+                {filter.label} ({filter.count})
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Status Messages */}
@@ -4312,47 +4942,52 @@ export default function MobileApp() {
         <div style={{ padding: "0 20px 20px", flex: 1, overflowY: "auto" }}>
           {loading ? (
             <div style={{ textAlign: "center", padding: "40px 0" }}>
-              <div style={{ fontSize: "16px", color: "#8e8e8e" }}>Loading {activeTab}...</div>
+              <div style={{ fontSize: "16px", color: "#8e8e8e" }}>Loading media requests...</div>
             </div>
-          ) : activeTab === 'reports' ? (
+          ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
               <div style={{ fontSize: "16px", fontWeight: 600, color: "#262626", marginBottom: "8px" }}>
-                Reports ({filteredReports.length})
+                Media Requests ({filteredRequests.length})
               </div>
-              {filteredReports.map((report) => (
-                <div key={report.id} style={{
+
+              {filteredRequests.map((request) => (
+                <div key={request.id} style={{
                   padding: "16px",
                   background: "#f8f9fa",
                   border: "1px solid #e5e5e5",
                   borderRadius: "8px"
                 }}>
-                  {/* Report Header */}
+                  {/* Request Header */}
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "12px" }}>
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: "14px", fontWeight: 600, color: "#262626", marginBottom: "4px" }}>
-                        {report.reason || 'No reason provided'}
+                      <div style={{ display: "flex", alignItems: "center", marginBottom: "4px" }}>
+                        <div style={{ fontSize: "14px", fontWeight: 600, color: "#262626", marginRight: "8px" }}>
+                          {request.user?.display_name || 'Unknown User'}
+                        </div>
+                        <div style={{
+                          padding: "2px 6px",
+                          borderRadius: "4px",
+                          background: getStatusColor(request.status),
+                          color: "#ffffff",
+                          fontSize: "11px",
+                          fontWeight: 500,
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "2px"
+                        }}>
+                          {getStatusIcon(request.status)} {request.status}
+                        </div>
                       </div>
-                      <div style={{ fontSize: "12px", color: "#8e8e8e" }}>
-                        Reported by: {report.reporter?.display_name || 'Unknown'}
+                      <div style={{ fontSize: "12px", color: "#8e8e8e", marginBottom: "2px" }}>
+                        {request.user?.email || 'No email'}
                       </div>
-                      <div style={{ fontSize: "12px", color: "#6c757d" }}>
-                        {new Date(report.created_at).toLocaleDateString()} at {new Date(report.created_at).toLocaleTimeString()}
+                      <div style={{ fontSize: "11px", color: "#6c757d" }}>
+                        Requested: {new Date(request.created_at).toLocaleDateString()} at {new Date(request.created_at).toLocaleTimeString()}
                       </div>
-                    </div>
-                    <div style={{
-                      padding: "4px 8px",
-                      borderRadius: "4px",
-                      background: getStatusColor(report.status),
-                      color: "#ffffff",
-                      fontSize: "12px",
-                      fontWeight: 500,
-                      textTransform: "capitalize"
-                    }}>
-                      {report.status || 'open'}
                     </div>
                   </div>
 
-                  {/* Target Content */}
+                  {/* Request Reason */}
                   <div style={{ 
                     padding: "12px", 
                     background: "#ffffff", 
@@ -4361,19 +4996,29 @@ export default function MobileApp() {
                     marginBottom: "12px" 
                   }}>
                     <div style={{ fontSize: "12px", color: "#6c757d", marginBottom: "4px" }}>
-                      Target: {report.target_type} #{report.target_id}
+                      Reason for Media Access:
                     </div>
-                    <div style={{ fontSize: "13px", color: "#262626" }}>
-                      {report.post?.title || report.comment?.content || 'Content unavailable'}
+                    <div style={{ fontSize: "13px", color: "#262626", lineHeight: "1.4" }}>
+                      {request.reason || 'No reason provided'}
                     </div>
                   </div>
 
+                  {/* Admin Info */}
+                  {request.admin && (
+                    <div style={{ fontSize: "11px", color: "#6c757d", marginBottom: "12px" }}>
+                      {request.status === 'approved' ? 'Approved' : 'Denied'} by: {request.admin.display_name || 'Admin'}
+                      {request.updated_at && (
+                        <> • {new Date(request.updated_at).toLocaleDateString()}</>
+                      )}
+                    </div>
+                  )}
+
                   {/* Actions */}
-                  {report.status === 'open' && (
+                  {request.status === 'pending' && (
                     <div style={{ display: "flex", gap: "8px" }}>
                       <button
-                        onClick={() => handleReportAction(report.id, 'resolved')}
-                        disabled={processingId === report.id}
+                        onClick={() => handleApprove(request.id)}
+                        disabled={processingId === request.id}
                         style={{
                           flex: 1,
                           padding: "8px 12px",
@@ -4382,114 +5027,49 @@ export default function MobileApp() {
                           border: "none",
                           borderRadius: "4px",
                           fontSize: "12px",
-                          cursor: processingId === report.id ? "not-allowed" : "pointer",
-                          opacity: processingId === report.id ? 0.6 : 1
+                          fontWeight: 500,
+                          cursor: processingId === request.id ? "not-allowed" : "pointer",
+                          opacity: processingId === request.id ? 0.6 : 1
                         }}
                       >
-                        {processingId === report.id ? "..." : "Resolve"}
+                        {processingId === request.id ? "..." : "✅ Approve"}
                       </button>
                       <button
-                        onClick={() => handleReportAction(report.id, 'dismissed')}
-                        disabled={processingId === report.id}
+                        onClick={() => handleDeny(request.id)}
+                        disabled={processingId === request.id}
                         style={{
                           flex: 1,
                           padding: "8px 12px",
-                          background: "#6c757d",
+                          background: "#dc3545",
                           color: "#ffffff",
                           border: "none",
                           borderRadius: "4px",
                           fontSize: "12px",
-                          cursor: processingId === report.id ? "not-allowed" : "pointer",
-                          opacity: processingId === report.id ? 0.6 : 1
+                          fontWeight: 500,
+                          cursor: processingId === request.id ? "not-allowed" : "pointer",
+                          opacity: processingId === request.id ? 0.6 : 1
                         }}
                       >
-                        {processingId === report.id ? "..." : "Dismiss"}
+                        {processingId === request.id ? "..." : "❌ Deny"}
                       </button>
                     </div>
                   )}
                 </div>
               ))}
 
-              {filteredReports.length === 0 && (
+              {filteredRequests.length === 0 && (
                 <div style={{ textAlign: "center", padding: "40px 0" }}>
+                  <div style={{ fontSize: "48px", marginBottom: "16px" }}>📤</div>
                   <div style={{ fontSize: "16px", color: "#8e8e8e", marginBottom: "8px" }}>
-                    No reports found
+                    {searchQuery ? "No requests match your search" : "No media requests found"}
                   </div>
                   <div style={{ fontSize: "14px", color: "#6c757d" }}>
-                    {searchQuery ? "Try adjusting your search terms" : "All reports have been handled"}
+                    {searchQuery 
+                      ? "Try adjusting your search terms" 
+                      : "Users can request media upload access from their settings page"}
                   </div>
                 </div>
               )}
-            </div>
-          ) : activeTab === 'prayers' ? (
-            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-              <div style={{ fontSize: "16px", fontWeight: 600, color: "#262626", marginBottom: "8px" }}>
-                Prayer Requests ({prayerRequests.length})
-              </div>
-              {prayerRequests.map((prayer) => (
-                <div key={prayer.id} style={{
-                  padding: "12px",
-                  background: "#f8f9fa",
-                  border: "1px solid #e5e5e5",
-                  borderRadius: "8px"
-                }}>
-                  <div style={{ fontSize: "14px", fontWeight: 600, color: "#262626", marginBottom: "4px" }}>
-                    {prayer.title}
-                  </div>
-                  <div style={{ fontSize: "13px", color: "#6c757d", marginBottom: "8px" }}>
-                    By: {prayer.profiles?.display_name || 'Anonymous'} • {new Date(prayer.created_at).toLocaleDateString()}
-                  </div>
-                  <div style={{ fontSize: "13px", color: "#262626" }}>
-                    {prayer.content}
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-              <div style={{ fontSize: "16px", fontWeight: 600, color: "#262626", marginBottom: "8px" }}>
-                Banned Users ({bannedUsers.length})
-              </div>
-              {bannedUsers.map((user) => (
-                <div key={user.id} style={{
-                  display: "flex",
-                  alignItems: "center",
-                  padding: "12px",
-                  background: "#f8f9fa",
-                  border: "1px solid #e5e5e5",
-                  borderRadius: "8px"
-                }}>
-                  <div style={{
-                    width: "32px",
-                    height: "32px",
-                    borderRadius: "50%",
-                    background: user.avatar_url ? "none" : "#dbdbdb",
-                    marginRight: "12px",
-                    overflow: "hidden",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center"
-                  }}>
-                    {user.avatar_url ? (
-                      <img
-                        src={user.avatar_url.startsWith("/") ? user.avatar_url : `/public-objects/${user.avatar_url}`}
-                        alt="Avatar"
-                        style={{ width: "32px", height: "32px", borderRadius: "50%", objectFit: "cover" }}
-                      />
-                    ) : (
-                      <span style={{ fontSize: "14px", color: "#8e8e8e" }}>👤</span>
-                    )}
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: "14px", fontWeight: 600, color: "#262626" }}>
-                      {user.display_name || 'No display name'}
-                    </div>
-                    <div style={{ fontSize: "12px", color: "#8e8e8e" }}>
-                      {user.email} • Banned: {new Date(user.updated_at || user.created_at).toLocaleDateString()}
-                    </div>
-                  </div>
-                </div>
-              ))}
             </div>
           )}
         </div>
@@ -4497,36 +5077,17 @@ export default function MobileApp() {
     );
   };
 
-  const MobileMediaRequestsPage = () => (
-    <div style={{ display: "flex", flexDirection: "column", minHeight: "100dvh", background: "#ffffff" }}>
-      <div style={{ padding: "16px 20px", borderBottom: "1px solid #e5e5e5", position: "sticky", top: 0, background: "#ffffff", zIndex: 10 }}>
-        <div style={{ display: "flex", alignItems: "center" }}>
-          <button onClick={() => setShowMobileMediaRequests(false)} style={{ background: "none", border: "none", fontSize: "20px", padding: "0", marginRight: "12px", cursor: "pointer", color: "#262626" }}>←</button>
-          <div style={{ fontSize: "18px", fontWeight: 600, color: "#dc2626" }}>📂 Media Requests</div>
-        </div>
-      </div>
-      <div style={{ padding: "20px", flex: 1, textAlign: "center", paddingTop: "60px" }}>
-        <div style={{ fontSize: "48px", marginBottom: "16px" }}>📂</div>
-        <div style={{ fontSize: "16px", fontWeight: 600, marginBottom: "8px", color: "#262626" }}>Media Requests</div>
-        <div style={{ fontSize: "14px", color: "#8e8e8e", marginBottom: "20px" }}>Approve and manage media upload requests</div>
-        <div style={{ backgroundColor: "#f8f9fa", padding: "16px", borderRadius: "8px", textAlign: "left", marginBottom: "16px" }}>
-          <div style={{ fontSize: "14px", fontWeight: 600, color: "#262626", marginBottom: "4px" }}>Feature Status</div>
-          <div style={{ fontSize: "12px", color: "#8e8e8e" }}>Full media request management functionality will be available in an upcoming update. Currently accessible via web interface.</div>
-        </div>
-        <div style={{ fontSize: "12px", color: "#6c757d" }}>For full functionality, please use the web version of the admin panel.</div>
-      </div>
-    </div>
-  );
-
   const MobileAdminSupportPage = () => {
     const [users, setUsers] = useState<any[]>([]);
     const [bannedUsers, setBannedUsers] = useState<any[]>([]);
-    const [searchQuery, setSearchQuery] = useState('');
+    const [searchQuery, setSearchQuery] = useState("");
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState('');
-    const [success, setSuccess] = useState('');
-    const [processingUserId, setProcessingUserId] = useState<string | null>(null);
-    const [activeTab, setActiveTab] = useState('users');
+    const [error, setError] = useState("");
+    const [success, setSuccess] = useState("");
+    const [processingUserId, setProcessingUserId] = useState<string | null>(
+      null,
+    );
+    const [activeTab, setActiveTab] = useState("users");
 
     // Load users and banned users when component mounts
     useEffect(() => {
@@ -4537,13 +5098,13 @@ export default function MobileApp() {
 
     const loadUsersAndBannedUsers = async () => {
       setLoading(true);
-      setError('');
+      setError("");
       try {
         // Load all users
         const { data: userData, error: userError } = await supabase
-          .from('profiles')
-          .select('*')
-          .order('created_at', { ascending: false })
+          .from("profiles")
+          .select("*")
+          .order("created_at", { ascending: false })
           .limit(50);
 
         if (userError) throw userError;
@@ -4551,43 +5112,46 @@ export default function MobileApp() {
 
         // Load banned users (users with role 'banned')
         const { data: bannedData, error: bannedError } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('role', 'banned')
-          .order('created_at', { ascending: false });
+          .from("profiles")
+          .select("*")
+          .eq("role", "banned")
+          .order("created_at", { ascending: false });
 
         if (bannedError) throw bannedError;
         setBannedUsers(bannedData || []);
-
       } catch (err: any) {
-        setError(err.message || 'Failed to load users');
+        setError(err.message || "Failed to load users");
       } finally {
         setLoading(false);
       }
     };
 
     const handleBanUser = async (userId: string) => {
-      if (!confirm('Are you sure you want to ban this user? They will lose access to post and comment.')) {
+      if (
+        !confirm(
+          "Are you sure you want to ban this user? They will lose access to post and comment.",
+        )
+      ) {
         return;
       }
 
       setProcessingUserId(userId);
-      setError('');
-      setSuccess('');
+      setError("");
+      setSuccess("");
 
       try {
         const { error } = await supabase
-          .from('profiles')
-          .update({ role: 'banned' })
-          .eq('id', userId);
+          .from("profiles")
+          .update({ role: "banned" })
+          .eq("id", userId);
 
         if (error) throw error;
 
-        setSuccess('User banned successfully');
+        setSuccess("User banned successfully");
         loadUsersAndBannedUsers();
-        setTimeout(() => setSuccess(''), 3000);
+        setTimeout(() => setSuccess(""), 3000);
       } catch (err: any) {
-        setError(err.message || 'Failed to ban user');
+        setError(err.message || "Failed to ban user");
       } finally {
         setProcessingUserId(null);
       }
@@ -4595,49 +5159,85 @@ export default function MobileApp() {
 
     const handleUnbanUser = async (userId: string) => {
       setProcessingUserId(userId);
-      setError('');
-      setSuccess('');
+      setError("");
+      setSuccess("");
 
       try {
         const { error } = await supabase
-          .from('profiles')
-          .update({ role: 'user' })
-          .eq('id', userId);
+          .from("profiles")
+          .update({ role: "user" })
+          .eq("id", userId);
 
         if (error) throw error;
 
-        setSuccess('User unbanned successfully');
+        setSuccess("User unbanned successfully");
         loadUsersAndBannedUsers();
-        setTimeout(() => setSuccess(''), 3000);
+        setTimeout(() => setSuccess(""), 3000);
       } catch (err: any) {
-        setError(err.message || 'Failed to unban user');
+        setError(err.message || "Failed to unban user");
       } finally {
         setProcessingUserId(null);
       }
     };
 
-    const filteredUsers = users.filter(user => 
-      user.display_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.email?.toLowerCase().includes(searchQuery.toLowerCase())
+    const filteredUsers = users.filter(
+      (user) =>
+        user.display_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        user.email?.toLowerCase().includes(searchQuery.toLowerCase()),
     );
 
-    const filteredBannedUsers = bannedUsers.filter(user => 
-      user.display_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.email?.toLowerCase().includes(searchQuery.toLowerCase())
+    const filteredBannedUsers = bannedUsers.filter(
+      (user) =>
+        user.display_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        user.email?.toLowerCase().includes(searchQuery.toLowerCase()),
     );
 
     return (
-      <div style={{ display: "flex", flexDirection: "column", minHeight: "100dvh", background: "#ffffff" }}>
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          minHeight: "100dvh",
+          background: "#ffffff",
+        }}
+      >
         {/* Header */}
-        <div style={{ padding: "16px 20px", borderBottom: "1px solid #e5e5e5", position: "sticky", top: 0, background: "#ffffff", zIndex: 10 }}>
-          <div style={{ display: "flex", alignItems: "center", marginBottom: "16px" }}>
-            <button 
-              onClick={() => setShowMobileAdminSupport(false)} 
-              style={{ background: "none", border: "none", fontSize: "20px", padding: "0", marginRight: "12px", cursor: "pointer", color: "#262626" }}
+        <div
+          style={{
+            padding: "16px 20px",
+            borderBottom: "1px solid #e5e5e5",
+            position: "sticky",
+            top: 0,
+            background: "#ffffff",
+            zIndex: 10,
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              marginBottom: "16px",
+            }}
+          >
+            <button
+              onClick={() => setShowMobileAdminSupport(false)}
+              style={{
+                background: "none",
+                border: "none",
+                fontSize: "20px",
+                padding: "0",
+                marginRight: "12px",
+                cursor: "pointer",
+                color: "#262626",
+              }}
             >
               ←
             </button>
-            <div style={{ fontSize: "18px", fontWeight: 600, color: "#262626" }}>🛠️ Admin Support</div>
+            <div
+              style={{ fontSize: "18px", fontWeight: 600, color: "#262626" }}
+            >
+              🛠️ Admin Support
+            </div>
           </div>
 
           {/* Search */}
@@ -4652,40 +5252,40 @@ export default function MobileApp() {
               border: "1px solid #e5e5e5",
               borderRadius: "6px",
               fontSize: "14px",
-              marginBottom: "12px"
+              marginBottom: "12px",
             }}
           />
 
           {/* Tabs */}
           <div style={{ display: "flex", gap: "8px" }}>
             <button
-              onClick={() => setActiveTab('users')}
+              onClick={() => setActiveTab("users")}
               style={{
                 flex: 1,
                 padding: "8px 16px",
                 border: "1px solid #e5e5e5",
                 borderRadius: "6px",
-                background: activeTab === 'users' ? "#007bff" : "#ffffff",
-                color: activeTab === 'users' ? "#ffffff" : "#262626",
+                background: activeTab === "users" ? "#007bff" : "#ffffff",
+                color: activeTab === "users" ? "#ffffff" : "#262626",
                 fontSize: "14px",
                 fontWeight: 500,
-                cursor: "pointer"
+                cursor: "pointer",
               }}
             >
               Users ({filteredUsers.length})
             </button>
             <button
-              onClick={() => setActiveTab('banned')}
+              onClick={() => setActiveTab("banned")}
               style={{
                 flex: 1,
                 padding: "8px 16px",
                 border: "1px solid #e5e5e5",
                 borderRadius: "6px",
-                background: activeTab === 'banned' ? "#dc3545" : "#ffffff",
-                color: activeTab === 'banned' ? "#ffffff" : "#262626",
+                background: activeTab === "banned" ? "#dc3545" : "#ffffff",
+                color: activeTab === "banned" ? "#ffffff" : "#262626",
                 fontSize: "14px",
                 fontWeight: 500,
-                cursor: "pointer"
+                cursor: "pointer",
               }}
             >
               Banned ({filteredBannedUsers.length})
@@ -4695,12 +5295,30 @@ export default function MobileApp() {
 
         {/* Status Messages */}
         {error && (
-          <div style={{ margin: "16px 20px", padding: "12px", background: "#fee", borderRadius: "6px", color: "#dc3545", fontSize: "14px" }}>
+          <div
+            style={{
+              margin: "16px 20px",
+              padding: "12px",
+              background: "#fee",
+              borderRadius: "6px",
+              color: "#dc3545",
+              fontSize: "14px",
+            }}
+          >
             {error}
           </div>
         )}
         {success && (
-          <div style={{ margin: "16px 20px", padding: "12px", background: "#efe", borderRadius: "6px", color: "#28a745", fontSize: "14px" }}>
+          <div
+            style={{
+              margin: "16px 20px",
+              padding: "12px",
+              background: "#efe",
+              borderRadius: "6px",
+              color: "#28a745",
+              fontSize: "14px",
+            }}
+          >
             {success}
           </div>
         )}
@@ -4709,59 +5327,89 @@ export default function MobileApp() {
         <div style={{ padding: "0 20px 20px", flex: 1, overflowY: "auto" }}>
           {loading ? (
             <div style={{ textAlign: "center", padding: "40px 0" }}>
-              <div style={{ fontSize: "16px", color: "#8e8e8e" }}>Loading users...</div>
+              <div style={{ fontSize: "16px", color: "#8e8e8e" }}>
+                Loading users...
+              </div>
             </div>
           ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-              {(activeTab === 'users' ? filteredUsers : filteredBannedUsers).map((user) => (
-                <div key={user.id} style={{
-                  display: "flex",
-                  alignItems: "center",
-                  padding: "12px",
-                  background: "#f8f9fa",
-                  border: "1px solid #e5e5e5",
-                  borderRadius: "8px"
-                }}>
-                  {/* User Avatar */}
-                  <div style={{
-                    width: "40px",
-                    height: "40px",
-                    borderRadius: "50%",
-                    background: user.avatar_url ? "none" : "#dbdbdb",
-                    marginRight: "12px",
-                    overflow: "hidden",
+            <div
+              style={{ display: "flex", flexDirection: "column", gap: "8px" }}
+            >
+              {(activeTab === "users"
+                ? filteredUsers
+                : filteredBannedUsers
+              ).map((user) => (
+                <div
+                  key={user.id}
+                  style={{
                     display: "flex",
                     alignItems: "center",
-                    justifyContent: "center"
-                  }}>
+                    padding: "12px",
+                    background: "#f8f9fa",
+                    border: "1px solid #e5e5e5",
+                    borderRadius: "8px",
+                  }}
+                >
+                  {/* User Avatar */}
+                  <div
+                    style={{
+                      width: "40px",
+                      height: "40px",
+                      borderRadius: "50%",
+                      background: user.avatar_url ? "none" : "#dbdbdb",
+                      marginRight: "12px",
+                      overflow: "hidden",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
                     {user.avatar_url ? (
                       <img
-                        src={user.avatar_url.startsWith("/") ? user.avatar_url : `/public-objects/${user.avatar_url}`}
+                        src={
+                          user.avatar_url.startsWith("/")
+                            ? user.avatar_url
+                            : `/public-objects/${user.avatar_url}`
+                        }
                         alt="Avatar"
-                        style={{ width: "40px", height: "40px", borderRadius: "50%", objectFit: "cover" }}
+                        style={{
+                          width: "40px",
+                          height: "40px",
+                          borderRadius: "50%",
+                          objectFit: "cover",
+                        }}
                       />
                     ) : (
-                      <span style={{ fontSize: "16px", color: "#8e8e8e" }}>👤</span>
+                      <span style={{ fontSize: "16px", color: "#8e8e8e" }}>
+                        👤
+                      </span>
                     )}
                   </div>
 
                   {/* User Info */}
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: "14px", fontWeight: 600, color: "#262626" }}>
-                      {user.display_name || 'No display name'}
+                    <div
+                      style={{
+                        fontSize: "14px",
+                        fontWeight: 600,
+                        color: "#262626",
+                      }}
+                    >
+                      {user.display_name || "No display name"}
                     </div>
                     <div style={{ fontSize: "12px", color: "#8e8e8e" }}>
-                      {user.email || 'No email'}
+                      {user.email || "No email"}
                     </div>
                     <div style={{ fontSize: "11px", color: "#6c757d" }}>
-                      Role: {user.role || 'user'} • Joined: {new Date(user.created_at).toLocaleDateString()}
+                      Role: {user.role || "user"} • Joined:{" "}
+                      {new Date(user.created_at).toLocaleDateString()}
                     </div>
                   </div>
 
                   {/* Actions */}
                   <div style={{ marginLeft: "12px" }}>
-                    {activeTab === 'users' ? (
-                      user.role !== 'banned' && (
+                    {activeTab === "users" ? (
+                      user.role !== "banned" && (
                         <button
                           onClick={() => handleBanUser(user.id)}
                           disabled={processingUserId === user.id}
@@ -4772,8 +5420,11 @@ export default function MobileApp() {
                             border: "none",
                             borderRadius: "4px",
                             fontSize: "12px",
-                            cursor: processingUserId === user.id ? "not-allowed" : "pointer",
-                            opacity: processingUserId === user.id ? 0.6 : 1
+                            cursor:
+                              processingUserId === user.id
+                                ? "not-allowed"
+                                : "pointer",
+                            opacity: processingUserId === user.id ? 0.6 : 1,
                           }}
                         >
                           {processingUserId === user.id ? "..." : "Ban"}
@@ -4790,8 +5441,11 @@ export default function MobileApp() {
                           border: "none",
                           borderRadius: "4px",
                           fontSize: "12px",
-                          cursor: processingUserId === user.id ? "not-allowed" : "pointer",
-                          opacity: processingUserId === user.id ? 0.6 : 1
+                          cursor:
+                            processingUserId === user.id
+                              ? "not-allowed"
+                              : "pointer",
+                          opacity: processingUserId === user.id ? 0.6 : 1,
                         }}
                       >
                         {processingUserId === user.id ? "..." : "Unban"}
@@ -4801,10 +5455,19 @@ export default function MobileApp() {
                 </div>
               ))}
 
-              {(activeTab === 'users' ? filteredUsers : filteredBannedUsers).length === 0 && (
+              {(activeTab === "users" ? filteredUsers : filteredBannedUsers)
+                .length === 0 && (
                 <div style={{ textAlign: "center", padding: "40px 0" }}>
-                  <div style={{ fontSize: "16px", color: "#8e8e8e", marginBottom: "8px" }}>
-                    {searchQuery ? "No users match your search" : `No ${activeTab} found`}
+                  <div
+                    style={{
+                      fontSize: "16px",
+                      color: "#8e8e8e",
+                      marginBottom: "8px",
+                    }}
+                  >
+                    {searchQuery
+                      ? "No users match your search"
+                      : `No ${activeTab} found`}
                   </div>
                   {searchQuery && (
                     <div style={{ fontSize: "14px", color: "#6c757d" }}>
@@ -7815,7 +8478,7 @@ export default function MobileApp() {
                     cursor: "pointer",
                   }}
                 >
-                  ⚙️ Settings
+                  Settings
                 </button>
 
                 <button
@@ -7841,7 +8504,7 @@ export default function MobileApp() {
                     cursor: "pointer",
                   }}
                 >
-                  🔖 Saved Posts
+                  Saved Posts
                 </button>
 
                 <button
@@ -7867,7 +8530,7 @@ export default function MobileApp() {
                     cursor: "pointer",
                   }}
                 >
-                  📖 Community Guidelines
+                  Community Guidelines
                 </button>
 
                 <button
@@ -7893,7 +8556,7 @@ export default function MobileApp() {
                     cursor: "pointer",
                   }}
                 >
-                  💖 Be a Supporter
+                  Be a Supporter
                 </button>
 
                 <button
@@ -7919,7 +8582,7 @@ export default function MobileApp() {
                     cursor: "pointer",
                   }}
                 >
-                  ❓ Help
+                  Help
                 </button>
 
                 {(userProfile?.role === "admin" || isAdmin) && (
@@ -7952,7 +8615,7 @@ export default function MobileApp() {
                         cursor: "pointer",
                       }}
                     >
-                      🚨 Admin Reports
+                      Admin Reports
                     </button>
                     <button
                       onClick={() => {
@@ -7976,7 +8639,7 @@ export default function MobileApp() {
                         cursor: "pointer",
                       }}
                     >
-                      📂 Media Requests
+                      Media Requests
                     </button>
                     <button
                       onClick={() => {
@@ -8000,7 +8663,7 @@ export default function MobileApp() {
                         cursor: "pointer",
                       }}
                     >
-                      🛠️ Admin Support
+                      Admin Support
                     </button>
                   </>
                 )}
@@ -8023,7 +8686,7 @@ export default function MobileApp() {
                     borderTop: "1px solid #f0f0f0",
                   }}
                 >
-                  🚪 Sign Out
+                  Sign Out
                 </button>
               </div>
             )}
