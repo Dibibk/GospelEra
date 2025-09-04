@@ -4087,6 +4087,294 @@ export default function MobileApp() {
     );
   };
 
+  // Mobile Admin Dashboard Component
+  const MobileAdminDashboardPage = () => {
+    return (
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          minHeight: "100dvh",
+          background: "#ffffff",
+          color: "#000000",
+        }}
+      >
+        {/* Header */}
+        <div
+          style={{
+            padding: "16px 20px",
+            borderBottom: "1px solid #e5e5e5",
+            background: "#ffffff",
+            position: "sticky",
+            top: 0,
+            zIndex: 10,
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center" }}>
+            <button
+              onClick={() => setShowMobileAdminDashboard(false)}
+              style={{
+                background: "none",
+                border: "none",
+                fontSize: "20px",
+                padding: "0",
+                marginRight: "12px",
+                cursor: "pointer",
+                color: "#000000",
+              }}
+            >
+              ←
+            </button>
+            <div
+              style={{
+                fontSize: "18px",
+                fontWeight: 600,
+                color: "#dc2626",
+              }}
+            >
+              🛡️ Admin Dashboard
+            </div>
+          </div>
+        </div>
+
+        {/* Content */}
+        <div style={{ padding: "20px", flex: 1 }}>
+          <div style={{ marginBottom: "24px" }}>
+            <h3 style={{ fontSize: "16px", fontWeight: 600, marginBottom: "8px", color: "#262626" }}>
+              Admin Tools
+            </h3>
+            <p style={{ fontSize: "14px", color: "#8e8e8e", marginBottom: "16px" }}>
+              Manage your Gospel Era community
+            </p>
+          </div>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+            <button
+              onClick={() => {
+                setShowMobileAdminDashboard(false);
+                setShowMobileReviewReports(true);
+              }}
+              style={{
+                padding: "16px",
+                background: "#f8f9fa",
+                border: "1px solid #e5e5e5",
+                borderRadius: "8px",
+                textAlign: "left",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: "12px",
+              }}
+            >
+              <span style={{ fontSize: "20px" }}>🚨</span>
+              <div>
+                <div style={{ fontSize: "14px", fontWeight: 600, color: "#262626" }}>
+                  Review Reports
+                </div>
+                <div style={{ fontSize: "12px", color: "#8e8e8e" }}>
+                  Moderate content and manage reports
+                </div>
+              </div>
+            </button>
+
+            <button
+              onClick={() => {
+                setShowMobileAdminDashboard(false);
+                setShowMobileMediaRequests(true);
+              }}
+              style={{
+                padding: "16px",
+                background: "#f8f9fa",
+                border: "1px solid #e5e5e5",
+                borderRadius: "8px",
+                textAlign: "left",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: "12px",
+              }}
+            >
+              <span style={{ fontSize: "20px" }}>📂</span>
+              <div>
+                <div style={{ fontSize: "14px", fontWeight: 600, color: "#262626" }}>
+                  Media Requests
+                </div>
+                <div style={{ fontSize: "12px", color: "#8e8e8e" }}>
+                  Approve media upload permissions
+                </div>
+              </div>
+            </button>
+
+            <button
+              onClick={() => {
+                setShowMobileAdminDashboard(false);
+                setShowMobileManageUsers(true);
+              }}
+              style={{
+                padding: "16px",
+                background: "#f8f9fa",
+                border: "1px solid #e5e5e5",
+                borderRadius: "8px",
+                textAlign: "left",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: "12px",
+              }}
+            >
+              <span style={{ fontSize: "20px" }}>👥</span>
+              <div>
+                <div style={{ fontSize: "14px", fontWeight: 600, color: "#262626" }}>
+                  Manage Users
+                </div>
+                <div style={{ fontSize: "12px", color: "#8e8e8e" }}>
+                  User management and moderation
+                </div>
+              </div>
+            </button>
+
+            <button
+              onClick={() => {
+                setShowMobileAdminDashboard(false);
+                setShowMobileAdminDonations(true);
+              }}
+              style={{
+                padding: "16px",
+                background: "#f8f9fa",
+                border: "1px solid #e5e5e5",
+                borderRadius: "8px",
+                textAlign: "left",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: "12px",
+              }}
+            >
+              <span style={{ fontSize: "20px" }}>💰</span>
+              <div>
+                <div style={{ fontSize: "14px", fontWeight: 600, color: "#262626" }}>
+                  Admin Donations
+                </div>
+                <div style={{ fontSize: "12px", color: "#8e8e8e" }}>
+                  View donation and pledge reports
+                </div>
+              </div>
+            </button>
+
+            <button
+              onClick={() => {
+                setShowMobileAdminDashboard(false);
+                setShowMobileAdminSupport(true);
+              }}
+              style={{
+                padding: "16px",
+                background: "#f8f9fa",
+                border: "1px solid #e5e5e5",
+                borderRadius: "8px",
+                textAlign: "left",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: "12px",
+              }}
+            >
+              <span style={{ fontSize: "20px" }}>🛠️</span>
+              <div>
+                <div style={{ fontSize: "14px", fontWeight: 600, color: "#262626" }}>
+                  Admin Support
+                </div>
+                <div style={{ fontSize: "12px", color: "#8e8e8e" }}>
+                  User support and system tools
+                </div>
+              </div>
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Placeholder Mobile Admin Components (will implement proper functionality later)
+  const MobileReviewReportsPage = () => (
+    <div style={{ display: "flex", flexDirection: "column", minHeight: "100dvh", background: "#ffffff" }}>
+      <div style={{ padding: "16px 20px", borderBottom: "1px solid #e5e5e5", position: "sticky", top: 0, background: "#ffffff", zIndex: 10 }}>
+        <div style={{ display: "flex", alignItems: "center" }}>
+          <button onClick={() => setShowMobileReviewReports(false)} style={{ background: "none", border: "none", fontSize: "20px", padding: "0", marginRight: "12px", cursor: "pointer" }}>←</button>
+          <div style={{ fontSize: "18px", fontWeight: 600, color: "#dc2626" }}>🚨 Review Reports</div>
+        </div>
+      </div>
+      <div style={{ padding: "20px", flex: 1, textAlign: "center", paddingTop: "60px" }}>
+        <div style={{ fontSize: "48px", marginBottom: "16px" }}>🚨</div>
+        <div style={{ fontSize: "16px", fontWeight: 600, marginBottom: "8px", color: "#262626" }}>Review Reports</div>
+        <div style={{ fontSize: "14px", color: "#8e8e8e" }}>Advanced admin functionality coming soon</div>
+      </div>
+    </div>
+  );
+
+  const MobileMediaRequestsPage = () => (
+    <div style={{ display: "flex", flexDirection: "column", minHeight: "100dvh", background: "#ffffff" }}>
+      <div style={{ padding: "16px 20px", borderBottom: "1px solid #e5e5e5", position: "sticky", top: 0, background: "#ffffff", zIndex: 10 }}>
+        <div style={{ display: "flex", alignItems: "center" }}>
+          <button onClick={() => setShowMobileMediaRequests(false)} style={{ background: "none", border: "none", fontSize: "20px", padding: "0", marginRight: "12px", cursor: "pointer" }}>←</button>
+          <div style={{ fontSize: "18px", fontWeight: 600, color: "#dc2626" }}>📂 Media Requests</div>
+        </div>
+      </div>
+      <div style={{ padding: "20px", flex: 1, textAlign: "center", paddingTop: "60px" }}>
+        <div style={{ fontSize: "48px", marginBottom: "16px" }}>📂</div>
+        <div style={{ fontSize: "16px", fontWeight: 600, marginBottom: "8px", color: "#262626" }}>Media Requests</div>
+        <div style={{ fontSize: "14px", color: "#8e8e8e" }}>Advanced admin functionality coming soon</div>
+      </div>
+    </div>
+  );
+
+  const MobileManageUsersPage = () => (
+    <div style={{ display: "flex", flexDirection: "column", minHeight: "100dvh", background: "#ffffff" }}>
+      <div style={{ padding: "16px 20px", borderBottom: "1px solid #e5e5e5", position: "sticky", top: 0, background: "#ffffff", zIndex: 10 }}>
+        <div style={{ display: "flex", alignItems: "center" }}>
+          <button onClick={() => setShowMobileManageUsers(false)} style={{ background: "none", border: "none", fontSize: "20px", padding: "0", marginRight: "12px", cursor: "pointer" }}>←</button>
+          <div style={{ fontSize: "18px", fontWeight: 600, color: "#dc2626" }}>👥 Manage Users</div>
+        </div>
+      </div>
+      <div style={{ padding: "20px", flex: 1, textAlign: "center", paddingTop: "60px" }}>
+        <div style={{ fontSize: "48px", marginBottom: "16px" }}>👥</div>
+        <div style={{ fontSize: "16px", fontWeight: 600, marginBottom: "8px", color: "#262626" }}>Manage Users</div>
+        <div style={{ fontSize: "14px", color: "#8e8e8e" }}>Advanced admin functionality coming soon</div>
+      </div>
+    </div>
+  );
+
+  const MobileAdminSupportPage = () => (
+    <div style={{ display: "flex", flexDirection: "column", minHeight: "100dvh", background: "#ffffff" }}>
+      <div style={{ padding: "16px 20px", borderBottom: "1px solid #e5e5e5", position: "sticky", top: 0, background: "#ffffff", zIndex: 10 }}>
+        <div style={{ display: "flex", alignItems: "center" }}>
+          <button onClick={() => setShowMobileAdminSupport(false)} style={{ background: "none", border: "none", fontSize: "20px", padding: "0", marginRight: "12px", cursor: "pointer" }}>←</button>
+          <div style={{ fontSize: "18px", fontWeight: 600, color: "#dc2626" }}>🛠️ Admin Support</div>
+        </div>
+      </div>
+      <div style={{ padding: "20px", flex: 1, textAlign: "center", paddingTop: "60px" }}>
+        <div style={{ fontSize: "48px", marginBottom: "16px" }}>🛠️</div>
+        <div style={{ fontSize: "16px", fontWeight: 600, marginBottom: "8px", color: "#262626" }}>Admin Support</div>
+        <div style={{ fontSize: "14px", color: "#8e8e8e" }}>Advanced admin functionality coming soon</div>
+      </div>
+    </div>
+  );
+
+  const MobileAdminDonationsPage = () => (
+    <div style={{ display: "flex", flexDirection: "column", minHeight: "100dvh", background: "#ffffff" }}>
+      <div style={{ padding: "16px 20px", borderBottom: "1px solid #e5e5e5", position: "sticky", top: 0, background: "#ffffff", zIndex: 10 }}>
+        <div style={{ display: "flex", alignItems: "center" }}>
+          <button onClick={() => setShowMobileAdminDonations(false)} style={{ background: "none", border: "none", fontSize: "20px", padding: "0", marginRight: "12px", cursor: "pointer" }}>←</button>
+          <div style={{ fontSize: "18px", fontWeight: 600, color: "#dc2626" }}>💰 Admin Donations</div>
+        </div>
+      </div>
+      <div style={{ padding: "20px", flex: 1, textAlign: "center", paddingTop: "60px" }}>
+        <div style={{ fontSize: "48px", marginBottom: "16px" }}>💰</div>
+        <div style={{ fontSize: "16px", fontWeight: 600, marginBottom: "8px", color: "#262626" }}>Admin Donations</div>
+        <div style={{ fontSize: "14px", color: "#8e8e8e" }}>Advanced admin functionality coming soon</div>
+      </div>
+    </div>
+  );
+
   // Mobile Edit Profile Component
   const MobileEditProfilePage = () => {
     return (
@@ -7344,6 +7632,18 @@ export default function MobileApp() {
       <div style={styles.content}>
         {!user ? (
           renderLoginPage()
+        ) : showMobileAdminDashboard ? (
+          <MobileAdminDashboardPage />
+        ) : showMobileReviewReports ? (
+          <MobileReviewReportsPage />
+        ) : showMobileMediaRequests ? (
+          <MobileMediaRequestsPage />
+        ) : showMobileManageUsers ? (
+          <MobileManageUsersPage />
+        ) : showMobileAdminSupport ? (
+          <MobileAdminSupportPage />
+        ) : showMobileAdminDonations ? (
+          <MobileAdminDonationsPage />
         ) : showMobileEditProfile ? (
           <MobileEditProfilePage />
         ) : showMobileProfile ? (
