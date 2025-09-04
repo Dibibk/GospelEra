@@ -7337,12 +7337,14 @@ export default function MobileApp() {
     const paymentsEnabled = stripeEnabled; // PayPal not implemented yet
 
     const handleAmountSelect = (amount: number) => {
+      console.log('Amount selected:', amount);
       setSelectedAmount(amount);
       setCustomAmount("");
       setError("");
     };
 
     const handleCustomAmountChange = (value: string) => {
+      console.log('Custom amount changed:', value);
       setCustomAmount(value);
       setSelectedAmount(null);
       setError("");
@@ -7429,6 +7431,7 @@ export default function MobileApp() {
     };
 
     const handleSupport = () => {
+      console.log('Support button clicked! Amount:', getSelectedAmount());
       if (paymentsEnabled && activeTab === "stripe") {
         handleStripePayment();
       } else {
@@ -7543,6 +7546,7 @@ export default function MobileApp() {
               <button
                 key={amount}
                 onClick={() => handleAmountSelect(amount)}
+                onTouchStart={() => {}} // Enable touch events
                 style={{
                   padding: "12px 16px",
                   borderRadius: "8px",
@@ -7552,6 +7556,9 @@ export default function MobileApp() {
                   fontSize: "14px",
                   fontWeight: 600,
                   cursor: "pointer",
+                  touchAction: "manipulation",
+                  userSelect: "none",
+                  WebkitTapHighlightColor: "rgba(0,0,0,0)",
                 }}
               >
                 ${amount}
@@ -7565,6 +7572,7 @@ export default function MobileApp() {
               placeholder="Custom amount"
               value={customAmount}
               onChange={(e) => handleCustomAmountChange(e.target.value)}
+              onFocus={() => console.log('Custom amount input focused')}
               inputMode="decimal"
               autoCapitalize="none"
               autoCorrect="off"
@@ -7574,7 +7582,10 @@ export default function MobileApp() {
                 padding: "12px",
                 border: "1px solid #dbdbdb",
                 borderRadius: "8px",
-                fontSize: "14px",
+                fontSize: "16px", // 16px prevents zoom on iOS
+                touchAction: "manipulation",
+                WebkitAppearance: "none",
+                boxSizing: "border-box",
               }}
               min="2"
               max="200"
@@ -7598,6 +7609,7 @@ export default function MobileApp() {
             placeholder="Add a message (optional)"
             value={message}
             onChange={(e) => setMessage(e.target.value)}
+            onFocus={() => console.log('Message textarea focused')}
             inputMode="text"
             autoCapitalize="sentences"
             autoCorrect="on"
@@ -7607,9 +7619,12 @@ export default function MobileApp() {
               padding: "12px",
               border: "1px solid #dbdbdb",
               borderRadius: "8px",
-              fontSize: "14px",
+              fontSize: "16px", // 16px prevents zoom on iOS
               minHeight: "80px",
               resize: "vertical",
+              touchAction: "manipulation",
+              WebkitAppearance: "none",
+              boxSizing: "border-box",
             }}
           />
         </div>
@@ -7685,6 +7700,7 @@ export default function MobileApp() {
         {/* Support Button */}
         <button
           onClick={handleSupport}
+          onTouchStart={() => {}} // Enable touch events
           disabled={!getSelectedAmount() || isProcessing}
           style={{
             width: "100%",
@@ -7696,6 +7712,10 @@ export default function MobileApp() {
             fontSize: "16px",
             fontWeight: 600,
             cursor: getSelectedAmount() ? "pointer" : "default",
+            touchAction: "manipulation",
+            userSelect: "none",
+            WebkitTapHighlightColor: "rgba(0,0,0,0)",
+            boxSizing: "border-box",
           }}
         >
           {isProcessing
