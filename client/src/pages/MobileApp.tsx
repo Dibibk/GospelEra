@@ -1128,7 +1128,7 @@ export default function MobileApp() {
       flex: 1,
       overflowY: "auto" as const,
       background: "#ffffff",
-      paddingBottom: "55px",
+      paddingBottom: "20px",
     },
     bottomNav: {
       position: "sticky" as const,
