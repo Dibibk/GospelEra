@@ -2203,6 +2203,7 @@ export default function MobileApp() {
             }}
           >
             ✏️
+
           </div>
           <div style={{ fontWeight: 600, color: "#262626" }}>Create Post</div>
         </div>
@@ -9016,10 +9017,7 @@ export default function MobileApp() {
       {user && (
         <nav style={styles.bottomNav}>
           <div
-            onClick={() => {
-              resetAllModalStates();
-              setActiveTab(0);
-            }}
+            onClick={() => setActiveTab(0)}
             style={{
               display: "flex",
               flexDirection: "column",
@@ -9038,7 +9036,6 @@ export default function MobileApp() {
           </div>
           <div
             onClick={() => {
-              resetAllModalStates();
               setActiveTab(0);
               // Focus on search input in home page
               setTimeout(() => {
@@ -9069,10 +9066,7 @@ export default function MobileApp() {
             <span style={{ fontSize: "10px", marginTop: "2px" }}>Search</span>
           </div>
           <div
-            onClick={() => {
-              resetAllModalStates();
-              setActiveTab(1);
-            }}
+            onClick={() => setActiveTab(1)}
             style={{
               display: "flex",
               flexDirection: "column",
@@ -9087,10 +9081,7 @@ export default function MobileApp() {
             ➕<span style={{ fontSize: "10px", marginTop: "2px" }}>Post</span>
           </div>
           <div
-            onClick={() => {
-              resetAllModalStates();
-              setActiveTab(2);
-            }}
+            onClick={() => setActiveTab(2)}
             style={{
               display: "flex",
               flexDirection: "column",
