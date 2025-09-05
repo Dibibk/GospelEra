@@ -8566,6 +8566,14 @@ export default function MobileApp() {
             {/* User Name and Avatar */}
             <button
               onClick={() => setShowUserDropdown(!showUserDropdown)}
+              onTouchStart={(e) => {
+                e.currentTarget.style.transform = 'scale(0.95)';
+                e.currentTarget.style.opacity = '0.7';
+              }}
+              onTouchEnd={(e) => {
+                e.currentTarget.style.transform = 'scale(1)';
+                e.currentTarget.style.opacity = '1';
+              }}
               style={{
                 display: "flex",
                 alignItems: "center",
@@ -8576,6 +8584,10 @@ export default function MobileApp() {
                 padding: "4px 8px",
                 borderRadius: "20px",
                 ":hover": { background: "#f0f0f0" },
+                WebkitTapHighlightColor: 'transparent',
+                touchAction: 'manipulation',
+                userSelect: 'none',
+                transition: 'transform 0.1s, opacity 0.1s',
               }}
             >
               <div
@@ -9017,7 +9029,18 @@ export default function MobileApp() {
       {user && (
         <nav style={styles.bottomNav}>
           <div
-            onClick={() => setActiveTab(0)}
+            onClick={() => {
+              resetAllModalStates();
+              setActiveTab(0);
+            }}
+            onTouchStart={(e) => {
+              e.currentTarget.style.transform = 'scale(0.95)';
+              e.currentTarget.style.opacity = '0.7';
+            }}
+            onTouchEnd={(e) => {
+              e.currentTarget.style.transform = 'scale(1)';
+              e.currentTarget.style.opacity = '1';
+            }}
             style={{
               display: "flex",
               flexDirection: "column",
@@ -9027,6 +9050,10 @@ export default function MobileApp() {
               fontSize: "20px",
               padding: "8px 12px",
               cursor: "pointer",
+              WebkitTapHighlightColor: 'transparent',
+              touchAction: 'manipulation',
+              userSelect: 'none',
+              transition: 'transform 0.1s, opacity 0.1s',
             }}
           >
             <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
@@ -9036,6 +9063,7 @@ export default function MobileApp() {
           </div>
           <div
             onClick={() => {
+              resetAllModalStates();
               setActiveTab(0);
               // Focus on search input in home page
               setTimeout(() => {
@@ -9051,6 +9079,14 @@ export default function MobileApp() {
                 }
               }, 100);
             }}
+            onTouchStart={(e) => {
+              e.currentTarget.style.transform = 'scale(0.95)';
+              e.currentTarget.style.opacity = '0.7';
+            }}
+            onTouchEnd={(e) => {
+              e.currentTarget.style.transform = 'scale(1)';
+              e.currentTarget.style.opacity = '1';
+            }}
             style={{
               display: "flex",
               flexDirection: "column",
@@ -9060,13 +9096,28 @@ export default function MobileApp() {
               fontSize: "20px",
               padding: "8px 12px",
               cursor: "pointer",
+              WebkitTapHighlightColor: 'transparent',
+              touchAction: 'manipulation',
+              userSelect: 'none',
+              transition: 'transform 0.1s, opacity 0.1s',
             }}
           >
             🔍
             <span style={{ fontSize: "10px", marginTop: "2px" }}>Search</span>
           </div>
           <div
-            onClick={() => setActiveTab(1)}
+            onClick={() => {
+              resetAllModalStates();
+              setActiveTab(1);
+            }}
+            onTouchStart={(e) => {
+              e.currentTarget.style.transform = 'scale(0.95)';
+              e.currentTarget.style.opacity = '0.7';
+            }}
+            onTouchEnd={(e) => {
+              e.currentTarget.style.transform = 'scale(1)';
+              e.currentTarget.style.opacity = '1';
+            }}
             style={{
               display: "flex",
               flexDirection: "column",
@@ -9076,12 +9127,27 @@ export default function MobileApp() {
               fontSize: "20px",
               padding: "8px 12px",
               cursor: "pointer",
+              WebkitTapHighlightColor: 'transparent',
+              touchAction: 'manipulation',
+              userSelect: 'none',
+              transition: 'transform 0.1s, opacity 0.1s',
             }}
           >
             ➕<span style={{ fontSize: "10px", marginTop: "2px" }}>Post</span>
           </div>
           <div
-            onClick={() => setActiveTab(2)}
+            onClick={() => {
+              resetAllModalStates();
+              setActiveTab(2);
+            }}
+            onTouchStart={(e) => {
+              e.currentTarget.style.transform = 'scale(0.95)';
+              e.currentTarget.style.opacity = '0.7';
+            }}
+            onTouchEnd={(e) => {
+              e.currentTarget.style.transform = 'scale(1)';
+              e.currentTarget.style.opacity = '1';
+            }}
             style={{
               display: "flex",
               flexDirection: "column",
@@ -9091,6 +9157,10 @@ export default function MobileApp() {
               fontSize: "20px",
               padding: "8px 12px",
               cursor: "pointer",
+              WebkitTapHighlightColor: 'transparent',
+              touchAction: 'manipulation',
+              userSelect: 'none',
+              transition: 'transform 0.1s, opacity 0.1s',
             }}
           >
             <svg
@@ -9135,6 +9205,14 @@ export default function MobileApp() {
                 loadMobileProfile();
               }
             }}
+            onTouchStart={(e) => {
+              e.currentTarget.style.transform = 'scale(0.95)';
+              e.currentTarget.style.opacity = '0.7';
+            }}
+            onTouchEnd={(e) => {
+              e.currentTarget.style.transform = 'scale(1)';
+              e.currentTarget.style.opacity = '1';
+            }}
             style={{
               display: "flex",
               flexDirection: "column",
@@ -9144,6 +9222,10 @@ export default function MobileApp() {
               fontSize: "20px",
               padding: "8px 12px",
               cursor: "pointer",
+              WebkitTapHighlightColor: 'transparent',
+              touchAction: 'manipulation',
+              userSelect: 'none',
+              transition: 'transform 0.1s, opacity 0.1s',
             }}
           >
             👤
