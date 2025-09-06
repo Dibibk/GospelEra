@@ -62,6 +62,8 @@ export async function createComment({ postId, content }: CreateCommentData) {
  */
 export async function listComments({ postId, limit = 20, fromId }: ListCommentsOptions) {
   try {
+    console.log('Attempting to fetch comments for postId:', postId)
+    
     let query = supabase
       .from('comments')
       .select(`
@@ -107,11 +109,13 @@ export async function listComments({ postId, limit = 20, fromId }: ListCommentsO
     const { data, error } = await query
 
     if (error) {
+      console.error('Supabase comments error:', error)
       throw new Error(`Failed to fetch comments: ${error.message}`)
     }
 
     return { data, error: null }
   } catch (err) {
+    console.error('Comments function error:', err)
     return { data: null, error: err }
   }
 }
