@@ -151,6 +151,102 @@ const STYLES = {
     fontSize: "12px",
     color: "#8e8e8e",
   },
+  // Post styles
+  postContainer: {
+    background: "#ffffff",
+    borderBottom: "1px solid #dbdbdb",
+  },
+  postHeader: {
+    display: "flex" as const,
+    alignItems: "center",
+    padding: "12px 16px",
+  },
+  postAvatar: {
+    width: "32px",
+    height: "32px",
+    borderRadius: "50%",
+    background: "#dbdbdb",
+    display: "flex" as const,
+    alignItems: "center",
+    justifyContent: "center",
+    fontSize: "16px",
+    marginRight: "12px",
+    border: "1px solid #dbdbdb",
+    color: "#8e8e8e",
+  },
+  postAuthorInfo: {
+    flex: 1,
+  },
+  postAuthorName: {
+    fontWeight: 600,
+    fontSize: "14px",
+    color: "#262626",
+  },
+  postTimeAgo: {
+    fontSize: "12px",
+    color: "#8e8e8e",
+  },
+  postContent: {
+    padding: "0 16px 8px",
+  },
+  postTitle: {
+    fontWeight: 600,
+    marginBottom: "8px",
+    color: "#262626",
+  },
+  postText: {
+    fontSize: "14px",
+    lineHeight: 1.4,
+    color: "#262626",
+    marginBottom: "8px",
+  },
+  postActions: {
+    display: "flex" as const,
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: "8px 16px",
+    borderTop: "1px solid #efefef",
+  },
+  postActionsLeft: {
+    display: "flex" as const,
+    gap: "16px",
+  },
+  actionButton: {
+    background: "none",
+    border: "none",
+    cursor: "pointer",
+    padding: "8px",
+    display: "flex" as const,
+    alignItems: "center",
+    gap: "4px",
+  },
+  skeletonPost: {
+    background: "#ffffff",
+    borderBottom: "1px solid #dbdbdb",
+  },
+  skeletonHeader: {
+    padding: "12px 16px",
+    display: "flex" as const,
+    alignItems: "center",
+  },
+  skeletonAvatar: {
+    width: "32px",
+    height: "32px",
+    borderRadius: "50%",
+    background: "#f0f0f0",
+    marginRight: "12px",
+  },
+  skeletonText: {
+    height: "12px",
+    background: "#f0f0f0",
+    borderRadius: "6px",
+    marginBottom: "8px",
+  },
+  skeletonImage: {
+    width: "100%",
+    height: "200px",
+    background: "#f0f0f0",
+  },
 };
 
 // Complete Instagram-style Gospel Era Mobile App with Real API Integration
@@ -295,12 +391,12 @@ export default function MobileApp() {
   };
 
   // Toggle post menu dropdown
-  const togglePostMenu = (postId: number) => {
+  const togglePostMenu = useCallback((postId: number) => {
     setShowPostMenu((prev) => ({
       ...prev,
       [postId]: !prev[postId],
     }));
-  };
+  }, []);
 
   // Close all post menus when clicking outside
   useEffect(() => {
@@ -1005,14 +1101,14 @@ export default function MobileApp() {
     }
   };
 
-  const toggleCommentForm = (postId: number) => {
+  const toggleCommentForm = useCallback((postId: number) => {
     setCommentForms((prev) => ({ ...prev, [postId]: !prev[postId] }));
 
     // Load comments when opening the form for the first time
     if (!commentForms[postId] && !postComments[postId]) {
       loadComments(postId);
     }
-  };
+  }, [commentForms, postComments]);
 
   const loadComments = async (postId: number) => {
     try {
@@ -1204,7 +1300,7 @@ export default function MobileApp() {
     }
   };
 
-  const formatTimeAgo = (dateString: string) => {
+  const formatTimeAgo = useCallback((dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
     const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
@@ -1214,7 +1310,7 @@ export default function MobileApp() {
     if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h`;
     if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d`;
     return `${Math.floor(diffInSeconds / 604800)}w`;
-  };
+  }, []);
 
   // ——— Focus safety helpers ———
   const isEditableEl = (el: EventTarget | null) =>
