@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { listPosts, createPost, updatePost, softDeletePost } from "@/lib/posts";
 import {
@@ -63,6 +63,94 @@ const stopIfTextField = (e: React.SyntheticEvent) => {
     'input:not([type=button]):not([type=submit]):not([type=checkbox]):not([type=radio]), textarea, select, [contenteditable="true"], [role="textbox"]',
   );
   if (isTextField) e.stopPropagation(); // let inputs get focus, don't block buttons/links
+};
+
+// Module-level style constants to prevent recreation on each render
+const STYLES = {
+  container: {
+    fontFamily:
+      '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
+    background: "#ffffff",
+    color: "#262626",
+    minHeight: "100dvh",
+    maxWidth: "414px",
+    margin: "0 auto",
+    display: "flex",
+    flexDirection: "column" as const,
+    fontSize: "14px",
+    position: "relative" as const,
+  },
+  header: {
+    background: "#ffffff",
+    borderBottom: "1px solid #dbdbdb",
+    padding: "12px 16px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    position: "sticky" as const,
+    top: 0,
+    zIndex: 100,
+  },
+  content: {
+    flex: 1,
+    overflowY: "auto" as const,
+    background: "#ffffff",
+    paddingBottom: "calc(64px + env(safe-area-inset-bottom, 0px))",
+  },
+  bottomNav: {
+    position: "fixed" as const,
+    bottom: "env(safe-area-inset-bottom, 0px)",
+    left: "50%",
+    transform: "translateX(-50%)",
+    width: "100%",
+    maxWidth: "414px",
+    height: "56px",
+    background: "#ffffff",
+    borderTop: "1px solid #dbdbdb",
+    display: "flex",
+    justifyContent: "space-around",
+    alignItems: "center",
+    padding: "0 16px",
+    zIndex: 50,
+  },
+  searchContainer: {
+    padding: "12px 16px",
+    background: "#ffffff",
+    borderBottom: "1px solid #dbdbdb",
+  },
+  searchInput: {
+    width: "100%",
+    height: "36px",
+    background: "#f2f2f2",
+    border: "none",
+    borderRadius: "18px",
+    padding: "0 16px",
+    fontSize: "14px",
+    color: "#262626",
+    outline: "none",
+  },
+  verseContainer: {
+    background: "#ffffff",
+    padding: "12px 16px",
+    borderBottom: "1px solid #dbdbdb",
+    textAlign: "center" as const,
+  },
+  verseText: {
+    fontSize: "13px",
+    color: "#262626",
+    fontStyle: "italic" as const,
+    lineHeight: 1.4,
+    marginBottom: "4px",
+  },
+  verseReference: {
+    fontSize: "11px",
+    color: "#8e8e8e",
+    fontWeight: 600,
+  },
+  verseLoading: {
+    fontSize: "12px",
+    color: "#8e8e8e",
+  },
 };
 
 // Complete Instagram-style Gospel Era Mobile App with Real API Integration
@@ -1128,57 +1216,6 @@ export default function MobileApp() {
     return `${Math.floor(diffInSeconds / 604800)}w`;
   };
 
-  // Component styles
-  const styles = {
-    container: {
-      fontFamily:
-        '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
-      background: "#ffffff",
-      color: "#262626",
-      minHeight: "100dvh",
-      maxWidth: "414px",
-      margin: "0 auto",
-      display: "flex",
-      flexDirection: "column" as const,
-      fontSize: "14px",
-      position: "relative" as const,
-    },
-    header: {
-      background: "#ffffff",
-      borderBottom: "1px solid #dbdbdb",
-      padding: "12px 16px",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "space-between",
-      position: "sticky" as const,
-      top: 0,
-      zIndex: 100,
-    },
-    content: {
-      flex: 1,
-      overflowY: "auto" as const,
-      background: "#ffffff",
-      // leave room for the fixed nav + iOS safe area
-      paddingBottom: "calc(64px + env(safe-area-inset-bottom,     0px))",
-    },
-
-    bottomNav: {
-      position: "fixed" as const, // <— was sticky
-      bottom: "env(safe-area-inset-bottom, 0px)",
-      left: "50%",
-      transform: "translateX(-50%)",
-      width: "100%",
-      maxWidth: "414px",
-      height: "56px",
-      background: "#ffffff",
-      borderTop: "1px solid #dbdbdb",
-      display: "flex",
-      justifyContent: "space-around",
-      alignItems: "center",
-      padding: "0 16px",
-      zIndex: 50, // make sure it stays above content
-    },
-  };
   // ——— Focus safety helpers ———
   const isEditableEl = (el: EventTarget | null) =>
     el instanceof HTMLElement &&
@@ -1400,13 +1437,7 @@ export default function MobileApp() {
     return (
       <>
         {/* Search bar */}
-        <div
-          style={{
-            padding: "12px 16px",
-            background: "#ffffff",
-            borderBottom: "1px solid #dbdbdb",
-          }}
-        >
+        <div style={STYLES.searchContainer}>
           <input
             type="text"
             placeholder="Search Gospel Era"
@@ -1416,54 +1447,23 @@ export default function MobileApp() {
             autoCapitalize="none"
             autoCorrect="off"
             spellCheck={false}
-            style={{
-              width: "100%",
-              height: "36px",
-              background: "#f2f2f2",
-              border: "none",
-              borderRadius: "18px",
-              padding: "0 16px",
-              fontSize: "14px",
-              color: "#262626",
-              outline: "none",
-            }}
+            style={STYLES.searchInput}
           />
         </div>
 
         {/* Daily scripture */}
-        <div
-          style={{
-            background: "#ffffff",
-            padding: "12px 16px",
-            borderBottom: "1px solid #dbdbdb",
-            textAlign: "center",
-          }}
-        >
+        <div style={STYLES.verseContainer}>
           {dailyVerse ? (
             <>
-              <div
-                style={{
-                  fontSize: "13px",
-                  color: "#262626",
-                  fontStyle: "italic",
-                  lineHeight: 1.4,
-                  marginBottom: "4px",
-                }}
-              >
+              <div style={STYLES.verseText}>
                 "{dailyVerse.text}"
               </div>
-              <div
-                style={{
-                  fontSize: "11px",
-                  color: "#8e8e8e",
-                  fontWeight: 600,
-                }}
-              >
+              <div style={STYLES.verseReference}>
                 - {dailyVerse.reference}
               </div>
             </>
           ) : (
-            <div style={{ fontSize: "12px", color: "#8e8e8e" }}>
+            <div style={STYLES.verseLoading}>
               Loading daily verse...
             </div>
           )}
@@ -8497,7 +8497,7 @@ export default function MobileApp() {
   // Loading state
   if (authLoading) {
     return (
-      <div style={styles.container}>
+      <div style={STYLES.container}>
         <div
           style={{
             display: "flex",
@@ -8532,9 +8532,9 @@ export default function MobileApp() {
 
   // Render main component
   return (
-    <div style={styles.container}>
+    <div style={STYLES.container}>
       {/* Header */}
-      <div style={styles.header}>
+      <div style={STYLES.header}>
         <div
           style={{
             fontSize: "24px",
@@ -8968,7 +8968,7 @@ export default function MobileApp() {
       </div>
 
       {/* Content */}
-      <div style={styles.content}>
+      <div style={STYLES.content}>
         {!user ? (
           renderLoginPage()
         ) : showMobileReviewReports ? (
@@ -9027,7 +9027,7 @@ export default function MobileApp() {
 
       {/* Bottom Navigation - Always show when logged in */}
       {user && (
-        <nav style={styles.bottomNav}>
+        <nav style={STYLES.bottomNav}>
           <div
             onClick={() => {
               resetAllModalStates();
