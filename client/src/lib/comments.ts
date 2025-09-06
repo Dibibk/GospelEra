@@ -72,7 +72,7 @@ export async function listComments({ postId, limit = 20, fromId }: ListCommentsO
         author_id
       `)
       .eq('post_id', postId)
-      .eq('is_deleted', false)
+      .eq('deleted', false)
 
     // Filter out hidden comments (handles both old and new schema)
     try {
