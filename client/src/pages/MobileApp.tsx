@@ -1102,13 +1102,22 @@ export default function MobileApp() {
   };
 
   const toggleCommentForm = useCallback((postId: number) => {
-    setCommentForms((prev) => ({ ...prev, [postId]: !prev[postId] }));
-
-    // Load comments when opening the form for the first time
-    if (!commentForms[postId] && !postComments[postId]) {
-      loadComments(postId);
-    }
-  }, [commentForms, postComments]);
+    setCommentForms((prev) => {
+      const newState = { ...prev, [postId]: !prev[postId] };
+      
+      // Load comments when opening the form for the first time
+      if (!prev[postId]) {
+        setPostComments((prevComments) => {
+          if (!prevComments[postId]) {
+            loadComments(postId);
+          }
+          return prevComments;
+        });
+      }
+      
+      return newState;
+    });
+  }, []);
 
   const loadComments = async (postId: number) => {
     try {
