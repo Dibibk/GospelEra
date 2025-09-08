@@ -2046,9 +2046,17 @@ export default function MobileApp() {
                       borderTop: "1px solid #dbdbdb",
                       padding: "12px 16px",
                     }}
+                    onPointerDownCapture={stopIfTextField}
+                    onMouseDownCapture={stopIfTextField}
+                    onTouchStartCapture={stopIfTextField}
+                    onPointerUpCapture={stopIfTextField}
+                    onMouseUpCapture={stopIfTextField}
+                    onTouchEndCapture={stopIfTextField}
+                    onClickCapture={stopIfTextField}
                   >
                     {/* Comment input */}
-                    <div
+                    <form
+                      onSubmit={(e) => handleCreateComment(post.id, e)}
                       style={{
                         display: "flex",
                         alignItems: "center",
@@ -2063,12 +2071,13 @@ export default function MobileApp() {
                             : "Add a comment..."
                         }
                         value={commentTexts[post.id] || ""}
-                        onChange={(e) =>
+                        onChange={(e) => {
+                          console.log('📝 Comment input change:', { postId: post.id, value: e.target.value });
                           setCommentTexts((prev) => ({
                             ...prev,
                             [post.id]: e.target.value,
-                          }))
-                        }
+                          }));
+                        }}
                         disabled={isBanned}
                         inputMode="text"
                         autoCapitalize="sentences"
@@ -2088,7 +2097,7 @@ export default function MobileApp() {
                         }}
                       />
                       <button
-                        onClick={() => handleCreateComment(post.id)}
+                        type="submit"
                         disabled={
                           !commentTexts[post.id]?.trim() ||
                           submittingComment[post.id] ||
@@ -2113,7 +2122,7 @@ export default function MobileApp() {
                       >
                         {submittingComment[post.id] ? "Posting..." : "Post"}
                       </button>
-                    </div>
+                    </form>
 
                     {/* Comments list */}
                     {postComments[post.id] &&
