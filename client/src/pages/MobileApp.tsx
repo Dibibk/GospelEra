@@ -2215,13 +2215,18 @@ export default function MobileApp() {
                                         background: "none",
                                         border: "none",
                                         color: "#8e8e8e",
-                                        fontSize: "10px",
+                                        fontSize: "14px",
                                         cursor: "pointer",
-                                        padding: "2px",
+                                        padding: "4px",
+                                        minWidth: "24px",
+                                        minHeight: "24px",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
                                       }}
                                       title="Report comment"
                                     >
-                                      Report
+                                      🚩
                                     </button>
                                     {(comment.author_id === user?.id ||
                                       isAdmin) && (
@@ -2239,15 +2244,21 @@ export default function MobileApp() {
                                           background: "none",
                                           border: "none",
                                           color: "#ef4444",
-                                          fontSize: "10px",
+                                          fontSize: "14px",
                                           cursor: "pointer",
-                                          padding: "2px",
+                                          padding: "4px",
+                                          minWidth: "24px",
+                                          minHeight: "24px",
+                                          display: "flex",
+                                          alignItems: "center",
+                                          justifyContent: "center",
+                                          opacity: deletingCommentId === comment.id ? 0.5 : 1,
                                         }}
                                         title="Delete comment"
                                       >
                                         {deletingCommentId === comment.id
-                                          ? "Deleting..."
-                                          : "Delete"}
+                                          ? "⏳"
+                                          : "🗑️"}
                                       </button>
                                     )}
                                   </div>
