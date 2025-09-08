@@ -1120,8 +1120,10 @@ export default function MobileApp() {
   }, []);
 
   const loadComments = async (postId: number) => {
+    console.log('🔍 Loading comments for post:', postId);
     try {
       const { data, error } = await listComments({ postId, limit: 3 });
+      console.log('📥 Load comments response:', { data, error });
       if (error) {
         console.error("Failed to load comments:", error);
       } else {
@@ -1139,8 +1141,13 @@ export default function MobileApp() {
     }
   };
 
-  const handleCreateComment = async (postId: number) => {
+  const handleCreateComment = async (postId: number, e?: React.FormEvent) => {
+    if (e) {
+      e.preventDefault();
+      console.log('📝 Form submitted for post:', postId);
+    }
     const content = commentTexts[postId]?.trim();
+    console.log('💬 Creating comment:', { postId, content, user: user?.id, isBanned });
     if (!content || !user || isBanned) return;
 
     // Enhanced Christ-centric validation for comment content
@@ -1157,11 +1164,14 @@ export default function MobileApp() {
     setSubmittingComment((prev) => ({ ...prev, [postId]: true }));
 
     try {
+      console.log('🚀 Calling createComment API:', { postId, content });
       const { data, error } = await createComment({ postId, content });
+      console.log('📤 Create comment response:', { data, error });
       if (error) {
         alert("Failed to create comment");
       } else {
         // Clear the input and reload comments
+        console.log('✅ Comment created successfully, clearing input and reloading');
         setCommentTexts((prev) => ({ ...prev, [postId]: "" }));
         await loadComments(postId);
       }
