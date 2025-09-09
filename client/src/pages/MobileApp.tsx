@@ -1,4 +1,11 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from "react";
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  useMemo,
+  memo,
+} from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { listPosts, createPost, updatePost, softDeletePost } from "@/lib/posts";
 import {
@@ -1104,7 +1111,7 @@ export default function MobileApp() {
   const toggleCommentForm = useCallback((postId: number) => {
     setCommentForms((prev) => {
       const newState = { ...prev, [postId]: !prev[postId] };
-      
+
       // Load comments when opening the form for the first time
       if (!prev[postId]) {
         setPostComments((prevComments) => {
@@ -1114,16 +1121,16 @@ export default function MobileApp() {
           return prevComments;
         });
       }
-      
+
       return newState;
     });
   }, []);
 
   const loadComments = async (postId: number) => {
-    console.log('🔍 Loading comments for post:', postId);
+    console.log("🔍 Loading comments for post:", postId);
     try {
       const { data, error } = await listComments({ postId, limit: 3 });
-      console.log('📥 Load comments response:', { data, error });
+      console.log("📥 Load comments response:", { data, error });
       if (error) {
         console.error("Failed to load comments:", error);
       } else {
@@ -1144,10 +1151,15 @@ export default function MobileApp() {
   const handleCreateComment = async (postId: number, e?: React.FormEvent) => {
     if (e) {
       e.preventDefault();
-      console.log('📝 Form submitted for post:', postId);
+      console.log("📝 Form submitted for post:", postId);
     }
     const content = commentTexts[postId]?.trim();
-    console.log('💬 Creating comment:', { postId, content, user: user?.id, isBanned });
+    console.log("💬 Creating comment:", {
+      postId,
+      content,
+      user: user?.id,
+      isBanned,
+    });
     if (!content || !user || isBanned) return;
 
     // Enhanced Christ-centric validation for comment content
@@ -1164,14 +1176,16 @@ export default function MobileApp() {
     setSubmittingComment((prev) => ({ ...prev, [postId]: true }));
 
     try {
-      console.log('🚀 Calling createComment API:', { postId, content });
+      console.log("🚀 Calling createComment API:", { postId, content });
       const { data, error } = await createComment({ postId, content });
-      console.log('📤 Create comment response:', { data, error });
+      console.log("📤 Create comment response:", { data, error });
       if (error) {
         alert("Failed to create comment");
       } else {
         // Clear the input and reload comments
-        console.log('✅ Comment created successfully, clearing input and reloading');
+        console.log(
+          "✅ Comment created successfully, clearing input and reloading",
+        );
         setCommentTexts((prev) => ({ ...prev, [postId]: "" }));
         await loadComments(postId);
       }
@@ -1570,17 +1584,11 @@ export default function MobileApp() {
         <div style={STYLES.verseContainer}>
           {dailyVerse ? (
             <>
-              <div style={STYLES.verseText}>
-                "{dailyVerse.text}"
-              </div>
-              <div style={STYLES.verseReference}>
-                - {dailyVerse.reference}
-              </div>
+              <div style={STYLES.verseText}>"{dailyVerse.text}"</div>
+              <div style={STYLES.verseReference}>- {dailyVerse.reference}</div>
             </>
           ) : (
-            <div style={STYLES.verseLoading}>
-              Loading daily verse...
-            </div>
+            <div style={STYLES.verseLoading}>Loading daily verse...</div>
           )}
         </div>
 
@@ -1713,11 +1721,18 @@ export default function MobileApp() {
                   {/* Three dots menu */}
                   <div style={{ position: "relative" }}>
                     <button
+                      onPointerUp={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        togglePostMenu(post.id);
+                      }}
                       onClick={(e) => {
                         e.stopPropagation();
                         togglePostMenu(post.id);
                       }}
                       style={{
+                        touchAction: "manipulation",
+                        WebkitTapHighlightColor: "transparent",
                         background: "none",
                         border: "none",
                         fontSize: "16px",
@@ -2072,7 +2087,10 @@ export default function MobileApp() {
                         }
                         value={commentTexts[post.id] || ""}
                         onChange={(e) => {
-                          console.log('📝 Comment input change:', { postId: post.id, value: e.target.value });
+                          console.log("📝 Comment input change:", {
+                            postId: post.id,
+                            value: e.target.value,
+                          });
                           setCommentTexts((prev) => ({
                             ...prev,
                             [post.id]: e.target.value,
@@ -2252,7 +2270,10 @@ export default function MobileApp() {
                                           display: "flex",
                                           alignItems: "center",
                                           justifyContent: "center",
-                                          opacity: deletingCommentId === comment.id ? 0.5 : 1,
+                                          opacity:
+                                            deletingCommentId === comment.id
+                                              ? 0.5
+                                              : 1,
                                         }}
                                         title="Delete comment"
                                       >
@@ -2338,7 +2359,6 @@ export default function MobileApp() {
             }}
           >
             ✏️
-
           </div>
           <div style={{ fontWeight: 600, color: "#262626" }}>Create Post</div>
         </div>
@@ -8702,12 +8722,12 @@ export default function MobileApp() {
             <button
               onClick={() => setShowUserDropdown(!showUserDropdown)}
               onTouchStart={(e) => {
-                e.currentTarget.style.transform = 'scale(0.95)';
-                e.currentTarget.style.opacity = '0.7';
+                e.currentTarget.style.transform = "scale(0.95)";
+                e.currentTarget.style.opacity = "0.7";
               }}
               onTouchEnd={(e) => {
-                e.currentTarget.style.transform = 'scale(1)';
-                e.currentTarget.style.opacity = '1';
+                e.currentTarget.style.transform = "scale(1)";
+                e.currentTarget.style.opacity = "1";
               }}
               style={{
                 display: "flex",
@@ -8719,10 +8739,10 @@ export default function MobileApp() {
                 padding: "4px 8px",
                 borderRadius: "20px",
                 ":hover": { background: "#f0f0f0" },
-                WebkitTapHighlightColor: 'transparent',
-                touchAction: 'manipulation',
-                userSelect: 'none',
-                transition: 'transform 0.1s, opacity 0.1s',
+                WebkitTapHighlightColor: "transparent",
+                touchAction: "manipulation",
+                userSelect: "none",
+                transition: "transform 0.1s, opacity 0.1s",
               }}
             >
               <div
@@ -8814,6 +8834,13 @@ export default function MobileApp() {
                 </div>
 
                 <button
+                  onPointerUp={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    // (same body as onClick)
+                    setShowUserDropdown(false);
+                    /* … your existing state toggles … */
+                  }}
                   onClick={() => {
                     setShowUserDropdown(false);
                     setShowMobileEditProfile(false);
@@ -9169,12 +9196,12 @@ export default function MobileApp() {
               setActiveTab(0);
             }}
             onTouchStart={(e) => {
-              e.currentTarget.style.transform = 'scale(0.95)';
-              e.currentTarget.style.opacity = '0.7';
+              e.currentTarget.style.transform = "scale(0.95)";
+              e.currentTarget.style.opacity = "0.7";
             }}
             onTouchEnd={(e) => {
-              e.currentTarget.style.transform = 'scale(1)';
-              e.currentTarget.style.opacity = '1';
+              e.currentTarget.style.transform = "scale(1)";
+              e.currentTarget.style.opacity = "1";
             }}
             style={{
               display: "flex",
@@ -9185,10 +9212,10 @@ export default function MobileApp() {
               fontSize: "20px",
               padding: "8px 12px",
               cursor: "pointer",
-              WebkitTapHighlightColor: 'transparent',
-              touchAction: 'manipulation',
-              userSelect: 'none',
-              transition: 'transform 0.1s, opacity 0.1s',
+              WebkitTapHighlightColor: "transparent",
+              touchAction: "manipulation",
+              userSelect: "none",
+              transition: "transform 0.1s, opacity 0.1s",
             }}
           >
             <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
@@ -9215,12 +9242,12 @@ export default function MobileApp() {
               }, 100);
             }}
             onTouchStart={(e) => {
-              e.currentTarget.style.transform = 'scale(0.95)';
-              e.currentTarget.style.opacity = '0.7';
+              e.currentTarget.style.transform = "scale(0.95)";
+              e.currentTarget.style.opacity = "0.7";
             }}
             onTouchEnd={(e) => {
-              e.currentTarget.style.transform = 'scale(1)';
-              e.currentTarget.style.opacity = '1';
+              e.currentTarget.style.transform = "scale(1)";
+              e.currentTarget.style.opacity = "1";
             }}
             style={{
               display: "flex",
@@ -9231,10 +9258,10 @@ export default function MobileApp() {
               fontSize: "20px",
               padding: "8px 12px",
               cursor: "pointer",
-              WebkitTapHighlightColor: 'transparent',
-              touchAction: 'manipulation',
-              userSelect: 'none',
-              transition: 'transform 0.1s, opacity 0.1s',
+              WebkitTapHighlightColor: "transparent",
+              touchAction: "manipulation",
+              userSelect: "none",
+              transition: "transform 0.1s, opacity 0.1s",
             }}
           >
             🔍
@@ -9246,12 +9273,12 @@ export default function MobileApp() {
               setActiveTab(1);
             }}
             onTouchStart={(e) => {
-              e.currentTarget.style.transform = 'scale(0.95)';
-              e.currentTarget.style.opacity = '0.7';
+              e.currentTarget.style.transform = "scale(0.95)";
+              e.currentTarget.style.opacity = "0.7";
             }}
             onTouchEnd={(e) => {
-              e.currentTarget.style.transform = 'scale(1)';
-              e.currentTarget.style.opacity = '1';
+              e.currentTarget.style.transform = "scale(1)";
+              e.currentTarget.style.opacity = "1";
             }}
             style={{
               display: "flex",
@@ -9262,10 +9289,10 @@ export default function MobileApp() {
               fontSize: "20px",
               padding: "8px 12px",
               cursor: "pointer",
-              WebkitTapHighlightColor: 'transparent',
-              touchAction: 'manipulation',
-              userSelect: 'none',
-              transition: 'transform 0.1s, opacity 0.1s',
+              WebkitTapHighlightColor: "transparent",
+              touchAction: "manipulation",
+              userSelect: "none",
+              transition: "transform 0.1s, opacity 0.1s",
             }}
           >
             ➕<span style={{ fontSize: "10px", marginTop: "2px" }}>Post</span>
@@ -9276,12 +9303,12 @@ export default function MobileApp() {
               setActiveTab(2);
             }}
             onTouchStart={(e) => {
-              e.currentTarget.style.transform = 'scale(0.95)';
-              e.currentTarget.style.opacity = '0.7';
+              e.currentTarget.style.transform = "scale(0.95)";
+              e.currentTarget.style.opacity = "0.7";
             }}
             onTouchEnd={(e) => {
-              e.currentTarget.style.transform = 'scale(1)';
-              e.currentTarget.style.opacity = '1';
+              e.currentTarget.style.transform = "scale(1)";
+              e.currentTarget.style.opacity = "1";
             }}
             style={{
               display: "flex",
@@ -9292,10 +9319,10 @@ export default function MobileApp() {
               fontSize: "20px",
               padding: "8px 12px",
               cursor: "pointer",
-              WebkitTapHighlightColor: 'transparent',
-              touchAction: 'manipulation',
-              userSelect: 'none',
-              transition: 'transform 0.1s, opacity 0.1s',
+              WebkitTapHighlightColor: "transparent",
+              touchAction: "manipulation",
+              userSelect: "none",
+              transition: "transform 0.1s, opacity 0.1s",
             }}
           >
             <svg
@@ -9341,12 +9368,12 @@ export default function MobileApp() {
               }
             }}
             onTouchStart={(e) => {
-              e.currentTarget.style.transform = 'scale(0.95)';
-              e.currentTarget.style.opacity = '0.7';
+              e.currentTarget.style.transform = "scale(0.95)";
+              e.currentTarget.style.opacity = "0.7";
             }}
             onTouchEnd={(e) => {
-              e.currentTarget.style.transform = 'scale(1)';
-              e.currentTarget.style.opacity = '1';
+              e.currentTarget.style.transform = "scale(1)";
+              e.currentTarget.style.opacity = "1";
             }}
             style={{
               display: "flex",
@@ -9357,10 +9384,10 @@ export default function MobileApp() {
               fontSize: "20px",
               padding: "8px 12px",
               cursor: "pointer",
-              WebkitTapHighlightColor: 'transparent',
-              touchAction: 'manipulation',
-              userSelect: 'none',
-              transition: 'transform 0.1s, opacity 0.1s',
+              WebkitTapHighlightColor: "transparent",
+              touchAction: "manipulation",
+              userSelect: "none",
+              transition: "transform 0.1s, opacity 0.1s",
             }}
           >
             👤

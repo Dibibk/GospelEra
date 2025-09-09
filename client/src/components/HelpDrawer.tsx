@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { X, Copy, Mail, HelpCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { startedInsideFormField } from "../../src/utils/dongaurds";
+import { startedInsideFormField } from "../utils/dongaurds";
 
 interface HelpDrawerProps {
   isOpen: boolean;
@@ -156,7 +156,7 @@ export function HelpDrawer({
           isOpen && !isClosing ? "opacity-100" : "opacity-0"
         }`}
         onClick={handleOverlayClick}
-        aria-hidden="true"
+        aria-hidden={!isOpen || isClosing} // <-- CHANGE: was aria-hidden="true"
       />
 
       {/* Drawer */}

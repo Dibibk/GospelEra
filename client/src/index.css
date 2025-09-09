@@ -927,7 +927,7 @@ textarea {
 }
 
 /* Prevent hidden/closed overlays from eating clicks */
-[aria-hidden="true"],
+.overlay-global[aria-hidden="true"],
 [hidden],
 [data-state="closed"] {
   pointer-events: none !important;
