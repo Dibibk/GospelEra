@@ -7196,10 +7196,10 @@ export default function MobileApp() {
 
     // Load saved posts when component mounts
     useEffect(() => {
-      if (showMobileSavedPosts && savedPosts.length === 0) {
-        loadSavedPosts();
-      }
-    }, [showMobileSavedPosts]); // Only load when this page is shown and no posts loaded
+      loadSavedPosts(); // fetch once when this page mounts
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []); // dependency-less mount effect
+    // Only load when this page is shown and no posts loaded
 
     const loadSavedPosts = async () => {
       setSavedPostsLoading(true);
@@ -8893,12 +8893,7 @@ export default function MobileApp() {
                 <button
                   onClick={() => {
                     setShowUserDropdown(false);
-                    setShowMobileProfile(false);
-                    setShowMobileEditProfile(false);
-                    setShowMobileSavedPosts(false);
-                    setShowMobileCommunityGuidelines(false);
-                    setShowMobileSupporter(false);
-                    setShowMobileHelp(false);
+                    resetAllModalStates();
                     setShowMobileSettings(true);
                   }}
                   style={{
@@ -8919,12 +8914,7 @@ export default function MobileApp() {
                 <button
                   onClick={() => {
                     setShowUserDropdown(false);
-                    setShowMobileProfile(false);
-                    setShowMobileEditProfile(false);
-                    setShowMobileSettings(false);
-                    setShowMobileCommunityGuidelines(false);
-                    setShowMobileSupporter(false);
-                    setShowMobileHelp(false);
+                    resetAllModalStates();
                     setShowMobileSavedPosts(true);
                   }}
                   style={{
@@ -8945,12 +8935,7 @@ export default function MobileApp() {
                 <button
                   onClick={() => {
                     setShowUserDropdown(false);
-                    setShowMobileProfile(false);
-                    setShowMobileEditProfile(false);
-                    setShowMobileSettings(false);
-                    setShowMobileSavedPosts(false);
-                    setShowMobileSupporter(false);
-                    setShowMobileHelp(false);
+                    resetAllModalStates();
                     setShowMobileCommunityGuidelines(true);
                   }}
                   style={{
@@ -8971,12 +8956,7 @@ export default function MobileApp() {
                 <button
                   onClick={() => {
                     setShowUserDropdown(false);
-                    setShowMobileProfile(false);
-                    setShowMobileEditProfile(false);
-                    setShowMobileSettings(false);
-                    setShowMobileSavedPosts(false);
-                    setShowMobileCommunityGuidelines(false);
-                    setShowMobileHelp(false);
+                    resetAllModalStates();
                     setShowMobileSupporter(true);
                   }}
                   style={{
@@ -8997,12 +8977,7 @@ export default function MobileApp() {
                 <button
                   onClick={() => {
                     setShowUserDropdown(false);
-                    setShowMobileProfile(false);
-                    setShowMobileEditProfile(false);
-                    setShowMobileSettings(false);
-                    setShowMobileSavedPosts(false);
-                    setShowMobileCommunityGuidelines(false);
-                    setShowMobileSupporter(false);
+                    resetAllModalStates();
                     setShowMobileHelp(true);
                   }}
                   style={{
@@ -9031,12 +9006,8 @@ export default function MobileApp() {
                     <button
                       onClick={() => {
                         setShowUserDropdown(false);
-                        // Reset all admin states first
-                        setShowMobileReviewReports(false);
-                        setShowMobileMediaRequests(false);
-                        setShowMobileAdminSupport(false);
-                        // Then show the selected page
-                        setTimeout(() => setShowMobileReviewReports(true), 0);
+                        resetAllModalStates();
+                        setShowMobileReviewReports(true);
                       }}
                       style={{
                         width: "100%",
@@ -9055,12 +9026,8 @@ export default function MobileApp() {
                     <button
                       onClick={() => {
                         setShowUserDropdown(false);
-                        // Reset all admin states first
-                        setShowMobileReviewReports(false);
-                        setShowMobileMediaRequests(false);
-                        setShowMobileAdminSupport(false);
-                        // Then show the selected page
-                        setTimeout(() => setShowMobileMediaRequests(true), 0);
+                        resetAllModalStates();
+                        setShowMobileMediaRequests(true);
                       }}
                       style={{
                         width: "100%",
@@ -9079,12 +9046,8 @@ export default function MobileApp() {
                     <button
                       onClick={() => {
                         setShowUserDropdown(false);
-                        // Reset all admin states first
-                        setShowMobileReviewReports(false);
-                        setShowMobileMediaRequests(false);
-                        setShowMobileAdminSupport(false);
-                        // Then show the selected page
-                        setTimeout(() => setShowMobileAdminSupport(true), 0);
+                        resetAllModalStates();
+                        setShowMobileAdminSupport(true);
                       }}
                       style={{
                         width: "100%",
