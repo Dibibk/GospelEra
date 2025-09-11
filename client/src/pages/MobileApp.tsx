@@ -7188,32 +7188,26 @@ export default function MobileApp() {
     );
   };
 
-  // Mobile Saved Posts Component
+  // Mobile Saved Posts Component (simplified for now - enhanced version will be separate)
   const MobileSavedPostsPage = () => {
     const [savedPosts, setSavedPosts] = useState<any[]>([]);
     const [savedPostsLoading, setSavedPostsLoading] = useState(true);
     const [savedPostsError, setSavedPostsError] = useState("");
 
-    // Load saved posts when component mounts
     useEffect(() => {
-      loadSavedPosts(); // fetch once when this page mounts
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []); // dependency-less mount effect
-    // Only load when this page is shown and no posts loaded
+      loadSavedPosts();
+    }, []);
 
     const loadSavedPosts = async () => {
       setSavedPostsLoading(true);
       setSavedPostsError("");
 
       try {
-        // Use the same listBookmarks function as web app but handle errors properly
         const { listBookmarks } = await import("../lib/engagement");
         const { data, error } = await listBookmarks({ limit: 50 });
 
         if (error) {
-          setSavedPostsError(
-            (error as any).message || "Failed to load saved posts",
-          );
+          setSavedPostsError((error as any).message || "Failed to load saved posts");
         } else {
           const bookmarkedPosts = data || [];
           setSavedPosts(bookmarkedPosts);
@@ -7247,9 +7241,7 @@ export default function MobileApp() {
         }
       } catch (err) {
         console.error("Error loading saved posts:", err);
-        setSavedPostsError(
-          (err as any).message || "Failed to load saved posts",
-        );
+        setSavedPostsError((err as any).message || "Failed to load saved posts");
       }
 
       setSavedPostsLoading(false);
@@ -7295,13 +7287,7 @@ export default function MobileApp() {
         ) : savedPostsError ? (
           <div style={{ padding: "40px 20px", textAlign: "center" }}>
             <div style={{ fontSize: "48px", marginBottom: "16px" }}>⚠️</div>
-            <div
-              style={{
-                fontSize: "16px",
-                color: "#ef4444",
-                marginBottom: "8px",
-              }}
-            >
+            <div style={{ fontSize: "16px", color: "#ef4444", marginBottom: "8px" }}>
               Error
             </div>
             <div style={{ fontSize: "14px", color: "#8e8e8e" }}>
@@ -7312,7 +7298,7 @@ export default function MobileApp() {
               style={{
                 marginTop: "16px",
                 padding: "8px 16px",
-                background: "#4285f4",
+                background: "#0095f6",
                 color: "#ffffff",
                 border: "none",
                 borderRadius: "6px",
@@ -7394,12 +7380,10 @@ export default function MobileApp() {
                         color: "#262626",
                       }}
                     >
-                      {profiles.get(post.author_id)?.display_name ||
-                        "Gospel User"}
+                      {profiles.get(post.author_id)?.display_name || "Gospel User"}
                     </div>
                     <div style={{ fontSize: "12px", color: "#8e8e8e" }}>
-                      Saved{" "}
-                      {formatTimeAgo(post.bookmarked_at || post.created_at)}
+                      Saved {formatTimeAgo(post.bookmarked_at || post.created_at)}
                     </div>
                   </div>
                 </div>
@@ -7441,7 +7425,7 @@ export default function MobileApp() {
                           key={tagIndex}
                           style={{
                             background: "#f2f2f2",
-                            color: "#4285f4",
+                            color: "#0095f6",
                             padding: "2px 8px",
                             borderRadius: "12px",
                             fontSize: "12px",
@@ -7454,106 +7438,6 @@ export default function MobileApp() {
                     </div>
                   )}
                 </div>
-
-                {/* Post actions */}
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    padding: "8px 16px",
-                    borderTop: "1px solid #efefef",
-                  }}
-                >
-                  <div style={{ display: "flex", gap: "16px" }}>
-                    {/* Heart/Amen button */}
-                    <button
-                      onClick={() => handleToggleAmen(post.id)}
-                      disabled={isBanned}
-                      style={{
-                        background: "none",
-                        border: "none",
-                        cursor: isBanned ? "not-allowed" : "pointer",
-                        padding: "8px",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "4px",
-                        opacity: isBanned ? 0.5 : 1,
-                      }}
-                    >
-                      <span
-                        style={{
-                          fontSize: "24px",
-                          color: engagementData.get(post.id)?.hasAmened
-                            ? "#ef4444"
-                            : "#262626",
-                        }}
-                      >
-                        {engagementData.get(post.id)?.hasAmened ? "♥" : "♡"}
-                      </span>
-                      {engagementData.get(post.id)?.amenCount > 0 && (
-                        <span
-                          style={{
-                            fontSize: "12px",
-                            color: "#8e8e8e",
-                            fontWeight: 500,
-                          }}
-                        >
-                          {engagementData.get(post.id)?.amenCount}
-                        </span>
-                      )}
-                    </button>
-
-                    {/* Comment button */}
-                    <button
-                      onClick={() => toggleCommentForm(post.id)}
-                      disabled={isBanned}
-                      style={{
-                        background: "none",
-                        border: "none",
-                        cursor: isBanned ? "not-allowed" : "pointer",
-                        padding: "8px",
-                        opacity: isBanned ? 0.5 : 1,
-                      }}
-                    >
-                      <svg
-                        width="24"
-                        height="24"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        style={{ color: "#262626" }}
-                      >
-                        <path d="M21 15c0 1.1-.9 2-2 2H7l-4 4V5c0-1.1.9-2 2-2h14c1.1 0 2 .9 2 2v10z" />
-                      </svg>
-                    </button>
-                  </div>
-
-                  <div style={{ display: "flex", gap: "12px" }}>
-                    {/* Remove from saved button */}
-                    <button
-                      onClick={() => handleToggleBookmark(post.id)}
-                      style={{
-                        background: "none",
-                        border: "none",
-                        cursor: "pointer",
-                        padding: "8px",
-                      }}
-                      title="Remove from saved"
-                    >
-                      <svg
-                        width="24"
-                        height="24"
-                        viewBox="0 0 24 24"
-                        fill="currentColor"
-                        style={{ color: "#262626" }}
-                      >
-                        <path d="M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2z" />
-                      </svg>
-                    </button>
-                  </div>
-                </div>
               </div>
             ))}
           </div>
@@ -7562,1832 +7446,1629 @@ export default function MobileApp() {
     );
   };
 
-  // Mobile Community Guidelines Component
-  function renderMobileCommunityGuidelinesPage() {
-    return (
-      <div
-        style={{ padding: "16px", background: "#ffffff", minHeight: "100vh" }}
-      >
-        {/* Header */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            marginBottom: "24px",
-            paddingBottom: "16px",
-            borderBottom: "1px solid #dbdbdb",
-          }}
-        >
-          <button
-            onClick={() => setShowMobileCommunityGuidelines(false)}
-            style={{
-              background: "none",
-              border: "none",
-              fontSize: "18px",
-              color: "#262626",
-              cursor: "pointer",
-              marginRight: "16px",
-            }}
-          >
-            ←
-          </button>
-          <div style={{ fontSize: "18px", fontWeight: 600, color: "#262626" }}>
-            Community Guidelines
-          </div>
-        </div>
+  // Add other mobile components/functions here if needed
 
-        {/* Content */}
-        <div style={{ lineHeight: 1.6, color: "#262626" }}>
-          <div
-            style={{
-              fontSize: "16px",
-              fontWeight: 600,
-              marginBottom: "16px",
-              color: "#262626",
-            }}
-          >
-            Gospel Era Community Guidelines
-          </div>
-
-          <div style={{ marginBottom: "20px" }}>
-            <div
-              style={{ fontSize: "14px", fontWeight: 600, marginBottom: "8px" }}
-            >
-              Our Mission
-            </div>
-            <div style={{ fontSize: "14px", marginBottom: "16px" }}>
-              Gospel Era is a Christ-centered community dedicated to sharing
-              faith, hope, and love through prayer and Gospel messages.
-            </div>
-          </div>
-
-          <div style={{ marginBottom: "20px" }}>
-            <div
-              style={{ fontSize: "14px", fontWeight: 600, marginBottom: "8px" }}
-            >
-              Content Guidelines
-            </div>
-            <ul style={{ fontSize: "14px", marginLeft: "16px" }}>
-              <li style={{ marginBottom: "4px" }}>
-                Share content that glorifies Jesus Christ
-              </li>
-              <li style={{ marginBottom: "4px" }}>
-                Focus on faith, hope, love, and encouragement
-              </li>
-              <li style={{ marginBottom: "4px" }}>
-                Be respectful and kind to all members
-              </li>
-              <li style={{ marginBottom: "4px" }}>
-                Avoid controversial or divisive topics
-              </li>
-            </ul>
-          </div>
-
-          <div style={{ marginBottom: "20px" }}>
-            <div
-              style={{ fontSize: "14px", fontWeight: 600, marginBottom: "8px" }}
-            >
-              What's Not Allowed
-            </div>
-            <ul style={{ fontSize: "14px", marginLeft: "16px" }}>
-              <li style={{ marginBottom: "4px" }}>
-                Hate speech or discrimination
-              </li>
-              <li style={{ marginBottom: "4px" }}>
-                Inappropriate or offensive content
-              </li>
-              <li style={{ marginBottom: "4px" }}>
-                Spam or promotional content
-              </li>
-              <li style={{ marginBottom: "4px" }}>
-                Content promoting other religions
-              </li>
-            </ul>
-          </div>
-
-          <div
-            style={{
-              background: "#f8f9fa",
-              padding: "16px",
-              borderRadius: "8px",
-              border: "1px solid #e1e5e9",
-              marginTop: "24px",
-            }}
-          >
-            <div
-              style={{ fontSize: "14px", fontWeight: 600, marginBottom: "8px" }}
-            >
-              Remember
-            </div>
-            <div style={{ fontSize: "14px", fontStyle: "italic" }}>
-              "Let your conversation be always full of grace, seasoned with
-              salt, so that you may know how to answer everyone." - Colossians
-              4:6
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Mobile Be a Supporter Component
-  const MobileSupporterPage = () => {
-    const [selectedAmount, setSelectedAmount] = useState<number | null>(null);
-    const [customAmount, setCustomAmount] = useState("");
-    const [message, setMessage] = useState("");
-    const [isProcessing, setIsProcessing] = useState(false);
-    const [error, setError] = useState("");
-    const [activeTab, setActiveTab] = useState<"stripe" | "paypal">("stripe");
-
-    const predefinedAmounts = [5, 10, 25, 50, 100];
-    const stripeEnabled = Boolean(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
-    const paymentsEnabled = stripeEnabled; // PayPal not implemented yet
-
-    const handleAmountSelect = (amount: number) => {
-      console.log("Amount button clicked:", amount);
-      setSelectedAmount(amount);
-      setCustomAmount("");
-      setError("");
-    };
-
-    const handleCustomAmountChange = (value: string) => {
-      setCustomAmount(value);
-      setSelectedAmount(null);
-      setError("");
-    };
-
-    const getSelectedAmount = () => {
-      return selectedAmount || (customAmount ? parseFloat(customAmount) : 0);
-    };
-
-    const validateDonationAmount = (
-      amount: number,
-    ): { valid: boolean; error?: string } => {
-      if (amount <= 0) {
-        return { valid: false, error: "Amount must be greater than $0" };
-      }
-      if (amount < 2) {
-        return { valid: false, error: "Minimum donation is $2" };
-      }
-      if (amount > 200) {
-        return { valid: false, error: "Maximum donation is $200" };
-      }
-      return { valid: true };
-    };
-
-    const createStripeCheckout = async (data: {
-      amount: number;
-      note?: string;
-    }): Promise<{ url: string } | { error: string }> => {
-      try {
-        const response = await fetch("/api/stripe/create-checkout-session", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(data),
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          return {
-            error: errorData.error || "Failed to create checkout session",
-          };
-        }
-
-        const result = await response.json();
-        return { url: result.url };
-      } catch (error) {
-        console.error("Error creating Stripe checkout:", error);
-        return { error: "Network error occurred" };
-      }
-    };
-
-    const handleStripePayment = async () => {
-      const amount = getSelectedAmount();
-
-      // Validate amount
-      const validation = validateDonationAmount(amount);
-      if (!validation.valid) {
-        setError(validation.error || "Invalid amount");
-        return;
-      }
-
-      setIsProcessing(true);
-      setError("");
-
-      try {
-        const result = await createStripeCheckout({
-          amount: amount,
-          note: message.trim() || undefined,
-        });
-
-        if ("error" in result) {
-          setError(result.error);
-        } else {
-          // Navigate directly to Stripe Checkout (mobile-friendly)
-          window.location.href = result.url;
-        }
-      } catch (error) {
-        console.error("Stripe payment error:", error);
-        setError("An unexpected error occurred. Please try again.");
-      } finally {
-        setIsProcessing(false);
-      }
-    };
-
-    const handleSupport = () => {
-      if (paymentsEnabled && activeTab === "stripe") {
-        handleStripePayment();
-      } else {
-        const amount = getSelectedAmount();
-        const validation = validateDonationAmount(amount);
-        if (!validation.valid) {
-          setError(validation.error || "Invalid amount");
-          return;
-        }
-
-        alert(
-          `Thank you for wanting to support with $${amount}! Payment processing will be implemented soon.`,
-        );
-      }
-    };
-
-    return (
-      <div
-        onPointerDownCapture={stopIfTextField}
-        onMouseDownCapture={stopIfTextField}
-        onClickCapture={stopIfTextField}
-        style={{ padding: "16px", background: "#ffffff", minHeight: "100vh" }}
-      >
-        {/* Header */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            marginBottom: "24px",
-            paddingBottom: "16px",
-            borderBottom: "1px solid #dbdbdb",
-          }}
-        >
-          <button
-            onClick={() => setShowMobileSupporter(false)}
-            style={{
-              background: "none",
-              border: "none",
-              fontSize: "18px",
-              color: "#262626",
-              cursor: "pointer",
-              marginRight: "16px",
-            }}
-          >
-            ←
-          </button>
-          <div style={{ fontSize: "18px", fontWeight: 600, color: "#262626" }}>
-            Be a Supporter
-          </div>
-        </div>
-
-        {/* Support Notice */}
-        <div
-          style={{
-            background: "#0095f6",
-            borderRadius: "12px",
-            padding: "20px",
-            marginBottom: "24px",
-            color: "#ffffff",
-          }}
-        >
-          <div
-            style={{ fontSize: "18px", fontWeight: 600, marginBottom: "8px" }}
-          >
-            Support Gospel Era
-          </div>
-          <div style={{ fontSize: "14px", opacity: 0.9 }}>
-            Your contribution supports hosting, development, and moderation.
-            Contributions are not tax-deductible.
-          </div>
-        </div>
-
-        {/* Payment Processing Banner */}
-        {!paymentsEnabled && (
-          <div
-            style={{
-              background: "#fff8dc",
-              border: "1px solid #f0e68c",
-              borderRadius: "8px",
-              padding: "12px",
-              marginBottom: "16px",
-              textAlign: "center",
-            }}
-          >
-            <div
-              style={{ fontSize: "14px", color: "#b8860b", fontWeight: 600 }}
-            >
-              Payment processing will be enabled soon; you can still pledge now.
-            </div>
-          </div>
-        )}
-
-        {/* Amount Selection */}
-        <div style={{ marginBottom: "24px" }}>
-          <div
-            style={{
-              fontSize: "16px",
-              fontWeight: 600,
-              color: "#262626",
-              marginBottom: "12px",
-            }}
-          >
-            Choose Amount
-          </div>
-
-          <div
-            style={{
-              display: "flex",
-              flexWrap: "wrap",
-              gap: "8px",
-              marginBottom: "16px",
-            }}
-          >
-            {predefinedAmounts.map((amount) => (
-              <button
-                key={amount}
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  handleAmountSelect(amount);
-                }}
-                onTouchStart={(e) => {
-                  e.preventDefault();
-                  console.log("Touch start on amount button:", amount);
-                }}
-                style={{
-                  padding: "12px 16px",
-                  borderRadius: "8px",
-                  border:
-                    selectedAmount === amount
-                      ? "2px solid #4285f4"
-                      : "1px solid #dbdbdb",
-                  background: selectedAmount === amount ? "#4285f4" : "#ffffff",
-                  color: selectedAmount === amount ? "#ffffff" : "#262626",
-                  fontSize: "14px",
-                  fontWeight: selectedAmount === amount ? 700 : 600,
-                  cursor: "pointer",
-                  touchAction: "manipulation",
-                  userSelect: "none",
-                  WebkitTapHighlightColor: "rgba(0,0,0,0)",
-                  transform:
-                    selectedAmount === amount ? "scale(1.02)" : "scale(1)",
-                  transition: "all 0.2s ease",
-                  boxShadow:
-                    selectedAmount === amount
-                      ? "0 2px 8px rgba(66, 133, 244, 0.3)"
-                      : "none",
-                }}
-              >
-                ${amount}
-              </button>
-            ))}
-          </div>
-
-          <div style={{ marginBottom: "8px" }}>
-            <input
-              type="number"
-              placeholder="Custom amount"
-              value={customAmount}
-              onChange={(e) => handleCustomAmountChange(e.target.value)}
-              inputMode="decimal"
-              autoCapitalize="none"
-              autoCorrect="off"
-              spellCheck={false}
-              style={{
-                width: "100%",
-                padding: "12px",
-                border: customAmount
-                  ? "2px solid #4285f4"
-                  : "1px solid #dbdbdb",
-                borderRadius: "8px",
-                fontSize: "16px", // 16px prevents zoom on iOS
-                touchAction: "manipulation",
-                WebkitAppearance: "none",
-                boxSizing: "border-box",
-                transition: "all 0.2s ease",
-                boxShadow: customAmount
-                  ? "0 2px 8px rgba(66, 133, 244, 0.2)"
-                  : "none",
-              }}
-              min="2"
-              max="200"
-            />
-          </div>
-        </div>
-
-        {/* Message */}
-        <div style={{ marginBottom: "24px" }}>
-          <div
-            style={{
-              fontSize: "16px",
-              fontWeight: 600,
-              color: "#262626",
-              marginBottom: "8px",
-            }}
-          >
-            Optional Message
-          </div>
-          <textarea
-            placeholder="Add a message (optional)"
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            inputMode="text"
-            autoCapitalize="sentences"
-            autoCorrect="on"
-            spellCheck={true}
-            style={{
-              width: "100%",
-              padding: "12px",
-              border: message ? "2px solid #4285f4" : "1px solid #dbdbdb",
-              borderRadius: "8px",
-              fontSize: "16px", // 16px prevents zoom on iOS
-              minHeight: "80px",
-              resize: "vertical",
-              touchAction: "manipulation",
-              WebkitAppearance: "none",
-              boxSizing: "border-box",
-              transition: "all 0.2s ease",
-              boxShadow: message ? "0 2px 8px rgba(66, 133, 244, 0.2)" : "none",
-            }}
-          />
-        </div>
-
-        {/* Error */}
-        {error && (
-          <div
-            style={{
-              background: "#fee",
-              border: "1px solid #fcc",
-              color: "#c00",
-              padding: "12px",
-              borderRadius: "8px",
-              marginBottom: "16px",
-              fontSize: "14px",
-              textAlign: "center",
-            }}
-          >
-            {error}
-          </div>
-        )}
-
-        {/* Payment Method Selection */}
-        {paymentsEnabled && (
-          <div style={{ marginBottom: "16px" }}>
-            <div
-              style={{
-                fontSize: "16px",
-                fontWeight: 600,
-                color: "#262626",
-                marginBottom: "8px",
-              }}
-            >
-              Payment Method
-            </div>
-            <div style={{ display: "flex", gap: "8px" }}>
-              <button
-                onClick={() => setActiveTab("stripe")}
-                style={{
-                  flex: 1,
-                  padding: "8px 12px",
-                  borderRadius: "6px",
-                  border: "1px solid #dbdbdb",
-                  fontSize: "14px",
-                  fontWeight: 600,
-                  background: activeTab === "stripe" ? "#0095f6" : "#ffffff",
-                  color: activeTab === "stripe" ? "#ffffff" : "#262626",
-                  cursor: "pointer",
-                }}
-              >
-                Stripe
-              </button>
-              <button
-                disabled
-                style={{
-                  flex: 1,
-                  padding: "8px 12px",
-                  borderRadius: "6px",
-                  border: "1px solid #dbdbdb",
-                  fontSize: "14px",
-                  fontWeight: 600,
-                  background: "#f5f5f5",
-                  color: "#8e8e8e",
-                  cursor: "not-allowed",
-                }}
-              >
-                PayPal (Soon)
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Support Button */}
-        <button
-          onClick={handleSupport}
-          onTouchStart={() => {}} // Enable touch events
-          disabled={!getSelectedAmount() || isProcessing}
-          style={{
-            width: "100%",
-            background: getSelectedAmount() ? "#0095f6" : "#dbdbdb",
-            color: getSelectedAmount() ? "#ffffff" : "#8e8e8e",
-            border: "none",
-            padding: "16px",
-            borderRadius: "8px",
-            fontSize: "16px",
-            fontWeight: 600,
-            cursor: getSelectedAmount() ? "pointer" : "default",
-            touchAction: "manipulation",
-            userSelect: "none",
-            WebkitTapHighlightColor: "rgba(0,0,0,0)",
-            boxSizing: "border-box",
-            transition: "all 0.2s ease",
-            boxShadow: getSelectedAmount()
-              ? "0 2px 8px rgba(66, 133, 244, 0.3)"
-              : "none",
-          }}
-        >
-          {isProcessing
-            ? "Processing..."
-            : paymentsEnabled
-              ? `Pay $${getSelectedAmount() || 0} via Stripe`
-              : `Support with $${getSelectedAmount() || 0}`}
-        </button>
-
-        {/* Info */}
-        {!paymentsEnabled && (
-          <div
-            style={{
-              marginTop: "24px",
-              padding: "16px",
-              background: "#f8f9fa",
-              borderRadius: "8px",
-              fontSize: "12px",
-              color: "#8e8e8e",
-              textAlign: "center",
-            }}
-          >
-            Payment processing will be implemented soon. Thank you for your
-            interest in supporting Gospel Era!
-          </div>
-        )}
-      </div>
-    );
-  };
-
-  // Mobile Help Component
-  const MobileHelpPage = () => {
-    const SUPPORT_EMAIL = "ridibi.service@gmail.com";
-
-    const copyEmail = async () => {
-      try {
-        await navigator.clipboard.writeText(SUPPORT_EMAIL);
-        alert("Email copied to clipboard!");
-      } catch (err) {
-        alert("Failed to copy email. Please copy manually: " + SUPPORT_EMAIL);
-      }
-    };
-
-    const openEmail = () => {
-      window.location.href = `mailto:${SUPPORT_EMAIL}?subject=Gospel Era Support Request`;
-    };
-
-    return (
-      <div
-        style={{ padding: "16px", background: "#ffffff", minHeight: "100vh" }}
-      >
-        {/* Header */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            marginBottom: "24px",
-            paddingBottom: "16px",
-            borderBottom: "1px solid #dbdbdb",
-          }}
-        >
-          <button
-            onClick={() => setShowMobileHelp(false)}
-            style={{
-              background: "none",
-              border: "none",
-              fontSize: "18px",
-              color: "#262626",
-              cursor: "pointer",
-              marginRight: "16px",
-            }}
-          >
-            ←
-          </button>
-          <div style={{ fontSize: "18px", fontWeight: 600, color: "#262626" }}>
-            Help & Support
-          </div>
-        </div>
-
-        {/* Contact Section */}
-        <div style={{ marginBottom: "32px" }}>
-          <div
-            style={{
-              fontSize: "16px",
-              fontWeight: 600,
-              color: "#262626",
-              marginBottom: "16px",
-            }}
-          >
-            📧 Contact Support
-          </div>
-
-          <div
-            style={{
-              background: "#f8f9fa",
-              borderRadius: "12px",
-              padding: "20px",
-              border: "1px solid #e1e5e9",
-              marginBottom: "16px",
-            }}
-          >
-            <div
-              style={{
-                fontSize: "14px",
-                color: "#8e8e8e",
-                marginBottom: "8px",
-              }}
-            >
-              Support Email
-            </div>
-            <div
-              style={{
-                fontSize: "16px",
-                fontWeight: 600,
-                color: "#262626",
-                marginBottom: "16px",
-              }}
-            >
-              {SUPPORT_EMAIL}
-            </div>
-
-            <div style={{ display: "flex", gap: "8px" }}>
-              <button
-                onClick={copyEmail}
-                style={{
-                  flex: 1,
-                  background: "#4285f4",
-                  color: "#ffffff",
-                  border: "none",
-                  padding: "12px",
-                  borderRadius: "8px",
-                  fontSize: "14px",
-                  fontWeight: 600,
-                  cursor: "pointer",
-                }}
-              >
-                📋 Copy Email
-              </button>
-
-              <button
-                onClick={openEmail}
-                style={{
-                  flex: 1,
-                  background: "#ffffff",
-                  color: "#262626",
-                  border: "1px solid #dbdbdb",
-                  padding: "12px",
-                  borderRadius: "8px",
-                  fontSize: "14px",
-                  fontWeight: 600,
-                  cursor: "pointer",
-                }}
-              >
-                ✉️ Open Mail App
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* FAQ Section */}
-        <div style={{ marginBottom: "32px" }}>
-          <div
-            style={{
-              fontSize: "16px",
-              fontWeight: 600,
-              color: "#262626",
-              marginBottom: "16px",
-            }}
-          >
-            ❓ Frequently Asked Questions
-          </div>
-
-          <div
-            style={{ display: "flex", flexDirection: "column", gap: "12px" }}
-          >
-            <div
-              style={{
-                background: "#f8f9fa",
-                borderRadius: "8px",
-                padding: "16px",
-                border: "1px solid #e1e5e9",
-              }}
-            >
-              <div
-                style={{
-                  fontSize: "14px",
-                  fontWeight: 600,
-                  color: "#262626",
-                  marginBottom: "4px",
-                }}
-              >
-                How do I create a prayer request?
-              </div>
-              <div style={{ fontSize: "13px", color: "#8e8e8e" }}>
-                Go to the Prayer tab and use the "Create Prayer Request" section
-                at the top.
-              </div>
-            </div>
-
-            <div
-              style={{
-                background: "#f8f9fa",
-                borderRadius: "8px",
-                padding: "16px",
-                border: "1px solid #e1e5e9",
-              }}
-            >
-              <div
-                style={{
-                  fontSize: "14px",
-                  fontWeight: 600,
-                  color: "#262626",
-                  marginBottom: "4px",
-                }}
-              >
-                How do I report inappropriate content?
-              </div>
-              <div style={{ fontSize: "13px", color: "#8e8e8e" }}>
-                Tap the three dots (⋯) on any post or comment and select
-                "Report".
-              </div>
-            </div>
-
-            <div
-              style={{
-                background: "#f8f9fa",
-                borderRadius: "8px",
-                padding: "16px",
-                border: "1px solid #e1e5e9",
-              }}
-            >
-              <div
-                style={{
-                  fontSize: "14px",
-                  fontWeight: 600,
-                  color: "#262626",
-                  marginBottom: "4px",
-                }}
-              >
-                How do I change my profile picture?
-              </div>
-              <div style={{ fontSize: "13px", color: "#8e8e8e" }}>
-                Go to Settings and tap "Change Profile Picture" in the Profile
-                Settings section.
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Community Guidelines Link */}
-        <div
-          style={{
-            background: "#f0f8ff",
-            borderRadius: "12px",
-            padding: "16px",
-            border: "1px solid #b3d9ff",
-            textAlign: "center",
-          }}
-        >
-          <div
-            style={{
-              fontSize: "14px",
-              fontWeight: 600,
-              color: "#1e40af",
-              marginBottom: "8px",
-            }}
-          >
-            📖 Community Guidelines
-          </div>
-          <div
-            style={{ fontSize: "13px", color: "#1e40af", marginBottom: "12px" }}
-          >
-            Learn about our Christ-centered community standards
-          </div>
-          <button
-            onClick={() => {
-              setShowMobileHelp(false);
-              setShowMobileCommunityGuidelines(true);
-            }}
-            style={{
-              background: "#1e40af",
-              color: "#ffffff",
-              border: "none",
-              padding: "8px 16px",
-              borderRadius: "6px",
-              fontSize: "13px",
-              fontWeight: 600,
-              cursor: "pointer",
-            }}
-          >
-            View Guidelines
-          </button>
-        </div>
-      </div>
-    );
-  };
-
-  // Profile Component
-  function renderProfilePage() {
-    return (
-      <div style={{ padding: "16px" }}>
-        {/* Profile header */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            marginBottom: "16px",
-          }}
-        >
-          <div
-            style={{
-              width: "60px",
-              height: "60px",
-              borderRadius: "50%",
-              background: userProfile?.avatar_url ? "none" : "#dbdbdb",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: "24px",
-              marginRight: "16px",
-              color: "#8e8e8e",
-              overflow: "hidden",
-            }}
-          >
-            {userProfile?.avatar_url ? (
-              <img
-                src={
-                  userProfile.avatar_url.startsWith("/")
-                    ? userProfile.avatar_url
-                    : `/public-objects/${userProfile.avatar_url}`
-                }
-                alt="Profile"
-                style={{
-                  width: "60px",
-                  height: "60px",
-                  borderRadius: "50%",
-                  objectFit: "cover",
-                }}
-              />
-            ) : (
-              "👤"
-            )}
-          </div>
-          <div style={{ flex: 1 }}>
-            <div
-              style={{ fontSize: "18px", fontWeight: 700, color: "#262626" }}
-            >
-              {userProfile?.display_name ||
-                user?.email?.split("@")[0] ||
-                "Gospel User"}
-            </div>
-            <div style={{ fontSize: "14px", color: "#8e8e8e" }}>
-              @
-              {userProfile?.display_name?.toLowerCase().replace(/\s+/g, "") ||
-                user?.email?.split("@")[0] ||
-                "gospeluser"}
-            </div>
-          </div>
-          <button
-            onClick={() => setShowMobileSettings(true)}
-            style={{
-              background: "none",
-              border: "none",
-              fontSize: "20px",
-              color: "#262626",
-              cursor: "pointer",
-              padding: "8px",
-            }}
-            title="Settings"
-          >
-            ⚙️
-          </button>
-        </div>
-
-        {/* Bio */}
-        <div
-          style={{
-            fontSize: "14px",
-            lineHeight: 1.4,
-            marginBottom: "16px",
-            color: "#262626",
-          }}
-        >
-          {userProfile?.bio ||
-            "Sharing faith, hope, and love through Christ ✝️"}
-          <br />
-          Prayer warrior | Bible study enthusiast
-        </div>
-
-        {/* Stats */}
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-around",
-            marginBottom: "20px",
-          }}
-        >
-          <div style={{ textAlign: "center" }}>
-            <div
-              style={{ fontSize: "18px", fontWeight: 700, color: "#262626" }}
-            >
-              {posts.length}
-            </div>
-            <div style={{ fontSize: "12px", color: "#8e8e8e" }}>Posts</div>
-          </div>
-          <div style={{ textAlign: "center" }}>
-            <div
-              style={{ fontSize: "18px", fontWeight: 700, color: "#262626" }}
-            >
-              {prayerRequests.length}
-            </div>
-            <div style={{ fontSize: "12px", color: "#8e8e8e" }}>Prayers</div>
-          </div>
-          <div style={{ textAlign: "center" }}>
-            <div
-              style={{ fontSize: "18px", fontWeight: 700, color: "#262626" }}
-            >
-              {userProfile?.followers_count || 0}
-            </div>
-            <div style={{ fontSize: "12px", color: "#8e8e8e" }}>Followers</div>
-          </div>
-          <div style={{ textAlign: "center" }}>
-            <div
-              style={{ fontSize: "18px", fontWeight: 700, color: "#262626" }}
-            >
-              {userProfile?.following_count || 0}
-            </div>
-            <div style={{ fontSize: "12px", color: "#8e8e8e" }}>Following</div>
-          </div>
-        </div>
-
-        {/* Action buttons */}
-        <div style={{ display: "flex", gap: "12px", marginBottom: "24px" }}>
-          <button
-            onClick={() => setShowMobileSettings(true)}
-            style={{
-              flex: 1,
-              background: "#f2f2f2",
-              border: "none",
-              padding: "10px",
-              borderRadius: "6px",
-              fontSize: "14px",
-              fontWeight: 600,
-              color: "#262626",
-              cursor: "pointer",
-            }}
-          >
-            Edit Profile
-          </button>
-          <button
-            onClick={() => setShowMobileSavedPosts(true)}
-            style={{
-              background: "#f2f2f2",
-              border: "none",
-              padding: "10px 16px",
-              borderRadius: "6px",
-              fontSize: "16px",
-              color: "#262626",
-              cursor: "pointer",
-            }}
-            title="Saved Posts"
-          >
-            🔖
-          </button>
-        </div>
-
-        {/* Recent Activity */}
-        <div style={{ marginBottom: "24px" }}>
-          <div
-            style={{
-              fontWeight: 600,
-              fontSize: "16px",
-              color: "#262626",
-              marginBottom: "12px",
-            }}
-          >
-            Recent Activity
-          </div>
-          {posts.length > 0 ? (
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(3, 1fr)",
-                gap: "4px",
-              }}
-            >
-              {posts.slice(0, 6).map((post) => (
-                <div
-                  key={post.id}
-                  style={{
-                    aspectRatio: "1",
-                    background: "#f0f0f0",
-                    borderRadius: "8px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: "24px",
-                  }}
-                >
-                  📖
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div
-              style={{
-                textAlign: "center",
-                color: "#8e8e8e",
-                fontSize: "14px",
-                padding: "20px",
-              }}
-            >
-              No posts yet. Share your first Gospel message!
-            </div>
-          )}
-        </div>
-
-        {/* Logout button */}
-        <button
-          onClick={signOut}
-          style={{
-            width: "100%",
-            background: "#dc2626",
-            color: "#ffffff",
-            border: "none",
-            padding: "12px",
-            borderRadius: "8px",
-            fontSize: "16px",
-            fontWeight: 600,
-            cursor: "pointer",
-          }}
-        >
-          Sign Out
-        </button>
-      </div>
-    );
-  }
-
-  // Loading state
+  // Loading screen for authentication
   if (authLoading) {
     return (
       <div style={STYLES.container}>
         <div
           style={{
             display: "flex",
-            alignItems: "center",
             justifyContent: "center",
-            height: "100%",
+            alignItems: "center",
+            height: "100vh",
           }}
         >
-          <div style={{ fontSize: "20px", color: "#8e8e8e" }}>Loading...</div>
+          <div style={{ fontSize: "16px", color: "#8e8e8e" }}>Loading...</div>
         </div>
       </div>
     );
   }
 
-  // Handle prayer detail view
-  if (selectedPrayerId && selectedPrayerDetail) {
+  // Login screen for unauthenticated users
+  if (!user) {
     return (
-      <PrayerDetailView
-        prayer={selectedPrayerDetail}
-        onBack={() => {
-          setSelectedPrayerId(null);
-          setSelectedPrayerDetail(null);
-        }}
-      />
+      <div style={STYLES.container}>
+        <div
+          style={{
+            padding: "32px 16px",
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "center",
+            minHeight: "100vh",
+          }}
+        >
+          <div
+            style={{
+              textAlign: "center",
+              marginBottom: "32px",
+            }}
+          >
+            <h1
+              style={{
+                fontSize: "24px",
+                fontWeight: 700,
+                color: "#262626",
+                marginBottom: "8px",
+              }}
+            >
+              Gospel Era
+            </h1>
+            <p style={{ fontSize: "14px", color: "#8e8e8e" }}>
+              Share your faith journey
+            </p>
+          </div>
+
+          {loginError && (
+            <div
+              style={{
+                background: "#ffebee",
+                color: "#c62828",
+                padding: "12px",
+                borderRadius: "6px",
+                marginBottom: "16px",
+                fontSize: "14px",
+              }}
+            >
+              {loginError}
+            </div>
+          )}
+
+          <div style={{ marginBottom: "16px" }}>
+            <input
+              ref={emailRef}
+              type="email"
+              placeholder="Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              onFocus={() => keepFocus(emailRef)}
+              style={{
+                width: "100%",
+                height: "44px",
+                border: "1px solid #dbdbdb",
+                borderRadius: "6px",
+                padding: "0 16px",
+                fontSize: "14px",
+                color: "#262626",
+                outline: "none",
+              }}
+            />
+          </div>
+
+          <div style={{ marginBottom: "16px" }}>
+            <input
+              ref={passwordRef}
+              type="password"
+              placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              onFocus={() => keepFocus(passwordRef)}
+              style={{
+                width: "100%",
+                height: "44px",
+                border: "1px solid #dbdbdb",
+                borderRadius: "6px",
+                padding: "0 16px",
+                fontSize: "14px",
+                color: "#262626",
+                outline: "none",
+              }}
+            />
+          </div>
+
+          {isSignUp && (
+            <div style={{ marginBottom: "16px" }}>
+              <label
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  fontSize: "14px",
+                  color: "#262626",
+                }}
+              >
+                <input
+                  type="checkbox"
+                  checked={faithAffirmed}
+                  onChange={(e) => setFaithAffirmed(e.target.checked)}
+                  style={{ marginRight: "8px" }}
+                />
+                I affirm my faith in Jesus Christ
+              </label>
+            </div>
+          )}
+
+          <button
+            onClick={async () => {
+              setLoginError("");
+              try {
+                if (isSignUp) {
+                  if (!faithAffirmed) {
+                    setLoginError("Please affirm your faith to continue");
+                    return;
+                  }
+                  const { error } = await signUp(email, password);
+                  if (error) {
+                    setLoginError(error.message);
+                  }
+                } else {
+                  const { error } = await signIn(email, password);
+                  if (error) {
+                    setLoginError(error.message);
+                  }
+                }
+              } catch (error) {
+                setLoginError("Authentication failed. Please try again.");
+              }
+            }}
+            disabled={
+              !email.trim() ||
+              !password.trim() ||
+              (isSignUp && !faithAffirmed)
+            }
+            style={{
+              width: "100%",
+              height: "44px",
+              background:
+                !email.trim() ||
+                !password.trim() ||
+                (isSignUp && !faithAffirmed)
+                  ? "#c7c7cc"
+                  : "#0095f6",
+              color: "#ffffff",
+              border: "none",
+              borderRadius: "6px",
+              fontSize: "14px",
+              fontWeight: 600,
+              cursor:
+                !email.trim() ||
+                !password.trim() ||
+                (isSignUp && !faithAffirmed)
+                  ? "not-allowed"
+                  : "pointer",
+              marginBottom: "16px",
+            }}
+          >
+            {isSignUp ? "Sign Up" : "Sign In"}
+          </button>
+
+          <button
+            onClick={() => {
+              setIsSignUp(!isSignUp);
+              setLoginError("");
+            }}
+            style={{
+              background: "none",
+              border: "none",
+              color: "#0095f6",
+              fontSize: "14px",
+              cursor: "pointer",
+              textAlign: "center",
+            }}
+          >
+            {isSignUp
+              ? "Already have an account? Sign In"
+              : "Don't have an account? Sign Up"}
+          </button>
+        </div>
+      </div>
     );
   }
 
-  // Handle full leaderboard view
-  if (showFullLeaderboard) {
-    return <FullLeaderboardView onBack={() => setShowFullLeaderboard(false)} />;
-  }
-
-  // Render main component
+  // Main app content for authenticated users
   return (
-    <div style={STYLES.container}>
+    <div style={STYLES.container} onClick={stopIfTextField}>
       {/* Header */}
       <div style={STYLES.header}>
-        <div
+        <h1
           style={{
-            fontSize: "24px",
+            fontSize: "20px",
             fontWeight: 700,
             color: "#262626",
-            letterSpacing: "-0.5px",
+            margin: 0,
           }}
         >
-          {!user
-            ? "Gospel Era"
-            : activeTab === 0
-              ? "Gospel Era"
-              : activeTab === 1
-                ? "Create"
-                : activeTab === 2
-                  ? "Prayer"
-                  : "Profile"}
-        </div>
-        {user && (
-          <div
-            className="user-dropdown-container"
+          Gospel Era
+        </h1>
+        <div style={{ position: "relative" }}>
+          <button
+            onClick={() => setShowUserDropdown(!showUserDropdown)}
             style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "16px",
-              position: "relative",
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              padding: "4px",
             }}
           >
-            {/* User Name and Avatar */}
-            <button
-              onClick={() => setShowUserDropdown(!showUserDropdown)}
-              onTouchStart={(e) => {
-                e.currentTarget.style.transform = "scale(0.95)";
-                e.currentTarget.style.opacity = "0.7";
-              }}
-              onTouchEnd={(e) => {
-                e.currentTarget.style.transform = "scale(1)";
-                e.currentTarget.style.opacity = "1";
-              }}
+            <div style={STYLES.postAvatar}>
+              {userProfile?.avatar_url ? (
+                <img
+                  src={userProfile.avatar_url}
+                  alt="Profile"
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    borderRadius: "50%",
+                    objectFit: "cover",
+                  }}
+                />
+              ) : (
+                "👤"
+              )}
+            </div>
+          </button>
+
+          {/* User Dropdown Menu */}
+          {showUserDropdown && (
+            <div
               style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "8px",
-                background: "none",
-                border: "none",
-                cursor: "pointer",
-                padding: "4px 8px",
-                borderRadius: "20px",
-                ":hover": { background: "#f0f0f0" },
-                WebkitTapHighlightColor: "transparent",
-                touchAction: "manipulation",
-                userSelect: "none",
-                transition: "transform 0.1s, opacity 0.1s",
+                position: "absolute",
+                top: "100%",
+                right: 0,
+                background: "#ffffff",
+                border: "1px solid #dbdbdb",
+                borderRadius: "8px",
+                boxShadow: "0 2px 10px rgba(0, 0, 0, 0.1)",
+                zIndex: 1000,
+                minWidth: "180px",
+                marginTop: "4px",
               }}
             >
-              <div
+              <button
+                onClick={() => {
+                  setShowMobileProfile(true);
+                  resetAllModalStates();
+                }}
                 style={{
-                  width: "28px",
-                  height: "28px",
-                  borderRadius: "50%",
-                  background: userProfile?.avatar_url ? "none" : "#dbdbdb",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  overflow: "hidden",
+                  width: "100%",
+                  padding: "12px 16px",
+                  background: "none",
+                  border: "none",
+                  textAlign: "left",
+                  cursor: "pointer",
+                  fontSize: "14px",
+                  color: "#262626",
+                  borderBottom: "1px solid #efefef",
                 }}
               >
-                {userProfile?.avatar_url ? (
-                  <img
-                    src={
-                      userProfile.avatar_url.startsWith("/objects/")
-                        ? userProfile.avatar_url
-                        : userProfile.avatar_url.startsWith("/")
-                          ? userProfile.avatar_url
-                          : `/public-objects/${userProfile.avatar_url}`
-                    }
-                    alt="Profile"
-                    style={{
-                      width: "28px",
-                      height: "28px",
-                      borderRadius: "50%",
-                      objectFit: "cover",
-                    }}
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).style.display = "none";
-                      const parent = (e.target as HTMLImageElement)
-                        .parentElement;
-                      if (parent) {
-                        parent.innerHTML =
-                          '<span style="fontSize: 14px; color: #8e8e8e">👤</span>';
-                      }
-                    }}
-                  />
-                ) : (
-                  <span style={{ fontSize: "14px", color: "#8e8e8e" }}>👤</span>
-                )}
-              </div>
-              <span
-                style={{ fontSize: "14px", fontWeight: 600, color: "#262626" }}
-              >
-                {userProfile?.display_name ||
-                  user?.email?.split("@")[0] ||
-                  "User"}
-              </span>
-              <span style={{ fontSize: "12px", color: "#8e8e8e" }}>▼</span>
-            </button>
-
-            {/* Dropdown Menu */}
-            {showUserDropdown && (
-              <div
+                👤 Profile
+              </button>
+              <button
+                onClick={() => {
+                  setShowMobileSettings(true);
+                  resetAllModalStates();
+                }}
                 style={{
-                  position: "absolute",
-                  top: "100%",
-                  right: 0,
-                  marginTop: "8px",
-                  background: "#ffffff",
-                  borderRadius: "12px",
-                  boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
-                  border: "1px solid #dbdbdb",
-                  minWidth: "200px",
-                  zIndex: 1000,
+                  width: "100%",
+                  padding: "12px 16px",
+                  background: "none",
+                  border: "none",
+                  textAlign: "left",
+                  cursor: "pointer",
+                  fontSize: "14px",
+                  color: "#262626",
+                  borderBottom: "1px solid #efefef",
                 }}
               >
-                <div
-                  style={{
-                    padding: "12px 16px",
-                    borderBottom: "1px solid #f0f0f0",
-                  }}
-                >
-                  <div
+                ⚙️ Settings
+              </button>
+              <button
+                onClick={() => {
+                  setShowMobileSavedPosts(true);
+                  resetAllModalStates();
+                }}
+                style={{
+                  width: "100%",
+                  padding: "12px 16px",
+                  background: "none",
+                  border: "none",
+                  textAlign: "left",
+                  cursor: "pointer",
+                  fontSize: "14px",
+                  color: "#262626",
+                  borderBottom: "1px solid #efefef",
+                }}
+              >
+                🔖 Saved Posts
+              </button>
+              {isAdmin && (
+                <>
+                  <button
+                    onClick={() => {
+                      setShowMobileReviewReports(true);
+                      resetAllModalStates();
+                    }}
                     style={{
+                      width: "100%",
+                      padding: "12px 16px",
+                      background: "none",
+                      border: "none",
+                      textAlign: "left",
+                      cursor: "pointer",
                       fontSize: "14px",
-                      fontWeight: 600,
                       color: "#262626",
+                      borderBottom: "1px solid #efefef",
                     }}
                   >
-                    {userProfile?.display_name || "Gospel User"}
-                  </div>
-                  <div style={{ fontSize: "12px", color: "#8e8e8e" }}>
-                    {user?.email}
-                  </div>
-                </div>
-
-                <button
-                  onPointerUp={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    // (same body as onClick)
-                    setShowUserDropdown(false);
-                    /* … your existing state toggles … */
-                  }}
-                  onClick={() => {
-                    setShowUserDropdown(false);
-                    setShowMobileEditProfile(false);
-                    setShowMobileSettings(false);
-                    setShowMobileSavedPosts(false);
-                    setShowMobileCommunityGuidelines(false);
-                    setShowMobileSupporter(false);
-                    setShowMobileHelp(false);
-                    setShowMobileProfile(true);
-                    // Set profile immediately instead of loading
-                    if (userProfile) {
-                      setProfile({
-                        id: user?.id || "",
-                        display_name:
-                          userProfile.display_name ||
-                          user?.email ||
-                          "Gospel User",
-                        bio: userProfile.bio || "",
-                        avatar_url: userProfile.avatar_url || "",
-                        created_at: new Date().toISOString(),
-                        updated_at: new Date().toISOString(),
-                      });
-                      setEditDisplayName(
-                        userProfile.display_name ||
-                          user?.email ||
-                          "Gospel User",
-                      );
-                      setEditBio(userProfile.bio || "");
-                      setEditAvatarUrl(userProfile.avatar_url || "");
-                      setProfileLoading(false);
-                    } else {
-                      loadMobileProfile();
-                    }
-                  }}
-                  style={{
-                    width: "100%",
-                    padding: "12px 16px",
-                    border: "none",
-                    background: "none",
-                    textAlign: "left",
-                    fontSize: "14px",
-                    color: "#262626",
-                    ":hover": { background: "#f9f9f9" },
-                    cursor: "pointer",
-                  }}
-                >
-                  👤 Profile
-                </button>
-
-                <button
-                  onClick={() => {
-                    setShowUserDropdown(false);
-                    resetAllModalStates();
-                    setShowMobileSettings(true);
-                  }}
-                  style={{
-                    width: "100%",
-                    padding: "12px 16px",
-                    border: "none",
-                    background: "none",
-                    textAlign: "left",
-                    fontSize: "14px",
-                    color: "#262626",
-                    ":hover": { background: "#f9f9f9" },
-                    cursor: "pointer",
-                  }}
-                >
-                  Settings
-                </button>
-
-                <button
-                  onClick={() => {
-                    setShowUserDropdown(false);
-                    resetAllModalStates();
-                    setShowMobileSavedPosts(true);
-                  }}
-                  style={{
-                    width: "100%",
-                    padding: "12px 16px",
-                    border: "none",
-                    background: "none",
-                    textAlign: "left",
-                    fontSize: "14px",
-                    color: "#262626",
-                    ":hover": { background: "#f9f9f9" },
-                    cursor: "pointer",
-                  }}
-                >
-                  Saved Posts
-                </button>
-
-                <button
-                  onClick={() => {
-                    setShowUserDropdown(false);
-                    resetAllModalStates();
-                    setShowMobileCommunityGuidelines(true);
-                  }}
-                  style={{
-                    width: "100%",
-                    padding: "12px 16px",
-                    border: "none",
-                    background: "none",
-                    textAlign: "left",
-                    fontSize: "14px",
-                    color: "#262626",
-                    ":hover": { background: "#f9f9f9" },
-                    cursor: "pointer",
-                  }}
-                >
-                  Community Guidelines
-                </button>
-
-                <button
-                  onClick={() => {
-                    setShowUserDropdown(false);
-                    resetAllModalStates();
-                    setShowMobileSupporter(true);
-                  }}
-                  style={{
-                    width: "100%",
-                    padding: "12px 16px",
-                    border: "none",
-                    background: "none",
-                    textAlign: "left",
-                    fontSize: "14px",
-                    color: "#262626",
-                    ":hover": { background: "#f9f9f9" },
-                    cursor: "pointer",
-                  }}
-                >
-                  Be a Supporter
-                </button>
-
-                <button
-                  onClick={() => {
-                    setShowUserDropdown(false);
-                    resetAllModalStates();
-                    setShowMobileHelp(true);
-                  }}
-                  style={{
-                    width: "100%",
-                    padding: "12px 16px",
-                    border: "none",
-                    background: "none",
-                    textAlign: "left",
-                    fontSize: "14px",
-                    color: "#262626",
-                    ":hover": { background: "#f9f9f9" },
-                    cursor: "pointer",
-                  }}
-                >
-                  Help
-                </button>
-
-                {(userProfile?.role === "admin" || isAdmin) && (
-                  <>
-                    <div
-                      style={{
-                        borderTop: "1px solid #f0f0f0",
-                        marginTop: "4px",
-                      }}
-                    />
-                    <button
-                      onClick={() => {
-                        setShowUserDropdown(false);
-                        resetAllModalStates();
-                        setShowMobileReviewReports(true);
-                      }}
-                      style={{
-                        width: "100%",
-                        padding: "12px 16px",
-                        border: "none",
-                        background: "none",
-                        textAlign: "left",
-                        fontSize: "14px",
-                        color: "#dc2626",
-                        ":hover": { background: "#f9f9f9" },
-                        cursor: "pointer",
-                      }}
-                    >
-                      Admin Reports
-                    </button>
-                    <button
-                      onClick={() => {
-                        setShowUserDropdown(false);
-                        resetAllModalStates();
-                        setShowMobileMediaRequests(true);
-                      }}
-                      style={{
-                        width: "100%",
-                        padding: "12px 16px",
-                        border: "none",
-                        background: "none",
-                        textAlign: "left",
-                        fontSize: "14px",
-                        color: "#dc2626",
-                        ":hover": { background: "#f9f9f9" },
-                        cursor: "pointer",
-                      }}
-                    >
-                      Media Requests
-                    </button>
-                    <button
-                      onClick={() => {
-                        setShowUserDropdown(false);
-                        resetAllModalStates();
-                        setShowMobileAdminSupport(true);
-                      }}
-                      style={{
-                        width: "100%",
-                        padding: "12px 16px",
-                        border: "none",
-                        background: "none",
-                        textAlign: "left",
-                        fontSize: "14px",
-                        color: "#dc2626",
-                        ":hover": { background: "#f9f9f9" },
-                        cursor: "pointer",
-                      }}
-                    >
-                      Admin Support
-                    </button>
-                  </>
-                )}
-
-                <button
-                  onClick={() => {
-                    setShowUserDropdown(false);
-                    signOut();
-                  }}
-                  style={{
-                    width: "100%",
-                    padding: "12px 16px",
-                    border: "none",
-                    background: "none",
-                    textAlign: "left",
-                    fontSize: "14px",
-                    color: "#dc2626",
-                    ":hover": { background: "#f9f9f9" },
-                    cursor: "pointer",
-                    borderTop: "1px solid #f0f0f0",
-                  }}
-                >
-                  Sign Out
-                </button>
-              </div>
-            )}
-          </div>
-        )}
+                    🛡️ Review Reports
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowMobileMediaRequests(true);
+                      resetAllModalStates();
+                    }}
+                    style={{
+                      width: "100%",
+                      padding: "12px 16px",
+                      background: "none",
+                      border: "none",
+                      textAlign: "left",
+                      cursor: "pointer",
+                      fontSize: "14px",
+                      color: "#262626",
+                      borderBottom: "1px solid #efefef",
+                    }}
+                  >
+                    📱 Media Requests
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowMobileAdminSupport(true);
+                      resetAllModalStates();
+                    }}
+                    style={{
+                      width: "100%",
+                      padding: "12px 16px",
+                      background: "none",
+                      border: "none",
+                      textAlign: "left",
+                      cursor: "pointer",
+                      fontSize: "14px",
+                      color: "#262626",
+                      borderBottom: "1px solid #efefef",
+                    }}
+                  >
+                    🎧 Admin Support
+                  </button>
+                </>
+              )}
+              <button
+                onClick={async () => {
+                  if (confirm("Are you sure you want to sign out?")) {
+                    await signOut();
+                  }
+                  setShowUserDropdown(false);
+                }}
+                style={{
+                  width: "100%",
+                  padding: "12px 16px",
+                  background: "none",
+                  border: "none",
+                  textAlign: "left",
+                  cursor: "pointer",
+                  fontSize: "14px",
+                  color: "#ff3b30",
+                }}
+              >
+                🚪 Sign Out
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Content */}
       <div style={STYLES.content}>
-        {!user ? (
-          renderLoginPage()
-        ) : showMobileReviewReports ? (
-          <MobileReviewReportsPage />
-        ) : showMobileMediaRequests ? (
-          <MobileMediaRequestsPage />
-        ) : showMobileAdminSupport ? (
-          <MobileAdminSupportPage />
-        ) : showMobileEditProfile ? (
-          <MobileEditProfilePage />
-        ) : showMobileProfile ? (
-          <MobileProfilePage />
-        ) : showMobileSettings ? (
-          <MobileSettingsPage />
-        ) : showMobileSavedPosts ? (
-          <MobileSavedPostsPage />
-        ) : showMobileCommunityGuidelines ? (
-          renderMobileCommunityGuidelinesPage()
-        ) : showMobileSupporter ? (
-          <MobileSupporterPage />
-        ) : showMobileHelp ? (
-          <MobileHelpPage />
-        ) : (
-          <div style={{ display: "flex", flex: 1, flexDirection: "column" }}>
+        {/* Show different content based on active tab */}
+        {activeTab === 0 && (
+          <>
+            {/* Search Bar */}
+            <div style={STYLES.searchContainer}>
+              <input
+                type="text"
+                placeholder="Search posts..."
+                value={searchText}
+                onChange={(e) => setSearchText(e.target.value)}
+                style={STYLES.searchInput}
+              />
+            </div>
+
+            {/* Daily Verse */}
+            {dailyVerse && (
+              <div style={STYLES.verseContainer}>
+                <div style={STYLES.verseText}>"{dailyVerse.text}"</div>
+                <div style={STYLES.verseReference}>— {dailyVerse.reference}</div>
+              </div>
+            )}
+
+            {/* Posts Feed */}
+            {loading ? (
+              <>
+                {[1, 2, 3].map((i) => (
+                  <div key={i} style={STYLES.skeletonPost}>
+                    <div style={STYLES.skeletonHeader}>
+                      <div style={STYLES.skeletonAvatar}></div>
+                      <div style={{ flex: 1 }}>
+                        <div
+                          style={{
+                            ...STYLES.skeletonText,
+                            width: "60%",
+                            marginBottom: "4px",
+                          }}
+                        ></div>
+                        <div
+                          style={{
+                            ...STYLES.skeletonText,
+                            width: "40%",
+                            height: "10px",
+                          }}
+                        ></div>
+                      </div>
+                    </div>
+                    <div style={{ padding: "0 16px" }}>
+                      <div
+                        style={{
+                          ...STYLES.skeletonText,
+                          width: "80%",
+                          marginBottom: "8px",
+                        }}
+                      ></div>
+                      <div
+                        style={{
+                          ...STYLES.skeletonText,
+                          width: "100%",
+                          marginBottom: "8px",
+                        }}
+                      ></div>
+                      <div
+                        style={{
+                          ...STYLES.skeletonText,
+                          width: "90%",
+                          marginBottom: "16px",
+                        }}
+                      ></div>
+                      <div style={STYLES.skeletonImage}></div>
+                    </div>
+                  </div>
+                ))}
+              </>
+            ) : (
+              <div>
+                {posts
+                  .filter(
+                    (post) =>
+                      !searchText ||
+                      post.title.toLowerCase().includes(searchText.toLowerCase()) ||
+                      post.content.toLowerCase().includes(searchText.toLowerCase()),
+                  )
+                  .map((post) => {
+                    const author = profiles.get(post.author_id);
+                    const engagement = engagementData.get(post.id) || {};
+                    const comments = postComments[post.id] || [];
+                    const showCommentForm = commentForms[post.id] || false;
+
+                    return (
+                      <div key={post.id} style={STYLES.postContainer}>
+                        {/* Post Header */}
+                        <div style={STYLES.postHeader}>
+                          <div style={STYLES.postAvatar}>
+                            {author?.avatar_url ? (
+                              <img
+                                src={author.avatar_url}
+                                alt="Avatar"
+                                style={{
+                                  width: "100%",
+                                  height: "100%",
+                                  borderRadius: "50%",
+                                  objectFit: "cover",
+                                }}
+                              />
+                            ) : (
+                              "👤"
+                            )}
+                          </div>
+                          <div style={STYLES.postAuthorInfo}>
+                            <div style={STYLES.postAuthorName}>
+                              {author?.display_name || "Anonymous"}
+                            </div>
+                            <div style={STYLES.postTimeAgo}>
+                              {new Date(post.created_at).toLocaleDateString()}
+                            </div>
+                          </div>
+                          <div style={{ position: "relative" }}>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                togglePostMenu(post.id);
+                              }}
+                              style={{
+                                background: "none",
+                                border: "none",
+                                cursor: "pointer",
+                                padding: "8px",
+                                fontSize: "18px",
+                                color: "#8e8e8e",
+                              }}
+                            >
+                              •••
+                            </button>
+                            {showPostMenu[post.id] && (
+                              <div
+                                style={{
+                                  position: "absolute",
+                                  top: "100%",
+                                  right: 0,
+                                  background: "#ffffff",
+                                  border: "1px solid #dbdbdb",
+                                  borderRadius: "8px",
+                                  boxShadow: "0 2px 10px rgba(0, 0, 0, 0.1)",
+                                  zIndex: 100,
+                                  minWidth: "140px",
+                                }}
+                              >
+                                <button
+                                  onClick={() => openReportModal(post.id)}
+                                  style={{
+                                    width: "100%",
+                                    padding: "12px 16px",
+                                    background: "none",
+                                    border: "none",
+                                    textAlign: "left",
+                                    cursor: "pointer",
+                                    fontSize: "14px",
+                                    color: "#262626",
+                                  }}
+                                >
+                                  🚨 Report
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Post Content */}
+                        <div style={STYLES.postContent}>
+                          <div style={STYLES.postTitle}>{post.title}</div>
+                          <div style={STYLES.postText}>{post.content}</div>
+
+                          {/* Tags */}
+                          {post.tags && post.tags.length > 0 && (
+                            <div
+                              style={{
+                                display: "flex",
+                                flexWrap: "wrap",
+                                gap: "4px",
+                                marginBottom: "8px",
+                              }}
+                            >
+                              {post.tags.map((tag: string, tagIndex: number) => (
+                                <span
+                                  key={tagIndex}
+                                  style={{
+                                    background: "#f2f2f2",
+                                    color: "#0095f6",
+                                    padding: "2px 8px",
+                                    borderRadius: "12px",
+                                    fontSize: "12px",
+                                    fontWeight: 500,
+                                  }}
+                                >
+                                  #{tag}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* YouTube Embed */}
+                          {post.embed_url && (
+                            <div
+                              style={{
+                                marginBottom: "8px",
+                                borderRadius: "8px",
+                                overflow: "hidden",
+                              }}
+                            >
+                              <iframe
+                                src={post.embed_url}
+                                width="100%"
+                                height="200"
+                                frameBorder="0"
+                                allowFullScreen
+                                style={{ border: "none" }}
+                              />
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Post Actions */}
+                        <div style={STYLES.postActions}>
+                          <div style={STYLES.postActionsLeft}>
+                            <button
+                              onClick={() => handleToggleAmen(post.id)}
+                              style={{
+                                ...STYLES.actionButton,
+                                color: engagement.hasAmened ? "#ff3040" : "#262626",
+                              }}
+                            >
+                              {engagement.hasAmened ? "🙏" : "🙏"}
+                              <span style={{ fontSize: "12px" }}>
+                                {engagement.amenCount || 0}
+                              </span>
+                            </button>
+                            <button
+                              onClick={() => toggleCommentForm(post.id)}
+                              disabled={isBanned}
+                              style={{
+                                ...STYLES.actionButton,
+                                opacity: isBanned ? 0.5 : 1,
+                                cursor: isBanned ? "not-allowed" : "pointer",
+                              }}
+                            >
+                              💬 <span style={{ fontSize: "12px" }}>{comments.length}</span>
+                            </button>
+                          </div>
+                          <button
+                            onClick={() => handleToggleBookmark(post.id)}
+                            style={{
+                              ...STYLES.actionButton,
+                              color: engagement.isBookmarked ? "#0095f6" : "#262626",
+                            }}
+                          >
+                            {engagement.isBookmarked ? "🔖" : "🔗"}
+                          </button>
+                        </div>
+
+                        {/* Comments Section */}
+                        {comments.length > 0 && (
+                          <div
+                            style={{
+                              borderTop: "1px solid #efefef",
+                              padding: "8px 16px",
+                            }}
+                          >
+                            {comments.map((comment) => (
+                              <div
+                                key={comment.id}
+                                style={{
+                                  marginBottom: "8px",
+                                  padding: "8px",
+                                  background: "#f9f9f9",
+                                  borderRadius: "8px",
+                                }}
+                              >
+                                <div
+                                  style={{
+                                    fontSize: "12px",
+                                    color: "#8e8e8e",
+                                    marginBottom: "4px",
+                                  }}
+                                >
+                                  {profiles.get(comment.author_id)?.display_name || "Anonymous"}
+                                </div>
+                                <div style={{ fontSize: "14px", color: "#262626" }}>
+                                  {comment.content}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Comment Form */}
+                        {showCommentForm && !isBanned && (
+                          <div
+                            style={{
+                              borderTop: "1px solid #efefef",
+                              padding: "12px 16px",
+                              background: "#f9f9f9",
+                            }}
+                          >
+                            <div
+                              style={{
+                                display: "flex",
+                                gap: "8px",
+                                alignItems: "flex-end",
+                              }}
+                            >
+                              <textarea
+                                placeholder="Add a comment..."
+                                value={commentTexts[post.id] || ""}
+                                onChange={(e) =>
+                                  setCommentTexts((prev) => ({
+                                    ...prev,
+                                    [post.id]: e.target.value,
+                                  }))
+                                }
+                                style={{
+                                  flex: 1,
+                                  minHeight: "60px",
+                                  maxHeight: "120px",
+                                  resize: "vertical",
+                                  border: "1px solid #dbdbdb",
+                                  borderRadius: "12px",
+                                  padding: "8px 12px",
+                                  fontSize: "14px",
+                                  outline: "none",
+                                }}
+                              />
+                              <button
+                                onClick={() => handleCreateComment(post.id)}
+                                disabled={
+                                  !commentTexts[post.id]?.trim() ||
+                                  submittingComment[post.id]
+                                }
+                                style={{
+                                  padding: "8px 16px",
+                                  background:
+                                    !commentTexts[post.id]?.trim() ||
+                                    submittingComment[post.id]
+                                      ? "#c7c7cc"
+                                      : "#0095f6",
+                                  color: "#ffffff",
+                                  border: "none",
+                                  borderRadius: "12px",
+                                  fontSize: "14px",
+                                  fontWeight: 600,
+                                  cursor:
+                                    !commentTexts[post.id]?.trim() ||
+                                    submittingComment[post.id]
+                                      ? "not-allowed"
+                                      : "pointer",
+                                }}
+                              >
+                                {submittingComment[post.id] ? "..." : "Post"}
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+              </div>
+            )}
+          </>
+        )}
+
+        {/* Create Post Tab */}
+        {activeTab === 1 && (
+          <div style={{ padding: "16px" }}>
             <div
               style={{
-                display: activeTab === 0 ? "flex" : "none",
-                flex: 1,
-                flexDirection: "column",
+                marginBottom: "16px",
+                fontSize: "18px",
+                fontWeight: 600,
+                color: "#262626",
               }}
             >
-              {renderHomeFeed()}
+              {editingPostId ? "Edit Post" : "Create New Post"}
             </div>
+
+            {moderationError && (
+              <div
+                style={{
+                  background: "#ffebee",
+                  color: "#c62828",
+                  padding: "12px",
+                  borderRadius: "6px",
+                  marginBottom: "16px",
+                  fontSize: "14px",
+                }}
+              >
+                {moderationError}
+              </div>
+            )}
+
+            <div style={{ marginBottom: "16px" }}>
+              <input
+                type="text"
+                placeholder="Post title..."
+                value={createTitle}
+                onChange={(e) => setCreateTitle(e.target.value)}
+                style={{
+                  width: "100%",
+                  height: "44px",
+                  border: "1px solid #dbdbdb",
+                  borderRadius: "6px",
+                  padding: "0 16px",
+                  fontSize: "14px",
+                  outline: "none",
+                }}
+              />
+            </div>
+
+            <div style={{ marginBottom: "16px" }}>
+              <textarea
+                placeholder="Share your faith journey..."
+                value={createContent}
+                onChange={(e) => setCreateContent(e.target.value)}
+                style={{
+                  width: "100%",
+                  minHeight: "120px",
+                  border: "1px solid #dbdbdb",
+                  borderRadius: "6px",
+                  padding: "16px",
+                  fontSize: "14px",
+                  outline: "none",
+                  resize: "vertical",
+                  fontFamily: "inherit",
+                }}
+              />
+            </div>
+
+            <div style={{ marginBottom: "16px" }}>
+              <input
+                type="text"
+                placeholder="Tags (comma-separated)..."
+                value={createTags}
+                onChange={(e) => setCreateTags(e.target.value)}
+                style={{
+                  width: "100%",
+                  height: "44px",
+                  border: "1px solid #dbdbdb",
+                  borderRadius: "6px",
+                  padding: "0 16px",
+                  fontSize: "14px",
+                  outline: "none",
+                }}
+              />
+            </div>
+
+            {hasMediaPermission && (
+              <div style={{ marginBottom: "16px" }}>
+                <input
+                  type="url"
+                  placeholder="YouTube URL (optional)..."
+                  value={createYouTubeUrl}
+                  onChange={(e) => setCreateYouTubeUrl(e.target.value)}
+                  style={{
+                    width: "100%",
+                    height: "44px",
+                    border: "1px solid #dbdbdb",
+                    borderRadius: "6px",
+                    padding: "0 16px",
+                    fontSize: "14px",
+                    outline: "none",
+                  }}
+                />
+                {youtubeError && (
+                  <div
+                    style={{
+                      color: "#c62828",
+                      fontSize: "12px",
+                      marginTop: "4px",
+                    }}
+                  >
+                    {youtubeError}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {!hasMediaPermission && !isCheckingPermission && (
+              <div
+                style={{
+                  background: "#f0f0f0",
+                  padding: "12px",
+                  borderRadius: "6px",
+                  marginBottom: "16px",
+                  fontSize: "14px",
+                  color: "#666",
+                }}
+              >
+                Want to share YouTube videos?{" "}
+                <button
+                  onClick={() => setShowMediaRequestModal(true)}
+                  style={{
+                    background: "none",
+                    border: "none",
+                    color: "#0095f6",
+                    cursor: "pointer",
+                    textDecoration: "underline",
+                  }}
+                >
+                  Request link sharing permission
+                </button>
+              </div>
+            )}
+
             <div
               style={{
-                display: activeTab === 1 ? "flex" : "none",
-                flex: 1,
-                flexDirection: "column",
+                display: "flex",
+                gap: "12px",
               }}
             >
-              {renderCreatePage()}
+              {editingPostId && (
+                <button
+                  onClick={() => {
+                    setEditingPostId(null);
+                    setEditingPost(null);
+                    setCreateTitle("");
+                    setCreateContent("");
+                    setCreateTags("");
+                    setCreateYouTubeUrl("");
+                    setYoutubeError("");
+                    setModerationError("");
+                  }}
+                  style={{
+                    flex: 1,
+                    height: "44px",
+                    background: "#ffffff",
+                    color: "#262626",
+                    border: "1px solid #dbdbdb",
+                    borderRadius: "6px",
+                    fontSize: "14px",
+                    fontWeight: 600,
+                    cursor: "pointer",
+                  }}
+                >
+                  Cancel
+                </button>
+              )}
+              <button
+                onClick={handleCreatePost}
+                disabled={
+                  !createTitle.trim() || !createContent.trim() || isBanned
+                }
+                style={{
+                  flex: 1,
+                  height: "44px",
+                  background:
+                    !createTitle.trim() || !createContent.trim() || isBanned
+                      ? "#c7c7cc"
+                      : "#0095f6",
+                  color: "#ffffff",
+                  border: "none",
+                  borderRadius: "6px",
+                  fontSize: "14px",
+                  fontWeight: 600,
+                  cursor:
+                    !createTitle.trim() || !createContent.trim() || isBanned
+                      ? "not-allowed"
+                      : "pointer",
+                }}
+              >
+                {editingPostId ? "Update Post" : "Share Post"}
+              </button>
             </div>
+          </div>
+        )}
+
+        {/* Prayer Tab */}
+        {activeTab === 2 && (
+          <div style={{ padding: "16px" }}>
+            {/* Prayer Sub-tabs */}
             <div
               style={{
-                display: activeTab === 2 ? "flex" : "none",
-                flex: 1,
-                flexDirection: "column",
+                display: "flex",
+                marginBottom: "16px",
+                borderBottom: "1px solid #dbdbdb",
               }}
             >
-              {renderPrayerPage()}
+              <button
+                onClick={() => setPrayerTab(0)}
+                style={{
+                  flex: 1,
+                  padding: "12px",
+                  background: "none",
+                  border: "none",
+                  borderBottom:
+                    prayerTab === 0 ? "2px solid #0095f6" : "2px solid transparent",
+                  color: prayerTab === 0 ? "#0095f6" : "#8e8e8e",
+                  fontSize: "14px",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                }}
+              >
+                Browse Prayers
+              </button>
+              <button
+                onClick={() => setPrayerTab(1)}
+                style={{
+                  flex: 1,
+                  padding: "12px",
+                  background: "none",
+                  border: "none",
+                  borderBottom:
+                    prayerTab === 1 ? "2px solid #0095f6" : "2px solid transparent",
+                  color: prayerTab === 1 ? "#0095f6" : "#8e8e8e",
+                  fontSize: "14px",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                }}
+              >
+                My Prayers
+              </button>
             </div>
-            {/* Profile tab content removed - now uses MobileProfilePage instead */}
+
+            {/* Browse Prayers Tab */}
+            {prayerTab === 0 && (
+              <>
+                {/* Prayer Warriors Leaderboard */}
+                <div
+                  style={{
+                    background: "#f9f9f9",
+                    padding: "16px",
+                    borderRadius: "12px",
+                    marginBottom: "16px",
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize: "16px",
+                      fontWeight: 600,
+                      marginBottom: "12px",
+                      color: "#262626",
+                    }}
+                  >
+                    🏆 Prayer Warriors This Week
+                  </div>
+                  {leaderboard.slice(0, showFullLeaderboard ? 10 : 3).map((warrior, index) => (
+                    <div
+                      key={warrior.id}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        marginBottom: "8px",
+                        padding: "8px",
+                        background: "#ffffff",
+                        borderRadius: "8px",
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: "24px",
+                          height: "24px",
+                          borderRadius: "50%",
+                          background:
+                            index === 0 ? "#ffd700" : index === 1 ? "#c0c0c0" : "#cd7f32",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          marginRight: "12px",
+                          fontSize: "12px",
+                          fontWeight: "bold",
+                        }}
+                      >
+                        {index + 1}
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: "14px", fontWeight: 600, color: "#262626" }}>
+                          {warrior.display_name || "Anonymous Warrior"}
+                        </div>
+                        <div style={{ fontSize: "12px", color: "#8e8e8e" }}>
+                          {warrior.prayer_count} prayers this week
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  {leaderboard.length > 3 && (
+                    <button
+                      onClick={() => setShowFullLeaderboard(!showFullLeaderboard)}
+                      style={{
+                        background: "none",
+                        border: "none",
+                        color: "#0095f6",
+                        fontSize: "12px",
+                        cursor: "pointer",
+                        marginTop: "8px",
+                      }}
+                    >
+                      {showFullLeaderboard ? "Show Less" : "Show More"}
+                    </button>
+                  )}
+                </div>
+
+                {/* Prayer Requests List */}
+                <div
+                  style={{
+                    fontSize: "16px",
+                    fontWeight: 600,
+                    marginBottom: "12px",
+                    color: "#262626",
+                  }}
+                >
+                  🙏 Prayer Requests
+                </div>
+                {loading ? (
+                  <div style={{ textAlign: "center", padding: "32px", color: "#8e8e8e" }}>
+                    Loading prayer requests...
+                  </div>
+                ) : (
+                  <div>
+                    {prayerRequests.map((request) => (
+                      <div
+                        key={request.id}
+                        style={{
+                          background: "#ffffff",
+                          border: "1px solid #dbdbdb",
+                          borderRadius: "12px",
+                          padding: "16px",
+                          marginBottom: "12px",
+                          cursor: "pointer",
+                        }}
+                        onClick={() => handlePrayerClick(request.id)}
+                      >
+                        <div
+                          style={{
+                            fontSize: "14px",
+                            fontWeight: 600,
+                            marginBottom: "8px",
+                            color: "#262626",
+                          }}
+                        >
+                          {request.title}
+                        </div>
+                        <div
+                          style={{
+                            fontSize: "14px",
+                            color: "#8e8e8e",
+                            marginBottom: "12px",
+                            lineHeight: 1.4,
+                          }}
+                        >
+                          {request.details.length > 100
+                            ? `${request.details.substring(0, 100)}...`
+                            : request.details}
+                        </div>
+                        <div
+                          style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                          }}
+                        >
+                          <div style={{ fontSize: "12px", color: "#8e8e8e" }}>
+                            {request.committed_count || 0} committed •{" "}
+                            {request.prayed_count || 0} prayed
+                          </div>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleCommitToPray(request.id);
+                            }}
+                            disabled={committingToId === request.id || isBanned}
+                            style={{
+                              background: "#0095f6",
+                              color: "#ffffff",
+                              border: "none",
+                              borderRadius: "16px",
+                              padding: "6px 12px",
+                              fontSize: "12px",
+                              fontWeight: 600,
+                              cursor:
+                                committingToId === request.id || isBanned
+                                  ? "not-allowed"
+                                  : "pointer",
+                              opacity:
+                                committingToId === request.id || isBanned ? 0.6 : 1,
+                            }}
+                          >
+                            {committingToId === request.id ? "..." : "Commit to Pray"}
+                          </button>
+                        </div>
+
+                        {/* Tags */}
+                        {request.tags && request.tags.length > 0 && (
+                          <div
+                            style={{
+                              display: "flex",
+                              flexWrap: "wrap",
+                              gap: "4px",
+                              marginTop: "8px",
+                            }}
+                          >
+                            {request.tags.map((tag: string, tagIndex: number) => (
+                              <span
+                                key={tagIndex}
+                                style={{
+                                  background: "#e3f2fd",
+                                  color: "#1976d2",
+                                  padding: "2px 8px",
+                                  borderRadius: "12px",
+                                  fontSize: "10px",
+                                  fontWeight: 500,
+                                }}
+                              >
+                                #{tag}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
+
+            {/* My Prayers Tab */}
+            {prayerTab === 1 && (
+              <>
+                {/* My Prayers Sub-tabs */}
+                <div
+                  style={{
+                    display: "flex",
+                    marginBottom: "16px",
+                    background: "#f9f9f9",
+                    borderRadius: "8px",
+                    padding: "4px",
+                  }}
+                >
+                  <button
+                    onClick={() => setMyPrayersTab("commitments")}
+                    style={{
+                      flex: 1,
+                      padding: "8px 12px",
+                      background:
+                        myPrayersTab === "commitments" ? "#ffffff" : "transparent",
+                      border: "none",
+                      borderRadius: "6px",
+                      color: myPrayersTab === "commitments" ? "#262626" : "#8e8e8e",
+                      fontSize: "14px",
+                      fontWeight: 600,
+                      cursor: "pointer",
+                    }}
+                  >
+                    My Commitments ({myCommitments.length})
+                  </button>
+                  <button
+                    onClick={() => setMyPrayersTab("requests")}
+                    style={{
+                      flex: 1,
+                      padding: "8px 12px",
+                      background:
+                        myPrayersTab === "requests" ? "#ffffff" : "transparent",
+                      border: "none",
+                      borderRadius: "6px",
+                      color: myPrayersTab === "requests" ? "#262626" : "#8e8e8e",
+                      fontSize: "14px",
+                      fontWeight: 600,
+                      cursor: "pointer",
+                    }}
+                  >
+                    My Requests ({myRequests.length})
+                  </button>
+                </div>
+
+                {/* My Commitments */}
+                {myPrayersTab === "commitments" && (
+                  <div>
+                    {myCommitments.length === 0 ? (
+                      <div
+                        style={{
+                          textAlign: "center",
+                          padding: "32px",
+                          color: "#8e8e8e",
+                        }}
+                      >
+                        No prayer commitments yet.
+                        <br />
+                        Browse prayers to commit!
+                      </div>
+                    ) : (
+                      myCommitments.map((commitment) => (
+                        <div
+                          key={commitment.id}
+                          style={{
+                            background: "#ffffff",
+                            border: "1px solid #dbdbdb",
+                            borderRadius: "12px",
+                            padding: "16px",
+                            marginBottom: "12px",
+                          }}
+                        >
+                          <div
+                            style={{
+                              fontSize: "14px",
+                              fontWeight: 600,
+                              marginBottom: "8px",
+                              color: "#262626",
+                            }}
+                          >
+                            {commitment.prayer_request?.title || "Prayer Request"}
+                          </div>
+                          <div
+                            style={{
+                              fontSize: "14px",
+                              color: "#8e8e8e",
+                              marginBottom: "12px",
+                              lineHeight: 1.4,
+                            }}
+                          >
+                            {commitment.prayer_request?.details?.substring(0, 100)}
+                            {commitment.prayer_request?.details?.length > 100 && "..."}
+                          </div>
+                          <div
+                            style={{
+                              display: "flex",
+                              justifyContent: "space-between",
+                              alignItems: "center",
+                            }}
+                          >
+                            <div style={{ fontSize: "12px", color: "#8e8e8e" }}>
+                              {commitment.has_prayed
+                                ? prayedJustNow.has(commitment.request_id)
+                                  ? "Prayed just now ✨"
+                                  : "Already prayed ✅"
+                                : "Committed to pray 🙏"}
+                            </div>
+                            {!commitment.has_prayed && (
+                              <button
+                                onClick={() => handleConfirmPrayed(commitment.request_id)}
+                                disabled={
+                                  confirmingId === commitment.request_id || isBanned
+                                }
+                                style={{
+                                  background: "#28a745",
+                                  color: "#ffffff",
+                                  border: "none",
+                                  borderRadius: "16px",
+                                  padding: "6px 12px",
+                                  fontSize: "12px",
+                                  fontWeight: 600,
+                                  cursor:
+                                    confirmingId === commitment.request_id ||
+                                    isBanned
+                                      ? "not-allowed"
+                                      : "pointer",
+                                  opacity:
+                                    confirmingId === commitment.request_id ||
+                                    isBanned
+                                      ? 0.6
+                                      : 1,
+                                }}
+                              >
+                                {confirmingId === commitment.request_id
+                                  ? "..."
+                                  : "Mark as Prayed"}
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                )}
+
+                {/* My Prayer Requests */}
+                {myPrayersTab === "requests" && (
+                  <div>
+                    {myRequests.length === 0 ? (
+                      <div
+                        style={{
+                          textAlign: "center",
+                          padding: "32px",
+                          color: "#8e8e8e",
+                        }}
+                      >
+                        No prayer requests yet.
+                        <br />
+                        Create your first request!
+                      </div>
+                    ) : (
+                      myRequests.map((request) => (
+                        <div
+                          key={request.id}
+                          style={{
+                            background: "#ffffff",
+                            border: "1px solid #dbdbdb",
+                            borderRadius: "12px",
+                            padding: "16px",
+                            marginBottom: "12px",
+                          }}
+                        >
+                          <div
+                            style={{
+                              fontSize: "14px",
+                              fontWeight: 600,
+                              marginBottom: "8px",
+                              color: "#262626",
+                            }}
+                          >
+                            {request.title}
+                          </div>
+                          <div
+                            style={{
+                              fontSize: "14px",
+                              color: "#8e8e8e",
+                              marginBottom: "12px",
+                              lineHeight: 1.4,
+                            }}
+                          >
+                            {request.details}
+                          </div>
+                          <div style={{ fontSize: "12px", color: "#8e8e8e" }}>
+                            {request.committed_count || 0} committed •{" "}
+                            {request.prayed_count || 0} prayed •{" "}
+                            {new Date(request.created_at).toLocaleDateString()}
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        )}
+
+        {/* New Prayer Tab */}
+        {activeTab === 3 && (
+          <div style={{ padding: "16px" }}>
+            <div
+              style={{
+                marginBottom: "16px",
+                fontSize: "18px",
+                fontWeight: 600,
+                color: "#262626",
+              }}
+            >
+              🙏 Request Prayer
+            </div>
+
+            {prayerModerationError && (
+              <div
+                style={{
+                  background: "#ffebee",
+                  color: "#c62828",
+                  padding: "12px",
+                  borderRadius: "6px",
+                  marginBottom: "16px",
+                  fontSize: "14px",
+                }}
+              >
+                {prayerModerationError}
+              </div>
+            )}
+
+            <div style={{ marginBottom: "16px" }}>
+              <input
+                type="text"
+                placeholder="Prayer request title..."
+                value={prayerTitle}
+                onChange={(e) => setPrayerTitle(e.target.value)}
+                style={{
+                  width: "100%",
+                  height: "44px",
+                  border: "1px solid #dbdbdb",
+                  borderRadius: "6px",
+                  padding: "0 16px",
+                  fontSize: "14px",
+                  outline: "none",
+                }}
+              />
+            </div>
+
+            <div style={{ marginBottom: "16px" }}>
+              <textarea
+                placeholder="Share your prayer request..."
+                value={prayerDetails}
+                onChange={(e) => setPrayerDetails(e.target.value)}
+                style={{
+                  width: "100%",
+                  minHeight: "120px",
+                  border: "1px solid #dbdbdb",
+                  borderRadius: "6px",
+                  padding: "16px",
+                  fontSize: "14px",
+                  outline: "none",
+                  resize: "vertical",
+                  fontFamily: "inherit",
+                }}
+              />
+            </div>
+
+            <div style={{ marginBottom: "16px" }}>
+              <input
+                type="text"
+                placeholder="Tags (comma-separated)..."
+                value={prayerTags}
+                onChange={(e) => setPrayerTags(e.target.value)}
+                style={{
+                  width: "100%",
+                  height: "44px",
+                  border: "1px solid #dbdbdb",
+                  borderRadius: "6px",
+                  padding: "0 16px",
+                  fontSize: "14px",
+                  outline: "none",
+                }}
+              />
+            </div>
+
+            <div style={{ marginBottom: "16px" }}>
+              <label
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  fontSize: "14px",
+                  color: "#262626",
+                }}
+              >
+                <input
+                  type="checkbox"
+                  checked={isAnonymous}
+                  onChange={(e) => setIsAnonymous(e.target.checked)}
+                  style={{ marginRight: "8px" }}
+                />
+                Request prayer anonymously
+              </label>
+            </div>
+
+            <button
+              onClick={handleCreatePrayerRequest}
+              disabled={
+                !prayerTitle.trim() || !prayerDetails.trim() || isBanned
+              }
+              style={{
+                width: "100%",
+                height: "44px",
+                background:
+                  !prayerTitle.trim() || !prayerDetails.trim() || isBanned
+                    ? "#c7c7cc"
+                    : "#0095f6",
+                color: "#ffffff",
+                border: "none",
+                borderRadius: "6px",
+                fontSize: "14px",
+                fontWeight: 600,
+                cursor:
+                  !prayerTitle.trim() || !prayerDetails.trim() || isBanned
+                    ? "not-allowed"
+                    : "pointer",
+              }}
+            >
+              Submit Prayer Request
+            </button>
           </div>
         )}
       </div>
 
-      {/* Bottom Navigation - Always show when logged in */}
-      {user && (
-        <nav style={STYLES.bottomNav}>
-          <div
-            onClick={() => {
-              resetAllModalStates();
-              setActiveTab(0);
-            }}
-            onTouchStart={(e) => {
-              e.currentTarget.style.transform = "scale(0.95)";
-              e.currentTarget.style.opacity = "0.7";
-            }}
-            onTouchEnd={(e) => {
-              e.currentTarget.style.transform = "scale(1)";
-              e.currentTarget.style.opacity = "1";
-            }}
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-              color: activeTab === 0 ? "#4285f4" : "#8e8e8e",
-              fontSize: "20px",
-              padding: "8px 12px",
-              cursor: "pointer",
-              WebkitTapHighlightColor: "transparent",
-              touchAction: "manipulation",
-              userSelect: "none",
-              transition: "transform 0.1s, opacity 0.1s",
-            }}
-          >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" />
-            </svg>
-            <span style={{ fontSize: "10px", marginTop: "2px" }}>Home</span>
-          </div>
-          <div
-            onClick={() => {
-              resetAllModalStates();
-              setActiveTab(0);
-              // Focus on search input in home page
-              setTimeout(() => {
-                const searchInput = document.querySelector(
-                  'input[placeholder*="Search"]',
-                ) as HTMLInputElement;
-                if (searchInput) {
-                  searchInput.focus();
-                  searchInput.scrollIntoView({
-                    behavior: "smooth",
-                    block: "center",
-                  });
-                }
-              }, 100);
-            }}
-            onTouchStart={(e) => {
-              e.currentTarget.style.transform = "scale(0.95)";
-              e.currentTarget.style.opacity = "0.7";
-            }}
-            onTouchEnd={(e) => {
-              e.currentTarget.style.transform = "scale(1)";
-              e.currentTarget.style.opacity = "1";
-            }}
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-              color: "#8e8e8e",
-              fontSize: "20px",
-              padding: "8px 12px",
-              cursor: "pointer",
-              WebkitTapHighlightColor: "transparent",
-              touchAction: "manipulation",
-              userSelect: "none",
-              transition: "transform 0.1s, opacity 0.1s",
-            }}
-          >
-            🔍
-            <span style={{ fontSize: "10px", marginTop: "2px" }}>Search</span>
-          </div>
-          <div
-            onClick={() => {
-              resetAllModalStates();
-              setActiveTab(1);
-            }}
-            onTouchStart={(e) => {
-              e.currentTarget.style.transform = "scale(0.95)";
-              e.currentTarget.style.opacity = "0.7";
-            }}
-            onTouchEnd={(e) => {
-              e.currentTarget.style.transform = "scale(1)";
-              e.currentTarget.style.opacity = "1";
-            }}
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-              color: activeTab === 1 ? "#4285f4" : "#8e8e8e",
-              fontSize: "20px",
-              padding: "8px 12px",
-              cursor: "pointer",
-              WebkitTapHighlightColor: "transparent",
-              touchAction: "manipulation",
-              userSelect: "none",
-              transition: "transform 0.1s, opacity 0.1s",
-            }}
-          >
-            ➕<span style={{ fontSize: "10px", marginTop: "2px" }}>Post</span>
-          </div>
-          <div
-            onClick={() => {
-              resetAllModalStates();
-              setActiveTab(2);
-            }}
-            onTouchStart={(e) => {
-              e.currentTarget.style.transform = "scale(0.95)";
-              e.currentTarget.style.opacity = "0.7";
-            }}
-            onTouchEnd={(e) => {
-              e.currentTarget.style.transform = "scale(1)";
-              e.currentTarget.style.opacity = "1";
-            }}
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-              color: activeTab === 2 ? "#4285f4" : "#8e8e8e",
-              fontSize: "20px",
-              padding: "8px 12px",
-              cursor: "pointer",
-              WebkitTapHighlightColor: "transparent",
-              touchAction: "manipulation",
-              userSelect: "none",
-              transition: "transform 0.1s, opacity 0.1s",
-            }}
-          >
-            <svg
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke={activeTab === 2 ? "#4285f4" : "#333333"}
-              strokeWidth="2"
-            >
-              <path d="M14 2v6a2 2 0 01-2 2 2 2 0 01-2-2V2" />
-              <path d="M10 2C8 2 8 4 10 6c0 1 0 2-2 2s-4-1-4-4" />
-              <path d="M14 2c2 0 2 2 0 4 0 1 0 2 2 2s4-1 4-4" />
-              <path d="M9 16v3a1 1 0 002 0v-3" />
-              <path d="M13 16v3a1 1 0 002 0v-3" />
-              <path d="M9 16h6" />
-            </svg>
-            <span style={{ fontSize: "10px", marginTop: "2px" }}>Prayer</span>
-          </div>
-          <div
-            onClick={() => {
-              // Use the same profile page as the dropdown
-              setActiveTab(0); // Keep on home tab
-              setShowMobileProfile(true);
-              if (userProfile) {
-                setProfile({
-                  id: user?.id || "",
-                  display_name:
-                    userProfile.display_name || user?.email || "Gospel User",
-                  bio: userProfile.bio || "",
-                  avatar_url: userProfile.avatar_url || "",
-                  created_at: new Date().toISOString(),
-                  updated_at: new Date().toISOString(),
-                });
-                setEditDisplayName(
-                  userProfile.display_name || user?.email || "Gospel User",
-                );
-                setEditBio(userProfile.bio || "");
-                setEditAvatarUrl(userProfile.avatar_url || "");
-                setProfileLoading(false);
-              } else {
-                loadMobileProfile();
-              }
-            }}
-            onTouchStart={(e) => {
-              e.currentTarget.style.transform = "scale(0.95)";
-              e.currentTarget.style.opacity = "0.7";
-            }}
-            onTouchEnd={(e) => {
-              e.currentTarget.style.transform = "scale(1)";
-              e.currentTarget.style.opacity = "1";
-            }}
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-              color: "#8e8e8e", // Always inactive since we use MobileProfilePage instead
-              fontSize: "20px",
-              padding: "8px 12px",
-              cursor: "pointer",
-              WebkitTapHighlightColor: "transparent",
-              touchAction: "manipulation",
-              userSelect: "none",
-              transition: "transform 0.1s, opacity 0.1s",
-            }}
-          >
-            👤
-            <span style={{ fontSize: "10px", marginTop: "2px" }}>Profile</span>
-          </div>
-        </nav>
-      )}
+      {/* Mobile Modal Pages */}
+      {showMobileProfile && <MobileProfilePage />}
+      {showMobileEditProfile && <MobileEditProfilePage />}
+      {showMobileSettings && <MobileSettingsPage />}
+      {showMobileSavedPosts && <MobileSavedPostsPage />}
+      {showMobileCommunityGuidelines && <MobileCommunityGuidelinesPage />}
+      {showMobileSupporter && <MobileSupporterPage />}
+      {showMobileHelp && <MobileHelpPage />}
+      {showMobileReviewReports && <MobileReviewReportsPage />}
+      {showMobileMediaRequests && <MobileMediaRequestsPage />}
+      {showMobileAdminSupport && <MobileAdminSupportPage />}
 
-      {/* Report Modal */}
-      {reportModalOpen && (
+      {/* Prayer Detail Modal */}
+      {selectedPrayerId && selectedPrayerDetail && (
         <div
           style={{
-            position: "absolute",
+            position: "fixed",
             top: 0,
             left: 0,
             right: 0,
             bottom: 0,
-            background: "rgba(0,0,0,0.5)",
+            background: "rgba(0, 0, 0, 0.5)",
+            zIndex: 1000,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            zIndex: 1000,
             padding: "20px",
+          }}
+          onClick={() => {
+            setSelectedPrayerId(null);
+            setSelectedPrayerDetail(null);
           }}
         >
           <div
             style={{
-              background: "white",
+              background: "#ffffff",
               borderRadius: "12px",
-              padding: "24px",
-              maxWidth: "90%",
-              width: "400px",
+              padding: "20px",
+              maxWidth: "400px",
+              width: "100%",
               maxHeight: "80vh",
-              overflow: "auto",
+              overflowY: "auto",
             }}
+            onClick={(e) => e.stopPropagation()}
           >
-            <h3
+            <div
               style={{
                 fontSize: "18px",
                 fontWeight: 600,
@@ -9395,121 +9076,315 @@ export default function MobileApp() {
                 color: "#262626",
               }}
             >
-              Report Content
-            </h3>
-            <p
+              {selectedPrayerDetail.title}
+            </div>
+            <div
               style={{
                 fontSize: "14px",
-                color: "#8e8e8e",
-                marginBottom: "20px",
+                color: "#262626",
+                lineHeight: 1.5,
+                marginBottom: "16px",
               }}
             >
-              Why are you reporting this {reportTarget?.type}?
-            </p>
-
+              {selectedPrayerDetail.details}
+            </div>
+            <div
+              style={{
+                fontSize: "12px",
+                color: "#8e8e8e",
+                marginBottom: "16px",
+              }}
+            >
+              {selectedPrayerDetail.committed_count || 0} committed •{" "}
+              {selectedPrayerDetail.prayed_count || 0} prayed
+            </div>
             <div
               style={{
                 display: "flex",
-                flexDirection: "column",
                 gap: "12px",
-                marginBottom: "24px",
               }}
             >
-              {[
-                "Inappropriate content",
-                "Spam or misleading",
-                "Not Christ-Centered (prayer not to Jesus)",
-                "Harassment or hate speech",
-                "Violence or dangerous content",
-                "Other",
-              ].map((reason) => (
-                <button
-                  key={reason}
-                  onClick={() => handleSubmitReport(reason)}
-                  style={{
-                    padding: "12px 16px",
-                    textAlign: "left",
-                    border: "1px solid #dbdbdb",
-                    borderRadius: "8px",
-                    background: "white",
-                    cursor: "pointer",
-                    fontSize: "14px",
-                    color: "#262626",
-                  }}
-                >
-                  {reason}
-                </button>
-              ))}
-            </div>
-
-            <div style={{ display: "flex", gap: "12px" }}>
               <button
-                onClick={() => setReportModalOpen(false)}
+                onClick={() => {
+                  setSelectedPrayerId(null);
+                  setSelectedPrayerDetail(null);
+                }}
                 style={{
                   flex: 1,
-                  padding: "12px 16px",
-                  border: "1px solid #dbdbdb",
-                  borderRadius: "8px",
-                  background: "white",
-                  cursor: "pointer",
+                  padding: "12px",
+                  background: "#f0f0f0",
+                  color: "#262626",
+                  border: "none",
+                  borderRadius: "6px",
                   fontSize: "14px",
                   fontWeight: 600,
-                  color: "#262626",
+                  cursor: "pointer",
                 }}
               >
-                Cancel
+                Close
+              </button>
+              <button
+                onClick={() => {
+                  handleCommitToPray(selectedPrayerId);
+                  setSelectedPrayerId(null);
+                  setSelectedPrayerDetail(null);
+                }}
+                disabled={isBanned}
+                style={{
+                  flex: 1,
+                  padding: "12px",
+                  background: isBanned ? "#c7c7cc" : "#0095f6",
+                  color: "#ffffff",
+                  border: "none",
+                  borderRadius: "6px",
+                  fontSize: "14px",
+                  fontWeight: 600,
+                  cursor: isBanned ? "not-allowed" : "pointer",
+                }}
+              >
+                Commit to Pray
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Simple Media Request Modal */}
-      {showMediaRequestModal && (
+      {/* Report Modal */}
+      {reportModal.isOpen && (
         <div
           style={{
-            position: "absolute",
+            position: "fixed",
             top: 0,
             left: 0,
             right: 0,
             bottom: 0,
-            backgroundColor: "rgba(0,0,0,0.5)",
+            background: "rgba(0, 0, 0, 0.5)",
             zIndex: 1000,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
+            padding: "20px",
           }}
+          onClick={() =>
+            setReportModal({
+              isOpen: false,
+              targetType: "post",
+              targetId: "",
+              reason: "",
+              selectedReason: "",
+            })
+          }
         >
           <div
             style={{
               background: "#ffffff",
-              padding: "24px",
               borderRadius: "12px",
-              maxWidth: "300px",
-              margin: "16px",
-              textAlign: "center",
+              padding: "20px",
+              maxWidth: "400px",
+              width: "100%",
             }}
+            onClick={(e) => e.stopPropagation()}
           >
-            <h3
+            <div
               style={{
-                margin: "0 0 16px 0",
                 fontSize: "18px",
                 fontWeight: 600,
+                marginBottom: "16px",
+                color: "#262626",
               }}
             >
-              Request Link Sharing
-            </h3>
-            <p
+              Report {reportModal.targetType}
+            </div>
+
+            <div style={{ marginBottom: "16px" }}>
+              <select
+                value={reportModal.selectedReason}
+                onChange={(e) =>
+                  setReportModal((prev) => ({
+                    ...prev,
+                    selectedReason: e.target.value,
+                  }))
+                }
+                style={{
+                  width: "100%",
+                  height: "44px",
+                  border: "1px solid #dbdbdb",
+                  borderRadius: "6px",
+                  padding: "0 16px",
+                  fontSize: "14px",
+                  outline: "none",
+                }}
+              >
+                <option value="">Select a reason...</option>
+                <option value="inappropriate">Inappropriate content</option>
+                <option value="spam">Spam or repetitive</option>
+                <option value="false_teaching">False teaching</option>
+                <option value="harassment">Harassment</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+
+            <div style={{ marginBottom: "16px" }}>
+              <textarea
+                placeholder="Additional details (optional)..."
+                value={reportModal.reason}
+                onChange={(e) =>
+                  setReportModal((prev) => ({
+                    ...prev,
+                    reason: e.target.value,
+                  }))
+                }
+                style={{
+                  width: "100%",
+                  minHeight: "80px",
+                  border: "1px solid #dbdbdb",
+                  borderRadius: "6px",
+                  padding: "12px",
+                  fontSize: "14px",
+                  outline: "none",
+                  resize: "vertical",
+                  fontFamily: "inherit",
+                }}
+              />
+            </div>
+
+            <div
               style={{
-                margin: "0 0 20px 0",
-                fontSize: "14px",
-                color: "#6c757d",
+                display: "flex",
+                gap: "12px",
               }}
             >
-              Link sharing permissions allow you to embed YouTube videos and
-              upload media files to enhance your posts.
-            </p>
-            <div style={{ display: "flex", gap: "8px" }}>
+              <button
+                onClick={() =>
+                  setReportModal({
+                    isOpen: false,
+                    targetType: "post",
+                    targetId: "",
+                    reason: "",
+                    selectedReason: "",
+                  })
+                }
+                style={{
+                  flex: 1,
+                  padding: "12px",
+                  background: "#f0f0f0",
+                  color: "#262626",
+                  border: "none",
+                  borderRadius: "6px",
+                  fontSize: "14px",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={async () => {
+                  if (!reportModal.selectedReason) return;
+
+                  setSubmittingReport(true);
+                  try {
+                    await createReport({
+                      target_type: reportModal.targetType,
+                      target_id: reportModal.targetId,
+                      reason: `${reportModal.selectedReason}: ${reportModal.reason}`.trim(),
+                    });
+
+                    alert("Report submitted successfully. Thank you!");
+                    setReportModal({
+                      isOpen: false,
+                      targetType: "post",
+                      targetId: "",
+                      reason: "",
+                      selectedReason: "",
+                    });
+                  } catch (error) {
+                    alert("Failed to submit report. Please try again.");
+                  } finally {
+                    setSubmittingReport(false);
+                  }
+                }}
+                disabled={!reportModal.selectedReason || submittingReport}
+                style={{
+                  flex: 1,
+                  padding: "12px",
+                  background:
+                    !reportModal.selectedReason || submittingReport
+                      ? "#c7c7cc"
+                      : "#ff3b30",
+                  color: "#ffffff",
+                  border: "none",
+                  borderRadius: "6px",
+                  fontSize: "14px",
+                  fontWeight: 600,
+                  cursor:
+                    !reportModal.selectedReason || submittingReport
+                      ? "not-allowed"
+                      : "pointer",
+                }}
+              >
+                {submittingReport ? "Submitting..." : "Submit Report"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Media Request Modal */}
+      {showMediaRequestModal && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: "rgba(0, 0, 0, 0.5)",
+            zIndex: 1000,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "20px",
+          }}
+          onClick={() => setShowMediaRequestModal(false)}
+        >
+          <div
+            style={{
+              background: "#ffffff",
+              borderRadius: "12px",
+              padding: "20px",
+              maxWidth: "400px",
+              width: "100%",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div
+              style={{
+                fontSize: "18px",
+                fontWeight: 600,
+                marginBottom: "16px",
+                color: "#262626",
+              }}
+            >
+              Request Link Sharing Permission
+            </div>
+            <div
+              style={{
+                fontSize: "14px",
+                color: "#8e8e8e",
+                marginBottom: "16px",
+                lineHeight: 1.4,
+              }}
+            >
+              To share YouTube videos and other links, you need special permission. This
+              helps us maintain a safe, Christ-centered community.
+            </div>
+            <div
+              style={{
+                display: "flex",
+                gap: "12px",
+              }}
+            >
               <button
                 onClick={() => setShowMediaRequestModal(false)}
                 style={{
@@ -9546,6 +9421,62 @@ export default function MobileApp() {
           </div>
         </div>
       )}
+
+      {/* Bottom Navigation */}
+      <div style={STYLES.bottomNav}>
+        <button
+          onClick={() => setActiveTab(0)}
+          style={{
+            background: "none",
+            border: "none",
+            cursor: "pointer",
+            padding: "8px",
+            color: activeTab === 0 ? "#0095f6" : "#8e8e8e",
+          }}
+        >
+          <div style={{ fontSize: "20px", marginBottom: "2px" }}>🏠</div>
+          <div style={{ fontSize: "10px" }}>Home</div>
+        </button>
+        <button
+          onClick={() => setActiveTab(1)}
+          style={{
+            background: "none",
+            border: "none",
+            cursor: "pointer",
+            padding: "8px",
+            color: activeTab === 1 ? "#0095f6" : "#8e8e8e",
+          }}
+        >
+          <div style={{ fontSize: "20px", marginBottom: "2px" }}>✏️</div>
+          <div style={{ fontSize: "10px" }}>Create</div>
+        </button>
+        <button
+          onClick={() => setActiveTab(2)}
+          style={{
+            background: "none",
+            border: "none",
+            cursor: "pointer",
+            padding: "8px",
+            color: activeTab === 2 ? "#0095f6" : "#8e8e8e",
+          }}
+        >
+          <div style={{ fontSize: "20px", marginBottom: "2px" }}>🙏</div>
+          <div style={{ fontSize: "10px" }}>Prayer</div>
+        </button>
+        <button
+          onClick={() => setActiveTab(3)}
+          style={{
+            background: "none",
+            border: "none",
+            cursor: "pointer",
+            padding: "8px",
+            color: activeTab === 3 ? "#0095f6" : "#8e8e8e",
+          }}
+        >
+          <div style={{ fontSize: "20px", marginBottom: "2px" }}>➕</div>
+          <div style={{ fontSize: "10px" }}>Request</div>
+        </button>
+      </div>
     </div>
   );
 }
