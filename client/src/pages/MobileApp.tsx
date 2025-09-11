@@ -267,7 +267,7 @@ export default function MobileApp() {
   const [prayerRequests, setPrayerRequests] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [profiles, setProfiles] = useState<Map<string, any>>(new Map());
-  const [engagementData, setEngagementData] = useState<Map<string, any>>(
+  const [engagementData, setEngagementData] = useState<Map<number, any>>(
     new Map(),
   );
   const [postComments, setPostComments] = useState<{ [key: string]: any[] }>(
@@ -279,7 +279,16 @@ export default function MobileApp() {
   const [commentTexts, setCommentTexts] = useState<{ [key: string]: string }>(
     {},
   );
-  const [searchText, setSearchText] = useState("");
+  // Enhanced search state - matching web app functionality
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [debouncedQuery, setDebouncedQuery] = useState("");
+  const [isSearchMode, setIsSearchMode] = useState(false);
+  const [topTags, setTopTags] = useState<any[]>([]);
+  const [tagsLoading, setTagsLoading] = useState(true);
+  const [nextCursor, setNextCursor] = useState<number | null>(null);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [createContent, setCreateContent] = useState("");
   const [createTitle, setCreateTitle] = useState("");
   const [prayerTitle, setPrayerTitle] = useState("");
@@ -814,6 +823,137 @@ export default function MobileApp() {
   const [showMobileReviewReports, setShowMobileReviewReports] = useState(false);
   const [showMobileMediaRequests, setShowMobileMediaRequests] = useState(false);
   const [showMobileAdminSupport, setShowMobileAdminSupport] = useState(false);
+
+  // Debounced search effect - matching web app
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedQuery(searchQuery);
+    }, 400); // 400ms debounce like web app
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // Search mode effect
+  useEffect(() => {
+    setIsSearchMode(searchQuery.length > 0 || selectedTags.length > 0);
+  }, [searchQuery, selectedTags]);
+
+  // Handle search functionality - matching web app
+  const handleSearch = async (fromId?: number) => {
+    if (!debouncedQuery && selectedTags.length === 0) {
+      return;
+    }
+
+    try {
+      if (!fromId) {
+        setLoading(true);
+      } else {
+        setLoadingMore(true);
+      }
+
+      const { data, error } = await searchPosts({
+        query: debouncedQuery,
+        tags: selectedTags,
+        cursor: fromId ? { created_at: new Date().toISOString(), id: fromId } : undefined,
+        limit: 10
+      });
+
+      if (data && !error) {
+        const posts = data.items || [];
+        if (!fromId) {
+          setPosts(posts);
+        } else {
+          setPosts(prev => [...prev, ...posts]);
+        }
+        setNextCursor(data.nextCursor?.id || null);
+
+        // Load profiles and engagement data for search results
+        const authorIds = [...new Set(posts.map((post: any) => post.author_id))];
+        await Promise.all([
+          loadProfilesForUsers(authorIds),
+          loadEngagementDataForPosts(posts.map((post: any) => post.id))
+        ]);
+      }
+    } catch (error) {
+      console.error('Search error:', error);
+      setError('Failed to search posts. Please try again.');
+    } finally {
+      setLoading(false);
+      setLoadingMore(false);
+    }
+  };
+
+  // Helper functions for search
+  const loadProfilesForUsers = async (userIds: string[]) => {
+    try {
+      const { data: profilesMap } = await getProfilesByIds(userIds);
+      if (profilesMap) {
+        setProfiles(prev => new Map([...prev, ...profilesMap]));
+      }
+    } catch (error) {
+      console.error('Failed to load profiles:', error);
+    }
+  };
+
+  const loadEngagementDataForPosts = async (postIds: number[]) => {
+    try {
+      const [bookmarksResult, amenResult] = await Promise.all([
+        Promise.all(postIds.map(id => isBookmarked(id))),
+        getAmenInfo(postIds)
+      ]);
+      
+      setEngagementData(prev => {
+        const updated = new Map(prev);
+        
+        postIds.forEach((postId, index) => {
+          const currentData = updated.get(postId) || {};
+          
+          if (!bookmarksResult[index]?.error) {
+            currentData.isBookmarked = bookmarksResult[index].isBookmarked;
+          }
+          
+          if (amenResult.data && amenResult.data[postId]) {
+            currentData.amenCount = amenResult.data[postId].count;
+            currentData.hasAmened = amenResult.data[postId].mine;
+          }
+          
+          updated.set(postId, currentData);
+        });
+        
+        return updated;
+      });
+    } catch (error) {
+      console.error('Failed to load engagement data:', error);
+    }
+  };
+
+  // Search effect - trigger search when query/tags change
+  useEffect(() => {
+    if (debouncedQuery || selectedTags.length > 0) {
+      handleSearch();
+    } else {
+      fetchData();
+    }
+  }, [debouncedQuery, selectedTags]);
+
+  // Load top tags
+  useEffect(() => {
+    const loadTopTags = async () => {
+      try {
+        setTagsLoading(true);
+        const { data } = await getTopTags({ limit: 10 });
+        if (data) {
+          setTopTags(data);
+        }
+      } catch (error) {
+        console.error('Failed to load top tags:', error);
+      } finally {
+        setTagsLoading(false);
+      }
+    };
+
+    loadTopTags();
+  }, []);
 
   // Fetch leaderboard data and user profile
   useEffect(() => {
@@ -1571,20 +1711,108 @@ export default function MobileApp() {
   function renderHomeFeed() {
     return (
       <>
-        {/* Search bar */}
-        <div style={STYLES.searchContainer}>
+        {/* Search bar with clear button */}
+        <div style={{
+          ...STYLES.searchContainer,
+          display: "flex",
+          alignItems: "center",
+          gap: "8px"
+        }}>
           <input
             type="text"
             placeholder="Search Gospel Era"
-            value={searchText}
-            onChange={(e) => setSearchText(e.target.value)}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
             inputMode="search"
             autoCapitalize="none"
             autoCorrect="off"
             spellCheck={false}
-            style={STYLES.searchInput}
+            style={{
+              ...STYLES.searchInput,
+              flex: 1
+            }}
           />
+          {(searchQuery || selectedTags.length > 0) && (
+            <button
+              onClick={() => {
+                setSearchQuery("");
+                setSelectedTags([]);
+              }}
+              style={{
+                background: "#f0f0f0",
+                border: "none",
+                borderRadius: "16px",
+                padding: "6px 12px",
+                fontSize: "12px",
+                color: "#262626",
+                cursor: "pointer"
+              }}
+            >
+              Clear
+            </button>
+          )}
         </div>
+
+        {/* Top Tags */}
+        {topTags.length > 0 && (
+          <div style={{
+            padding: "12px 16px",
+            background: "#ffffff",
+            borderBottom: "1px solid #dbdbdb"
+          }}>
+            <div style={{
+              fontSize: "14px",
+              fontWeight: 600,
+              marginBottom: "8px",
+              color: "#262626"
+            }}>Popular Topics</div>
+            <div style={{
+              display: "flex",
+              flexWrap: "wrap",
+              gap: "8px"
+            }}>
+              {tagsLoading ? (
+                Array(5).fill(0).map((_, i) => (
+                  <div key={i} style={{
+                    background: "#f0f0f0",
+                    height: "28px",
+                    width: "60px",
+                    borderRadius: "16px",
+                    animation: "pulse 1.5s ease-in-out infinite"
+                  }} />
+                ))
+              ) : (
+                topTags.map((tag, index) => {
+                  const tagName = tag.tag || tag.tag_name || tag.name;
+                  const isSelected = selectedTags.includes(tagName);
+                  return (
+                    <button
+                      key={index}
+                      onClick={() => {
+                        if (isSelected) {
+                          setSelectedTags(selectedTags.filter(t => t !== tagName));
+                        } else {
+                          setSelectedTags([...selectedTags, tagName]);
+                        }
+                      }}
+                      style={{
+                        background: isSelected ? "#0095f6" : "#f0f0f0",
+                        color: isSelected ? "#ffffff" : "#262626",
+                        border: "none",
+                        padding: "6px 12px",
+                        borderRadius: "16px",
+                        fontSize: "12px",
+                        cursor: "pointer"
+                      }}
+                    >
+                      #{tagName} ({tag.count})
+                    </button>
+                  );
+                })
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Daily scripture */}
         <div style={STYLES.verseContainer}>
@@ -1659,9 +1887,9 @@ export default function MobileApp() {
           posts
             .filter(
               (post) =>
-                !searchText ||
-                post.title?.toLowerCase().includes(searchText.toLowerCase()) ||
-                post.content?.toLowerCase().includes(searchText.toLowerCase()),
+                !searchQuery ||
+                post.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                post.content?.toLowerCase().includes(searchQuery.toLowerCase()),
             )
             .map((post, index) => (
               <div
