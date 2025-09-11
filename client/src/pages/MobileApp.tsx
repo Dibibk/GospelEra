@@ -765,6 +765,10 @@ export default function MobileApp() {
   const [userProfile, setUserProfile] = useState<{
     display_name?: string;
     avatar_url?: string;
+    bio?: string;
+    role?: string;
+    followers_count?: number;
+    following_count?: number;
   } | null>(null);
   const [showUserDropdown, setShowUserDropdown] = useState(false);
   // Mobile page states
@@ -8738,7 +8742,6 @@ export default function MobileApp() {
                 cursor: "pointer",
                 padding: "4px 8px",
                 borderRadius: "20px",
-                ":hover": { background: "#f0f0f0" },
                 WebkitTapHighlightColor: "transparent",
                 touchAction: "manipulation",
                 userSelect: "none",
@@ -8883,7 +8886,7 @@ export default function MobileApp() {
                     textAlign: "left",
                     fontSize: "14px",
                     color: "#262626",
-                    ":hover": { background: "#f9f9f9" },
+            
                     cursor: "pointer",
                   }}
                 >
@@ -8904,7 +8907,7 @@ export default function MobileApp() {
                     textAlign: "left",
                     fontSize: "14px",
                     color: "#262626",
-                    ":hover": { background: "#f9f9f9" },
+            
                     cursor: "pointer",
                   }}
                 >
@@ -8925,7 +8928,7 @@ export default function MobileApp() {
                     textAlign: "left",
                     fontSize: "14px",
                     color: "#262626",
-                    ":hover": { background: "#f9f9f9" },
+            
                     cursor: "pointer",
                   }}
                 >
@@ -8946,7 +8949,7 @@ export default function MobileApp() {
                     textAlign: "left",
                     fontSize: "14px",
                     color: "#262626",
-                    ":hover": { background: "#f9f9f9" },
+            
                     cursor: "pointer",
                   }}
                 >
@@ -8967,7 +8970,7 @@ export default function MobileApp() {
                     textAlign: "left",
                     fontSize: "14px",
                     color: "#262626",
-                    ":hover": { background: "#f9f9f9" },
+            
                     cursor: "pointer",
                   }}
                 >
@@ -8988,7 +8991,7 @@ export default function MobileApp() {
                     textAlign: "left",
                     fontSize: "14px",
                     color: "#262626",
-                    ":hover": { background: "#f9f9f9" },
+            
                     cursor: "pointer",
                   }}
                 >
@@ -9017,7 +9020,7 @@ export default function MobileApp() {
                         textAlign: "left",
                         fontSize: "14px",
                         color: "#dc2626",
-                        ":hover": { background: "#f9f9f9" },
+                
                         cursor: "pointer",
                       }}
                     >
@@ -9037,7 +9040,7 @@ export default function MobileApp() {
                         textAlign: "left",
                         fontSize: "14px",
                         color: "#dc2626",
-                        ":hover": { background: "#f9f9f9" },
+                
                         cursor: "pointer",
                       }}
                     >
@@ -9057,7 +9060,7 @@ export default function MobileApp() {
                         textAlign: "left",
                         fontSize: "14px",
                         color: "#dc2626",
-                        ":hover": { background: "#f9f9f9" },
+                
                         cursor: "pointer",
                       }}
                     >
@@ -9079,7 +9082,7 @@ export default function MobileApp() {
                     textAlign: "left",
                     fontSize: "14px",
                     color: "#dc2626",
-                    ":hover": { background: "#f9f9f9" },
+            
                     cursor: "pointer",
                     borderTop: "1px solid #f0f0f0",
                   }}
