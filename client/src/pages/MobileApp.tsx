@@ -7,7 +7,7 @@ import React, {
   memo,
 } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { listPosts, createPost, updatePost, softDeletePost } from "@/lib/posts";
+import { listPosts, createPost, updatePost, softDeletePost, searchPosts, getTopTags } from "@/lib/posts";
 import {
   listPrayerRequests,
   createPrayerRequest,
@@ -39,6 +39,8 @@ import {
 } from "@/lib/profiles";
 import { ObjectUploader } from "@/components/ObjectUploader";
 import { getDailyVerse } from "@/lib/scripture";
+import { createDonationPledge, validateDonationAmount, formatCurrency, createStripeCheckout } from "@/lib/donations";
+import { PAYMENTS } from "@/config/payments";
 // at top of MobileApp.tsx
 
 // focus helpers (no hooks here)
