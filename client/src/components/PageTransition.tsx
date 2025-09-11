@@ -53,13 +53,27 @@ export function PageTransition({ children }: PageTransitionProps) {
       return !!(t && root.contains(t));
     };
 
-    // Capture-phase guard so global listeners never see events from this page
+    // Selective guard - only block events when protecting input field focus
     const guard = (evt: Event) => {
-      if (startedInside(evt)) {
-        // @ts-ignore
-        evt.stopImmediatePropagation?.();
+      if (!startedInside(evt)) return;
+      
+      // Only interfere if we have an active input field that needs protection
+      const hasActiveInput = lastInputRef.current && document.activeElement === lastInputRef.current;
+      
+      // For focus events, always protect to maintain input focus
+      if (evt.type === 'focusin' || evt.type === 'focusout') {
         evt.stopPropagation();
+        return;
       }
+      
+      // For other events, only block if we're protecting an active input
+      if (hasActiveInput && (evt.type === 'keydown' || evt.type === 'keyup')) {
+        evt.stopPropagation();
+        return;
+      }
+      
+      // NEVER block click/touch events for buttons and interactive elements
+      // This allows normal button/icon interactions to work
     };
 
     // Track last focused input/textarea inside the page

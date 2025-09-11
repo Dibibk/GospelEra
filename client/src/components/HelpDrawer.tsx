@@ -153,10 +153,10 @@ export function HelpDrawer({
       {/* Overlay */}
       <div
         className={`fixed inset-0 bg-black/50 z-40 transition-opacity duration-300 ${
-          isOpen && !isClosing ? "opacity-100" : "opacity-0"
+          isOpen && !isClosing ? "opacity-100" : "opacity-0 pointer-events-none"
         }`}
         onClick={handleOverlayClick}
-        aria-hidden={!isOpen || isClosing} // <-- CHANGE: was aria-hidden="true"
+        aria-hidden={!isOpen || isClosing}
       />
 
       {/* Drawer */}

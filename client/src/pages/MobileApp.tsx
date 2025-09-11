@@ -7,7 +7,14 @@ import React, {
   memo,
 } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { listPosts, createPost, updatePost, softDeletePost, searchPosts, getTopTags } from "@/lib/posts";
+import {
+  listPosts,
+  createPost,
+  updatePost,
+  softDeletePost,
+  searchPosts,
+  getTopTags,
+} from "@/lib/posts";
 import {
   listPrayerRequests,
   createPrayerRequest,
@@ -40,7 +47,12 @@ import {
 } from "@/lib/profiles";
 import { ObjectUploader } from "@/components/ObjectUploader";
 import { getDailyVerse } from "@/lib/scripture";
-import { createDonationPledge, validateDonationAmount, formatCurrency, createStripeCheckout } from "@/lib/donations";
+import {
+  createDonationPledge,
+  validateDonationAmount,
+  formatCurrency,
+  createStripeCheckout,
+} from "@/lib/donations";
 import { PAYMENTS } from "@/config/payments";
 // at top of MobileApp.tsx
 
@@ -66,13 +78,12 @@ const keepFocus = (
   }
 };
 
-// replace your stopIfField with this:
 const stopIfTextField = (e: React.SyntheticEvent) => {
   const t = e.target as HTMLElement | null;
   const isTextField = !!t?.closest(
-    'input:not([type=button]):not([type=submit]):not([type=checkbox]):not([type=radio]), textarea, select, [contenteditable="true"], [role="textbox"]',
+    'input:not([type="button"]):not([type="submit"]):not([type="reset"]), textarea, select, [contenteditable="true"], [role="textbox"]',
   );
-  if (isTextField) e.stopPropagation(); // let inputs get focus, don't block buttons/links
+  if (isTextField) e.stopPropagation();
 };
 
 // Module-level style constants to prevent recreation on each render
@@ -855,8 +866,10 @@ export default function MobileApp() {
       const { data, error } = await searchPosts({
         query: debouncedQuery,
         tags: selectedTags,
-        cursor: fromId ? { created_at: new Date().toISOString(), id: fromId } : undefined,
-        limit: 10
+        cursor: fromId
+          ? { created_at: new Date().toISOString(), id: fromId }
+          : undefined,
+        limit: 10,
       });
 
       if (data && !error) {
@@ -864,20 +877,22 @@ export default function MobileApp() {
         if (!fromId) {
           setPosts(posts);
         } else {
-          setPosts(prev => [...prev, ...posts]);
+          setPosts((prev) => [...prev, ...posts]);
         }
         setNextCursor(data.nextCursor?.id || null);
 
         // Load profiles and engagement data for search results
-        const authorIds = [...new Set(posts.map((post: any) => post.author_id))];
+        const authorIds = [
+          ...new Set(posts.map((post: any) => post.author_id)),
+        ];
         await Promise.all([
           loadProfilesForUsers(authorIds),
-          loadEngagementDataForPosts(posts.map((post: any) => post.id))
+          loadEngagementDataForPosts(posts.map((post: any) => post.id)),
         ]);
       }
     } catch (error) {
-      console.error('Search error:', error);
-      setError('Failed to search posts. Please try again.');
+      console.error("Search error:", error);
+      setError("Failed to search posts. Please try again.");
     } finally {
       setLoading(false);
       setLoadingMore(false);
@@ -889,42 +904,42 @@ export default function MobileApp() {
     try {
       const { data: profilesMap } = await getProfilesByIds(userIds);
       if (profilesMap) {
-        setProfiles(prev => new Map([...prev, ...profilesMap]));
+        setProfiles((prev) => new Map([...prev, ...profilesMap]));
       }
     } catch (error) {
-      console.error('Failed to load profiles:', error);
+      console.error("Failed to load profiles:", error);
     }
   };
 
   const loadEngagementDataForPosts = async (postIds: number[]) => {
     try {
       const [bookmarksResult, amenResult] = await Promise.all([
-        Promise.all(postIds.map(id => isBookmarked(id))),
-        getAmenInfo(postIds)
+        Promise.all(postIds.map((id) => isBookmarked(id))),
+        getAmenInfo(postIds),
       ]);
-      
-      setEngagementData(prev => {
+
+      setEngagementData((prev) => {
         const updated = new Map(prev);
-        
+
         postIds.forEach((postId, index) => {
           const currentData = updated.get(postId) || {};
-          
+
           if (!bookmarksResult[index]?.error) {
             currentData.isBookmarked = bookmarksResult[index].isBookmarked;
           }
-          
+
           if (amenResult.data && amenResult.data[postId]) {
             currentData.amenCount = amenResult.data[postId].count;
             currentData.hasAmened = amenResult.data[postId].mine;
           }
-          
+
           updated.set(postId, currentData);
         });
-        
+
         return updated;
       });
     } catch (error) {
-      console.error('Failed to load engagement data:', error);
+      console.error("Failed to load engagement data:", error);
     }
   };
 
@@ -947,7 +962,7 @@ export default function MobileApp() {
           setTopTags(data);
         }
       } catch (error) {
-        console.error('Failed to load top tags:', error);
+        console.error("Failed to load top tags:", error);
       } finally {
         setTagsLoading(false);
       }
@@ -1713,12 +1728,14 @@ export default function MobileApp() {
     return (
       <>
         {/* Search bar with clear button */}
-        <div style={{
-          ...STYLES.searchContainer,
-          display: "flex",
-          alignItems: "center",
-          gap: "8px"
-        }}>
+        <div
+          style={{
+            ...STYLES.searchContainer,
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+          }}
+        >
           <input
             type="text"
             placeholder="Search Gospel Era"
@@ -1730,7 +1747,7 @@ export default function MobileApp() {
             spellCheck={false}
             style={{
               ...STYLES.searchInput,
-              flex: 1
+              flex: 1,
             }}
           />
           {(searchQuery || selectedTags.length > 0) && (
@@ -1746,7 +1763,7 @@ export default function MobileApp() {
                 padding: "6px 12px",
                 fontSize: "12px",
                 color: "#262626",
-                cursor: "pointer"
+                cursor: "pointer",
               }}
             >
               Clear
@@ -1756,61 +1773,74 @@ export default function MobileApp() {
 
         {/* Top Tags */}
         {topTags.length > 0 && (
-          <div style={{
-            padding: "12px 16px",
-            background: "#ffffff",
-            borderBottom: "1px solid #dbdbdb"
-          }}>
-            <div style={{
-              fontSize: "14px",
-              fontWeight: 600,
-              marginBottom: "8px",
-              color: "#262626"
-            }}>Popular Topics</div>
-            <div style={{
-              display: "flex",
-              flexWrap: "wrap",
-              gap: "8px"
-            }}>
-              {tagsLoading ? (
-                Array(5).fill(0).map((_, i) => (
-                  <div key={i} style={{
-                    background: "#f0f0f0",
-                    height: "28px",
-                    width: "60px",
-                    borderRadius: "16px",
-                    animation: "pulse 1.5s ease-in-out infinite"
-                  }} />
-                ))
-              ) : (
-                topTags.map((tag, index) => {
-                  const tagName = tag.tag || tag.tag_name || tag.name;
-                  const isSelected = selectedTags.includes(tagName);
-                  return (
-                    <button
-                      key={index}
-                      onClick={() => {
-                        if (isSelected) {
-                          setSelectedTags(selectedTags.filter(t => t !== tagName));
-                        } else {
-                          setSelectedTags([...selectedTags, tagName]);
-                        }
-                      }}
-                      style={{
-                        background: isSelected ? "#0095f6" : "#f0f0f0",
-                        color: isSelected ? "#ffffff" : "#262626",
-                        border: "none",
-                        padding: "6px 12px",
-                        borderRadius: "16px",
-                        fontSize: "12px",
-                        cursor: "pointer"
-                      }}
-                    >
-                      #{tagName} ({tag.count})
-                    </button>
-                  );
-                })
-              )}
+          <div
+            style={{
+              padding: "12px 16px",
+              background: "#ffffff",
+              borderBottom: "1px solid #dbdbdb",
+            }}
+          >
+            <div
+              style={{
+                fontSize: "14px",
+                fontWeight: 600,
+                marginBottom: "8px",
+                color: "#262626",
+              }}
+            >
+              Popular Topics
+            </div>
+            <div
+              style={{
+                display: "flex",
+                flexWrap: "wrap",
+                gap: "8px",
+              }}
+            >
+              {tagsLoading
+                ? Array(5)
+                    .fill(0)
+                    .map((_, i) => (
+                      <div
+                        key={i}
+                        style={{
+                          background: "#f0f0f0",
+                          height: "28px",
+                          width: "60px",
+                          borderRadius: "16px",
+                          animation: "pulse 1.5s ease-in-out infinite",
+                        }}
+                      />
+                    ))
+                : topTags.map((tag, index) => {
+                    const tagName = tag.tag || tag.tag_name || tag.name;
+                    const isSelected = selectedTags.includes(tagName);
+                    return (
+                      <button
+                        key={index}
+                        onClick={() => {
+                          if (isSelected) {
+                            setSelectedTags(
+                              selectedTags.filter((t) => t !== tagName),
+                            );
+                          } else {
+                            setSelectedTags([...selectedTags, tagName]);
+                          }
+                        }}
+                        style={{
+                          background: isSelected ? "#0095f6" : "#f0f0f0",
+                          color: isSelected ? "#ffffff" : "#262626",
+                          border: "none",
+                          padding: "6px 12px",
+                          borderRadius: "16px",
+                          fontSize: "12px",
+                          cursor: "pointer",
+                        }}
+                      >
+                        #{tagName} ({tag.count})
+                      </button>
+                    );
+                  })}
             </div>
           </div>
         )}
@@ -7431,7 +7461,7 @@ export default function MobileApp() {
 
     // Load saved posts when component mounts
     useEffect(() => {
-      console.log('MobileSavedPostsPage mounted, loading saved posts');
+      console.log("MobileSavedPostsPage mounted, loading saved posts");
       loadSavedPosts(); // fetch once when this page mounts
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []); // dependency-less mount effect
@@ -7441,20 +7471,20 @@ export default function MobileApp() {
       setSavedPostsError("");
 
       try {
-        console.log('Loading saved posts...');
+        console.log("Loading saved posts...");
         // Use the same listBookmarks function as web app but handle errors properly
         const { data, error } = await listBookmarks({ limit: 50 });
 
-        console.log('Saved posts result:', { data, error });
+        console.log("Saved posts result:", { data, error });
 
         if (error) {
-          console.error('Saved posts error:', error);
+          console.error("Saved posts error:", error);
           setSavedPostsError(
             (error as any).message || "Failed to load saved posts",
           );
         } else {
           const bookmarkedPosts = data || [];
-          console.log('Setting saved posts:', bookmarkedPosts.length, 'posts');
+          console.log("Setting saved posts:", bookmarkedPosts.length, "posts");
           setSavedPosts(bookmarkedPosts);
 
           // Load author profiles for saved posts
@@ -7491,7 +7521,7 @@ export default function MobileApp() {
         );
       } finally {
         setSavedPostsLoading(false);
-        console.log('Setting loading to false');
+        console.log("Setting loading to false");
       }
     };
 
@@ -7527,11 +7557,13 @@ export default function MobileApp() {
 
         {/* Content */}
         {(() => {
-          console.log('Saved Posts Debug:', {
+          console.log("Saved Posts Debug:", {
             savedPostsLoading,
             savedPostsError,
             savedPostsCount: savedPosts?.length || 0,
-            savedPostsType: Array.isArray(savedPosts) ? 'array' : typeof savedPosts
+            savedPostsType: Array.isArray(savedPosts)
+              ? "array"
+              : typeof savedPosts,
           });
           return null;
         })()}
@@ -9082,13 +9114,6 @@ export default function MobileApp() {
                 </div>
 
                 <button
-                  onPointerUp={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    // (same body as onClick)
-                    setShowUserDropdown(false);
-                    /* … your existing state toggles … */
-                  }}
                   onClick={() => {
                     setShowUserDropdown(false);
                     setShowMobileEditProfile(false);
@@ -9131,7 +9156,7 @@ export default function MobileApp() {
                     textAlign: "left",
                     fontSize: "14px",
                     color: "#262626",
-            
+
                     cursor: "pointer",
                   }}
                 >
@@ -9152,7 +9177,7 @@ export default function MobileApp() {
                     textAlign: "left",
                     fontSize: "14px",
                     color: "#262626",
-            
+
                     cursor: "pointer",
                   }}
                 >
@@ -9173,7 +9198,7 @@ export default function MobileApp() {
                     textAlign: "left",
                     fontSize: "14px",
                     color: "#262626",
-            
+
                     cursor: "pointer",
                   }}
                 >
@@ -9194,7 +9219,7 @@ export default function MobileApp() {
                     textAlign: "left",
                     fontSize: "14px",
                     color: "#262626",
-            
+
                     cursor: "pointer",
                   }}
                 >
@@ -9215,7 +9240,7 @@ export default function MobileApp() {
                     textAlign: "left",
                     fontSize: "14px",
                     color: "#262626",
-            
+
                     cursor: "pointer",
                   }}
                 >
@@ -9236,7 +9261,7 @@ export default function MobileApp() {
                     textAlign: "left",
                     fontSize: "14px",
                     color: "#262626",
-            
+
                     cursor: "pointer",
                   }}
                 >
@@ -9265,7 +9290,7 @@ export default function MobileApp() {
                         textAlign: "left",
                         fontSize: "14px",
                         color: "#dc2626",
-                
+
                         cursor: "pointer",
                       }}
                     >
@@ -9285,7 +9310,7 @@ export default function MobileApp() {
                         textAlign: "left",
                         fontSize: "14px",
                         color: "#dc2626",
-                
+
                         cursor: "pointer",
                       }}
                     >
@@ -9305,7 +9330,7 @@ export default function MobileApp() {
                         textAlign: "left",
                         fontSize: "14px",
                         color: "#dc2626",
-                
+
                         cursor: "pointer",
                       }}
                     >
@@ -9327,7 +9352,7 @@ export default function MobileApp() {
                     textAlign: "left",
                     fontSize: "14px",
                     color: "#dc2626",
-            
+
                     cursor: "pointer",
                     borderTop: "1px solid #f0f0f0",
                   }}
