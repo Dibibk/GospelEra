@@ -7440,16 +7440,20 @@ export default function MobileApp() {
       setSavedPostsError("");
 
       try {
+        console.log('Loading saved posts...');
         // Use the same listBookmarks function as web app but handle errors properly
-        const { listBookmarks } = await import("../lib/engagement");
         const { data, error } = await listBookmarks({ limit: 50 });
 
+        console.log('Saved posts result:', { data, error });
+
         if (error) {
+          console.error('Saved posts error:', error);
           setSavedPostsError(
             (error as any).message || "Failed to load saved posts",
           );
         } else {
           const bookmarkedPosts = data || [];
+          console.log('Setting saved posts:', bookmarkedPosts.length, 'posts');
           setSavedPosts(bookmarkedPosts);
 
           // Load author profiles for saved posts
