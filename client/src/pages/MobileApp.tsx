@@ -7458,73 +7458,77 @@ export default function MobileApp() {
     const [savedPosts, setSavedPosts] = useState<any[]>([]);
     const [savedPostsLoading, setSavedPostsLoading] = useState(true);
     const [savedPostsError, setSavedPostsError] = useState("");
+    const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
 
     // Load saved posts when component mounts
+    const didInitRef = useRef(false);
+
     useEffect(() => {
-      console.log("MobileSavedPostsPage mounted, loading saved posts");
-      loadSavedPosts(); // fetch once when this page mounts
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []); // dependency-less mount effect
+      if (didInitRef.current) return;
+      didInitRef.current = true;
+      loadSavedPosts();
+    }, []);
 
     const loadSavedPosts = async () => {
-      setSavedPostsLoading(true);
+      if (!hasLoadedOnce) setSavedPostsLoading(true);
       setSavedPostsError("");
 
       try {
-        console.log("Loading saved posts...");
-        // Use the same listBookmarks function as web app but handle errors properly
-        const { data, error } = await listBookmarks({ limit: 50 });
-
-        console.log("Saved posts result:", { data, error });
+        // Accept either {data,error} or a plain array
+        const res: any = await listBookmarks({ limit: 50 });
+        const error = res?.error;
+        const data = Array.isArray(res) ? res : res?.data;
 
         if (error) {
-          console.error("Saved posts error:", error);
           setSavedPostsError(
             (error as any).message || "Failed to load saved posts",
           );
-        } else {
-          const bookmarkedPosts = data || [];
-          console.log("Setting saved posts:", bookmarkedPosts.length, "posts");
-          setSavedPosts(bookmarkedPosts);
-
-          // Load author profiles for saved posts
-          if (Array.isArray(bookmarkedPosts) && bookmarkedPosts.length > 0) {
-            const { getProfilesByIds } = await import("../lib/profiles");
-            const authorIds = bookmarkedPosts
-              .map((post: any) => post.author_id || post.author)
-              .filter(Boolean);
-            const profilesResult = await getProfilesByIds(authorIds);
-
-            // Update the profiles map
-            if (profilesResult.data && !profilesResult.error) {
-              setProfiles((prev) => {
-                const newProfiles = new Map(prev);
-                if (Array.isArray(profilesResult.data)) {
-                  profilesResult.data.forEach((profile: any) => {
-                    newProfiles.set(profile.id, profile);
-                  });
-                } else {
-                  // Handle Map format
-                  Array.from(profilesResult.data).forEach(([id, profile]) => {
-                    newProfiles.set(id, profile);
-                  });
-                }
-                return newProfiles;
-              });
-            }
-          }
+          setSavedPosts([]);
+          return;
         }
-      } catch (err) {
-        console.error("Error loading saved posts:", err);
-        setSavedPostsError(
-          (err as any).message || "Failed to load saved posts",
-        );
+
+        const bookmarkedPosts = Array.isArray(data) ? data : [];
+        setSavedPosts(bookmarkedPosts);
+
+        // Best-effort: load author profiles (no effect on loading spinner)
+        if (bookmarkedPosts.length > 0) {
+          (async () => {
+            try {
+              const { getProfilesByIds } = await import("../lib/profiles");
+              const authorIds = Array.from(
+                new Set(
+                  bookmarkedPosts
+                    .map((p: any) => p?.author_id || p?.author)
+                    .filter(Boolean),
+                ),
+              );
+              const profilesResult: any = await getProfilesByIds(authorIds);
+              if (profilesResult?.data && !profilesResult?.error) {
+                setProfiles((prev) => {
+                  const next = new Map(prev);
+                  (Array.isArray(profilesResult.data)
+                    ? profilesResult.data
+                    : Array.from(profilesResult.data)
+                  ).forEach((item: any) => {
+                    const id = Array.isArray(item) ? item[0] : item.id;
+                    const profile = Array.isArray(item) ? item[1] : item;
+                    next.set(id, profile);
+                  });
+                  return next;
+                });
+              }
+            } catch {
+              // ignore profile load errors
+            }
+          })();
+        }
+      } catch (err: any) {
+        setSavedPostsError(err?.message || "Failed to load saved posts");
+        setSavedPosts([]);
       } finally {
         setSavedPostsLoading(false);
-        console.log("Setting loading to false");
       }
     };
-
     return (
       <div style={{ background: "#ffffff", minHeight: "100vh" }}>
         {/* Header */}
@@ -7567,7 +7571,8 @@ export default function MobileApp() {
           });
           return null;
         })()}
-        {savedPostsLoading ? (
+        {savedPostsLoading &&
+        (!Array.isArray(savedPosts) || savedPosts.length === 0) ? (
           <div style={{ padding: "40px 20px", textAlign: "center" }}>
             <div style={{ fontSize: "20px", color: "#8e8e8e" }}>
               Loading saved posts...
@@ -7646,155 +7651,193 @@ export default function MobileApp() {
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      fontSize: "16px",
                       marginRight: "12px",
-                      border: "1px solid #dbdbdb",
-                      color: "#8e8e8e",
+                      overflow: "hidden",
                     }}
                   >
-                    {profiles.get(post.author_id)?.avatar_url ? (
-                      <img
-                        src={profiles.get(post.author_id).avatar_url}
-                        alt="Avatar"
-                        style={{
-                          width: "100%",
-                          height: "100%",
-                          borderRadius: "50%",
-                          objectFit: "cover",
-                        }}
-                      />
-                    ) : (
-                      "👤"
-                    )}
+                    {/* Avatar */}
+                    <svg
+                      width="18"
+                      height="18"
+                      viewBox="0 0 24 24"
+                      fill="currentColor"
+                      style={{ color: "#ffffff" }}
+                    >
+                      <path d="M12 12c2.761 0 5-2.239 5-5s-2.239-5-5-5-5 2.239-5 5 2.239 5 5 5zm0 2c-4.411 0-8 3.589-8 8h2c0-3.309 2.691-6 6-6s6 2.691 6 6h2c0-4.411-3.589-8-8-8z" />
+                    </svg>
                   </div>
                   <div style={{ flex: 1 }}>
                     <div
                       style={{
-                        fontWeight: 600,
                         fontSize: "14px",
+                        fontWeight: 600,
                         color: "#262626",
                       }}
                     >
-                      {profiles.get(post.author_id)?.display_name ||
+                      {profiles.get(post.author_id || post.author)
+                        ?.display_name ||
+                        post.author_name ||
                         "Gospel User"}
                     </div>
                     <div style={{ fontSize: "12px", color: "#8e8e8e" }}>
-                      Saved{" "}
-                      {formatTimeAgo(post.bookmarked_at || post.created_at)}
+                      {new Date(post.created_at).toLocaleString()}
                     </div>
+                  </div>
+
+                  {/* ⋯ menu (saved context) */}
+                  <div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setPostMenuOpenId(post.id);
+                        setPostMenuType("saved");
+                      }}
+                      aria-label="More options"
+                      style={{
+                        background: "none",
+                        border: "none",
+                        cursor: "pointer",
+                        padding: "4px",
+                        color: "#262626",
+                      }}
+                    >
+                      <svg
+                        width="20"
+                        height="20"
+                        viewBox="0 0 24 24"
+                        fill="currentColor"
+                        style={{ color: "#262626" }}
+                      >
+                        <circle cx="5" cy="12" r="2" />
+                        <circle cx="12" cy="12" r="2" />
+                        <circle cx="19" cy="12" r="2" />
+                      </svg>
+                    </button>
                   </div>
                 </div>
 
-                {/* Post content */}
-                <div style={{ padding: "0 16px 8px" }}>
+                {/* Post body */}
+                <div style={{ padding: "0 16px 12px 16px" }}>
                   <div
                     style={{
-                      fontWeight: 600,
-                      marginBottom: "8px",
+                      fontSize: "15px",
                       color: "#262626",
+                      whiteSpace: "pre-wrap",
+                      wordBreak: "break-word",
                     }}
                   >
-                    {post.title}
-                  </div>
-                  <div
-                    style={{
-                      fontSize: "14px",
-                      lineHeight: 1.4,
-                      color: "#262626",
-                      marginBottom: "8px",
-                    }}
-                  >
-                    {post.content}
+                    {post.content || ""}
                   </div>
 
-                  {/* Tags */}
-                  {post.tags && post.tags.length > 0 && (
+                  {/* Media (if any) */}
+                  {post.media_url && (
                     <div
                       style={{
-                        display: "flex",
-                        flexWrap: "wrap",
-                        gap: "4px",
-                        marginBottom: "8px",
+                        marginTop: "12px",
+                        borderRadius: "12px",
+                        overflow: "hidden",
+                        background: "#f5f5f5",
                       }}
                     >
-                      {post.tags.map((tag: string, tagIndex: number) => (
-                        <span
-                          key={tagIndex}
+                      {/* Basic image/video heuristic */}
+                      {/\.(jpg|jpeg|png|gif|webp)$/i.test(post.media_url) ? (
+                        <img
+                          src={post.media_url}
+                          alt="Post media"
                           style={{
-                            background: "#f2f2f2",
-                            color: "#4285f4",
-                            padding: "2px 8px",
-                            borderRadius: "12px",
-                            fontSize: "12px",
-                            fontWeight: 500,
+                            width: "100%",
+                            height: "auto",
+                            display: "block",
                           }}
-                        >
-                          #{tag}
-                        </span>
-                      ))}
+                        />
+                      ) : (
+                        <video
+                          src={post.media_url}
+                          controls
+                          style={{ width: "100%", display: "block" }}
+                        />
+                      )}
                     </div>
                   )}
                 </div>
 
-                {/* Post actions */}
+                {/* Footer actions */}
                 <div
                   style={{
                     display: "flex",
-                    justifyContent: "space-between",
                     alignItems: "center",
-                    padding: "8px 16px",
-                    borderTop: "1px solid #efefef",
+                    justifyContent: "space-between",
+                    padding: "8px 16px 12px 16px",
                   }}
                 >
-                  <div style={{ display: "flex", gap: "16px" }}>
-                    {/* Heart/Amen button */}
+                  <div style={{ display: "flex", gap: "12px" }}>
+                    {/* Amen */}
                     <button
-                      onClick={() => handleToggleAmen(post.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleToggleAmen(post.id);
+                      }}
                       disabled={isBanned}
+                      aria-label="Amen"
                       style={{
                         background: "none",
                         border: "none",
                         cursor: isBanned ? "not-allowed" : "pointer",
-                        padding: "8px",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "4px",
-                        opacity: isBanned ? 0.5 : 1,
                       }}
                     >
-                      <span
-                        style={{
-                          fontSize: "24px",
-                          color: engagementData.get(post.id)?.hasAmened
-                            ? "#ef4444"
-                            : "#262626",
-                        }}
+                      <svg
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        style={{ color: "#262626" }}
                       >
-                        {engagementData.get(post.id)?.hasAmened ? "♥" : "♡"}
-                      </span>
-                      {engagementData.get(post.id)?.amenCount > 0 && (
-                        <span
-                          style={{
-                            fontSize: "12px",
-                            color: "#8e8e8e",
-                            fontWeight: 500,
-                          }}
-                        >
-                          {engagementData.get(post.id)?.amenCount}
-                        </span>
-                      )}
+                        <path d="M12 21s-8-4.438-8-11c0-3.584 2.686-6 6-6 2.083 0 3.682 1.004 4 2 0.318-.996 1.917-2 4-2 3.314 0 6 2.416 6 6 0 6.563-8 11-8 11z" />
+                      </svg>
                     </button>
 
-                    {/* Comment button */}
+                    {/* Comment */}
                     <button
-                      onClick={() => toggleCommentForm(post.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleCommentForm(post.id);
+                      }}
                       disabled={isBanned}
+                      aria-label="Comment"
                       style={{
                         background: "none",
                         border: "none",
                         cursor: isBanned ? "not-allowed" : "pointer",
-                        padding: "8px",
-                        opacity: isBanned ? 0.5 : 1,
+                      }}
+                    >
+                      <svg
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        style={{ color: "#262626" }}
+                      >
+                        <path d="M21 15a3 3 0 01-3 3H7l-4 4V5a3 3 0 013-3h14a3 3 0 013 3v10z" />
+                      </svg>
+                    </button>
+                  </div>
+
+                  <div style={{ display: "flex", gap: "12px" }}>
+                    {/* Remove from saved */}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleToggleBookmark(post.id);
+                      }}
+                      aria-label="Remove from saved"
+                      style={{
+                        background: "none",
+                        border: "none",
+                        cursor: "pointer",
                       }}
                     >
                       <svg
@@ -7809,19 +7852,19 @@ export default function MobileApp() {
                         <path d="M21 15c0 1.1-.9 2-2 2H7l-4 4V5c0-1.1.9-2 2-2h14c1.1 0 2 .9 2 2v10z" />
                       </svg>
                     </button>
-                  </div>
 
-                  <div style={{ display: "flex", gap: "12px" }}>
-                    {/* Remove from saved button */}
+                    {/* Bookmark (solid) */}
                     <button
-                      onClick={() => handleToggleBookmark(post.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleToggleBookmark(post.id);
+                      }}
+                      aria-label="Bookmark"
                       style={{
                         background: "none",
                         border: "none",
                         cursor: "pointer",
-                        padding: "8px",
                       }}
-                      title="Remove from saved"
                     >
                       <svg
                         width="24"
