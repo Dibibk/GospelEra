@@ -7458,7 +7458,6 @@ export default function MobileApp() {
     const [savedPosts, setSavedPosts] = useState<any[]>([]);
     const [savedPostsLoading, setSavedPostsLoading] = useState(true);
     const [savedPostsError, setSavedPostsError] = useState("");
-    const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
 
     // Load saved posts when component mounts
     const didInitRef = useRef(false);
@@ -7470,9 +7469,8 @@ export default function MobileApp() {
     }, []);
 
     const loadSavedPosts = async () => {
-      if (!hasLoadedOnce) setSavedPostsLoading(true);
+      setSavedPostsLoading(true);
       setSavedPostsError("");
-
 
       try {
         // Accept either {data,error} or a plain array
@@ -7572,8 +7570,7 @@ export default function MobileApp() {
           });
           return null;
         })()}
-        {savedPostsLoading &&
-        (!Array.isArray(savedPosts) || savedPosts.length === 0) ? (
+        {savedPostsLoading ? (
           <div style={{ padding: "40px 20px", textAlign: "center" }}>
             <div style={{ fontSize: "20px", color: "#8e8e8e" }}>
               Loading saved posts...
