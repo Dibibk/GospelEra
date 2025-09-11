@@ -7431,10 +7431,10 @@ export default function MobileApp() {
 
     // Load saved posts when component mounts
     useEffect(() => {
+      console.log('MobileSavedPostsPage mounted, loading saved posts');
       loadSavedPosts(); // fetch once when this page mounts
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []); // dependency-less mount effect
-    // Only load when this page is shown and no posts loaded
 
     const loadSavedPosts = async () => {
       setSavedPostsLoading(true);
@@ -7489,9 +7489,10 @@ export default function MobileApp() {
         setSavedPostsError(
           (err as any).message || "Failed to load saved posts",
         );
+      } finally {
+        setSavedPostsLoading(false);
+        console.log('Setting loading to false');
       }
-
-      setSavedPostsLoading(false);
     };
 
     return (
@@ -7525,6 +7526,15 @@ export default function MobileApp() {
         </div>
 
         {/* Content */}
+        {(() => {
+          console.log('Saved Posts Debug:', {
+            savedPostsLoading,
+            savedPostsError,
+            savedPostsCount: savedPosts?.length || 0,
+            savedPostsType: Array.isArray(savedPosts) ? 'array' : typeof savedPosts
+          });
+          return null;
+        })()}
         {savedPostsLoading ? (
           <div style={{ padding: "40px 20px", textAlign: "center" }}>
             <div style={{ fontSize: "20px", color: "#8e8e8e" }}>
@@ -9347,7 +9357,7 @@ export default function MobileApp() {
         ) : showMobileSettings ? (
           <MobileSettingsPage />
         ) : showMobileSavedPosts ? (
-          <MobileSavedPostsPage />
+          <MobileSavedPostsPage key="saved-posts" />
         ) : showMobileCommunityGuidelines ? (
           renderMobileCommunityGuidelinesPage()
         ) : showMobileSupporter ? (
