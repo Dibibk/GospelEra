@@ -7473,6 +7473,7 @@ export default function MobileApp() {
       if (!hasLoadedOnce) setSavedPostsLoading(true);
       setSavedPostsError("");
 
+
       try {
         // Accept either {data,error} or a plain array
         const res: any = await listBookmarks({ limit: 50 });
