@@ -396,7 +396,6 @@ export default function MobileApp() {
         await Promise.all([
           fetchData(), // load posts
           checkUserMediaPermission(), // any permission checks
-          loadDailyVerse(), // extra boot data
         ]);
       } catch (err) {
         // optional: console.error(err);
@@ -409,6 +408,25 @@ export default function MobileApp() {
       cancelled = true;
     };
   }, [user, posts.length]);
+
+  // Load daily verse separately to ensure it always loads
+  useEffect(() => {
+    if (!user) return;
+    
+    let cancelled = false;
+    
+    (async () => {
+      try {
+        await loadDailyVerse();
+      } catch (err) {
+        console.error('Failed to load daily verse:', err);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
 
   // Load daily scripture verse
   const loadDailyVerse = async () => {
