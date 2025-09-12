@@ -10196,7 +10196,7 @@ export default function MobileApp() {
   }
 
   // Handle prayer detail view
-  if (selectedPrayerId && selectedPrayerDetail) {
+  if (prayerDetailId && selectedPrayerDetail) {
     return (
       <PrayerDetailView
         prayer={selectedPrayerDetail}
