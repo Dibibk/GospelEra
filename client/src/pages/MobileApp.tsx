@@ -7458,25 +7458,52 @@ export default function MobileApp() {
     const [savedPosts, setSavedPosts] = useState<any[]>([]);
     const [savedPostsLoading, setSavedPostsLoading] = useState(true);
     const [savedPostsError, setSavedPostsError] = useState("");
+    const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
 
-    // Load saved posts when component mounts
+    // Call loader once on mount (guarded for React StrictMode) + track in-flight
+    // Call loader once on mount (guarded for React StrictMode) and don't block UI
+    // Call loader once on mount (guarded for React StrictMode) + track in-flight
+    // Call loader once on mount (guarded for React StrictMode) and don't block UI
     const didInitRef = useRef(false);
+    const savedLoadInFlightRef = useRef(false);
 
     useEffect(() => {
       if (didInitRef.current) return;
       didInitRef.current = true;
       loadSavedPosts();
+      // Do not keep the large spinner up before data arrives
+      setHasLoadedOnce(true);
+      setSavedPostsLoading(false);
     }, []);
 
     const loadSavedPosts = async () => {
-      setSavedPostsLoading(true);
+      if ((savedLoadInFlightRef as React.MutableRefObject<boolean>).current)
+        return;
+      (savedLoadInFlightRef as React.MutableRefObject<boolean>).current = true;
+
+      // Refresh silently after first paint
+      if (!hasLoadedOnce) setSavedPostsLoading(true);
       setSavedPostsError("");
 
       try {
-        // Accept either {data,error} or a plain array
+        // Accept {data,error}, plain array, or {data:{items:[...]}} and unwrap bookmark wrappers
         const res: any = await listBookmarks({ limit: 50 });
         const error = res?.error;
-        const data = Array.isArray(res) ? res : res?.data;
+
+        // Choose the container that holds items
+        const container: any = Array.isArray(res) ? res : (res?.data ?? res);
+
+        // Normalize each entry to the actual post object if wrapped (e.g., { post: {...} })
+        const normalizePost = (x: any) =>
+          (x && (x.post ?? x.post_data ?? x.postDto ?? x.Post)) || x;
+
+        const items: any[] = Array.isArray(container)
+          ? container
+          : Array.isArray(container?.items)
+            ? container.items
+            : [];
+
+        const bookmarkedPosts = items.map(normalizePost).filter(Boolean);
 
         if (error) {
           setSavedPostsError(
@@ -7486,10 +7513,10 @@ export default function MobileApp() {
           return;
         }
 
-        const bookmarkedPosts = Array.isArray(data) ? data : [];
+        // Set posts (empty array allowed on true empty)
         setSavedPosts(bookmarkedPosts);
 
-        // Best-effort: load author profiles (no effect on loading spinner)
+        // Best-effort profile hydration (NON-BLOCKING so loading spinner can clear)
         if (bookmarkedPosts.length > 0) {
           (async () => {
             try {
@@ -7525,9 +7552,13 @@ export default function MobileApp() {
         setSavedPostsError(err?.message || "Failed to load saved posts");
         setSavedPosts([]);
       } finally {
-        setSavedPostsLoading(false);
+        if (!hasLoadedOnce) setSavedPostsLoading(false);
+        setHasLoadedOnce(true);
+        (savedLoadInFlightRef as React.MutableRefObject<boolean>).current =
+          false;
       }
     };
+
     return (
       <div style={{ background: "#ffffff", minHeight: "100vh" }}>
         {/* Header */}
@@ -7570,7 +7601,7 @@ export default function MobileApp() {
           });
           return null;
         })()}
-        {savedPostsLoading ? (
+        {savedPostsLoading && !hasLoadedOnce ? (
           <div style={{ padding: "40px 20px", textAlign: "center" }}>
             <div style={{ fontSize: "20px", color: "#8e8e8e" }}>
               Loading saved posts...
