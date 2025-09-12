@@ -309,8 +309,9 @@ export default function MobileApp() {
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [prayerModerationError, setPrayerModerationError] = useState("");
   const [committingToId, setCommittingToId] = useState<number | null>(null);
-  const [prayerTab, setPrayerTab] = useState(0); // 0: Browse, 1: My Prayers
-  const [selectedPrayerId, setSelectedPrayerId] = useState<number | null>(null);
+  // Prayer System Internal Routing
+  const [prayerRoute, setPrayerRoute] = useState<'browse' | 'new' | 'detail' | 'my' | 'leaderboard'>('browse');
+  const [prayerDetailId, setPrayerDetailId] = useState<number | null>(null);
   const [selectedPrayerDetail, setSelectedPrayerDetail] = useState<any>(null);
   const [showFullLeaderboard, setShowFullLeaderboard] = useState(false);
   const [prayedJustNow, setPrayedJustNow] = useState<Set<number>>(new Set());
@@ -2899,7 +2900,987 @@ export default function MobileApp() {
     );
   }
 
-  // Prayer Page Component
+  // Prayer Router - Complete Mobile Prayer System
+  function renderPrayerRouter() {
+    switch (prayerRoute) {
+      case 'browse':
+        return <PrayerBrowseMobile />;
+      case 'new':
+        return <PrayerNewMobile />;
+      case 'detail':
+        return <PrayerDetailMobile />;
+      case 'my':
+        return <PrayerMyMobile />;
+      case 'leaderboard':
+        return <PrayerLeaderboardMobile />;
+      default:
+        return <PrayerBrowseMobile />;
+    }
+  }
+
+  // Prayer Browse Page Component
+  function PrayerBrowseMobile() {
+    return (
+      <div style={{ minHeight: "100vh", background: "#ffffff" }}>
+        {/* Header with Navigation */}
+        <div style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          padding: "16px",
+          borderBottom: "1px solid #dbdbdb",
+          background: "#ffffff",
+          position: "sticky",
+          top: 0,
+          zIndex: 100
+        }}>
+          <div style={{ fontSize: "18px", fontWeight: 600, color: "#262626" }}>
+            Prayer Requests
+          </div>
+          <div style={{ display: "flex", gap: "8px" }}>
+            <button
+              onClick={() => setPrayerRoute('new')}
+              data-testid="button-new-prayer"
+              style={{
+                background: "#4285f4",
+                color: "#ffffff",
+                border: "none",
+                padding: "8px 12px",
+                borderRadius: "16px",
+                fontSize: "12px",
+                fontWeight: 600,
+                cursor: "pointer"
+              }}
+            >
+              + New
+            </button>
+            <button
+              onClick={() => setPrayerRoute('my')}
+              data-testid="button-my-prayers"
+              style={{
+                background: "none",
+                color: "#4285f4",
+                border: "1px solid #4285f4",
+                padding: "8px 12px",
+                borderRadius: "16px",
+                fontSize: "12px",
+                fontWeight: 600,
+                cursor: "pointer"
+              }}
+            >
+              My Prayers
+            </button>
+            <button
+              onClick={() => setPrayerRoute('leaderboard')}
+              data-testid="button-leaderboard"
+              style={{
+                background: "none",
+                color: "#8e8e8e",
+                border: "1px solid #dbdbdb",
+                padding: "8px 12px",
+                borderRadius: "16px",
+                fontSize: "12px",
+                cursor: "pointer"
+              }}
+            >
+              🏆
+            </button>
+          </div>
+        </div>
+
+        {/* Prayer Stats */}
+        <div style={{
+          display: "flex",
+          justifyContent: "space-around",
+          padding: "16px",
+          background: "#f8f9fa",
+          borderBottom: "1px solid #dbdbdb"
+        }}>
+          <div style={{ textAlign: "center" }}>
+            <div style={{ fontSize: "18px", fontWeight: 700, color: "#262626" }}>
+              {prayerRequests.length}
+            </div>
+            <div style={{ fontSize: "12px", color: "#8e8e8e" }}>Requests</div>
+          </div>
+          <div style={{ textAlign: "center" }}>
+            <div style={{ fontSize: "18px", fontWeight: 700, color: "#262626" }}>
+              {prayerRequests.reduce((sum, req) => sum + (req.prayer_stats?.committed_count || 0), 0)}
+            </div>
+            <div style={{ fontSize: "12px", color: "#8e8e8e" }}>Committed</div>
+          </div>
+          <div style={{ textAlign: "center" }}>
+            <div style={{ fontSize: "18px", fontWeight: 700, color: "#262626" }}>
+              {prayerRequests.reduce((sum, req) => sum + (req.prayer_stats?.prayed_count || 0), 0)}
+            </div>
+            <div style={{ fontSize: "12px", color: "#8e8e8e" }}>Prayed</div>
+          </div>
+        </div>
+
+        {/* Prayer Requests Feed */}
+        <div style={{ padding: "16px" }}>
+          {prayerRequests.length > 0 ? (
+            prayerRequests.map((request) => (
+              <div
+                key={request.id}
+                data-testid={`card-prayer-${request.id}`}
+                onClick={() => {
+                  setPrayerDetailId(request.id);
+                  setSelectedPrayerDetail(request);
+                  setPrayerRoute('detail');
+                }}
+                style={{
+                  background: "#ffffff",
+                  border: "1px solid #dbdbdb",
+                  borderRadius: "12px",
+                  padding: "16px",
+                  marginBottom: "12px",
+                  cursor: "pointer"
+                }}
+              >
+                {/* Author */}
+                <div style={{ display: "flex", alignItems: "center", marginBottom: "12px" }}>
+                  <div style={{
+                    width: "32px",
+                    height: "32px",
+                    borderRadius: "50%",
+                    background: "#dbdbdb",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    marginRight: "12px",
+                    color: "#8e8e8e"
+                  }}>
+                    {request.is_anonymous ? "🙏" : "•"}
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 600, color: "#262626" }}>
+                      {request.is_anonymous ? "Anonymous" : request.profiles?.display_name || "Prayer Warrior"}
+                    </div>
+                    <div style={{ fontSize: "12px", color: "#8e8e8e" }}>
+                      {formatTimeAgo(request.created_at)}
+                    </div>
+                  </div>
+                  <div style={{ fontSize: "16px", color: "#8e8e8e" }}>→</div>
+                </div>
+
+                {/* Title */}
+                <div style={{
+                  fontWeight: 600,
+                  marginBottom: "8px",
+                  color: "#262626"
+                }}>
+                  {request.title}
+                </div>
+
+                {/* Details */}
+                <div style={{
+                  fontSize: "14px",
+                  lineHeight: 1.4,
+                  marginBottom: "12px",
+                  color: "#8e8e8e"
+                }}>
+                  {request.details.slice(0, 100)}{request.details.length > 100 ? "..." : ""}
+                </div>
+
+                {/* Tags */}
+                {request.tags && request.tags.length > 0 && (
+                  <div style={{ marginBottom: "12px" }}>
+                    {request.tags.slice(0, 3).map((tag: string, index: number) => (
+                      <span
+                        key={`${request.id}-tag-${index}`}
+                        style={{
+                          background: "#f0f0f0",
+                          padding: "2px 8px",
+                          borderRadius: "12px",
+                          fontSize: "12px",
+                          color: "#666",
+                          marginRight: "6px"
+                        }}
+                      >
+                        #{tag}
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                {/* Stats */}
+                <div style={{
+                  fontSize: "12px",
+                  color: "#8e8e8e",
+                  display: "flex",
+                  justifyContent: "space-between"
+                }}>
+                  <span>
+                    {request.prayer_stats?.committed_count || 0} committed · {request.prayer_stats?.prayed_count || 0} prayed
+                  </span>
+                  <span>Tap to view</span>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div style={{ textAlign: "center", padding: "40px 20px" }}>
+              <div style={{ fontSize: "48px", marginBottom: "16px" }}>🙏</div>
+              <div style={{ fontWeight: 600, marginBottom: "8px", color: "#262626" }}>
+                Prayer Community
+              </div>
+              <div style={{ color: "#8e8e8e", fontSize: "14px" }}>
+                Share your prayer needs and pray for others
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Prayer New Page Component  
+  function PrayerNewMobile() {
+    return (
+      <div style={{ minHeight: "100vh", background: "#ffffff" }}>
+        {/* Header */}
+        <div style={{
+          display: "flex",
+          alignItems: "center",
+          padding: "16px",
+          borderBottom: "1px solid #dbdbdb",
+          background: "#ffffff",
+          position: "sticky",
+          top: 0,
+          zIndex: 100
+        }}>
+          <button
+            onClick={() => setPrayerRoute('browse')}
+            data-testid="button-back-browse"
+            style={{
+              background: "none",
+              border: "none",
+              fontSize: "18px",
+              cursor: "pointer",
+              marginRight: "12px",
+              color: "#262626"
+            }}
+          >
+            ←
+          </button>
+          <div style={{ fontSize: "18px", fontWeight: 600, color: "#262626" }}>
+            New Prayer Request
+          </div>
+        </div>
+
+        {/* Form */}
+        <div style={{ padding: "16px" }}>
+          {/* Error messages */}
+          {prayerModerationError && (
+            <div style={{
+              background: "#fee",
+              border: "1px solid #fcc",
+              color: "#c00",
+              padding: "12px",
+              borderRadius: "8px",
+              marginBottom: "16px",
+              fontSize: "14px"
+            }}>
+              {prayerModerationError}
+            </div>
+          )}
+
+          {isBanned && (
+            <div style={{
+              background: "#fff3cd",
+              border: "1px solid #ffeaa7",
+              color: "#856404",
+              padding: "12px",
+              borderRadius: "8px",
+              marginBottom: "16px",
+              fontSize: "14px"
+            }}>
+              Account limited. You can read but cannot post or comment.
+            </div>
+          )}
+
+          {/* Title Input */}
+          <input
+            type="text"
+            placeholder="Prayer request title..."
+            value={prayerTitle}
+            onChange={(e) => setPrayerTitle(e.target.value)}
+            disabled={isBanned}
+            data-testid="input-prayer-title"
+            style={{
+              width: "100%",
+              padding: "16px",
+              border: "1px solid #dbdbdb",
+              borderRadius: "12px",
+              fontSize: "16px",
+              marginBottom: "16px",
+              outline: "none",
+              backgroundColor: isBanned ? "#f5f5f5" : "#ffffff",
+              color: isBanned ? "#8e8e8e" : "#262626"
+            }}
+          />
+
+          {/* Details Textarea */}
+          <textarea
+            placeholder="Share your prayer need in detail..."
+            value={prayerDetails}
+            onChange={(e) => setPrayerDetails(e.target.value)}
+            rows={6}
+            disabled={isBanned}
+            data-testid="input-prayer-details"
+            style={{
+              width: "100%",
+              padding: "16px",
+              border: "1px solid #dbdbdb",
+              borderRadius: "12px",
+              fontSize: "16px",
+              resize: "none",
+              outline: "none",
+              fontFamily: "inherit",
+              marginBottom: "16px",
+              backgroundColor: isBanned ? "#f5f5f5" : "#ffffff",
+              color: isBanned ? "#8e8e8e" : "#262626"
+            }}
+          />
+
+          {/* Tags Input */}
+          <input
+            type="text"
+            placeholder="Tags (healing, family, guidance...)"
+            value={prayerTags}
+            onChange={(e) => setPrayerTags(e.target.value)}
+            disabled={isBanned}
+            data-testid="input-prayer-tags"
+            style={{
+              width: "100%",
+              padding: "16px",
+              border: "1px solid #dbdbdb",
+              borderRadius: "12px",
+              fontSize: "16px",
+              marginBottom: "16px",
+              outline: "none",
+              backgroundColor: isBanned ? "#f5f5f5" : "#ffffff",
+              color: isBanned ? "#8e8e8e" : "#262626"
+            }}
+          />
+
+          {/* Anonymous Toggle */}
+          {!isBanned && (
+            <div style={{
+              display: "flex",
+              alignItems: "center",
+              marginBottom: "24px",
+              padding: "16px",
+              background: "#f8f9fa",
+              borderRadius: "12px"
+            }}>
+              <input
+                type="checkbox"
+                id="anonymous-mobile"
+                checked={isAnonymous}
+                onChange={(e) => setIsAnonymous(e.target.checked)}
+                data-testid="input-anonymous"
+                style={{ marginRight: "12px", transform: "scale(1.2)" }}
+              />
+              <label htmlFor="anonymous-mobile" style={{ fontSize: "16px", color: "#262626" }}>
+                Submit anonymously
+              </label>
+            </div>
+          )}
+
+          {/* Submit Button */}
+          <button
+            onClick={handleCreatePrayerRequest}
+            disabled={!prayerTitle.trim() || !prayerDetails.trim() || isBanned}
+            data-testid="button-submit-prayer"
+            style={{
+              width: "100%",
+              background: prayerTitle.trim() && prayerDetails.trim() && !isBanned ? "#4285f4" : "#dbdbdb",
+              color: "#ffffff",
+              border: "none",
+              padding: "16px",
+              borderRadius: "12px",
+              fontSize: "16px",
+              fontWeight: 600,
+              cursor: prayerTitle.trim() && prayerDetails.trim() && !isBanned ? "pointer" : "not-allowed"
+            }}
+          >
+            Submit Prayer Request
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Prayer Detail Page Component
+  function PrayerDetailMobile() {
+    if (!selectedPrayerDetail) {
+      return (
+        <div style={{ padding: "40px 20px", textAlign: "center" }}>
+          <div>Prayer not found</div>
+          <button onClick={() => setPrayerRoute('browse')} style={{ marginTop: "16px", padding: "8px 16px", borderRadius: "8px", border: "1px solid #dbdbdb", background: "#ffffff" }}>
+            Back to Browse
+          </button>
+        </div>
+      );
+    }
+
+    const prayer = selectedPrayerDetail;
+    const commitment = myCommitments.find(c => c.prayer_request_id === prayer.id);
+
+    return (
+      <div style={{ minHeight: "100vh", background: "#ffffff" }}>
+        {/* Header */}
+        <div style={{
+          display: "flex",
+          alignItems: "center",
+          padding: "16px",
+          borderBottom: "1px solid #dbdbdb",
+          background: "#ffffff",
+          position: "sticky",
+          top: 0,
+          zIndex: 100
+        }}>
+          <button
+            onClick={() => setPrayerRoute('browse')}
+            data-testid="button-back-detail"
+            style={{
+              background: "none",
+              border: "none",
+              fontSize: "18px",
+              cursor: "pointer",
+              marginRight: "12px",
+              color: "#262626"
+            }}
+          >
+            ←
+          </button>
+          <div style={{ fontSize: "18px", fontWeight: 600, color: "#262626" }}>
+            Prayer Details
+          </div>
+        </div>
+
+        {/* Content */}
+        <div style={{ padding: "16px" }}>
+          {/* Author */}
+          <div style={{ display: "flex", alignItems: "center", marginBottom: "20px" }}>
+            <div style={{
+              width: "48px",
+              height: "48px",
+              borderRadius: "50%",
+              background: "#dbdbdb",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              marginRight: "16px",
+              color: "#8e8e8e"
+            }}>
+              {prayer.is_anonymous ? "🙏" : "•"}
+            </div>
+            <div>
+              <div style={{ fontWeight: 600, fontSize: "16px", color: "#262626" }}>
+                {prayer.is_anonymous ? "Anonymous Prayer Request" : prayer.profiles?.display_name || "Prayer Warrior"}
+              </div>
+              <div style={{ fontSize: "14px", color: "#8e8e8e" }}>
+                {formatTimeAgo(prayer.created_at)}
+              </div>
+            </div>
+          </div>
+
+          {/* Title */}
+          <div style={{
+            fontSize: "20px",
+            fontWeight: 600,
+            marginBottom: "16px",
+            color: "#262626",
+            lineHeight: 1.3
+          }}>
+            {prayer.title}
+          </div>
+
+          {/* Content */}
+          <div style={{
+            fontSize: "16px",
+            lineHeight: 1.5,
+            marginBottom: "20px",
+            color: "#262626"
+          }}>
+            {prayer.details}
+          </div>
+
+          {/* Tags */}
+          {prayer.tags && prayer.tags.length > 0 && (
+            <div style={{ marginBottom: "20px" }}>
+              {prayer.tags.map((tag: string, index: number) => (
+                <span
+                  key={`detail-tag-${index}`}
+                  style={{
+                    background: "#f0f0f0",
+                    padding: "6px 12px",
+                    borderRadius: "16px",
+                    fontSize: "14px",
+                    color: "#666",
+                    marginRight: "8px",
+                    marginBottom: "8px",
+                    display: "inline-block"
+                  }}
+                >
+                  #{tag}
+                </span>
+              ))}
+            </div>
+          )}
+
+          {/* Stats */}
+          <div style={{
+            background: "#f8f9fa",
+            padding: "16px",
+            borderRadius: "12px",
+            marginBottom: "20px"
+          }}>
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px" }}>
+              <span style={{ color: "#8e8e8e" }}>Prayer Warriors Committed:</span>
+              <span style={{ fontWeight: 600, color: "#262626" }}>
+                {prayer.prayer_stats?.committed_count || 0}
+              </span>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between" }}>
+              <span style={{ color: "#8e8e8e" }}>Times Prayed:</span>
+              <span style={{ fontWeight: 600, color: "#262626" }}>
+                {prayer.prayer_stats?.prayed_count || 0}
+              </span>
+            </div>
+          </div>
+
+          {/* Action Button */}
+          {user && !isBanned && (
+            <button
+              onClick={() => {
+                if (commitment && !commitment.has_prayed) {
+                  handleConfirmPrayed(prayer.id);
+                } else if (!commitment) {
+                  handleCommitToPray(prayer.id);
+                }
+              }}
+              disabled={committingToId === prayer.id}
+              data-testid="button-commit-pray"
+              style={{
+                width: "100%",
+                background: commitment && commitment.has_prayed ? "#28a745" : "#4285f4",
+                color: "#ffffff",
+                border: "none",
+                padding: "16px",
+                borderRadius: "12px",
+                fontSize: "16px",
+                fontWeight: 600,
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "8px"
+              }}
+            >
+              {committingToId === prayer.id ? "..." :
+                commitment && commitment.has_prayed ? "✓ Prayed" :
+                commitment && !commitment.has_prayed ? "Confirm I Prayed" :
+                "I Will Pray"}
+            </button>
+          )}
+
+          {isBanned && (
+            <div style={{
+              background: "#fff3cd",
+              border: "1px solid #ffeaa7",
+              color: "#856404",
+              padding: "12px",
+              borderRadius: "8px",
+              textAlign: "center",
+              fontSize: "14px"
+            }}>
+              Account limited - cannot commit to pray
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Prayer My Page Component
+  function PrayerMyMobile() {
+    return (
+      <div style={{ minHeight: "100vh", background: "#ffffff" }}>
+        {/* Header */}
+        <div style={{
+          display: "flex",
+          alignItems: "center",
+          padding: "16px",
+          borderBottom: "1px solid #dbdbdb",
+          background: "#ffffff",
+          position: "sticky",
+          top: 0,
+          zIndex: 100
+        }}>
+          <button
+            onClick={() => setPrayerRoute('browse')}
+            data-testid="button-back-my"
+            style={{
+              background: "none",
+              border: "none",
+              fontSize: "18px",
+              cursor: "pointer",
+              marginRight: "12px",
+              color: "#262626"
+            }}
+          >
+            ←
+          </button>
+          <div style={{ fontSize: "18px", fontWeight: 600, color: "#262626" }}>
+            My Prayers
+          </div>
+        </div>
+
+        {/* Tab Navigation */}
+        <div style={{ display: "flex", padding: "16px", gap: "8px" }}>
+          <button
+            onClick={() => setMyPrayersTab("commitments")}
+            data-testid="button-tab-commitments"
+            style={{
+              flex: 1,
+              padding: "12px",
+              border: "none",
+              background: myPrayersTab === "commitments" ? "#4285f4" : "#f5f5f5",
+              color: myPrayersTab === "commitments" ? "#ffffff" : "#8e8e8e",
+              borderRadius: "8px",
+              fontSize: "14px",
+              fontWeight: 600,
+              cursor: "pointer"
+            }}
+          >
+            My Commitments ({myCommitments.length})
+          </button>
+          <button
+            onClick={() => setMyPrayersTab("requests")}
+            data-testid="button-tab-requests"
+            style={{
+              flex: 1,
+              padding: "12px",
+              border: "none",
+              background: myPrayersTab === "requests" ? "#4285f4" : "#f5f5f5",
+              color: myPrayersTab === "requests" ? "#ffffff" : "#8e8e8e",
+              borderRadius: "8px",
+              fontSize: "14px",
+              fontWeight: 600,
+              cursor: "pointer"
+            }}
+          >
+            My Requests ({myRequests.length})
+          </button>
+        </div>
+
+        {/* Content */}
+        <div style={{ padding: "16px" }}>
+          {myPrayersTab === "commitments" ? (
+            <>
+              {myCommitments.length > 0 ? (
+                myCommitments.map((commitment: any) => (
+                  <div
+                    key={commitment.id}
+                    data-testid={`card-commitment-${commitment.id}`}
+                    style={{
+                      background: "#ffffff",
+                      border: "1px solid #dbdbdb",
+                      borderRadius: "12px",
+                      padding: "16px",
+                      marginBottom: "12px"
+                    }}
+                  >
+                    <div style={{ display: "flex", alignItems: "center", marginBottom: "12px" }}>
+                      <div style={{
+                        width: "32px",
+                        height: "32px",
+                        borderRadius: "50%",
+                        background: "#dbdbdb",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontSize: "14px",
+                        marginRight: "12px",
+                        color: "#8e8e8e"
+                      }}>
+                        {commitment.prayer_requests?.is_anonymous ? "🙏" : "•"}
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontWeight: 600, color: "#262626" }}>
+                          {commitment.prayer_requests?.is_anonymous ? "Anonymous" : 
+                            commitment.prayer_requests?.profiles?.display_name || "Prayer Warrior"}
+                        </div>
+                        <div style={{ fontSize: "12px", color: "#8e8e8e" }}>
+                          Committed {formatTimeAgo(commitment.committed_at)}
+                        </div>
+                      </div>
+                      <div style={{
+                        fontSize: "12px",
+                        padding: "4px 8px",
+                        borderRadius: "12px",
+                        background: commitment.status === "prayed" ? "#d4edda" : "#fff3cd",
+                        color: commitment.status === "prayed" ? "#155724" : "#856404"
+                      }}>
+                        {commitment.status === "prayed" ? "✓ Prayed" : "Committed"}
+                      </div>
+                    </div>
+
+                    <div style={{ fontWeight: 600, color: "#262626", marginBottom: "4px" }}>
+                      {commitment.prayer_requests?.title}
+                    </div>
+                    <div style={{ fontSize: "14px", color: "#8e8e8e", lineHeight: 1.4, marginBottom: "12px" }}>
+                      {commitment.prayer_requests?.details}
+                    </div>
+
+                    {commitment.status === "committed" && (
+                      <button
+                        onClick={() => handleConfirmPrayed(commitment.prayer_requests?.id)}
+                        disabled={confirmingId === commitment.prayer_requests?.id}
+                        data-testid={`button-confirm-prayed-${commitment.id}`}
+                        style={{
+                          background: "#28a745",
+                          color: "#ffffff",
+                          border: "none",
+                          padding: "8px 16px",
+                          borderRadius: "20px",
+                          fontSize: "12px",
+                          fontWeight: 600,
+                          cursor: "pointer"
+                        }}
+                      >
+                        {confirmingId === commitment.prayer_requests?.id ? "..." : "✓ Confirm I Prayed"}
+                      </button>
+                    )}
+                  </div>
+                ))
+              ) : (
+                <div style={{ textAlign: "center", padding: "40px 20px" }}>
+                  <div style={{ fontSize: "48px", marginBottom: "16px" }}>🙏</div>
+                  <div style={{ fontWeight: 600, marginBottom: "8px", color: "#262626" }}>
+                    No Prayer Commitments
+                  </div>
+                  <div style={{ color: "#8e8e8e", fontSize: "14px" }}>
+                    Commit to pray for others to see them here
+                  </div>
+                </div>
+              )}
+            </>
+          ) : (
+            <>
+              {myRequests.length > 0 ? (
+                myRequests.map((request: any) => (
+                  <div
+                    key={request.id}
+                    data-testid={`card-request-${request.id}`}
+                    onClick={() => {
+                      setPrayerDetailId(request.id);
+                      setSelectedPrayerDetail(request);
+                      setPrayerRoute('detail');
+                    }}
+                    style={{
+                      background: "#ffffff",
+                      border: "1px solid #dbdbdb",
+                      borderRadius: "12px",
+                      padding: "16px",
+                      marginBottom: "12px",
+                      cursor: "pointer"
+                    }}
+                  >
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "8px" }}>
+                      <div style={{ fontWeight: 600, color: "#262626", flex: 1 }}>
+                        {request.title}
+                      </div>
+                      <div style={{
+                        fontSize: "12px",
+                        padding: "4px 8px",
+                        borderRadius: "12px",
+                        background: request.status === "open" ? "#d4edda" : "#f8f9fa",
+                        color: request.status === "open" ? "#155724" : "#8e8e8e",
+                        marginLeft: "8px"
+                      }}>
+                        {request.status === "open" ? "🟢 Active" : "⏸️ Closed"}
+                      </div>
+                    </div>
+                    
+                    <div style={{ fontSize: "14px", color: "#8e8e8e", lineHeight: 1.4, marginBottom: "12px" }}>
+                      {request.details.slice(0, 100)}{request.details.length > 100 ? "..." : ""}
+                    </div>
+
+                    <div style={{ fontSize: "12px", color: "#8e8e8e", display: "flex", justifyContent: "space-between" }}>
+                      <span>
+                        {request.prayer_stats?.committed_count || 0} committed · {request.prayer_stats?.prayed_count || 0} prayed
+                      </span>
+                      <span>Tap to view</span>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div style={{ textAlign: "center", padding: "40px 20px" }}>
+                  <div style={{ fontSize: "48px", marginBottom: "16px" }}>✍️</div>
+                  <div style={{ fontWeight: 600, marginBottom: "8px", color: "#262626" }}>
+                    No Prayer Requests
+                  </div>
+                  <div style={{ color: "#8e8e8e", fontSize: "14px", marginBottom: "16px" }}>
+                    Submit a prayer request to see it here
+                  </div>
+                  <button
+                    onClick={() => setPrayerRoute('new')}
+                    data-testid="button-create-first-prayer"
+                    style={{
+                      background: "#4285f4",
+                      color: "#ffffff",
+                      border: "none",
+                      padding: "12px 24px",
+                      borderRadius: "20px",
+                      fontSize: "14px",
+                      fontWeight: 600,
+                      cursor: "pointer"
+                    }}
+                  >
+                    Create Prayer Request
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Prayer Leaderboard Page Component
+  function PrayerLeaderboardMobile() {
+    const [timeframe, setTimeframe] = useState<'week' | 'month' | 'alltime'>('week');
+    
+    return (
+      <div style={{ minHeight: "100vh", background: "#ffffff" }}>
+        {/* Header */}
+        <div style={{
+          display: "flex",
+          alignItems: "center",
+          padding: "16px",
+          borderBottom: "1px solid #dbdbdb",
+          background: "#ffffff",
+          position: "sticky",
+          top: 0,
+          zIndex: 100
+        }}>
+          <button
+            onClick={() => setPrayerRoute('browse')}
+            data-testid="button-back-leaderboard"
+            style={{
+              background: "none",
+              border: "none",
+              fontSize: "18px",
+              cursor: "pointer",
+              marginRight: "12px",
+              color: "#262626"
+            }}
+          >
+            ←
+          </button>
+          <div style={{ fontSize: "18px", fontWeight: 600, color: "#262626" }}>
+            🏆 Prayer Warriors
+          </div>
+        </div>
+
+        {/* Timeframe Tabs */}
+        <div style={{ display: "flex", padding: "16px", gap: "8px" }}>
+          {(['week', 'month', 'alltime'] as const).map((tf) => (
+            <button
+              key={tf}
+              onClick={() => setTimeframe(tf)}
+              data-testid={`button-timeframe-${tf}`}
+              style={{
+                flex: 1,
+                padding: "10px",
+                border: "none",
+                background: timeframe === tf ? "#4285f4" : "#f5f5f5",
+                color: timeframe === tf ? "#ffffff" : "#8e8e8e",
+                borderRadius: "8px",
+                fontSize: "14px",
+                fontWeight: 600,
+                cursor: "pointer"
+              }}
+            >
+              {tf === 'week' ? 'This Week' : tf === 'month' ? 'This Month' : 'All Time'}
+            </button>
+          ))}
+        </div>
+
+        {/* Leaderboard */}
+        <div style={{ padding: "16px" }}>
+          {leaderboardData.length > 0 ? (
+            leaderboardData.map((warrior, index) => (
+              <div
+                key={warrior.user_id}
+                data-testid={`card-warrior-${warrior.user_id}`}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  background: "#ffffff",
+                  border: "1px solid #dbdbdb",
+                  borderRadius: "12px",
+                  padding: "16px",
+                  marginBottom: "8px"
+                }}
+              >
+                {/* Rank */}
+                <div style={{
+                  width: "40px",
+                  height: "40px",
+                  borderRadius: "50%",
+                  background: index < 3 ? "#FFD700" : "#f0f0f0",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  marginRight: "16px",
+                  fontSize: "18px"
+                }}>
+                  {index === 0 ? "🥇" : index === 1 ? "🥈" : index === 2 ? "🥉" : index + 1}
+                </div>
+
+                {/* Profile */}
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 600, color: "#262626", marginBottom: "2px" }}>
+                    {warrior.display_name || `User ${warrior.user_id.slice(0, 8)}`}
+                  </div>
+                  <div style={{ fontSize: "12px", color: "#8e8e8e" }}>
+                    Prayer Warrior
+                  </div>
+                </div>
+
+                {/* Stats */}
+                <div style={{ textAlign: "right" }}>
+                  <div style={{ fontSize: "18px", fontWeight: 700, color: "#262626" }}>
+                    {warrior.prayer_count}
+                  </div>
+                  <div style={{ fontSize: "12px", color: "#8e8e8e" }}>
+                    prayers
+                  </div>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div style={{ textAlign: "center", padding: "40px 20px" }}>
+              <div style={{ fontSize: "48px", marginBottom: "16px" }}>🏆</div>
+              <div style={{ fontWeight: 600, marginBottom: "8px", color: "#262626" }}>
+                No Prayer Warriors Yet
+              </div>
+              <div style={{ color: "#8e8e8e", fontSize: "14px" }}>
+                Start praying to appear on the leaderboard
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Old Prayer Page Component (Temporary Fallback)
   function renderPrayerPage() {
     return (
       <>
@@ -3618,19 +4599,10 @@ export default function MobileApp() {
                         }}
                       >
                         <div
-                          onPointerUp={(e) => {
-                            e.preventDefault();
+                          onClick={(e) => {
                             e.stopPropagation();
                             openPublicProfile(comment.author_id);
                           }}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            openPublicProfile(comment.author_id);
-                          }} //dibi                          onPointerUp={(e) => { e.preventDefault(); e.stopPropagation(); openPublicProfile(comment.author_id); }}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            openPublicProfile(comment.author_id);
-                          }} //dibi
                           style={{
                             width: "24px",
                             height: "24px",
@@ -3665,15 +4637,10 @@ export default function MobileApp() {
                       {/* Request content */}
                       <div style={{ marginBottom: "12px" }}>
                         <div
-                          onPointerUp={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            openPublicProfile(comment.author_id);
-                          }}
                           onClick={(e) => {
                             e.stopPropagation();
                             openPublicProfile(comment.author_id);
-                          }} //dibi
+                          }}
                           style={{
                             fontWeight: 600,
                             color: "#262626",
@@ -9698,7 +10665,7 @@ export default function MobileApp() {
                 flexDirection: "column",
               }}
             >
-              {renderPrayerPage()}
+              {renderPrayerRouter()}
             </div>
             {/* Profile tab content removed - now uses MobileProfilePage instead */}
           </div>
