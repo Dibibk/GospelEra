@@ -63,13 +63,13 @@ export const MobileHomeFeed: React.FC<MobileHomeFeedProps> = ({
       // Load posts
       const postsResult = await listPosts({ limit: 20 });
       if (postsResult.error) {
-        setError(postsResult.error);
+        setError(String(postsResult.error));
         return;
       }
 
       const postsData = Array.isArray(postsResult.data) ? postsResult.data : [];
       setPosts(postsData);
-      setNextCursor(postsResult.nextCursor || null);
+      setNextCursor((postsResult as any).nextCursor || null);
 
       // Load profiles for post authors
       if (postsData.length > 0) {

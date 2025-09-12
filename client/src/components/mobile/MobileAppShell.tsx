@@ -1,6 +1,8 @@
 import React, { Suspense, lazy, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { MobileProvider } from '@/contexts/MobileContext';
+import { BottomNavigation } from '@/components/BottomNavigation';
+import '@/styles/mobile-native.css';
 
 // Lazy load components for better performance
 const MobileHomeFeed = lazy(() => import('./MobileHomeFeed').then(m => ({ default: m.MobileHomeFeed })));
@@ -22,52 +24,7 @@ const LoadingScreen: React.FC = () => (
   </div>
 );
 
-// Style constants
-const STYLES = {
-  container: {
-    fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
-    background: '#ffffff',
-    color: '#262626',
-    minHeight: '100dvh',
-    maxWidth: '414px',
-    margin: '0 auto',
-    display: 'flex',
-    flexDirection: 'column' as const,
-    fontSize: '14px',
-    position: 'relative' as const,
-  },
-  header: {
-    background: '#ffffff',
-    borderBottom: '1px solid #dbdbdb',
-    padding: '12px 16px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    position: 'sticky' as const,
-    top: 0,
-    zIndex: 100,
-  },
-  content: {
-    flex: 1,
-    overflowY: 'auto' as const,
-    background: '#ffffff',
-    paddingBottom: 'calc(64px + env(safe-area-inset-bottom, 0px))',
-  },
-  bottomNav: {
-    position: 'fixed' as const,
-    bottom: 'env(safe-area-inset-bottom, 0px)',
-    left: '50%',
-    transform: 'translateX(-50%)',
-    maxWidth: '414px',
-    width: '100%',
-    background: '#ffffff',
-    borderTop: '1px solid #dbdbdb',
-    display: 'flex',
-    justifyContent: 'space-around',
-    padding: '8px 0',
-    zIndex: 101,
-  }
-};
+// Use mobile-native.css classes instead of inline styles
 
 export const MobileAppShell: React.FC = () => {
   const { user, loading: authLoading } = useAuth();
@@ -133,14 +90,9 @@ export const MobileAppShell: React.FC = () => {
   // Show loading during auth
   if (authLoading) {
     return (
-      <div style={STYLES.container}>
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          height: '100%',
-        }}>
-          <div style={{ fontSize: '20px', color: '#8e8e8e' }}>Loading...</div>
+      <div className="min-h-screen max-w-sm mx-auto flex flex-col bg-white">
+        <div className="flex items-center justify-center h-full">
+          <div className="text-mobile-lg text-gray-500">Loading...</div>
         </div>
       </div>
     );
@@ -148,30 +100,22 @@ export const MobileAppShell: React.FC = () => {
 
   return (
     <MobileProvider>
-      <div style={STYLES.container}>
+      <div className="min-h-screen max-w-sm mx-auto flex flex-col bg-white relative">
         {/* Header */}
-        <div style={STYLES.header}>
-          <div style={{
-            fontSize: '24px',
-            fontWeight: 700,
-            color: '#262626',
-            letterSpacing: '-0.5px',
-          }}>
+        <header className="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between sticky top-0 z-50">
+          <h1 className="text-mobile-2xl font-bold text-gray-900 tracking-tight">
             {getTabTitle()}
-          </div>
+          </h1>
           
           {user && (
-            <div style={{
-              fontSize: '14px',
-              color: '#8e8e8e'
-            }}>
+            <div className="text-mobile-sm text-gray-500">
               {user.email?.split('@')[0]}
             </div>
           )}
-        </div>
+        </header>
 
         {/* Content */}
-        <div style={STYLES.content}>
+        <main className="flex-1 overflow-y-auto bg-white pb-20">
           <Suspense fallback={<LoadingScreen />}>
             {activeTab === 0 && (
               <MobileHomeFeed
@@ -203,140 +147,20 @@ export const MobileAppShell: React.FC = () => {
               />
             )}
           </Suspense>
-        </div>
+        </main>
 
-        {/* Bottom Navigation */}
-        {user && (
-          <nav style={STYLES.bottomNav}>
-            {/* Home */}
-            <div
-              onClick={() => handleTabChange(0)}
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                cursor: 'pointer',
-                padding: '4px',
-                color: activeTab === 0 ? '#262626' : '#8e8e8e'
-              }}
-              data-testid="nav-home"
-            >
-              <span style={{ fontSize: '20px', marginBottom: '2px' }}>
-                {activeTab === 0 ? '🏠' : '🏘️'}
-              </span>
-              <span style={{ fontSize: '10px', marginTop: '2px' }}>Home</span>
-            </div>
-
-            {/* Search */}
-            <div
-              onClick={() => handleTabChange(3)}
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                cursor: 'pointer',
-                padding: '4px',
-                color: activeTab === 3 ? '#262626' : '#8e8e8e'
-              }}
-              data-testid="nav-search"
-            >
-              <span style={{ fontSize: '20px', marginBottom: '2px' }}>
-                {activeTab === 3 ? '🔍' : '🔎'}
-              </span>
-              <span style={{ fontSize: '10px', marginTop: '2px' }}>Search</span>
-            </div>
-
-            {/* Create */}
-            <div
-              onClick={() => handleTabChange(1)}
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                cursor: 'pointer',
-                padding: '4px',
-                color: activeTab === 1 ? '#262626' : '#8e8e8e'
-              }}
-              data-testid="nav-create"
-            >
-              <span style={{ fontSize: '20px', marginBottom: '2px' }}>
-                {activeTab === 1 ? '✚' : '➕'}
-              </span>
-              <span style={{ fontSize: '10px', marginTop: '2px' }}>Post</span>
-            </div>
-
-            {/* Prayer */}
-            <div
-              onClick={() => handleTabChange(2)}
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                cursor: 'pointer',
-                padding: '4px',
-                color: activeTab === 2 ? '#262626' : '#8e8e8e'
-              }}
-              data-testid="nav-prayer"
-            >
-              <span style={{ fontSize: '20px', marginBottom: '2px' }}>
-                {activeTab === 2 ? '🙏' : '🤲'}
-              </span>
-              <span style={{ fontSize: '10px', marginTop: '2px' }}>Prayer</span>
-            </div>
-
-            {/* Profile */}
-            <div
-              onClick={() => handleTabChange(4)}
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                cursor: 'pointer',
-                padding: '4px',
-                color: activeTab === 4 ? '#262626' : '#8e8e8e'
-              }}
-              data-testid="nav-profile"
-            >
-              <span style={{ fontSize: '20px', marginBottom: '2px' }}>
-                {activeTab === 4 ? '👤' : '👥'}
-              </span>
-              <span style={{ fontSize: '10px', marginTop: '2px' }}>Profile</span>
-            </div>
-          </nav>
-        )}
+        {/* Bottom Navigation - Use your original component */}
+        {user && <BottomNavigation />}
 
         {/* Modals */}
         {showSavedPosts && (
-          <div style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: 'rgba(0,0,0,0.5)',
-            zIndex: 1000,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
-          }}>
-            <div style={{
-              background: 'white',
-              padding: '20px',
-              borderRadius: '8px',
-              maxWidth: '300px',
-              textAlign: 'center'
-            }}>
-              <p>Saved Posts feature coming soon!</p>
-              <button
+          <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+            <div className="modal-mobile">
+              <h3 className="text-mobile-lg font-semibold mb-3">Saved Posts</h3>
+              <p className="text-mobile-base text-gray-600 mb-4">Coming soon...</p>
+              <button 
                 onClick={() => setShowSavedPosts(false)}
-                style={{
-                  background: '#5A31F4',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '4px',
-                  padding: '8px 16px',
-                  cursor: 'pointer'
-                }}
+                className="btn-mobile w-full"
               >
                 Close
               </button>
@@ -345,36 +169,13 @@ export const MobileAppShell: React.FC = () => {
         )}
 
         {showSettings && (
-          <div style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: 'rgba(0,0,0,0.5)',
-            zIndex: 1000,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
-          }}>
-            <div style={{
-              background: 'white',
-              padding: '20px',
-              borderRadius: '8px',
-              maxWidth: '300px',
-              textAlign: 'center'
-            }}>
-              <p>Settings feature coming soon!</p>
-              <button
+          <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+            <div className="modal-mobile">
+              <h3 className="text-mobile-lg font-semibold mb-3">Settings</h3>
+              <p className="text-mobile-base text-gray-600 mb-4">Settings coming soon...</p>
+              <button 
                 onClick={() => setShowSettings(false)}
-                style={{
-                  background: '#5A31F4',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '4px',
-                  padding: '8px 16px',
-                  cursor: 'pointer'
-                }}
+                className="btn-mobile w-full"
               >
                 Close
               </button>
