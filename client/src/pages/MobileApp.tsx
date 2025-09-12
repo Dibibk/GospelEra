@@ -7486,24 +7486,8 @@ export default function MobileApp() {
       setSavedPostsError("");
 
       try {
-        // Accept {data,error}, plain array, or {data:{items:[...]}} and unwrap bookmark wrappers
-        const res: any = await listBookmarks({ limit: 50 });
-        const error = res?.error;
-
-        // Choose the container that holds items
-        const container: any = Array.isArray(res) ? res : (res?.data ?? res);
-
-        // Normalize each entry to the actual post object if wrapped (e.g., { post: {...} })
-        const normalizePost = (x: any) =>
-          (x && (x.post ?? x.post_data ?? x.postDto ?? x.Post)) || x;
-
-        const items: any[] = Array.isArray(container)
-          ? container
-          : Array.isArray(container?.items)
-            ? container.items
-            : [];
-
-        const bookmarkedPosts = items.map(normalizePost).filter(Boolean);
+        // Use the same simple approach as SavedPosts.tsx
+        const { data, nextCursor, error } = await listBookmarks({ limit: 20 });
 
         if (error) {
           setSavedPostsError(
@@ -7513,40 +7497,38 @@ export default function MobileApp() {
           return;
         }
 
-        // Set posts (empty array allowed on true empty)
+        // Set posts directly - no complex normalization needed
+        const bookmarkedPosts = Array.isArray(data) ? data : [];
         setSavedPosts(bookmarkedPosts);
 
-        // Best-effort profile hydration (NON-BLOCKING so loading spinner can clear)
+        // Load author profiles if we have posts
         if (bookmarkedPosts.length > 0) {
-          (async () => {
-            try {
-              const { getProfilesByIds } = await import("../lib/profiles");
-              const authorIds = Array.from(
-                new Set(
-                  bookmarkedPosts
-                    .map((p: any) => p?.author_id || p?.author)
-                    .filter(Boolean),
-                ),
-              );
+          try {
+            const { getProfilesByIds } = await import("../lib/profiles");
+            const authorIds = Array.from(
+              new Set(
+                bookmarkedPosts
+                  .map((p: any) => p?.author_id || p?.author)
+                  .filter(Boolean),
+              ),
+            );
+            
+            if (authorIds.length > 0) {
               const profilesResult: any = await getProfilesByIds(authorIds);
-              if (profilesResult?.data && !profilesResult?.error) {
+              if (profilesResult?.data && !profilesResult?.error && Array.isArray(profilesResult.data)) {
                 setProfiles((prev) => {
                   const next = new Map(prev);
-                  (Array.isArray(profilesResult.data)
-                    ? profilesResult.data
-                    : Array.from(profilesResult.data)
-                  ).forEach((item: any) => {
-                    const id = Array.isArray(item) ? item[0] : item.id;
-                    const profile = Array.isArray(item) ? item[1] : item;
-                    next.set(id, profile);
+                  profilesResult.data.forEach((profile: any) => {
+                    next.set(profile.id, profile);
                   });
                   return next;
                 });
               }
-            } catch {
-              // ignore profile load errors
             }
-          })();
+          } catch (profileError) {
+            // ignore profile load errors - non-blocking
+            console.log("Profile loading failed (non-blocking):", profileError);
+          }
         }
       } catch (err: any) {
         setSavedPostsError(err?.message || "Failed to load saved posts");
@@ -7590,17 +7572,6 @@ export default function MobileApp() {
         </div>
 
         {/* Content */}
-        {(() => {
-          console.log("Saved Posts Debug:", {
-            savedPostsLoading,
-            savedPostsError,
-            savedPostsCount: savedPosts?.length || 0,
-            savedPostsType: Array.isArray(savedPosts)
-              ? "array"
-              : typeof savedPosts,
-          });
-          return null;
-        })()}
         {savedPostsLoading && !hasLoadedOnce ? (
           <div style={{ padding: "40px 20px", textAlign: "center" }}>
             <div style={{ fontSize: "20px", color: "#8e8e8e" }}>
