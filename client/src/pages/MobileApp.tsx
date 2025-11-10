@@ -3168,7 +3168,16 @@ export default function MobileApp() {
         </div>
 
         {/* Form */}
-        <div style={{ padding: "16px" }}>
+        <div 
+          style={{ padding: "16px" }}
+          onPointerDownCapture={stopIfTextField}
+          onMouseDownCapture={stopIfTextField}
+          onTouchStartCapture={stopIfTextField}
+          onPointerUpCapture={stopIfTextField}
+          onMouseUpCapture={stopIfTextField}
+          onTouchEndCapture={stopIfTextField}
+          onClickCapture={stopIfTextField}
+        >
           {/* Error messages */}
           {prayerModerationError && (
             <div style={{
