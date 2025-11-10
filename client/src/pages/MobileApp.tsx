@@ -3217,9 +3217,14 @@ export default function MobileApp() {
             placeholder="Prayer request title..."
             value={prayerTitle}
             onChange={(e) => {
+              e.stopPropagation();
               setPrayerTitle(e.target.value);
               keepFocus(prayerTitleRef);
             }}
+            onFocus={(e) => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()}
+            onPointerDown={(e) => e.stopPropagation()}
             disabled={isBanned}
             data-testid="input-prayer-title"
             style={{
@@ -3241,9 +3246,14 @@ export default function MobileApp() {
             placeholder="Share your prayer need in detail..."
             value={prayerDetails}
             onChange={(e) => {
+              e.stopPropagation();
               setPrayerDetails(e.target.value);
               keepFocus(prayerDetailsRef);
             }}
+            onFocus={(e) => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()}
+            onPointerDown={(e) => e.stopPropagation()}
             rows={6}
             disabled={isBanned}
             data-testid="input-prayer-details"
@@ -3269,9 +3279,14 @@ export default function MobileApp() {
             placeholder="Tags (healing, family, guidance...)"
             value={prayerTags}
             onChange={(e) => {
+              e.stopPropagation();
               setPrayerTags(e.target.value);
               keepFocus(prayerTagsRef);
             }}
+            onFocus={(e) => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()}
+            onPointerDown={(e) => e.stopPropagation()}
             disabled={isBanned}
             data-testid="input-prayer-tags"
             style={{
