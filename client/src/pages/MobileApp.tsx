@@ -2969,7 +2969,13 @@ export default function MobileApp() {
       case 'browse':
         return <PrayerBrowseMobile />;
       case 'new':
-        return <PrayerNewMobile />;
+        return (
+          <PrayerNewMobile
+            onBack={() => setPrayerRoute('browse')}
+            onSubmitNewPrayer={handleSubmitNewPrayer}
+            isBanned={isBanned}
+          />
+        );
       case 'detail':
         return <PrayerDetailMobile />;
       case 'my':
@@ -3196,48 +3202,78 @@ export default function MobileApp() {
     );
   }
 
-  // Prayer New Page Component - uses LOCAL state (no parent coupling)
-  function PrayerNewMobile() {
-    const [localTitle, setLocalTitle] = useState("");
-    const [localDetails, setLocalDetails] = useState("");
-    const [localTags, setLocalTags] = useState("");
-    const [localAnonymous, setLocalAnonymous] = useState(false);
-    const [localError, setLocalError] = useState("");
+  // Prayer New Page Component (memoized & self-contained state)
+  const PrayerNewMobile = React.memo(function PrayerNewMobile({
+    onBack,
+    onSubmitNewPrayer,
+    isBanned,
+  }: {
+    onBack: () => void;
+    onSubmitNewPrayer: (args: {
+      prayerTitle: string;
+      prayerDetails: string;
+      prayerTags: string;
+      isAnonymous: boolean;
+      setLocalError: (s: string) => void;
+      resetLocalForm: () => void;
+    }) => void;
+    isBanned: boolean;
+  }) {
+    // Local, isolated state so parent re-renders never wipe input
+    const [prayerTitle, setPrayerTitle] = React.useState("");
+    const [prayerDetails, setPrayerDetails] = React.useState("");
+    const [prayerTags, setPrayerTags] = React.useState("");
+    const [isAnonymous, setIsAnonymous] = React.useState(false);
+    const [prayerModerationError, setPrayerModerationError] = React.useState("");
 
-    const resetLocalForm = () => {
-      setLocalTitle("");
-      setLocalDetails("");
-      setLocalTags("");
-      setLocalAnonymous(false);
-      setLocalError("");
-    };
+    // Stable handlers (no dynamic keys, no effects that reset during typing)
+    const resetLocalForm = React.useCallback(() => {
+      setPrayerTitle("");
+      setPrayerDetails("");
+      setPrayerTags("");
+      setIsAnonymous(false);
+      setPrayerModerationError("");
+    }, []);
 
-    const handleSubmit = () => {
-      handleSubmitNewPrayer({
-        prayerTitle: localTitle,
-        prayerDetails: localDetails,
-        prayerTags: localTags,
-        isAnonymous: localAnonymous,
-        setLocalError,
-        resetLocalForm,
-      });
-    };
+    const handleSubmit = React.useCallback(
+      (e?: React.FormEvent) => {
+        if (e) e.preventDefault();
+        onSubmitNewPrayer({
+          prayerTitle,
+          prayerDetails,
+          prayerTags,
+          isAnonymous,
+          setLocalError: setPrayerModerationError,
+          resetLocalForm,
+        });
+      },
+      [
+        onSubmitNewPrayer,
+        prayerTitle,
+        prayerDetails,
+        prayerTags,
+        isAnonymous,
+        resetLocalForm
+      ]
+    );
 
     return (
       <div style={{ minHeight: "100vh", background: "#ffffff" }}>
         {/* Header */}
-        <div style={{
-          display: "flex",
-          alignItems: "center",
-          padding: "16px",
-          borderBottom: "1px solid #dbdbdb",
-          background: "#ffffff",
-          position: "sticky",
-          top: 0,
-          zIndex: 100
-        }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            padding: "16px",
+            borderBottom: "1px solid #dbdbdb",
+            background: "#ffffff",
+            position: "sticky",
+            top: 0,
+            zIndex: 100,
+          }}
+        >
           <button
-            onClick={() => setPrayerRoute('browse')}
+            onClick={onBack}
             data-testid="button-back-browse"
             style={{
               background: "none",
@@ -3245,7 +3281,7 @@ export default function MobileApp() {
               fontSize: "18px",
               cursor: "pointer",
               marginRight: "12px",
-              color: "#262626"
+              color: "#262626",
             }}
           >
             ←
@@ -3256,33 +3292,21 @@ export default function MobileApp() {
         </div>
 
         {/* Form */}
-        <div style={{ padding: "16px" }}>
+        <form onSubmit={handleSubmit} style={{ padding: "16px" }}>
           {/* Error messages */}
-          {localError && (
-            <div style={{
-              background: "#fee",
-              border: "1px solid #fcc",
-              color: "#c00",
-              padding: "12px",
-              borderRadius: "8px",
-              marginBottom: "16px",
-              fontSize: "14px"
-            }}>
-              {localError}
-            </div>
-          )}
-
-          {isBanned && (
-            <div style={{
-              background: "#fff3cd",
-              border: "1px solid #ffeaa7",
-              color: "#856404",
-              padding: "12px",
-              borderRadius: "8px",
-              marginBottom: "16px",
-              fontSize: "14px"
-            }}>
-              Account limited. You can read but cannot post or comment.
+          {prayerModerationError && (
+            <div
+              style={{
+                background: "#fee",
+                border: "1px solid #fcc",
+                color: "#c00",
+                padding: "12px",
+                borderRadius: "8px",
+                marginBottom: "16px",
+                fontSize: "14px",
+              }}
+            >
+              {prayerModerationError}
             </div>
           )}
 
@@ -3290,8 +3314,8 @@ export default function MobileApp() {
           <input
             type="text"
             placeholder="Prayer request title..."
-            value={localTitle}
-            onChange={(e) => setLocalTitle(e.target.value)}
+            value={prayerTitle}
+            onChange={(e) => setPrayerTitle(e.target.value)}
             disabled={isBanned}
             data-testid="input-prayer-title"
             style={{
@@ -3303,15 +3327,15 @@ export default function MobileApp() {
               marginBottom: "16px",
               outline: "none",
               backgroundColor: isBanned ? "#f5f5f5" : "#ffffff",
-              color: isBanned ? "#8e8e8e" : "#262626"
+              color: isBanned ? "#8e8e8e" : "#262626",
             }}
           />
 
           {/* Details Textarea */}
           <textarea
             placeholder="Share your prayer need in detail..."
-            value={localDetails}
-            onChange={(e) => setLocalDetails(e.target.value)}
+            value={prayerDetails}
+            onChange={(e) => setPrayerDetails(e.target.value)}
             rows={6}
             disabled={isBanned}
             data-testid="input-prayer-details"
@@ -3326,7 +3350,7 @@ export default function MobileApp() {
               fontFamily: "inherit",
               marginBottom: "16px",
               backgroundColor: isBanned ? "#f5f5f5" : "#ffffff",
-              color: isBanned ? "#8e8e8e" : "#262626"
+              color: isBanned ? "#8e8e8e" : "#262626",
             }}
           />
 
@@ -3334,8 +3358,8 @@ export default function MobileApp() {
           <input
             type="text"
             placeholder="Tags (healing, family, guidance...)"
-            value={localTags}
-            onChange={(e) => setLocalTags(e.target.value)}
+            value={prayerTags}
+            onChange={(e) => setPrayerTags(e.target.value)}
             disabled={isBanned}
             data-testid="input-prayer-tags"
             style={{
@@ -3347,29 +3371,34 @@ export default function MobileApp() {
               marginBottom: "16px",
               outline: "none",
               backgroundColor: isBanned ? "#f5f5f5" : "#ffffff",
-              color: isBanned ? "#8e8e8e" : "#262626"
+              color: isBanned ? "#8e8e8e" : "#262626",
             }}
           />
 
           {/* Anonymous Toggle */}
           {!isBanned && (
-            <div style={{
-              display: "flex",
-              alignItems: "center",
-              marginBottom: "24px",
-              padding: "16px",
-              background: "#f8f9fa",
-              borderRadius: "12px"
-            }}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                marginBottom: "24px",
+                padding: "16px",
+                background: "#f8f9fa",
+                borderRadius: "12px",
+              }}
+            >
               <input
                 type="checkbox"
                 id="anonymous-mobile"
-                checked={localAnonymous}
-                onChange={(e) => setLocalAnonymous(e.target.checked)}
+                checked={isAnonymous}
+                onChange={(e) => setIsAnonymous(e.target.checked)}
                 data-testid="input-anonymous"
                 style={{ marginRight: "12px", transform: "scale(1.2)" }}
               />
-              <label htmlFor="anonymous-mobile" style={{ fontSize: "16px", color: "#262626" }}>
+              <label
+                htmlFor="anonymous-mobile"
+                style={{ fontSize: "16px", color: "#262626" }}
+              >
                 Submit anonymously
               </label>
             </div>
@@ -3377,27 +3406,33 @@ export default function MobileApp() {
 
           {/* Submit Button */}
           <button
-            onClick={handleSubmit}
-            disabled={!localTitle.trim() || !localDetails.trim() || isBanned}
+            type="submit"
+            disabled={!prayerTitle.trim() || !prayerDetails.trim() || isBanned}
             data-testid="button-submit-prayer"
             style={{
               width: "100%",
-              background: localTitle.trim() && localDetails.trim() && !isBanned ? "#4285f4" : "#dbdbdb",
+              background:
+                prayerTitle.trim() && prayerDetails.trim() && !isBanned
+                  ? "#4285f4"
+                  : "#dbdbdb",
               color: "#ffffff",
               border: "none",
               padding: "16px",
               borderRadius: "12px",
               fontSize: "16px",
               fontWeight: 600,
-              cursor: prayerTitle.trim() && prayerDetails.trim() && !isBanned ? "pointer" : "not-allowed"
+              cursor:
+                prayerTitle.trim() && prayerDetails.trim() && !isBanned
+                  ? "pointer"
+                  : "not-allowed",
             }}
           >
             Submit Prayer Request
           </button>
-        </div>
+        </form>
       </div>
     );
-  }
+  });
 
   // Prayer Detail Page Component
   function PrayerDetailMobile() {
