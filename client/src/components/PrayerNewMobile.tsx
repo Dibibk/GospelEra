@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { validateFaithContent } from '@/lib/moderation';
+import { validateFaithContent } from '../../../shared/moderation';
 import { createPrayerRequest } from '@/lib/prayer';
 
 interface PrayerNewMobileProps {
