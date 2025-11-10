@@ -3133,71 +3133,8 @@ export default function MobileApp() {
     );
   }
 
-  // Prayer New Page Component - Isolated with local state
-  const PrayerNewMobile = React.memo(function PrayerNewMobile() {
-    // Local form state - isolated from parent re-renders
-    const [prayerTitle, setPrayerTitle] = useState("");
-    const [prayerDetails, setPrayerDetails] = useState("");
-    const [prayerTags, setPrayerTags] = useState("");
-    const [isAnonymous, setIsAnonymous] = useState(false);
-    const [moderationError, setModerationError] = useState("");
-
-    const handleSubmit = async () => {
-      if (!prayerTitle.trim() || !prayerDetails.trim()) return;
-
-      if (isBanned) {
-        alert("Your account is limited. You cannot create prayer requests.");
-        return;
-      }
-
-      // Clear previous errors
-      setModerationError("");
-
-      const titleText = prayerTitle.trim();
-      const detailsText = prayerDetails.trim();
-
-      // Enhanced Christ-centric validation for title and details
-      const titleValidation = validateFaithContent(titleText);
-      const detailsValidation = validateFaithContent(detailsText);
-
-      if (!titleValidation.isValid && !detailsValidation.isValid) {
-        setModerationError(
-          titleValidation.reason ||
-            "Please keep your prayer request centered on Jesus or Scripture.",
-        );
-        return;
-      }
-
-      // Process tags
-      const tagsArray = prayerTags.trim()
-        ? prayerTags.split(",").map((tag) => tag.trim())
-        : [];
-
-      try {
-        const result = await createPrayerRequest({
-          title: titleText,
-          details: detailsText,
-          tags: tagsArray,
-          is_anonymous: isAnonymous,
-        });
-
-        if (result.data) {
-          // Clear form on success
-          setPrayerTitle("");
-          setPrayerDetails("");
-          setPrayerTags("");
-          setIsAnonymous(false);
-          setModerationError("");
-          fetchData();
-          // Navigate back to browse
-          setPrayerRoute('browse');
-        }
-      } catch (error) {
-        console.error("Error creating prayer request:", error);
-        alert("Failed to create prayer request. Please try again.");
-      }
-    };
-
+  // Prayer New Page Component  
+  function PrayerNewMobile() {
     return (
       <div style={{ minHeight: "100vh", background: "#ffffff" }}>
         {/* Header */}
@@ -3233,7 +3170,7 @@ export default function MobileApp() {
         {/* Form */}
         <div style={{ padding: "16px" }}>
           {/* Error messages */}
-          {moderationError && (
+          {prayerModerationError && (
             <div style={{
               background: "#fee",
               border: "1px solid #fcc",
@@ -3243,7 +3180,7 @@ export default function MobileApp() {
               marginBottom: "16px",
               fontSize: "14px"
             }}>
-              {moderationError}
+              {prayerModerationError}
             </div>
           )}
 
@@ -3352,7 +3289,7 @@ export default function MobileApp() {
 
           {/* Submit Button */}
           <button
-            onClick={handleSubmit}
+            onClick={handleCreatePrayerRequest}
             disabled={!prayerTitle.trim() || !prayerDetails.trim() || isBanned}
             data-testid="button-submit-prayer"
             style={{
@@ -3372,7 +3309,7 @@ export default function MobileApp() {
         </div>
       </div>
     );
-  });
+  }
 
   // Prayer Detail Page Component
   function PrayerDetailMobile() {
