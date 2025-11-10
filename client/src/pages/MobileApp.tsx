@@ -306,9 +306,6 @@ export default function MobileApp() {
   const [prayerTitle, setPrayerTitle] = useState("");
   const [prayerDetails, setPrayerDetails] = useState("");
   const [prayerTags, setPrayerTags] = useState("");
-  const prayerTitleRef = useRef<HTMLInputElement>(null);
-  const prayerDetailsRef = useRef<HTMLTextAreaElement>(null);
-  const prayerTagsRef = useRef<HTMLInputElement>(null);
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [prayerModerationError, setPrayerModerationError] = useState("");
   const [committingToId, setCommittingToId] = useState<number | null>(null);
@@ -3171,16 +3168,7 @@ export default function MobileApp() {
         </div>
 
         {/* Form */}
-        <div 
-          style={{ padding: "16px" }}
-          onPointerDownCapture={stopIfTextField}
-          onMouseDownCapture={stopIfTextField}
-          onTouchStartCapture={stopIfTextField}
-          onPointerUpCapture={stopIfTextField}
-          onMouseUpCapture={stopIfTextField}
-          onTouchEndCapture={stopIfTextField}
-          onClickCapture={stopIfTextField}
-        >
+        <div style={{ padding: "16px" }}>
           {/* Error messages */}
           {prayerModerationError && (
             <div style={{
@@ -3212,19 +3200,10 @@ export default function MobileApp() {
 
           {/* Title Input */}
           <input
-            ref={prayerTitleRef}
             type="text"
             placeholder="Prayer request title..."
             value={prayerTitle}
-            onChange={(e) => {
-              e.stopPropagation();
-              setPrayerTitle(e.target.value);
-              keepFocus(prayerTitleRef);
-            }}
-            onFocus={(e) => e.stopPropagation()}
-            onClick={(e) => e.stopPropagation()}
-            onMouseDown={(e) => e.stopPropagation()}
-            onPointerDown={(e) => e.stopPropagation()}
+            onChange={(e) => setPrayerTitle(e.target.value)}
             disabled={isBanned}
             data-testid="input-prayer-title"
             style={{
@@ -3242,18 +3221,9 @@ export default function MobileApp() {
 
           {/* Details Textarea */}
           <textarea
-            ref={prayerDetailsRef}
             placeholder="Share your prayer need in detail..."
             value={prayerDetails}
-            onChange={(e) => {
-              e.stopPropagation();
-              setPrayerDetails(e.target.value);
-              keepFocus(prayerDetailsRef);
-            }}
-            onFocus={(e) => e.stopPropagation()}
-            onClick={(e) => e.stopPropagation()}
-            onMouseDown={(e) => e.stopPropagation()}
-            onPointerDown={(e) => e.stopPropagation()}
+            onChange={(e) => setPrayerDetails(e.target.value)}
             rows={6}
             disabled={isBanned}
             data-testid="input-prayer-details"
@@ -3274,19 +3244,10 @@ export default function MobileApp() {
 
           {/* Tags Input */}
           <input
-            ref={prayerTagsRef}
             type="text"
             placeholder="Tags (healing, family, guidance...)"
             value={prayerTags}
-            onChange={(e) => {
-              e.stopPropagation();
-              setPrayerTags(e.target.value);
-              keepFocus(prayerTagsRef);
-            }}
-            onFocus={(e) => e.stopPropagation()}
-            onClick={(e) => e.stopPropagation()}
-            onMouseDown={(e) => e.stopPropagation()}
-            onPointerDown={(e) => e.stopPropagation()}
+            onChange={(e) => setPrayerTags(e.target.value)}
             disabled={isBanned}
             data-testid="input-prayer-tags"
             style={{
