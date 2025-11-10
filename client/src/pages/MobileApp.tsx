@@ -2385,13 +2385,6 @@ export default function MobileApp() {
                       borderTop: "1px solid #dbdbdb",
                       padding: "12px 16px",
                     }}
-                    onPointerDownCapture={stopIfTextField}
-                    onMouseDownCapture={stopIfTextField}
-                    onTouchStartCapture={stopIfTextField}
-                    onPointerUpCapture={stopIfTextField}
-                    onMouseUpCapture={stopIfTextField}
-                    onTouchEndCapture={stopIfTextField}
-                    onClickCapture={stopIfTextField}
                   >
                     {/* Comment input */}
                     <form
@@ -8682,9 +8675,6 @@ export default function MobileApp() {
 
     return (
       <div
-        onPointerDownCapture={stopIfTextField}
-        onMouseDownCapture={stopIfTextField}
-        onClickCapture={stopIfTextField}
         style={{ padding: "16px", background: "#ffffff", minHeight: "100vh" }}
       >
         {/* Header */}
