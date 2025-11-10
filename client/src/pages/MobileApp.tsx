@@ -46,6 +46,7 @@ import {
   ensureMyProfile,
 } from "@/lib/profiles";
 import { ObjectUploader } from "@/components/ObjectUploader";
+import { PrayerNewMobile } from "@/components/PrayerNewMobile";
 import { getDailyVerse } from "@/lib/scripture";
 import {
   createDonationPledge,
@@ -675,69 +676,6 @@ export default function MobileApp() {
       alert(
         `Failed to ${editingPostId ? "update" : "create"} post. Please try again.`,
       );
-    }
-  };
-
-  // NEW: payload-based submit for the New Prayer page (no parent state coupling)
-  const handleSubmitNewPrayer = async ({
-    prayerTitle,
-    prayerDetails,
-    prayerTags,
-    isAnonymous,
-    setLocalError,
-    resetLocalForm,
-  }: {
-    prayerTitle: string;
-    prayerDetails: string;
-    prayerTags: string;
-    isAnonymous: boolean;
-    setLocalError: (s: string) => void;
-    resetLocalForm: () => void;
-  }) => {
-    if (!prayerTitle.trim() || !prayerDetails.trim()) return;
-
-    if (isBanned) {
-      alert("Your account is limited. You cannot create prayer requests.");
-      return;
-    }
-
-    setLocalError("");
-
-    const titleText = prayerTitle.trim();
-    const detailsText = prayerDetails.trim();
-
-    // reuse existing validators/utils already in this file
-    const titleValidation = validateFaithContent(titleText);
-    const detailsValidation = validateFaithContent(detailsText);
-
-    if (!titleValidation.isValid && !detailsValidation.isValid) {
-      setLocalError(
-        titleValidation.reason ||
-          "Please keep your prayer request centered on Jesus or Scripture.",
-      );
-      return;
-    }
-
-    const tagsArray = prayerTags.trim()
-      ? prayerTags.split(",").map((tag) => tag.trim())
-      : [];
-
-    try {
-      const result = await createPrayerRequest({
-        title: titleText,
-        details: detailsText,
-        tags: tagsArray,
-        is_anonymous: isAnonymous,
-      });
-
-      if (result.data) {
-        resetLocalForm(); // clear child fields
-        // refresh list so the new request appears
-        fetchData();
-      }
-    } catch (error) {
-      console.error("Error creating prayer request:", error);
-      alert("Failed to create prayer request. Please try again.");
     }
   };
 
@@ -2910,7 +2848,10 @@ export default function MobileApp() {
         return (
           <PrayerNewMobile
             onBack={goBackToBrowse}
-            onSubmitNewPrayer={handleSubmitNewPrayer}
+            onSuccess={() => {
+              fetchData();
+              setPrayerRoute("browse");
+            }}
             isBanned={isBanned}
           />
         );
@@ -3181,239 +3122,6 @@ export default function MobileApp() {
       </div>
     );
   }
-
-  // Prayer New Page Component (memoized & self-contained state)
-  const PrayerNewMobile = React.memo(function PrayerNewMobile({
-    onBack,
-    onSubmitNewPrayer,
-    isBanned,
-  }: {
-    onBack: () => void;
-    onSubmitNewPrayer: (args: {
-      prayerTitle: string;
-      prayerDetails: string;
-      prayerTags: string;
-      isAnonymous: boolean;
-      setLocalError: (s: string) => void;
-      resetLocalForm: () => void;
-    }) => void;
-    isBanned: boolean;
-  }) {
-    // Local, isolated state so parent re-renders never wipe input
-    const [prayerTitle, setPrayerTitle] = React.useState("");
-    const [prayerDetails, setPrayerDetails] = React.useState("");
-    const [prayerTags, setPrayerTags] = React.useState("");
-    const [isAnonymous, setIsAnonymous] = React.useState(false);
-    const [prayerModerationError, setPrayerModerationError] =
-      React.useState("");
-
-    // Stable handlers (no dynamic keys, no effects that reset during typing)
-    const resetLocalForm = React.useCallback(() => {
-      setPrayerTitle("");
-      setPrayerDetails("");
-      setPrayerTags("");
-      setIsAnonymous(false);
-      setPrayerModerationError("");
-    }, []);
-
-    const handleSubmit = React.useCallback(
-      (e?: React.FormEvent) => {
-        if (e) e.preventDefault();
-        onSubmitNewPrayer({
-          prayerTitle,
-          prayerDetails,
-          prayerTags,
-          isAnonymous,
-          setLocalError: setPrayerModerationError,
-          resetLocalForm,
-        });
-      },
-      [
-        onSubmitNewPrayer,
-        prayerTitle,
-        prayerDetails,
-        prayerTags,
-        isAnonymous,
-        resetLocalForm,
-      ],
-    );
-
-    return (
-      <div style={{ minHeight: "100vh", background: "#ffffff" }}>
-        {/* Header */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            padding: "16px",
-            borderBottom: "1px solid #dbdbdb",
-            background: "#ffffff",
-            position: "sticky",
-            top: 0,
-            zIndex: 100,
-          }}
-        >
-          <button
-            onClick={onBack}
-            data-testid="button-back-browse"
-            style={{
-              background: "none",
-              border: "none",
-              fontSize: "18px",
-              cursor: "pointer",
-              marginRight: "12px",
-              color: "#262626",
-            }}
-          >
-            ←
-          </button>
-          <div style={{ fontSize: "18px", fontWeight: 600, color: "#262626" }}>
-            New Prayer Request
-          </div>
-        </div>
-
-        {/* Form */}
-        <form onSubmit={handleSubmit} style={{ padding: "16px" }}>
-          {/* Error messages */}
-          {prayerModerationError && (
-            <div
-              style={{
-                background: "#fee",
-                border: "1px solid #fcc",
-                color: "#c00",
-                padding: "12px",
-                borderRadius: "8px",
-                marginBottom: "16px",
-                fontSize: "14px",
-              }}
-            >
-              {prayerModerationError}
-            </div>
-          )}
-
-          {/* Title Input */}
-          <input
-            type="text"
-            placeholder="Prayer request title..."
-            value={prayerTitle}
-            onChange={(e) => setPrayerTitle(e.target.value)}
-            disabled={isBanned}
-            data-testid="input-prayer-title"
-            style={{
-              width: "100%",
-              padding: "16px",
-              border: "1px solid #dbdbdb",
-              borderRadius: "12px",
-              fontSize: "16px",
-              marginBottom: "16px",
-              outline: "none",
-              backgroundColor: isBanned ? "#f5f5f5" : "#ffffff",
-              color: isBanned ? "#8e8e8e" : "#262626",
-            }}
-          />
-
-          {/* Details Textarea */}
-          <textarea
-            placeholder="Share your prayer need in detail..."
-            value={prayerDetails}
-            onChange={(e) => setPrayerDetails(e.target.value)}
-            rows={6}
-            disabled={isBanned}
-            data-testid="input-prayer-details"
-            style={{
-              width: "100%",
-              padding: "16px",
-              border: "1px solid #dbdbdb",
-              borderRadius: "12px",
-              fontSize: "16px",
-              resize: "none",
-              outline: "none",
-              fontFamily: "inherit",
-              marginBottom: "16px",
-              backgroundColor: isBanned ? "#f5f5f5" : "#ffffff",
-              color: isBanned ? "#8e8e8e" : "#262626",
-            }}
-          />
-
-          {/* Tags Input */}
-          <input
-            type="text"
-            placeholder="Tags (healing, family, guidance...)"
-            value={prayerTags}
-            onChange={(e) => setPrayerTags(e.target.value)}
-            disabled={isBanned}
-            data-testid="input-prayer-tags"
-            style={{
-              width: "100%",
-              padding: "16px",
-              border: "1px solid #dbdbdb",
-              borderRadius: "12px",
-              fontSize: "16px",
-              marginBottom: "16px",
-              outline: "none",
-              backgroundColor: isBanned ? "#f5f5f5" : "#ffffff",
-              color: isBanned ? "#8e8e8e" : "#262626",
-            }}
-          />
-
-          {/* Anonymous Toggle */}
-          {!isBanned && (
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                marginBottom: "24px",
-                padding: "16px",
-                background: "#f8f9fa",
-                borderRadius: "12px",
-              }}
-            >
-              <input
-                type="checkbox"
-                id="anonymous-mobile"
-                checked={isAnonymous}
-                onChange={(e) => setIsAnonymous(e.target.checked)}
-                data-testid="input-anonymous"
-                style={{ marginRight: "12px", transform: "scale(1.2)" }}
-              />
-              <label
-                htmlFor="anonymous-mobile"
-                style={{ fontSize: "16px", color: "#262626" }}
-              >
-                Submit anonymously
-              </label>
-            </div>
-          )}
-
-          {/* Submit Button */}
-          <button
-            type="submit"
-            disabled={!prayerTitle.trim() || !prayerDetails.trim() || isBanned}
-            data-testid="button-submit-prayer"
-            style={{
-              width: "100%",
-              background:
-                prayerTitle.trim() && prayerDetails.trim() && !isBanned
-                  ? "#4285f4"
-                  : "#dbdbdb",
-              color: "#ffffff",
-              border: "none",
-              padding: "16px",
-              borderRadius: "12px",
-              fontSize: "16px",
-              fontWeight: 600,
-              cursor:
-                prayerTitle.trim() && prayerDetails.trim() && !isBanned
-                  ? "pointer"
-                  : "not-allowed",
-            }}
-          >
-            Submit Prayer Request
-          </button>
-        </form>
-      </div>
-    );
-  });
 
   // Prayer Detail Page Component
   function PrayerDetailMobile() {
