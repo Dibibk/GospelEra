@@ -305,7 +305,9 @@ export default function MobileApp() {
   const [createTitle, setCreateTitle] = useState("");
   const [committingToId, setCommittingToId] = useState<number | null>(null);
   // Prayer System Internal Routing
-  const [prayerRoute, setPrayerRoute] = useState<'browse' | 'new' | 'detail' | 'my' | 'leaderboard'>('browse');
+  const [prayerRoute, setPrayerRoute] = useState<
+    "browse" | "new" | "detail" | "my" | "leaderboard"
+  >("browse");
   const [prayerDetailId, setPrayerDetailId] = useState<number | null>(null);
   const [selectedPrayerDetail, setSelectedPrayerDetail] = useState<any>(null);
   const [showFullLeaderboard, setShowFullLeaderboard] = useState(false);
@@ -408,14 +410,14 @@ export default function MobileApp() {
   // Load daily verse separately to ensure it always loads
   useEffect(() => {
     if (!user) return;
-    
+
     let cancelled = false;
-    
+
     (async () => {
       try {
         await loadDailyVerse();
       } catch (err) {
-        console.error('Failed to load daily verse:', err);
+        console.error("Failed to load daily verse:", err);
       }
     })();
 
@@ -711,7 +713,7 @@ export default function MobileApp() {
     if (!titleValidation.isValid && !detailsValidation.isValid) {
       setLocalError(
         titleValidation.reason ||
-          "Please keep your prayer request centered on Jesus or Scripture."
+          "Please keep your prayer request centered on Jesus or Scripture.",
       );
       return;
     }
@@ -2904,24 +2906,26 @@ export default function MobileApp() {
     );
   }
 
+  const goBackToBrowse = React.useCallback(() => setPrayerRoute("browse"), []);
+
   // Prayer Router - Complete Mobile Prayer System
   function renderPrayerRouter() {
     switch (prayerRoute) {
-      case 'browse':
+      case "browse":
         return <PrayerBrowseMobile />;
-      case 'new':
+      case "new":
         return (
           <PrayerNewMobile
-            onBack={() => setPrayerRoute('browse')}
+            onBack={goBackToBrowse}
             onSubmitNewPrayer={handleSubmitNewPrayer}
             isBanned={isBanned}
           />
         );
-      case 'detail':
+      case "detail":
         return <PrayerDetailMobile />;
-      case 'my':
+      case "my":
         return <PrayerMyMobile />;
-      case 'leaderboard':
+      case "leaderboard":
         return <PrayerLeaderboardMobile />;
       default:
         return <PrayerBrowseMobile />;
@@ -2933,23 +2937,25 @@ export default function MobileApp() {
     return (
       <div style={{ minHeight: "100vh", background: "#ffffff" }}>
         {/* Header with Navigation */}
-        <div style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          padding: "16px",
-          borderBottom: "1px solid #dbdbdb",
-          background: "#ffffff",
-          position: "sticky",
-          top: 0,
-          zIndex: 100
-        }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            padding: "16px",
+            borderBottom: "1px solid #dbdbdb",
+            background: "#ffffff",
+            position: "sticky",
+            top: 0,
+            zIndex: 100,
+          }}
+        >
           <div style={{ fontSize: "18px", fontWeight: 600, color: "#262626" }}>
             Prayer Requests
           </div>
           <div style={{ display: "flex", gap: "8px" }}>
             <button
-              onClick={() => setPrayerRoute('new')}
+              onClick={() => setPrayerRoute("new")}
               data-testid="button-new-prayer"
               style={{
                 background: "#4285f4",
@@ -2959,13 +2965,13 @@ export default function MobileApp() {
                 borderRadius: "16px",
                 fontSize: "12px",
                 fontWeight: 600,
-                cursor: "pointer"
+                cursor: "pointer",
               }}
             >
               + New
             </button>
             <button
-              onClick={() => setPrayerRoute('my')}
+              onClick={() => setPrayerRoute("my")}
               data-testid="button-my-prayers"
               style={{
                 background: "none",
@@ -2975,13 +2981,13 @@ export default function MobileApp() {
                 borderRadius: "16px",
                 fontSize: "12px",
                 fontWeight: 600,
-                cursor: "pointer"
+                cursor: "pointer",
               }}
             >
               My Prayers
             </button>
             <button
-              onClick={() => setPrayerRoute('leaderboard')}
+              onClick={() => setPrayerRoute("leaderboard")}
               data-testid="button-leaderboard"
               style={{
                 background: "none",
@@ -2990,7 +2996,7 @@ export default function MobileApp() {
                 padding: "8px 12px",
                 borderRadius: "16px",
                 fontSize: "12px",
-                cursor: "pointer"
+                cursor: "pointer",
               }}
             >
               🏆
@@ -2999,28 +3005,42 @@ export default function MobileApp() {
         </div>
 
         {/* Prayer Stats */}
-        <div style={{
-          display: "flex",
-          justifyContent: "space-around",
-          padding: "16px",
-          background: "#f8f9fa",
-          borderBottom: "1px solid #dbdbdb"
-        }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-around",
+            padding: "16px",
+            background: "#f8f9fa",
+            borderBottom: "1px solid #dbdbdb",
+          }}
+        >
           <div style={{ textAlign: "center" }}>
-            <div style={{ fontSize: "18px", fontWeight: 700, color: "#262626" }}>
+            <div
+              style={{ fontSize: "18px", fontWeight: 700, color: "#262626" }}
+            >
               {prayerRequests.length}
             </div>
             <div style={{ fontSize: "12px", color: "#8e8e8e" }}>Requests</div>
           </div>
           <div style={{ textAlign: "center" }}>
-            <div style={{ fontSize: "18px", fontWeight: 700, color: "#262626" }}>
-              {prayerRequests.reduce((sum, req) => sum + (req.prayer_stats?.committed_count || 0), 0)}
+            <div
+              style={{ fontSize: "18px", fontWeight: 700, color: "#262626" }}
+            >
+              {prayerRequests.reduce(
+                (sum, req) => sum + (req.prayer_stats?.committed_count || 0),
+                0,
+              )}
             </div>
             <div style={{ fontSize: "12px", color: "#8e8e8e" }}>Committed</div>
           </div>
           <div style={{ textAlign: "center" }}>
-            <div style={{ fontSize: "18px", fontWeight: 700, color: "#262626" }}>
-              {prayerRequests.reduce((sum, req) => sum + (req.prayer_stats?.prayed_count || 0), 0)}
+            <div
+              style={{ fontSize: "18px", fontWeight: 700, color: "#262626" }}
+            >
+              {prayerRequests.reduce(
+                (sum, req) => sum + (req.prayer_stats?.prayed_count || 0),
+                0,
+              )}
             </div>
             <div style={{ fontSize: "12px", color: "#8e8e8e" }}>Prayed</div>
           </div>
@@ -3036,7 +3056,7 @@ export default function MobileApp() {
                 onClick={() => {
                   setPrayerDetailId(request.id);
                   setSelectedPrayerDetail(request);
-                  setPrayerRoute('detail');
+                  setPrayerRoute("detail");
                 }}
                 style={{
                   background: "#ffffff",
@@ -3044,27 +3064,37 @@ export default function MobileApp() {
                   borderRadius: "12px",
                   padding: "16px",
                   marginBottom: "12px",
-                  cursor: "pointer"
+                  cursor: "pointer",
                 }}
               >
                 {/* Author */}
-                <div style={{ display: "flex", alignItems: "center", marginBottom: "12px" }}>
-                  <div style={{
-                    width: "32px",
-                    height: "32px",
-                    borderRadius: "50%",
-                    background: "#dbdbdb",
+                <div
+                  style={{
                     display: "flex",
                     alignItems: "center",
-                    justifyContent: "center",
-                    marginRight: "12px",
-                    color: "#8e8e8e"
-                  }}>
+                    marginBottom: "12px",
+                  }}
+                >
+                  <div
+                    style={{
+                      width: "32px",
+                      height: "32px",
+                      borderRadius: "50%",
+                      background: "#dbdbdb",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      marginRight: "12px",
+                      color: "#8e8e8e",
+                    }}
+                  >
                     {request.is_anonymous ? "🙏" : "•"}
                   </div>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontWeight: 600, color: "#262626" }}>
-                      {request.is_anonymous ? "Anonymous" : request.profiles?.display_name || "Prayer Warrior"}
+                      {request.is_anonymous
+                        ? "Anonymous"
+                        : request.profiles?.display_name || "Prayer Warrior"}
                     </div>
                     <div style={{ fontSize: "12px", color: "#8e8e8e" }}>
                       {formatTimeAgo(request.created_at)}
@@ -3074,54 +3104,64 @@ export default function MobileApp() {
                 </div>
 
                 {/* Title */}
-                <div style={{
-                  fontWeight: 600,
-                  marginBottom: "8px",
-                  color: "#262626"
-                }}>
+                <div
+                  style={{
+                    fontWeight: 600,
+                    marginBottom: "8px",
+                    color: "#262626",
+                  }}
+                >
                   {request.title}
                 </div>
 
                 {/* Details */}
-                <div style={{
-                  fontSize: "14px",
-                  lineHeight: 1.4,
-                  marginBottom: "12px",
-                  color: "#8e8e8e"
-                }}>
-                  {request.details.slice(0, 100)}{request.details.length > 100 ? "..." : ""}
+                <div
+                  style={{
+                    fontSize: "14px",
+                    lineHeight: 1.4,
+                    marginBottom: "12px",
+                    color: "#8e8e8e",
+                  }}
+                >
+                  {request.details.slice(0, 100)}
+                  {request.details.length > 100 ? "..." : ""}
                 </div>
 
                 {/* Tags */}
                 {request.tags && request.tags.length > 0 && (
                   <div style={{ marginBottom: "12px" }}>
-                    {request.tags.slice(0, 3).map((tag: string, index: number) => (
-                      <span
-                        key={`${request.id}-tag-${index}`}
-                        style={{
-                          background: "#f0f0f0",
-                          padding: "2px 8px",
-                          borderRadius: "12px",
-                          fontSize: "12px",
-                          color: "#666",
-                          marginRight: "6px"
-                        }}
-                      >
-                        #{tag}
-                      </span>
-                    ))}
+                    {request.tags
+                      .slice(0, 3)
+                      .map((tag: string, index: number) => (
+                        <span
+                          key={`${request.id}-tag-${index}`}
+                          style={{
+                            background: "#f0f0f0",
+                            padding: "2px 8px",
+                            borderRadius: "12px",
+                            fontSize: "12px",
+                            color: "#666",
+                            marginRight: "6px",
+                          }}
+                        >
+                          #{tag}
+                        </span>
+                      ))}
                   </div>
                 )}
 
                 {/* Stats */}
-                <div style={{
-                  fontSize: "12px",
-                  color: "#8e8e8e",
-                  display: "flex",
-                  justifyContent: "space-between"
-                }}>
+                <div
+                  style={{
+                    fontSize: "12px",
+                    color: "#8e8e8e",
+                    display: "flex",
+                    justifyContent: "space-between",
+                  }}
+                >
                   <span>
-                    {request.prayer_stats?.committed_count || 0} committed · {request.prayer_stats?.prayed_count || 0} prayed
+                    {request.prayer_stats?.committed_count || 0} committed ·{" "}
+                    {request.prayer_stats?.prayed_count || 0} prayed
                   </span>
                   <span>Tap to view</span>
                 </div>
@@ -3130,7 +3170,13 @@ export default function MobileApp() {
           ) : (
             <div style={{ textAlign: "center", padding: "40px 20px" }}>
               <div style={{ fontSize: "48px", marginBottom: "16px" }}>🙏</div>
-              <div style={{ fontWeight: 600, marginBottom: "8px", color: "#262626" }}>
+              <div
+                style={{
+                  fontWeight: 600,
+                  marginBottom: "8px",
+                  color: "#262626",
+                }}
+              >
                 Prayer Community
               </div>
               <div style={{ color: "#8e8e8e", fontSize: "14px" }}>
@@ -3165,7 +3211,8 @@ export default function MobileApp() {
     const [prayerDetails, setPrayerDetails] = React.useState("");
     const [prayerTags, setPrayerTags] = React.useState("");
     const [isAnonymous, setIsAnonymous] = React.useState(false);
-    const [prayerModerationError, setPrayerModerationError] = React.useState("");
+    const [prayerModerationError, setPrayerModerationError] =
+      React.useState("");
 
     // Stable handlers (no dynamic keys, no effects that reset during typing)
     const resetLocalForm = React.useCallback(() => {
@@ -3194,8 +3241,8 @@ export default function MobileApp() {
         prayerDetails,
         prayerTags,
         isAnonymous,
-        resetLocalForm
-      ]
+        resetLocalForm,
+      ],
     );
 
     return (
@@ -3381,7 +3428,16 @@ export default function MobileApp() {
       return (
         <div style={{ padding: "40px 20px", textAlign: "center" }}>
           <div>Prayer not found</div>
-          <button onClick={() => setPrayerRoute('browse')} style={{ marginTop: "16px", padding: "8px 16px", borderRadius: "8px", border: "1px solid #dbdbdb", background: "#ffffff" }}>
+          <button
+            onClick={() => setPrayerRoute("browse")}
+            style={{
+              marginTop: "16px",
+              padding: "8px 16px",
+              borderRadius: "8px",
+              border: "1px solid #dbdbdb",
+              background: "#ffffff",
+            }}
+          >
             Back to Browse
           </button>
         </div>
@@ -3389,23 +3445,27 @@ export default function MobileApp() {
     }
 
     const prayer = selectedPrayerDetail;
-    const commitment = myCommitments.find(c => c.prayer_request_id === prayer.id);
+    const commitment = myCommitments.find(
+      (c) => c.prayer_request_id === prayer.id,
+    );
 
     return (
       <div style={{ minHeight: "100vh", background: "#ffffff" }}>
         {/* Header */}
-        <div style={{
-          display: "flex",
-          alignItems: "center",
-          padding: "16px",
-          borderBottom: "1px solid #dbdbdb",
-          background: "#ffffff",
-          position: "sticky",
-          top: 0,
-          zIndex: 100
-        }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            padding: "16px",
+            borderBottom: "1px solid #dbdbdb",
+            background: "#ffffff",
+            position: "sticky",
+            top: 0,
+            zIndex: 100,
+          }}
+        >
           <button
-            onClick={() => setPrayerRoute('browse')}
+            onClick={() => setPrayerRoute("browse")}
             data-testid="button-back-detail"
             style={{
               background: "none",
@@ -3413,7 +3473,7 @@ export default function MobileApp() {
               fontSize: "18px",
               cursor: "pointer",
               marginRight: "12px",
-              color: "#262626"
+              color: "#262626",
             }}
           >
             ←
@@ -3426,23 +3486,35 @@ export default function MobileApp() {
         {/* Content */}
         <div style={{ padding: "16px" }}>
           {/* Author */}
-          <div style={{ display: "flex", alignItems: "center", marginBottom: "20px" }}>
-            <div style={{
-              width: "48px",
-              height: "48px",
-              borderRadius: "50%",
-              background: "#dbdbdb",
+          <div
+            style={{
               display: "flex",
               alignItems: "center",
-              justifyContent: "center",
-              marginRight: "16px",
-              color: "#8e8e8e"
-            }}>
+              marginBottom: "20px",
+            }}
+          >
+            <div
+              style={{
+                width: "48px",
+                height: "48px",
+                borderRadius: "50%",
+                background: "#dbdbdb",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                marginRight: "16px",
+                color: "#8e8e8e",
+              }}
+            >
               {prayer.is_anonymous ? "🙏" : "•"}
             </div>
             <div>
-              <div style={{ fontWeight: 600, fontSize: "16px", color: "#262626" }}>
-                {prayer.is_anonymous ? "Anonymous Prayer Request" : prayer.profiles?.display_name || "Prayer Warrior"}
+              <div
+                style={{ fontWeight: 600, fontSize: "16px", color: "#262626" }}
+              >
+                {prayer.is_anonymous
+                  ? "Anonymous Prayer Request"
+                  : prayer.profiles?.display_name || "Prayer Warrior"}
               </div>
               <div style={{ fontSize: "14px", color: "#8e8e8e" }}>
                 {formatTimeAgo(prayer.created_at)}
@@ -3451,23 +3523,27 @@ export default function MobileApp() {
           </div>
 
           {/* Title */}
-          <div style={{
-            fontSize: "20px",
-            fontWeight: 600,
-            marginBottom: "16px",
-            color: "#262626",
-            lineHeight: 1.3
-          }}>
+          <div
+            style={{
+              fontSize: "20px",
+              fontWeight: 600,
+              marginBottom: "16px",
+              color: "#262626",
+              lineHeight: 1.3,
+            }}
+          >
             {prayer.title}
           </div>
 
           {/* Content */}
-          <div style={{
-            fontSize: "16px",
-            lineHeight: 1.5,
-            marginBottom: "20px",
-            color: "#262626"
-          }}>
+          <div
+            style={{
+              fontSize: "16px",
+              lineHeight: 1.5,
+              marginBottom: "20px",
+              color: "#262626",
+            }}
+          >
             {prayer.details}
           </div>
 
@@ -3485,7 +3561,7 @@ export default function MobileApp() {
                     color: "#666",
                     marginRight: "8px",
                     marginBottom: "8px",
-                    display: "inline-block"
+                    display: "inline-block",
                   }}
                 >
                   #{tag}
@@ -3495,14 +3571,24 @@ export default function MobileApp() {
           )}
 
           {/* Stats */}
-          <div style={{
-            background: "#f8f9fa",
-            padding: "16px",
-            borderRadius: "12px",
-            marginBottom: "20px"
-          }}>
-            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px" }}>
-              <span style={{ color: "#8e8e8e" }}>Prayer Warriors Committed:</span>
+          <div
+            style={{
+              background: "#f8f9fa",
+              padding: "16px",
+              borderRadius: "12px",
+              marginBottom: "20px",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                marginBottom: "8px",
+              }}
+            >
+              <span style={{ color: "#8e8e8e" }}>
+                Prayer Warriors Committed:
+              </span>
               <span style={{ fontWeight: 600, color: "#262626" }}>
                 {prayer.prayer_stats?.committed_count || 0}
               </span>
@@ -3529,7 +3615,8 @@ export default function MobileApp() {
               data-testid="button-commit-pray"
               style={{
                 width: "100%",
-                background: commitment && commitment.has_prayed ? "#28a745" : "#4285f4",
+                background:
+                  commitment && commitment.has_prayed ? "#28a745" : "#4285f4",
                 color: "#ffffff",
                 border: "none",
                 padding: "16px",
@@ -3540,26 +3627,31 @@ export default function MobileApp() {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                gap: "8px"
+                gap: "8px",
               }}
             >
-              {committingToId === prayer.id ? "..." :
-                commitment && commitment.has_prayed ? "✓ Prayed" :
-                commitment && !commitment.has_prayed ? "Confirm I Prayed" :
-                "I Will Pray"}
+              {committingToId === prayer.id
+                ? "..."
+                : commitment && commitment.has_prayed
+                  ? "✓ Prayed"
+                  : commitment && !commitment.has_prayed
+                    ? "Confirm I Prayed"
+                    : "I Will Pray"}
             </button>
           )}
 
           {isBanned && (
-            <div style={{
-              background: "#fff3cd",
-              border: "1px solid #ffeaa7",
-              color: "#856404",
-              padding: "12px",
-              borderRadius: "8px",
-              textAlign: "center",
-              fontSize: "14px"
-            }}>
+            <div
+              style={{
+                background: "#fff3cd",
+                border: "1px solid #ffeaa7",
+                color: "#856404",
+                padding: "12px",
+                borderRadius: "8px",
+                textAlign: "center",
+                fontSize: "14px",
+              }}
+            >
               Account limited - cannot commit to pray
             </div>
           )}
@@ -3573,18 +3665,20 @@ export default function MobileApp() {
     return (
       <div style={{ minHeight: "100vh", background: "#ffffff" }}>
         {/* Header */}
-        <div style={{
-          display: "flex",
-          alignItems: "center",
-          padding: "16px",
-          borderBottom: "1px solid #dbdbdb",
-          background: "#ffffff",
-          position: "sticky",
-          top: 0,
-          zIndex: 100
-        }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            padding: "16px",
+            borderBottom: "1px solid #dbdbdb",
+            background: "#ffffff",
+            position: "sticky",
+            top: 0,
+            zIndex: 100,
+          }}
+        >
           <button
-            onClick={() => setPrayerRoute('browse')}
+            onClick={() => setPrayerRoute("browse")}
             data-testid="button-back-my"
             style={{
               background: "none",
@@ -3592,7 +3686,7 @@ export default function MobileApp() {
               fontSize: "18px",
               cursor: "pointer",
               marginRight: "12px",
-              color: "#262626"
+              color: "#262626",
             }}
           >
             ←
@@ -3611,12 +3705,13 @@ export default function MobileApp() {
               flex: 1,
               padding: "12px",
               border: "none",
-              background: myPrayersTab === "commitments" ? "#4285f4" : "#f5f5f5",
+              background:
+                myPrayersTab === "commitments" ? "#4285f4" : "#f5f5f5",
               color: myPrayersTab === "commitments" ? "#ffffff" : "#8e8e8e",
               borderRadius: "8px",
               fontSize: "14px",
               fontWeight: 600,
-              cursor: "pointer"
+              cursor: "pointer",
             }}
           >
             My Commitments ({myCommitments.length})
@@ -3633,7 +3728,7 @@ export default function MobileApp() {
               borderRadius: "8px",
               fontSize: "14px",
               fontWeight: 600,
-              cursor: "pointer"
+              cursor: "pointer",
             }}
           >
             My Requests ({myRequests.length})
@@ -3654,55 +3749,92 @@ export default function MobileApp() {
                       border: "1px solid #dbdbdb",
                       borderRadius: "12px",
                       padding: "16px",
-                      marginBottom: "12px"
+                      marginBottom: "12px",
                     }}
                   >
-                    <div style={{ display: "flex", alignItems: "center", marginBottom: "12px" }}>
-                      <div style={{
-                        width: "32px",
-                        height: "32px",
-                        borderRadius: "50%",
-                        background: "#dbdbdb",
+                    <div
+                      style={{
                         display: "flex",
                         alignItems: "center",
-                        justifyContent: "center",
-                        fontSize: "14px",
-                        marginRight: "12px",
-                        color: "#8e8e8e"
-                      }}>
+                        marginBottom: "12px",
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: "32px",
+                          height: "32px",
+                          borderRadius: "50%",
+                          background: "#dbdbdb",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          fontSize: "14px",
+                          marginRight: "12px",
+                          color: "#8e8e8e",
+                        }}
+                      >
                         {commitment.prayer_requests?.is_anonymous ? "🙏" : "•"}
                       </div>
                       <div style={{ flex: 1 }}>
                         <div style={{ fontWeight: 600, color: "#262626" }}>
-                          {commitment.prayer_requests?.is_anonymous ? "Anonymous" : 
-                            commitment.prayer_requests?.profiles?.display_name || "Prayer Warrior"}
+                          {commitment.prayer_requests?.is_anonymous
+                            ? "Anonymous"
+                            : commitment.prayer_requests?.profiles
+                                ?.display_name || "Prayer Warrior"}
                         </div>
                         <div style={{ fontSize: "12px", color: "#8e8e8e" }}>
                           Committed {formatTimeAgo(commitment.committed_at)}
                         </div>
                       </div>
-                      <div style={{
-                        fontSize: "12px",
-                        padding: "4px 8px",
-                        borderRadius: "12px",
-                        background: commitment.status === "prayed" ? "#d4edda" : "#fff3cd",
-                        color: commitment.status === "prayed" ? "#155724" : "#856404"
-                      }}>
-                        {commitment.status === "prayed" ? "✓ Prayed" : "Committed"}
+                      <div
+                        style={{
+                          fontSize: "12px",
+                          padding: "4px 8px",
+                          borderRadius: "12px",
+                          background:
+                            commitment.status === "prayed"
+                              ? "#d4edda"
+                              : "#fff3cd",
+                          color:
+                            commitment.status === "prayed"
+                              ? "#155724"
+                              : "#856404",
+                        }}
+                      >
+                        {commitment.status === "prayed"
+                          ? "✓ Prayed"
+                          : "Committed"}
                       </div>
                     </div>
 
-                    <div style={{ fontWeight: 600, color: "#262626", marginBottom: "4px" }}>
+                    <div
+                      style={{
+                        fontWeight: 600,
+                        color: "#262626",
+                        marginBottom: "4px",
+                      }}
+                    >
                       {commitment.prayer_requests?.title}
                     </div>
-                    <div style={{ fontSize: "14px", color: "#8e8e8e", lineHeight: 1.4, marginBottom: "12px" }}>
+                    <div
+                      style={{
+                        fontSize: "14px",
+                        color: "#8e8e8e",
+                        lineHeight: 1.4,
+                        marginBottom: "12px",
+                      }}
+                    >
                       {commitment.prayer_requests?.details}
                     </div>
 
                     {commitment.status === "committed" && (
                       <button
-                        onClick={() => handleConfirmPrayed(commitment.prayer_requests?.id)}
-                        disabled={confirmingId === commitment.prayer_requests?.id}
+                        onClick={() =>
+                          handleConfirmPrayed(commitment.prayer_requests?.id)
+                        }
+                        disabled={
+                          confirmingId === commitment.prayer_requests?.id
+                        }
                         data-testid={`button-confirm-prayed-${commitment.id}`}
                         style={{
                           background: "#28a745",
@@ -3712,18 +3844,28 @@ export default function MobileApp() {
                           borderRadius: "20px",
                           fontSize: "12px",
                           fontWeight: 600,
-                          cursor: "pointer"
+                          cursor: "pointer",
                         }}
                       >
-                        {confirmingId === commitment.prayer_requests?.id ? "..." : "✓ Confirm I Prayed"}
+                        {confirmingId === commitment.prayer_requests?.id
+                          ? "..."
+                          : "✓ Confirm I Prayed"}
                       </button>
                     )}
                   </div>
                 ))
               ) : (
                 <div style={{ textAlign: "center", padding: "40px 20px" }}>
-                  <div style={{ fontSize: "48px", marginBottom: "16px" }}>🙏</div>
-                  <div style={{ fontWeight: 600, marginBottom: "8px", color: "#262626" }}>
+                  <div style={{ fontSize: "48px", marginBottom: "16px" }}>
+                    🙏
+                  </div>
+                  <div
+                    style={{
+                      fontWeight: 600,
+                      marginBottom: "8px",
+                      color: "#262626",
+                    }}
+                  >
                     No Prayer Commitments
                   </div>
                   <div style={{ color: "#8e8e8e", fontSize: "14px" }}>
@@ -3742,7 +3884,7 @@ export default function MobileApp() {
                     onClick={() => {
                       setPrayerDetailId(request.id);
                       setSelectedPrayerDetail(request);
-                      setPrayerRoute('detail');
+                      setPrayerRoute("detail");
                     }}
                     style={{
                       background: "#ffffff",
@@ -3750,32 +3892,61 @@ export default function MobileApp() {
                       borderRadius: "12px",
                       padding: "16px",
                       marginBottom: "12px",
-                      cursor: "pointer"
+                      cursor: "pointer",
                     }}
                   >
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "8px" }}>
-                      <div style={{ fontWeight: 600, color: "#262626", flex: 1 }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "flex-start",
+                        marginBottom: "8px",
+                      }}
+                    >
+                      <div
+                        style={{ fontWeight: 600, color: "#262626", flex: 1 }}
+                      >
                         {request.title}
                       </div>
-                      <div style={{
-                        fontSize: "12px",
-                        padding: "4px 8px",
-                        borderRadius: "12px",
-                        background: request.status === "open" ? "#d4edda" : "#f8f9fa",
-                        color: request.status === "open" ? "#155724" : "#8e8e8e",
-                        marginLeft: "8px"
-                      }}>
+                      <div
+                        style={{
+                          fontSize: "12px",
+                          padding: "4px 8px",
+                          borderRadius: "12px",
+                          background:
+                            request.status === "open" ? "#d4edda" : "#f8f9fa",
+                          color:
+                            request.status === "open" ? "#155724" : "#8e8e8e",
+                          marginLeft: "8px",
+                        }}
+                      >
                         {request.status === "open" ? "🟢 Active" : "⏸️ Closed"}
                       </div>
                     </div>
-                    
-                    <div style={{ fontSize: "14px", color: "#8e8e8e", lineHeight: 1.4, marginBottom: "12px" }}>
-                      {request.details.slice(0, 100)}{request.details.length > 100 ? "..." : ""}
+
+                    <div
+                      style={{
+                        fontSize: "14px",
+                        color: "#8e8e8e",
+                        lineHeight: 1.4,
+                        marginBottom: "12px",
+                      }}
+                    >
+                      {request.details.slice(0, 100)}
+                      {request.details.length > 100 ? "..." : ""}
                     </div>
 
-                    <div style={{ fontSize: "12px", color: "#8e8e8e", display: "flex", justifyContent: "space-between" }}>
+                    <div
+                      style={{
+                        fontSize: "12px",
+                        color: "#8e8e8e",
+                        display: "flex",
+                        justifyContent: "space-between",
+                      }}
+                    >
                       <span>
-                        {request.prayer_stats?.committed_count || 0} committed · {request.prayer_stats?.prayed_count || 0} prayed
+                        {request.prayer_stats?.committed_count || 0} committed ·{" "}
+                        {request.prayer_stats?.prayed_count || 0} prayed
                       </span>
                       <span>Tap to view</span>
                     </div>
@@ -3783,15 +3954,29 @@ export default function MobileApp() {
                 ))
               ) : (
                 <div style={{ textAlign: "center", padding: "40px 20px" }}>
-                  <div style={{ fontSize: "48px", marginBottom: "16px" }}>✍️</div>
-                  <div style={{ fontWeight: 600, marginBottom: "8px", color: "#262626" }}>
+                  <div style={{ fontSize: "48px", marginBottom: "16px" }}>
+                    ✍️
+                  </div>
+                  <div
+                    style={{
+                      fontWeight: 600,
+                      marginBottom: "8px",
+                      color: "#262626",
+                    }}
+                  >
                     No Prayer Requests
                   </div>
-                  <div style={{ color: "#8e8e8e", fontSize: "14px", marginBottom: "16px" }}>
+                  <div
+                    style={{
+                      color: "#8e8e8e",
+                      fontSize: "14px",
+                      marginBottom: "16px",
+                    }}
+                  >
                     Submit a prayer request to see it here
                   </div>
                   <button
-                    onClick={() => setPrayerRoute('new')}
+                    onClick={() => setPrayerRoute("new")}
                     data-testid="button-create-first-prayer"
                     style={{
                       background: "#4285f4",
@@ -3801,7 +3986,7 @@ export default function MobileApp() {
                       borderRadius: "20px",
                       fontSize: "14px",
                       fontWeight: 600,
-                      cursor: "pointer"
+                      cursor: "pointer",
                     }}
                   >
                     Create Prayer Request
@@ -3817,23 +4002,27 @@ export default function MobileApp() {
 
   // Prayer Leaderboard Page Component
   function PrayerLeaderboardMobile() {
-    const [timeframe, setTimeframe] = useState<'week' | 'month' | 'alltime'>('week');
-    
+    const [timeframe, setTimeframe] = useState<"week" | "month" | "alltime">(
+      "week",
+    );
+
     return (
       <div style={{ minHeight: "100vh", background: "#ffffff" }}>
         {/* Header */}
-        <div style={{
-          display: "flex",
-          alignItems: "center",
-          padding: "16px",
-          borderBottom: "1px solid #dbdbdb",
-          background: "#ffffff",
-          position: "sticky",
-          top: 0,
-          zIndex: 100
-        }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            padding: "16px",
+            borderBottom: "1px solid #dbdbdb",
+            background: "#ffffff",
+            position: "sticky",
+            top: 0,
+            zIndex: 100,
+          }}
+        >
           <button
-            onClick={() => setPrayerRoute('browse')}
+            onClick={() => setPrayerRoute("browse")}
             data-testid="button-back-leaderboard"
             style={{
               background: "none",
@@ -3841,7 +4030,7 @@ export default function MobileApp() {
               fontSize: "18px",
               cursor: "pointer",
               marginRight: "12px",
-              color: "#262626"
+              color: "#262626",
             }}
           >
             ←
@@ -3853,7 +4042,7 @@ export default function MobileApp() {
 
         {/* Timeframe Tabs */}
         <div style={{ display: "flex", padding: "16px", gap: "8px" }}>
-          {(['week', 'month', 'alltime'] as const).map((tf) => (
+          {(["week", "month", "alltime"] as const).map((tf) => (
             <button
               key={tf}
               onClick={() => setTimeframe(tf)}
@@ -3867,10 +4056,14 @@ export default function MobileApp() {
                 borderRadius: "8px",
                 fontSize: "14px",
                 fontWeight: 600,
-                cursor: "pointer"
+                cursor: "pointer",
               }}
             >
-              {tf === 'week' ? 'This Week' : tf === 'month' ? 'This Month' : 'All Time'}
+              {tf === "week"
+                ? "This Week"
+                : tf === "month"
+                  ? "This Month"
+                  : "All Time"}
             </button>
           ))}
         </div>
@@ -3889,28 +4082,43 @@ export default function MobileApp() {
                   border: "1px solid #dbdbdb",
                   borderRadius: "12px",
                   padding: "16px",
-                  marginBottom: "8px"
+                  marginBottom: "8px",
                 }}
               >
                 {/* Rank */}
-                <div style={{
-                  width: "40px",
-                  height: "40px",
-                  borderRadius: "50%",
-                  background: index < 3 ? "#FFD700" : "#f0f0f0",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  marginRight: "16px",
-                  fontSize: "18px"
-                }}>
-                  {index === 0 ? "🥇" : index === 1 ? "🥈" : index === 2 ? "🥉" : index + 1}
+                <div
+                  style={{
+                    width: "40px",
+                    height: "40px",
+                    borderRadius: "50%",
+                    background: index < 3 ? "#FFD700" : "#f0f0f0",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    marginRight: "16px",
+                    fontSize: "18px",
+                  }}
+                >
+                  {index === 0
+                    ? "🥇"
+                    : index === 1
+                      ? "🥈"
+                      : index === 2
+                        ? "🥉"
+                        : index + 1}
                 </div>
 
                 {/* Profile */}
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 600, color: "#262626", marginBottom: "2px" }}>
-                    {warrior.display_name || `User ${warrior.user_id.slice(0, 8)}`}
+                  <div
+                    style={{
+                      fontWeight: 600,
+                      color: "#262626",
+                      marginBottom: "2px",
+                    }}
+                  >
+                    {warrior.display_name ||
+                      `User ${warrior.user_id.slice(0, 8)}`}
                   </div>
                   <div style={{ fontSize: "12px", color: "#8e8e8e" }}>
                     Prayer Warrior
@@ -3919,7 +4127,13 @@ export default function MobileApp() {
 
                 {/* Stats */}
                 <div style={{ textAlign: "right" }}>
-                  <div style={{ fontSize: "18px", fontWeight: 700, color: "#262626" }}>
+                  <div
+                    style={{
+                      fontSize: "18px",
+                      fontWeight: 700,
+                      color: "#262626",
+                    }}
+                  >
                     {warrior.prayer_count}
                   </div>
                   <div style={{ fontSize: "12px", color: "#8e8e8e" }}>
@@ -3931,7 +4145,13 @@ export default function MobileApp() {
           ) : (
             <div style={{ textAlign: "center", padding: "40px 20px" }}>
               <div style={{ fontSize: "48px", marginBottom: "16px" }}>🏆</div>
-              <div style={{ fontWeight: 600, marginBottom: "8px", color: "#262626" }}>
+              <div
+                style={{
+                  fontWeight: 600,
+                  marginBottom: "8px",
+                  color: "#262626",
+                }}
+              >
                 No Prayer Warriors Yet
               </div>
               <div style={{ color: "#8e8e8e", fontSize: "14px" }}>
@@ -9744,7 +9964,7 @@ export default function MobileApp() {
         ) : showMobileEditProfile ? (
           <MobileEditProfilePage />
         ) : showMobilePublicProfile ? (
-           <MobilePublicProfilePage />
+          <MobilePublicProfilePage />
         ) : showMobileProfile ? (
           <MobileProfilePage />
         ) : showMobileSettings ? (
