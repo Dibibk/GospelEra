@@ -735,6 +735,69 @@ export default function MobileApp() {
     }
   };
 
+  // NEW: payload-based submit for the New Prayer page (no parent state coupling)
+  const handleSubmitNewPrayer = async ({
+    prayerTitle,
+    prayerDetails,
+    prayerTags,
+    isAnonymous,
+    setLocalError,
+    resetLocalForm,
+  }: {
+    prayerTitle: string;
+    prayerDetails: string;
+    prayerTags: string;
+    isAnonymous: boolean;
+    setLocalError: (s: string) => void;
+    resetLocalForm: () => void;
+  }) => {
+    if (!prayerTitle.trim() || !prayerDetails.trim()) return;
+
+    if (isBanned) {
+      alert("Your account is limited. You cannot create prayer requests.");
+      return;
+    }
+
+    setLocalError("");
+
+    const titleText = prayerTitle.trim();
+    const detailsText = prayerDetails.trim();
+
+    // reuse existing validators/utils already in this file
+    const titleValidation = validateFaithContent(titleText);
+    const detailsValidation = validateFaithContent(detailsText);
+
+    if (!titleValidation.isValid && !detailsValidation.isValid) {
+      setLocalError(
+        titleValidation.reason ||
+          "Please keep your prayer request centered on Jesus or Scripture."
+      );
+      return;
+    }
+
+    const tagsArray = prayerTags.trim()
+      ? prayerTags.split(",").map((tag) => tag.trim())
+      : [];
+
+    try {
+      const result = await createPrayerRequest({
+        title: titleText,
+        details: detailsText,
+        tags: tagsArray,
+        is_anonymous: isAnonymous,
+      });
+
+      if (result.data) {
+        resetLocalForm(); // clear child fields
+        // refresh list so the new request appears
+        fetchData();
+      }
+    } catch (error) {
+      console.error("Error creating prayer request:", error);
+      alert("Failed to create prayer request. Please try again.");
+    }
+  };
+
   const handleCommitToPray = async (requestId: number) => {
     if (!user || isBanned) return;
 
@@ -3133,8 +3196,33 @@ export default function MobileApp() {
     );
   }
 
-  // Prayer New Page Component  
+  // Prayer New Page Component - uses LOCAL state (no parent coupling)
   function PrayerNewMobile() {
+    const [localTitle, setLocalTitle] = useState("");
+    const [localDetails, setLocalDetails] = useState("");
+    const [localTags, setLocalTags] = useState("");
+    const [localAnonymous, setLocalAnonymous] = useState(false);
+    const [localError, setLocalError] = useState("");
+
+    const resetLocalForm = () => {
+      setLocalTitle("");
+      setLocalDetails("");
+      setLocalTags("");
+      setLocalAnonymous(false);
+      setLocalError("");
+    };
+
+    const handleSubmit = () => {
+      handleSubmitNewPrayer({
+        prayerTitle: localTitle,
+        prayerDetails: localDetails,
+        prayerTags: localTags,
+        isAnonymous: localAnonymous,
+        setLocalError,
+        resetLocalForm,
+      });
+    };
+
     return (
       <div style={{ minHeight: "100vh", background: "#ffffff" }}>
         {/* Header */}
@@ -3170,7 +3258,7 @@ export default function MobileApp() {
         {/* Form */}
         <div style={{ padding: "16px" }}>
           {/* Error messages */}
-          {prayerModerationError && (
+          {localError && (
             <div style={{
               background: "#fee",
               border: "1px solid #fcc",
@@ -3180,7 +3268,7 @@ export default function MobileApp() {
               marginBottom: "16px",
               fontSize: "14px"
             }}>
-              {prayerModerationError}
+              {localError}
             </div>
           )}
 
@@ -3202,8 +3290,8 @@ export default function MobileApp() {
           <input
             type="text"
             placeholder="Prayer request title..."
-            value={prayerTitle}
-            onChange={(e) => setPrayerTitle(e.target.value)}
+            value={localTitle}
+            onChange={(e) => setLocalTitle(e.target.value)}
             disabled={isBanned}
             data-testid="input-prayer-title"
             style={{
@@ -3222,8 +3310,8 @@ export default function MobileApp() {
           {/* Details Textarea */}
           <textarea
             placeholder="Share your prayer need in detail..."
-            value={prayerDetails}
-            onChange={(e) => setPrayerDetails(e.target.value)}
+            value={localDetails}
+            onChange={(e) => setLocalDetails(e.target.value)}
             rows={6}
             disabled={isBanned}
             data-testid="input-prayer-details"
@@ -3246,8 +3334,8 @@ export default function MobileApp() {
           <input
             type="text"
             placeholder="Tags (healing, family, guidance...)"
-            value={prayerTags}
-            onChange={(e) => setPrayerTags(e.target.value)}
+            value={localTags}
+            onChange={(e) => setLocalTags(e.target.value)}
             disabled={isBanned}
             data-testid="input-prayer-tags"
             style={{
@@ -3276,8 +3364,8 @@ export default function MobileApp() {
               <input
                 type="checkbox"
                 id="anonymous-mobile"
-                checked={isAnonymous}
-                onChange={(e) => setIsAnonymous(e.target.checked)}
+                checked={localAnonymous}
+                onChange={(e) => setLocalAnonymous(e.target.checked)}
                 data-testid="input-anonymous"
                 style={{ marginRight: "12px", transform: "scale(1.2)" }}
               />
@@ -3289,12 +3377,12 @@ export default function MobileApp() {
 
           {/* Submit Button */}
           <button
-            onClick={handleCreatePrayerRequest}
-            disabled={!prayerTitle.trim() || !prayerDetails.trim() || isBanned}
+            onClick={handleSubmit}
+            disabled={!localTitle.trim() || !localDetails.trim() || isBanned}
             data-testid="button-submit-prayer"
             style={{
               width: "100%",
-              background: prayerTitle.trim() && prayerDetails.trim() && !isBanned ? "#4285f4" : "#dbdbdb",
+              background: localTitle.trim() && localDetails.trim() && !isBanned ? "#4285f4" : "#dbdbdb",
               color: "#ffffff",
               border: "none",
               padding: "16px",
