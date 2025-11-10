@@ -3200,10 +3200,14 @@ export default function MobileApp() {
 
           {/* Title Input */}
           <input
+            key="prayer-title-input"
             type="text"
             placeholder="Prayer request title..."
             value={prayerTitle}
-            onChange={(e) => setPrayerTitle(e.target.value)}
+            onChange={(e) => {
+              console.log("Title onChange called, value:", e.target.value);
+              setPrayerTitle(e.target.value);
+            }}
             disabled={isBanned}
             data-testid="input-prayer-title"
             style={{
@@ -3221,9 +3225,13 @@ export default function MobileApp() {
 
           {/* Details Textarea */}
           <textarea
+            key="prayer-details-input"
             placeholder="Share your prayer need in detail..."
             value={prayerDetails}
-            onChange={(e) => setPrayerDetails(e.target.value)}
+            onChange={(e) => {
+              console.log("Details onChange called, value:", e.target.value);
+              setPrayerDetails(e.target.value);
+            }}
             rows={6}
             disabled={isBanned}
             data-testid="input-prayer-details"
@@ -3244,6 +3252,7 @@ export default function MobileApp() {
 
           {/* Tags Input */}
           <input
+            key="prayer-tags-input"
             type="text"
             placeholder="Tags (healing, family, guidance...)"
             value={prayerTags}
