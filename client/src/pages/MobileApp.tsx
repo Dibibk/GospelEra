@@ -303,11 +303,6 @@ export default function MobileApp() {
   const [error, setError] = useState<string | null>(null);
   const [createContent, setCreateContent] = useState("");
   const [createTitle, setCreateTitle] = useState("");
-  const [prayerTitle, setPrayerTitle] = useState("");
-  const [prayerDetails, setPrayerDetails] = useState("");
-  const [prayerTags, setPrayerTags] = useState("");
-  const [isAnonymous, setIsAnonymous] = useState(false);
-  const [prayerModerationError, setPrayerModerationError] = useState("");
   const [committingToId, setCommittingToId] = useState<number | null>(null);
   // Prayer System Internal Routing
   const [prayerRoute, setPrayerRoute] = useState<'browse' | 'new' | 'detail' | 'my' | 'leaderboard'>('browse');
@@ -678,60 +673,6 @@ export default function MobileApp() {
       alert(
         `Failed to ${editingPostId ? "update" : "create"} post. Please try again.`,
       );
-    }
-  };
-
-  const handleCreatePrayerRequest = async () => {
-    if (!prayerTitle.trim() || !prayerDetails.trim()) return;
-
-    if (isBanned) {
-      alert("Your account is limited. You cannot create prayer requests.");
-      return;
-    }
-
-    // Clear previous errors
-    setPrayerModerationError("");
-
-    const titleText = prayerTitle.trim();
-    const detailsText = prayerDetails.trim();
-
-    // Enhanced Christ-centric validation for title and details
-    const titleValidation = validateFaithContent(titleText);
-    const detailsValidation = validateFaithContent(detailsText);
-
-    if (!titleValidation.isValid && !detailsValidation.isValid) {
-      setPrayerModerationError(
-        titleValidation.reason ||
-          "Please keep your prayer request centered on Jesus or Scripture.",
-      );
-      return;
-    }
-
-    // Process tags
-    const tagsArray = prayerTags.trim()
-      ? prayerTags.split(",").map((tag) => tag.trim())
-      : [];
-
-    try {
-      const result = await createPrayerRequest({
-        title: titleText,
-        details: detailsText,
-        tags: tagsArray,
-        is_anonymous: isAnonymous,
-      });
-
-      if (result.data) {
-        // Clear form
-        setPrayerTitle("");
-        setPrayerDetails("");
-        setPrayerTags("");
-        setIsAnonymous(false);
-        setPrayerModerationError("");
-        fetchData();
-      }
-    } catch (error) {
-      console.error("Error creating prayer request:", error);
-      alert("Failed to create prayer request. Please try again.");
     }
   };
 
