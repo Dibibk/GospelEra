@@ -306,6 +306,9 @@ export default function MobileApp() {
   const [prayerTitle, setPrayerTitle] = useState("");
   const [prayerDetails, setPrayerDetails] = useState("");
   const [prayerTags, setPrayerTags] = useState("");
+  const prayerTitleRef = useRef<HTMLInputElement>(null);
+  const prayerDetailsRef = useRef<HTMLTextAreaElement>(null);
+  const prayerTagsRef = useRef<HTMLInputElement>(null);
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [prayerModerationError, setPrayerModerationError] = useState("");
   const [committingToId, setCommittingToId] = useState<number | null>(null);
@@ -3209,10 +3212,14 @@ export default function MobileApp() {
 
           {/* Title Input */}
           <input
+            ref={prayerTitleRef}
             type="text"
             placeholder="Prayer request title..."
             value={prayerTitle}
-            onChange={(e) => setPrayerTitle(e.target.value)}
+            onChange={(e) => {
+              setPrayerTitle(e.target.value);
+              keepFocus(prayerTitleRef);
+            }}
             disabled={isBanned}
             data-testid="input-prayer-title"
             style={{
@@ -3230,9 +3237,13 @@ export default function MobileApp() {
 
           {/* Details Textarea */}
           <textarea
+            ref={prayerDetailsRef}
             placeholder="Share your prayer need in detail..."
             value={prayerDetails}
-            onChange={(e) => setPrayerDetails(e.target.value)}
+            onChange={(e) => {
+              setPrayerDetails(e.target.value);
+              keepFocus(prayerDetailsRef);
+            }}
             rows={6}
             disabled={isBanned}
             data-testid="input-prayer-details"
@@ -3253,10 +3264,14 @@ export default function MobileApp() {
 
           {/* Tags Input */}
           <input
+            ref={prayerTagsRef}
             type="text"
             placeholder="Tags (healing, family, guidance...)"
             value={prayerTags}
-            onChange={(e) => setPrayerTags(e.target.value)}
+            onChange={(e) => {
+              setPrayerTags(e.target.value);
+              keepFocus(prayerTagsRef);
+            }}
             disabled={isBanned}
             data-testid="input-prayer-tags"
             style={{
