@@ -246,6 +246,8 @@ export function EditProfileMobile({ profile, onBack, onSuccess }: EditProfileMob
                   borderRadius: '50%',
                   objectFit: 'cover',
                   background: '#f0f0f0',
+                  display: 'block',
+                  margin: '0 auto',
                 }}
               />
             ) : (
