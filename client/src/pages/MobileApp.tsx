@@ -58,6 +58,7 @@ import { AdminSupportMobile } from "@/components/AdminSupportMobile";
 import { ProfileMobile } from "@/components/ProfileMobile";
 import { CreatePostMobile } from "@/components/CreatePostMobile";
 import { PrayerBrowseMobile } from "@/components/PrayerBrowseMobile";
+import { PrayerDetailMobile } from "@/components/PrayerDetailMobile";
 import { getDailyVerse } from "@/lib/scripture";
 import {
   createDonationPledge,
@@ -2436,7 +2437,19 @@ export default function MobileApp() {
           />
         );
       case "detail":
-        return <PrayerDetailMobile />;
+        return (
+          <PrayerDetailMobile
+            prayer={selectedPrayerDetail}
+            commitment={myCommitments.find(
+              (c) => c.prayer_request_id === selectedPrayerDetail?.id
+            )}
+            user={user}
+            isBanned={isBanned}
+            onBack={() => setPrayerRoute("browse")}
+            onCommitToPray={handleCommitToPray}
+            onConfirmPrayed={handleConfirmPrayed}
+          />
+        );
       case "my":
         return <PrayerMyMobile />;
       case "leaderboard":
@@ -2458,244 +2471,6 @@ export default function MobileApp() {
     }
   }
 
-
-  // Prayer Detail Page Component
-  function PrayerDetailMobile() {
-    if (!selectedPrayerDetail) {
-      return (
-        <div style={{ padding: "40px 20px", textAlign: "center" }}>
-          <div>Prayer not found</div>
-          <button
-            onClick={() => setPrayerRoute("browse")}
-            style={{
-              marginTop: "16px",
-              padding: "8px 16px",
-              borderRadius: "8px",
-              border: "1px solid #dbdbdb",
-              background: "#ffffff",
-            }}
-          >
-            Back to Browse
-          </button>
-        </div>
-      );
-    }
-
-    const prayer = selectedPrayerDetail;
-    const commitment = myCommitments.find(
-      (c) => c.prayer_request_id === prayer.id,
-    );
-
-    return (
-      <div style={{ minHeight: "100vh", background: "#ffffff" }}>
-        {/* Header */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            padding: "16px",
-            borderBottom: "1px solid #dbdbdb",
-            background: "#ffffff",
-            position: "sticky",
-            top: 0,
-            zIndex: 100,
-          }}
-        >
-          <button
-            onClick={() => setPrayerRoute("browse")}
-            data-testid="button-back-detail"
-            style={{
-              background: "none",
-              border: "none",
-              fontSize: "18px",
-              cursor: "pointer",
-              marginRight: "12px",
-              color: "#262626",
-            }}
-          >
-            ←
-          </button>
-          <div style={{ fontSize: "18px", fontWeight: 600, color: "#262626" }}>
-            Prayer Details
-          </div>
-        </div>
-
-        {/* Content */}
-        <div style={{ padding: "16px" }}>
-          {/* Author */}
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              marginBottom: "20px",
-            }}
-          >
-            <div
-              style={{
-                width: "48px",
-                height: "48px",
-                borderRadius: "50%",
-                background: "#dbdbdb",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                marginRight: "16px",
-                color: "#8e8e8e",
-              }}
-            >
-              {prayer.is_anonymous ? "🙏" : "•"}
-            </div>
-            <div>
-              <div
-                style={{ fontWeight: 600, fontSize: "16px", color: "#262626" }}
-              >
-                {prayer.is_anonymous
-                  ? "Anonymous Prayer Request"
-                  : prayer.profiles?.display_name || "Prayer Warrior"}
-              </div>
-              <div style={{ fontSize: "14px", color: "#8e8e8e" }}>
-                {formatTimeAgo(prayer.created_at)}
-              </div>
-            </div>
-          </div>
-
-          {/* Title */}
-          <div
-            style={{
-              fontSize: "20px",
-              fontWeight: 600,
-              marginBottom: "16px",
-              color: "#262626",
-              lineHeight: 1.3,
-            }}
-          >
-            {prayer.title}
-          </div>
-
-          {/* Content */}
-          <div
-            style={{
-              fontSize: "16px",
-              lineHeight: 1.5,
-              marginBottom: "20px",
-              color: "#262626",
-            }}
-          >
-            {prayer.details}
-          </div>
-
-          {/* Tags */}
-          {prayer.tags && prayer.tags.length > 0 && (
-            <div style={{ marginBottom: "20px" }}>
-              {prayer.tags.map((tag: string, index: number) => (
-                <span
-                  key={`detail-tag-${index}`}
-                  style={{
-                    background: "#f0f0f0",
-                    padding: "6px 12px",
-                    borderRadius: "16px",
-                    fontSize: "14px",
-                    color: "#666",
-                    marginRight: "8px",
-                    marginBottom: "8px",
-                    display: "inline-block",
-                  }}
-                >
-                  #{tag}
-                </span>
-              ))}
-            </div>
-          )}
-
-          {/* Stats */}
-          <div
-            style={{
-              background: "#f8f9fa",
-              padding: "16px",
-              borderRadius: "12px",
-              marginBottom: "20px",
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                marginBottom: "8px",
-              }}
-            >
-              <span style={{ color: "#8e8e8e" }}>
-                Prayer Warriors Committed:
-              </span>
-              <span style={{ fontWeight: 600, color: "#262626" }}>
-                {prayer.prayer_stats?.committed_count || 0}
-              </span>
-            </div>
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <span style={{ color: "#8e8e8e" }}>Times Prayed:</span>
-              <span style={{ fontWeight: 600, color: "#262626" }}>
-                {prayer.prayer_stats?.prayed_count || 0}
-              </span>
-            </div>
-          </div>
-
-          {/* Action Button */}
-          {user && !isBanned && (
-            <button
-              onClick={() => {
-                if (commitment && !commitment.has_prayed) {
-                  handleConfirmPrayed(prayer.id);
-                } else if (!commitment) {
-                  handleCommitToPray(prayer.id);
-                }
-              }}
-              disabled={committingToId === prayer.id}
-              data-testid="button-commit-pray"
-              style={{
-                width: "100%",
-                background:
-                  commitment && commitment.has_prayed ? "#28a745" : "#4285f4",
-                color: "#ffffff",
-                border: "none",
-                padding: "16px",
-                borderRadius: "12px",
-                fontSize: "16px",
-                fontWeight: 600,
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: "8px",
-              }}
-            >
-              {committingToId === prayer.id
-                ? "..."
-                : commitment && commitment.has_prayed
-                  ? "✓ Prayed"
-                  : commitment && !commitment.has_prayed
-                    ? "Confirm I Prayed"
-                    : "I Will Pray"}
-            </button>
-          )}
-
-          {isBanned && (
-            <div
-              style={{
-                background: "#fff3cd",
-                border: "1px solid #ffeaa7",
-                color: "#856404",
-                padding: "12px",
-                borderRadius: "8px",
-                textAlign: "center",
-                fontSize: "14px",
-              }}
-            >
-              Account limited - cannot commit to pray
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  }
 
   // Prayer My Page Component
   function PrayerMyMobile() {
