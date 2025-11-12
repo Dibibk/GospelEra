@@ -7552,212 +7552,40 @@ export default function MobileApp() {
                   )}
                 </div>
 
-                {/* Footer actions */}
+                {/* Footer actions - Only Unsave button */}
                 <div
                   style={{
                     display: "flex",
                     alignItems: "center",
-                    justifyContent: "space-between",
+                    justifyContent: "flex-end",
                     padding: "8px 16px 12px 16px",
                   }}
                 >
-                  <div style={{ display: "flex", gap: "12px" }}>
-                    {/* Amen */}
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleToggleAmen(post.id);
-                      }}
-                      disabled={isBanned}
-                      aria-label="Amen"
-                      style={{
-                        background: "none",
-                        border: "none",
-                        cursor: isBanned ? "not-allowed" : "pointer",
-                      }}
-                    >
-                      <svg
-                        width="24"
-                        height="24"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        style={{ color: "#262626" }}
-                      >
-                        <path d="M12 21s-8-4.438-8-11c0-3.584 2.686-6 6-6 2.083 0 3.682 1.004 4 2 0.318-.996 1.917-2 4-2 3.314 0 6 2.416 6 6 0 6.563-8 11-8 11z" />
-                      </svg>
-                    </button>
-
-                    {/* Comment */}
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleCommentForm(post.id);
-                      }}
-                      disabled={isBanned}
-                      aria-label="Comment"
-                      style={{
-                        background: "none",
-                        border: "none",
-                        cursor: isBanned ? "not-allowed" : "pointer",
-                      }}
-                    >
-                      <svg
-                        width="24"
-                        height="24"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        style={{ color: "#262626" }}
-                      >
-                        <path d="M21 15a3 3 0 01-3 3H7l-4 4V5a3 3 0 013-3h14a3 3 0 013 3v10z" />
-                      </svg>
-                    </button>
-                  </div>
-
-                  <div style={{ display: "flex", gap: "12px" }}>
-                    {/* Remove from saved */}
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleToggleBookmark(post.id);
-                      }}
-                      aria-label="Remove from saved"
-                      style={{
-                        background: "none",
-                        border: "none",
-                        cursor: "pointer",
-                      }}
-                    >
-                      <svg
-                        width="24"
-                        height="24"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        style={{ color: "#262626" }}
-                      >
-                        <path d="M21 15c0 1.1-.9 2-2 2H7l-4 4V5c0-1.1.9-2 2-2h14c1.1 0 2 .9 2 2v10z" />
-                      </svg>
-                    </button>
-
-                    {/* Bookmark (solid) */}
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleToggleBookmark(post.id);
-                      }}
-                      aria-label="Bookmark"
-                      style={{
-                        background: "none",
-                        border: "none",
-                        cursor: "pointer",
-                      }}
-                    >
-                      <svg
-                        width="24"
-                        height="24"
-                        viewBox="0 0 24 24"
-                        fill="currentColor"
-                        style={{ color: "#262626" }}
-                      >
-                        <path d="M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2z" />
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-
-                {/* Comments section */}
-                {commentForms[post.id] && (
-                  <div
+                  {/* Unsave (Bookmark icon) */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleToggleBookmark(post.id);
+                    }}
+                    aria-label="Remove from saved"
                     style={{
-                      borderTop: "1px solid #dbdbdb",
-                      padding: "12px 16px",
+                      background: "none",
+                      border: "none",
+                      cursor: "pointer",
+                      padding: "8px",
                     }}
                   >
-                    {/* Comment input */}
-                    <CommentInputMobile
-                      postId={post.id}
-                      isBanned={isBanned}
-                      onSubmit={handleCreateComment}
-                    />
-
-                    {/* Comments list */}
-                    {postComments[post.id] &&
-                      postComments[post.id].length > 0 && (
-                        <div
-                          style={{
-                            display: "flex",
-                            flexDirection: "column",
-                            gap: "8px",
-                            marginTop: "12px",
-                          }}
-                        >
-                          {postComments[post.id].map((comment) => (
-                            <div
-                              key={comment.id}
-                              style={{
-                                display: "flex",
-                                alignItems: "flex-start",
-                                marginBottom: "8px",
-                              }}
-                            >
-                              <div
-                                style={{
-                                  width: "24px",
-                                  height: "24px",
-                                  borderRadius: "50%",
-                                  background: "#dbdbdb",
-                                  display: "flex",
-                                  alignItems: "center",
-                                  justifyContent: "center",
-                                  fontSize: "12px",
-                                  marginRight: "8px",
-                                  flexShrink: 0,
-                                  color: "#8e8e8e",
-                                }}
-                              >
-                                {profiles.get(comment.author_id)?.avatar_url ? (
-                                  <img
-                                    src={profiles.get(comment.author_id).avatar_url}
-                                    alt="Avatar"
-                                    style={{
-                                      width: "100%",
-                                      height: "100%",
-                                      borderRadius: "50%",
-                                      objectFit: "cover",
-                                    }}
-                                  />
-                                ) : (
-                                  "👤"
-                                )}
-                              </div>
-                              <div style={{ flex: 1 }}>
-                                <div style={{ fontSize: "12px" }}>
-                                  <span
-                                    style={{
-                                      fontWeight: 600,
-                                      color: "#262626",
-                                      marginRight: "6px",
-                                    }}
-                                  >
-                                    {profiles.get(comment.author_id)?.display_name ||
-                                      "Gospel User"}
-                                  </span>
-                                  <span style={{ color: "#262626" }}>
-                                    {comment.content}
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                  </div>
-                )}
+                    <svg
+                      width="24"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      fill="currentColor"
+                      style={{ color: "#262626" }}
+                    >
+                      <path d="M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2z" />
+                    </svg>
+                  </button>
+                </div>
               </div>
             ))}
           </div>
