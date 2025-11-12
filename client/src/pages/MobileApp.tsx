@@ -117,7 +117,7 @@ const STYLES = {
     justifyContent: "space-between",
     position: "sticky" as const,
     top: 0,
-    zIndex: 100,
+    zIndex: 1100,
   },
   content: {
     flex: 1,
