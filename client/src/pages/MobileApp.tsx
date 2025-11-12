@@ -7669,6 +7669,95 @@ export default function MobileApp() {
                     </button>
                   </div>
                 </div>
+
+                {/* Comments section */}
+                {commentForms[post.id] && (
+                  <div
+                    style={{
+                      borderTop: "1px solid #dbdbdb",
+                      padding: "12px 16px",
+                    }}
+                  >
+                    {/* Comment input */}
+                    <CommentInputMobile
+                      postId={post.id}
+                      isBanned={isBanned}
+                      onSubmit={handleCreateComment}
+                    />
+
+                    {/* Comments list */}
+                    {postComments[post.id] &&
+                      postComments[post.id].length > 0 && (
+                        <div
+                          style={{
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: "8px",
+                            marginTop: "12px",
+                          }}
+                        >
+                          {postComments[post.id].map((comment) => (
+                            <div
+                              key={comment.id}
+                              style={{
+                                display: "flex",
+                                alignItems: "flex-start",
+                                marginBottom: "8px",
+                              }}
+                            >
+                              <div
+                                style={{
+                                  width: "24px",
+                                  height: "24px",
+                                  borderRadius: "50%",
+                                  background: "#dbdbdb",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  fontSize: "12px",
+                                  marginRight: "8px",
+                                  flexShrink: 0,
+                                  color: "#8e8e8e",
+                                }}
+                              >
+                                {profiles.get(comment.author_id)?.avatar_url ? (
+                                  <img
+                                    src={profiles.get(comment.author_id).avatar_url}
+                                    alt="Avatar"
+                                    style={{
+                                      width: "100%",
+                                      height: "100%",
+                                      borderRadius: "50%",
+                                      objectFit: "cover",
+                                    }}
+                                  />
+                                ) : (
+                                  "👤"
+                                )}
+                              </div>
+                              <div style={{ flex: 1 }}>
+                                <div style={{ fontSize: "12px" }}>
+                                  <span
+                                    style={{
+                                      fontWeight: 600,
+                                      color: "#262626",
+                                      marginRight: "6px",
+                                    }}
+                                  >
+                                    {profiles.get(comment.author_id)?.display_name ||
+                                      "Gospel User"}
+                                  </span>
+                                  <span style={{ color: "#262626" }}>
+                                    {comment.content}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                  </div>
+                )}
               </div>
             ))}
           </div>
