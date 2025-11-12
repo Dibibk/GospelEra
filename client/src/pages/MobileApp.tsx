@@ -49,6 +49,7 @@ import { ObjectUploader } from "@/components/ObjectUploader";
 import { PrayerNewMobile } from "@/components/PrayerNewMobile";
 import { SupporterMobile } from "@/components/SupporterMobile";
 import { EditProfileMobile } from "@/components/EditProfileMobile";
+import { CommentInputMobile } from "@/components/CommentInputMobile";
 import { getDailyVerse } from "@/lib/scripture";
 import {
   createDonationPledge,
@@ -291,9 +292,6 @@ export default function MobileApp() {
   const [commentForms, setCommentForms] = useState<{ [key: string]: boolean }>(
     {},
   );
-  const [commentTexts, setCommentTexts] = useState<{ [key: string]: string }>(
-    {},
-  );
   // Enhanced search state - matching web app functionality
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
@@ -346,9 +344,6 @@ export default function MobileApp() {
 
   // Additional engagement states needed for web app parity
   const [editingPost, setEditingPost] = useState<any>(null);
-  const [submittingComment, setSubmittingComment] = useState<{
-    [postId: number]: boolean;
-  }>({});
   const [deletingCommentId, setDeletingCommentId] = useState<number | null>(
     null,
   );
@@ -1291,53 +1286,37 @@ export default function MobileApp() {
     }
   };
 
-  const handleCreateComment = async (postId: number, e?: React.FormEvent) => {
-    if (e) {
-      e.preventDefault();
-      console.log("📝 Form submitted for post:", postId);
-    }
-    const content = commentTexts[postId]?.trim();
+  const handleCreateComment = async (postId: number, content: string) => {
     console.log("💬 Creating comment:", {
       postId,
       content,
       user: user?.id,
       isBanned,
     });
-    if (!content || !user || isBanned) return;
-
-    // Enhanced Christ-centric validation for comment content
-    const validation = validateFaithContent(content);
-
-    if (!validation.isValid) {
-      alert(
-        validation.reason ||
-          "Please keep your comment centered on Jesus or Scripture.",
-      );
-      return;
+    
+    if (!user) {
+      throw new Error('You must be logged in to comment');
+    }
+    
+    if (isBanned) {
+      throw new Error('Your account is limited. You cannot post comments.');
+    }
+    
+    if (!content) {
+      throw new Error('Comment cannot be empty');
     }
 
-    setSubmittingComment((prev) => ({ ...prev, [postId]: true }));
-
-    try {
-      console.log("🚀 Calling createComment API:", { postId, content });
-      const { data, error } = await createComment({ postId, content });
-      console.log("📤 Create comment response:", { data, error });
-      if (error) {
-        alert("Failed to create comment");
-      } else {
-        // Clear the input and reload comments
-        console.log(
-          "✅ Comment created successfully, clearing input and reloading",
-        );
-        setCommentTexts((prev) => ({ ...prev, [postId]: "" }));
-        await loadComments(postId);
-      }
-    } catch (error) {
-      console.error("Error creating comment:", error);
-      alert("Failed to create comment");
-    } finally {
-      setSubmittingComment((prev) => ({ ...prev, [postId]: false }));
+    console.log("🚀 Calling createComment API:", { postId, content });
+    const { data, error } = await createComment({ postId, content });
+    console.log("📤 Create comment response:", { data, error });
+    
+    if (error) {
+      throw new Error((error as any)?.message || 'Failed to create comment');
     }
+    
+    // Reload comments after successful creation
+    console.log("✅ Comment created successfully, reloading comments");
+    await loadComments(postId);
   };
 
   const handleDeletePost = async (postId: number) => {
@@ -2327,77 +2306,11 @@ export default function MobileApp() {
                     }}
                   >
                     {/* Comment input */}
-                    <form
-                      onSubmit={(e) => handleCreateComment(post.id, e)}
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        marginBottom: "12px",
-                      }}
-                    >
-                      <input
-                        type="text"
-                        placeholder={
-                          isBanned
-                            ? "Account limited - cannot comment"
-                            : "Add a comment..."
-                        }
-                        value={commentTexts[post.id] || ""}
-                        onChange={(e) => {
-                          console.log("📝 Comment input change:", {
-                            postId: post.id,
-                            value: e.target.value,
-                          });
-                          setCommentTexts((prev) => ({
-                            ...prev,
-                            [post.id]: e.target.value,
-                          }));
-                        }}
-                        disabled={isBanned}
-                        inputMode="text"
-                        autoCapitalize="sentences"
-                        autoCorrect="on"
-                        spellCheck={true}
-                        style={{
-                          flex: 1,
-                          padding: "8px 12px",
-                          border: "1px solid #dbdbdb",
-                          borderRadius: "20px",
-                          fontSize: "14px",
-                          outline: "none",
-                          marginRight: "8px",
-                          backgroundColor: isBanned ? "#f5f5f5" : "#ffffff",
-                          color: isBanned ? "#8e8e8e" : "#262626",
-                          cursor: isBanned ? "not-allowed" : "text",
-                        }}
-                      />
-                      <button
-                        type="submit"
-                        disabled={
-                          !commentTexts[post.id]?.trim() ||
-                          submittingComment[post.id] ||
-                          isBanned
-                        }
-                        style={{
-                          background:
-                            commentTexts[post.id]?.trim() && !isBanned
-                              ? "#4285f4"
-                              : "#dbdbdb",
-                          color: "#ffffff",
-                          border: "none",
-                          padding: "8px 16px",
-                          borderRadius: "20px",
-                          fontSize: "12px",
-                          fontWeight: 600,
-                          cursor:
-                            commentTexts[post.id]?.trim() && !isBanned
-                              ? "pointer"
-                              : "not-allowed",
-                        }}
-                      >
-                        {submittingComment[post.id] ? "Posting..." : "Post"}
-                      </button>
-                    </form>
+                    <CommentInputMobile
+                      postId={post.id}
+                      isBanned={isBanned}
+                      onSubmit={handleCreateComment}
+                    />
 
                     {/* Comments list */}
                     {postComments[post.id] &&
