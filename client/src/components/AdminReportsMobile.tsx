@@ -1143,7 +1143,7 @@ export function AdminReportsMobile({
                       </div>
 
                       {/* Actions */}
-                      <div style={{display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap'}}>
+                      <div style={{display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', justifyContent: 'space-between'}}>
                         <button
                           onClick={() => {
                             setSelectedRequest(request);
@@ -1156,48 +1156,52 @@ export function AdminReportsMobile({
                           View Commitments
                         </button>
                         {request.status === 'open' && (
-                          <>
+                          <div style={{display: 'flex', alignItems: 'center', gap: '8px', marginLeft: 'auto'}}>
                             <button
                               onClick={() => handlePrayerRequestAction(request.id, 'answered')}
                               disabled={actionLoading.has(request.id)}
                               data-testid={`button-answered-${request.id}`}
+                              title="Mark Answered"
                               style={{
-                                ...ADMIN_STYLES.button,
-                                ...ADMIN_STYLES.buttonSecondary,
-                                ...ADMIN_STYLES.buttonSmall,
+                                padding: '8px',
+                                background: '#f2f2f2',
                                 color: '#16a34a',
+                                border: '1px solid #dbdbdb',
+                                borderRadius: '6px',
+                                cursor: 'pointer',
                                 display: 'flex',
                                 alignItems: 'center',
-                                gap: '4px',
+                                justifyContent: 'center',
                                 ...(actionLoading.has(request.id) ? {opacity: 0.5, cursor: 'not-allowed'} : {})
                               }}
                             >
                               {actionLoading.has(request.id) ? (
-                                <Loader2 size={12} className="animate-spin" />
+                                <Loader2 size={16} className="animate-spin" />
                               ) : (
-                                <CheckCircle size={12} />
+                                <CheckCircle size={16} />
                               )}
-                              Mark Answered
                             </button>
                             <button
                               onClick={() => handlePrayerRequestAction(request.id, 'close')}
                               disabled={actionLoading.has(request.id)}
                               data-testid={`button-close-${request.id}`}
+                              title="Close"
                               style={{
-                                ...ADMIN_STYLES.button,
-                                ...ADMIN_STYLES.buttonSecondary,
-                                ...ADMIN_STYLES.buttonSmall,
+                                padding: '8px',
+                                background: '#f2f2f2',
                                 color: '#dc2626',
+                                border: '1px solid #dbdbdb',
+                                borderRadius: '6px',
+                                cursor: 'pointer',
                                 display: 'flex',
                                 alignItems: 'center',
-                                gap: '4px',
+                                justifyContent: 'center',
                                 ...(actionLoading.has(request.id) ? {opacity: 0.5, cursor: 'not-allowed'} : {})
                               }}
                             >
-                              <X size={12} />
-                              Close
+                              <X size={16} />
                             </button>
-                          </>
+                          </div>
                         )}
                       </div>
                     </div>
