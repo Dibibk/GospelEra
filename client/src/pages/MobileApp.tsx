@@ -56,6 +56,7 @@ import { AdminReportsMobile } from "@/components/AdminReportsMobile";
 import { MediaRequestsMobile } from "@/components/MediaRequestsMobile";
 import { AdminSupportMobile } from "@/components/AdminSupportMobile";
 import { ProfileMobile } from "@/components/ProfileMobile";
+import { CreatePostMobile } from "@/components/CreatePostMobile";
 import { getDailyVerse } from "@/lib/scripture";
 import {
   createDonationPledge,
@@ -308,8 +309,6 @@ export default function MobileApp() {
   const [nextCursor, setNextCursor] = useState<number | null>(null);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [createContent, setCreateContent] = useState("");
-  const [createTitle, setCreateTitle] = useState("");
   const [committingToId, setCommittingToId] = useState<number | null>(null);
   // Prayer System Internal Routing
   const [prayerRoute, setPrayerRoute] = useState<
@@ -340,13 +339,9 @@ export default function MobileApp() {
   } | null>(null);
 
   // Enhanced post creation states
-  const [createTags, setCreateTags] = useState("");
-  const [createYouTubeUrl, setCreateYouTubeUrl] = useState("");
   const [hasMediaPermission, setHasMediaPermission] = useState(false);
   const [isCheckingPermission, setIsCheckingPermission] = useState(true);
   const [showMediaRequestModal, setShowMediaRequestModal] = useState(false);
-  const [youtubeError, setYoutubeError] = useState("");
-  const [moderationError, setModerationError] = useState("");
 
   // Additional engagement states needed for web app parity
   const [editingPost, setEditingPost] = useState<any>(null);
@@ -587,100 +582,6 @@ export default function MobileApp() {
     }
   };
 
-  const handleCreatePost = async () => {
-    if (!createTitle.trim() || !createContent.trim()) return;
-
-    if (isBanned) {
-      alert("Your account is limited. You cannot create posts.");
-      return;
-    }
-
-    // Clear previous errors
-    setYoutubeError("");
-    setModerationError("");
-
-    const titleText = createTitle.trim();
-    const contentText = createContent.trim();
-
-    // Enhanced Christ-centric validation for title and content
-    const titleValidation = validateFaithContent(titleText);
-    const contentValidation = validateFaithContent(contentText);
-
-    if (!titleValidation.isValid && !contentValidation.isValid) {
-      setModerationError(
-        titleValidation.reason ||
-          "Please keep your post centered on Jesus or Scripture.",
-      );
-      return;
-    }
-
-    // Process tags
-    const tagsArray = createTags.trim()
-      ? createTags.split(",").map((tag) => tag.trim())
-      : [];
-
-    // Validate YouTube URL if provided
-    let normalizedYouTubeUrl = "";
-    if (createYouTubeUrl.trim()) {
-      if (!hasMediaPermission) {
-        setYoutubeError(
-          "You need link sharing permission to add YouTube videos.",
-        );
-        return;
-      }
-
-      const validation = validateAndNormalizeYouTubeUrl(
-        createYouTubeUrl.trim(),
-      );
-      if (!validation.isValid) {
-        setYoutubeError(validation.error || "Invalid YouTube URL");
-        return;
-      }
-      normalizedYouTubeUrl = validation.normalizedUrl || "";
-    }
-
-    try {
-      let result;
-      if (editingPostId && editingPost) {
-        // Update existing post
-        result = await updatePost(editingPostId, {
-          title: titleText,
-          content: contentText,
-          tags: tagsArray,
-          media_urls: editingPost.media_urls || [],
-          embed_url: normalizedYouTubeUrl,
-        });
-      } else {
-        // Create new post
-        result = await createPost({
-          title: titleText,
-          content: contentText,
-          tags: tagsArray,
-          media_urls: [],
-          embed_url: normalizedYouTubeUrl,
-        });
-      }
-
-      if (result.data) {
-        // Clear form
-        setCreateTitle("");
-        setCreateContent("");
-        setCreateTags("");
-        setCreateYouTubeUrl("");
-        setYoutubeError("");
-        setModerationError("");
-        setEditingPostId(null);
-        setEditingPost(null);
-        fetchData();
-        setActiveTab(0); // Go back to home
-      }
-    } catch (error) {
-      console.error("Error saving post:", error);
-      alert(
-        `Failed to ${editingPostId ? "update" : "create"} post. Please try again.`,
-      );
-    }
-  };
 
   const handleCommitToPray = async (requestId: number) => {
     if (!user || isBanned) return;
@@ -1353,16 +1254,12 @@ export default function MobileApp() {
     const post = posts.find((p) => p.id === postId);
     if (!post) return;
 
-    // Set edit mode and populate form fields
+    // Set edit mode - CreatePostMobile component will populate its own form fields
     setEditingPostId(postId);
     setEditingPost(post);
-    setCreateTitle(post.title || "");
-    setCreateContent(post.content || "");
-    setCreateTags(post.tags ? post.tags.join(", ") : "");
-    setCreateYouTubeUrl(post.embed_url || "");
 
     // Switch to Create tab for editing
-    setActiveTab(2);
+    setActiveTab(1);
   };
 
   const handleReportPost = (postId: number) => {
@@ -2506,257 +2403,6 @@ export default function MobileApp() {
   }
 
   // Search Component
-
-  // Create Post Component
-  function renderCreatePage() {
-    return (
-      <div style={{ padding: "16px" }}>
-        {/* Simple header like before */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            marginBottom: "16px",
-          }}
-        >
-          <div
-            style={{
-              width: "32px",
-              height: "32px",
-              borderRadius: "50%",
-              background: "#0095f6",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              marginRight: "12px",
-              color: "#ffffff",
-              fontSize: "18px",
-              fontWeight: "bold",
-            }}
-          >
-            ✏️
-          </div>
-          <div style={{ fontWeight: 600, color: "#262626" }}>Create Post</div>
-        </div>
-
-        {/* Error messages - keep them compact */}
-        {moderationError && (
-          <div
-            style={{
-              background: "#fee",
-              border: "1px solid #fcc",
-              color: "#c00",
-              padding: "8px 12px",
-              borderRadius: "6px",
-              marginBottom: "12px",
-              fontSize: "13px",
-              textAlign: "center",
-            }}
-          >
-            {moderationError}
-          </div>
-        )}
-
-        {isBanned && (
-          <div
-            style={{
-              background: "#fff3cd",
-              border: "1px solid #ffeaa7",
-              color: "#856404",
-              padding: "8px 12px",
-              borderRadius: "6px",
-              marginBottom: "12px",
-              fontSize: "13px",
-              textAlign: "center",
-            }}
-          >
-            Account limited. You can read but cannot post or comment.
-          </div>
-        )}
-
-        {/* Title input - clean like before */}
-        <input
-          type="text"
-          placeholder="Post title..."
-          value={createTitle}
-          onChange={(e) => setCreateTitle(e.target.value)}
-          disabled={isBanned}
-          inputMode="text"
-          autoCapitalize="sentences"
-          autoCorrect="on"
-          spellCheck={true}
-          style={{
-            width: "100%",
-            padding: "12px 16px",
-            border: "1px solid #dbdbdb",
-            borderRadius: "8px",
-            fontSize: "16px",
-            marginBottom: "12px",
-            outline: "none",
-            backgroundColor: isBanned ? "#f5f5f5" : "#ffffff",
-            color: isBanned ? "#8e8e8e" : "#262626",
-          }}
-          title={isBanned ? "Account limited - cannot create posts" : ""}
-        />
-
-        {/* Content textarea - clean like before */}
-        <textarea
-          placeholder="Share your faith, testimony, or encouragement..."
-          value={createContent}
-          onChange={(e) => setCreateContent(e.target.value)}
-          rows={6}
-          disabled={isBanned}
-          inputMode="text"
-          autoCapitalize="sentences"
-          autoCorrect="on"
-          spellCheck={true}
-          style={{
-            width: "100%",
-            padding: "12px 16px",
-            border: "1px solid #dbdbdb",
-            borderRadius: "8px",
-            fontSize: "16px",
-            resize: "none",
-            outline: "none",
-            fontFamily: "inherit",
-            marginBottom: "12px",
-            backgroundColor: isBanned ? "#f5f5f5" : "#ffffff",
-            color: isBanned ? "#8e8e8e" : "#262626",
-          }}
-          title={isBanned ? "Account limited - cannot create posts" : ""}
-        />
-
-        {/* Tags input - clean style */}
-        <input
-          type="text"
-          placeholder="Tags (prayer, testimony, scripture...)"
-          value={createTags}
-          onChange={(e) => setCreateTags(e.target.value)}
-          disabled={isBanned}
-          inputMode="text"
-          autoCapitalize="none"
-          autoCorrect="off"
-          spellCheck={false}
-          style={{
-            width: "100%",
-            padding: "12px 16px",
-            border: "1px solid #dbdbdb",
-            borderRadius: "8px",
-            fontSize: "16px",
-            marginBottom: "12px",
-            outline: "none",
-            backgroundColor: isBanned ? "#f5f5f5" : "#ffffff",
-            color: isBanned ? "#8e8e8e" : "#262626",
-          }}
-          title={isBanned ? "Account limited - cannot create posts" : ""}
-        />
-
-        {/* YouTube input or request - clean style */}
-        {hasMediaPermission ? (
-          <div style={{ marginBottom: "12px" }}>
-            <input
-              type="text"
-              placeholder="YouTube URL (optional)"
-              value={createYouTubeUrl}
-              onChange={(e) => setCreateYouTubeUrl(e.target.value)}
-              disabled={isBanned}
-              inputMode="url"
-              autoCapitalize="none"
-              autoCorrect="off"
-              spellCheck={false}
-              style={{
-                width: "100%",
-                padding: "12px 16px",
-                border: "1px solid #dbdbdb",
-                borderRadius: "8px",
-                fontSize: "16px",
-                outline: "none",
-                backgroundColor: isBanned ? "#f5f5f5" : "#ffffff",
-                color: isBanned ? "#8e8e8e" : "#262626",
-              }}
-              title={isBanned ? "Account limited - cannot create posts" : ""}
-            />
-            {youtubeError && (
-              <div
-                style={{
-                  color: "#c00",
-                  fontSize: "12px",
-                  marginTop: "4px",
-                  paddingLeft: "4px",
-                }}
-              >
-                {youtubeError}
-              </div>
-            )}
-          </div>
-        ) : (
-          !isBanned && (
-            <div
-              style={{
-                padding: "12px",
-                background: "#f8f9fa",
-                border: "1px solid #e9ecef",
-                borderRadius: "8px",
-                textAlign: "center",
-                marginBottom: "12px",
-              }}
-            >
-              <div
-                style={{
-                  fontSize: "13px",
-                  color: "#6c757d",
-                  marginBottom: "8px",
-                }}
-              >
-                Want to share YouTube videos?
-              </div>
-              <button
-                onClick={() => setShowMediaRequestModal(true)}
-                style={{
-                  background: "#0095f6",
-                  color: "#ffffff",
-                  border: "none",
-                  padding: "6px 12px",
-                  borderRadius: "6px",
-                  fontSize: "13px",
-                  cursor: "pointer",
-                  fontWeight: 600,
-                }}
-              >
-                Request Access
-              </button>
-            </div>
-          )
-        )}
-
-        {/* Share/Update button - same as before */}
-        <button
-          onClick={handleCreatePost}
-          disabled={!createTitle.trim() || !createContent.trim() || isBanned}
-          style={{
-            width: "100%",
-            background:
-              createTitle.trim() && createContent.trim() && !isBanned
-                ? "#4285f4"
-                : "#dbdbdb",
-            color: "#ffffff",
-            border: "none",
-            padding: "12px",
-            borderRadius: "8px",
-            fontSize: "16px",
-            fontWeight: 600,
-            cursor:
-              createTitle.trim() && createContent.trim() && !isBanned
-                ? "pointer"
-                : "not-allowed",
-          }}
-          title={isBanned ? "Account limited - cannot create posts" : ""}
-        >
-          {editingPostId ? "Update Post" : "Share Post"}
-        </button>
-      </div>
-    );
-  }
 
   const goBackToBrowse = React.useCallback(() => setPrayerRoute("browse"), []);
 
@@ -6335,7 +5981,31 @@ export default function MobileApp() {
                 flexDirection: "column",
               }}
             >
-              {renderCreatePage()}
+              <CreatePostMobile
+                isVisible={activeTab === 1}
+                onBack={() => setActiveTab(0)}
+                onSuccess={() => {
+                  fetchData();
+                  setActiveTab(0);
+                  setEditingPostId(null);
+                  setEditingPost(null);
+                }}
+                isBanned={isBanned}
+                hasMediaPermission={hasMediaPermission}
+                onRequestMediaPermission={() => setShowMediaRequestModal(true)}
+                editingPost={
+                  editingPostId && editingPost
+                    ? {
+                        id: editingPostId,
+                        title: editingPost.title || "",
+                        content: editingPost.content || "",
+                        tags: editingPost.tags || [],
+                        media_urls: editingPost.media_urls || [],
+                        embed_url: editingPost.embed_url,
+                      }
+                    : null
+                }
+              />
             </div>
             <div
               style={{
