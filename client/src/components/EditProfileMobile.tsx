@@ -47,7 +47,6 @@ export function EditProfileMobile({ profile, onBack, onSuccess }: EditProfileMob
       setError((saveError as any).message || 'Failed to save profile');
       setSaving(false);
     } else {
-      setProfile(data);
       setSuccess('Profile updated successfully!');
       setTimeout(() => {
         onSuccess();
