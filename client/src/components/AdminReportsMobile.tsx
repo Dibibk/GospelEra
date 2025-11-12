@@ -1,35 +1,6 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { updateReportStatus, banUser, unbanUser, getBannedUsers } from "@/lib/admin";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  AlertDialog, 
-  AlertDialogAction, 
-  AlertDialogCancel, 
-  AlertDialogContent, 
-  AlertDialogDescription, 
-  AlertDialogFooter, 
-  AlertDialogHeader, 
-  AlertDialogTitle 
-} from "@/components/ui/alert-dialog";
-import { 
-  Sheet, 
-  SheetContent, 
-  SheetDescription, 
-  SheetHeader, 
-  SheetTitle 
-} from "@/components/ui/sheet";
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuTrigger 
-} from "@/components/ui/dropdown-menu";
 import { 
   ArrowLeft, 
   Eye, 
@@ -42,9 +13,297 @@ import {
   X, 
   Users, 
   CheckCircle,
-  Loader2
+  Loader2,
+  Check
 } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+
+// Mobile app theme styles (matching MobileApp.tsx)
+const ADMIN_STYLES = {
+  container: {
+    fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
+    background: '#ffffff',
+    minHeight: '100dvh',
+    maxWidth: '414px',
+    margin: '0 auto',
+    display: 'flex',
+    flexDirection: 'column' as const,
+    fontSize: '14px',
+  },
+  header: {
+    background: '#ffffff',
+    borderBottom: '1px solid #dbdbdb',
+    padding: '12px 16px',
+    position: 'sticky' as const,
+    top: 0,
+    zIndex: 100,
+  },
+  headerRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+    marginBottom: '12px',
+  },
+  headerTitle: {
+    fontSize: '18px',
+    fontWeight: 600,
+    color: '#262626',
+  },
+  searchContainer: {
+    position: 'relative' as const,
+    marginBottom: '12px',
+  },
+  searchInput: {
+    width: '100%',
+    height: '36px',
+    background: '#f2f2f2',
+    border: 'none',
+    borderRadius: '18px',
+    padding: '0 16px 0 36px',
+    fontSize: '14px',
+    color: '#262626',
+    outline: 'none',
+  },
+  searchIcon: {
+    position: 'absolute' as const,
+    left: '12px',
+    top: '50%',
+    transform: 'translateY(-50%)',
+    color: '#8e8e8e',
+    pointerEvents: 'none' as const,
+  },
+  tabList: {
+    display: 'flex',
+    borderBottom: '1px solid #dbdbdb',
+  },
+  tab: {
+    flex: 1,
+    padding: '12px',
+    background: 'none',
+    border: 'none',
+    borderBottom: '2px solid transparent',
+    fontSize: '14px',
+    fontWeight: 600,
+    color: '#8e8e8e',
+    cursor: 'pointer',
+  },
+  tabActive: {
+    color: '#262626',
+    borderBottomColor: '#262626',
+  },
+  content: {
+    flex: 1,
+    overflow: 'auto' as const,
+    background: '#ffffff',
+    padding: '16px',
+  },
+  filterRow: {
+    display: 'flex',
+    gap: '8px',
+    marginBottom: '12px',
+  },
+  filterButton: {
+    padding: '6px 12px',
+    background: '#f2f2f2',
+    border: '1px solid #dbdbdb',
+    borderRadius: '6px',
+    fontSize: '13px',
+    color: '#262626',
+    cursor: 'pointer',
+  },
+  filterButtonActive: {
+    background: '#262626',
+    color: '#ffffff',
+    borderColor: '#262626',
+  },
+  card: {
+    background: '#ffffff',
+    border: '1px solid #dbdbdb',
+    borderRadius: '8px',
+    marginBottom: '12px',
+    padding: '12px',
+  },
+  cardHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'start',
+    marginBottom: '8px',
+  },
+  cardTitle: {
+    fontSize: '14px',
+    fontWeight: 600,
+    color: '#262626',
+  },
+  cardDescription: {
+    fontSize: '13px',
+    color: '#8e8e8e',
+    marginTop: '4px',
+  },
+  badge: {
+    display: 'inline-block',
+    padding: '2px 8px',
+    borderRadius: '12px',
+    fontSize: '11px',
+    fontWeight: 600,
+  },
+  badgeOpen: {
+    background: '#fee2e2',
+    color: '#991b1b',
+  },
+  badgeResolved: {
+    background: '#d1fae5',
+    color: '#065f46',
+  },
+  badgeDismissed: {
+    background: '#e5e7eb',
+    color: '#374151',
+  },
+  badgeDefault: {
+    background: '#f3f4f6',
+    color: '#4b5563',
+  },
+  button: {
+    padding: '8px 16px',
+    background: '#262626',
+    color: '#ffffff',
+    border: 'none',
+    borderRadius: '6px',
+    fontSize: '14px',
+    fontWeight: 600,
+    cursor: 'pointer',
+  },
+  buttonSecondary: {
+    background: '#f2f2f2',
+    color: '#262626',
+    border: '1px solid #dbdbdb',
+  },
+  buttonSmall: {
+    padding: '6px 12px',
+    fontSize: '13px',
+  },
+  buttonIcon: {
+    padding: '8px',
+    background: 'none',
+    border: 'none',
+    cursor: 'pointer',
+    color: '#262626',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkbox: {
+    width: '20px',
+    height: '20px',
+    border: '2px solid #dbdbdb',
+    borderRadius: '4px',
+    background: '#ffffff',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkboxChecked: {
+    background: '#262626',
+    borderColor: '#262626',
+  },
+  overlay: {
+    position: 'fixed' as const,
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    background: 'rgba(0, 0, 0, 0.5)',
+    zIndex: 1000,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modal: {
+    background: '#ffffff',
+    borderRadius: '12px',
+    maxWidth: '90%',
+    maxHeight: '80vh',
+    overflow: 'auto' as const,
+    padding: '20px',
+  },
+  modalFullscreen: {
+    position: 'fixed' as const,
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    background: '#ffffff',
+    zIndex: 1001,
+    overflow: 'auto' as const,
+  },
+  modalHeader: {
+    borderBottom: '1px solid #dbdbdb',
+    paddingBottom: '12px',
+    marginBottom: '16px',
+  },
+  modalTitle: {
+    fontSize: '18px',
+    fontWeight: 600,
+    color: '#262626',
+  },
+  modalDescription: {
+    fontSize: '14px',
+    color: '#8e8e8e',
+    marginTop: '4px',
+  },
+  bulkActions: {
+    position: 'sticky' as const,
+    bottom: 0,
+    background: '#ffffff',
+    borderTop: '1px solid #dbdbdb',
+    padding: '12px 16px',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+  },
+  loadingContainer: {
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: '40px',
+    color: '#8e8e8e',
+  },
+  emptyState: {
+    textAlign: 'center' as const,
+    padding: '40px 20px',
+    color: '#8e8e8e',
+  },
+  menuContainer: {
+    position: 'relative' as const,
+    display: 'inline-block',
+  },
+  menu: {
+    position: 'absolute' as const,
+    right: 0,
+    top: '100%',
+    background: '#ffffff',
+    border: '1px solid #dbdbdb',
+    borderRadius: '8px',
+    minWidth: '150px',
+    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+    zIndex: 10,
+  },
+  menuItem: {
+    padding: '12px 16px',
+    border: 'none',
+    background: 'none',
+    width: '100%',
+    textAlign: 'left' as const,
+    cursor: 'pointer',
+    fontSize: '14px',
+    color: '#262626',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+  },
+  menuItemHover: {
+    background: '#f2f2f2',
+  },
+};
 
 interface AdminReportsMobileProps {
   isVisible: boolean;
@@ -53,14 +312,35 @@ interface AdminReportsMobileProps {
   onError?: (error: string) => void;
 }
 
+// Simple toast utility
+const showToast = (message: string, type: 'success' | 'error' = 'success') => {
+  const toast = document.createElement('div');
+  toast.textContent = message;
+  toast.style.cssText = `
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: ${type === 'success' ? '#262626' : '#dc2626'};
+    color: #ffffff;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    z-index: 9999;
+    max-width: 90%;
+    text-align: center;
+  `;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 3000);
+};
+
 export function AdminReportsMobile({
   isVisible,
   onBack,
   onActionComplete,
   onError,
 }: AdminReportsMobileProps) {
-  const { toast } = useToast();
-  
   // Data state
   const [reports, setReports] = useState<any[]>([]);
   const [prayerRequests, setPrayerRequests] = useState<any[]>([]);
@@ -71,6 +351,7 @@ export function AdminReportsMobile({
   const [activeTab, setActiveTab] = useState("reports");
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("open");
+  const [showUserMenu, setShowUserMenu] = useState<string | null>(null);
   
   // Selection and action state
   const [selectedReports, setSelectedReports] = useState<Set<string>>(new Set());
@@ -91,14 +372,14 @@ export function AdminReportsMobile({
     });
   }, []);
 
-  // Get status badge variant
-  const getStatusBadgeVariant = useCallback((status: string): 'destructive' | 'default' | 'secondary' => {
-    const variants: Record<string, 'destructive' | 'default' | 'secondary'> = {
-      open: 'destructive',
-      resolved: 'default',
-      dismissed: 'secondary'
+  // Get status badge style
+  const getStatusBadgeStyle = useCallback((status: string) => {
+    const styles: Record<string, any> = {
+      open: ADMIN_STYLES.badgeOpen,
+      resolved: ADMIN_STYLES.badgeResolved,
+      dismissed: ADMIN_STYLES.badgeDismissed
     };
-    return variants[status] || 'default';
+    return { ...ADMIN_STYLES.badge, ...(styles[status] || ADMIN_STYLES.badgeDefault) };
   }, []);
 
   // Load reports with server-side filtering
@@ -192,13 +473,9 @@ export function AdminReportsMobile({
       setReports(enrichedReports);
     } catch (err: any) {
       console.error('Error loading reports:', err);
-      toast({
-        title: "Error",
-        description: err.message,
-        variant: "destructive",
-      });
+      showToast(err.message || 'Failed to load reports', 'error');
     }
-  }, [statusFilter, toast]);
+  }, [statusFilter]);
 
   // Load prayer requests with commitments
   const loadPrayerRequests = useCallback(async () => {
@@ -233,13 +510,9 @@ export function AdminReportsMobile({
       setPrayerRequests(data || []);
     } catch (err: any) {
       console.error('Error loading prayer requests:', err);
-      toast({
-        title: "Error",
-        description: err.message,
-        variant: "destructive",
-      });
+      showToast(err.message || 'Failed to load prayer requests', 'error');
     }
-  }, [toast]);
+  }, []);
 
   // Load banned users
   const loadBannedUsers = useCallback(async () => {
@@ -248,13 +521,9 @@ export function AdminReportsMobile({
       setBannedUsers(users);
     } catch (err: any) {
       console.error('Error loading banned users:', err);
-      toast({
-        title: "Error",
-        description: err.message,
-        variant: "destructive",
-      });
+      showToast(err.message || 'Failed to load banned users', 'error');
     }
-  }, [toast]);
+  }, []);
 
   // Load all data
   const loadAllData = useCallback(async () => {
@@ -299,10 +568,7 @@ export function AdminReportsMobile({
     try {
       await updateReportStatus(reportId, newStatus);
       
-      toast({
-        title: 'Success',
-        description: `Report ${newStatus} successfully`
-      });
+      showToast(`Report ${newStatus} successfully`);
 
       // Remove from current view if filter doesn't match
       if (newStatus !== statusFilter) {
@@ -316,11 +582,7 @@ export function AdminReportsMobile({
       // Revert optimistic update
       setReports(originalReports);
       
-      toast({
-        title: 'Error',
-        description: err.message,
-        variant: 'destructive'
-      });
+      showToast(err.message || 'Failed to update report', 'error');
       
       if (onError) {
         onError(err.message);
@@ -332,7 +594,7 @@ export function AdminReportsMobile({
         return newSet;
       });
     }
-  }, [actionLoading, reports, statusFilter, toast, onActionComplete, onError]);
+  }, [actionLoading, reports, statusFilter, onActionComplete, onError]);
 
   // Handle bulk actions
   const handleBulkAction = useCallback(async (action: string) => {
@@ -343,18 +605,11 @@ export function AdminReportsMobile({
     try {
       await Promise.all(reportIds.map(id => handleStatusChange(id, action)));
       setSelectedReports(new Set());
-      toast({
-        title: 'Success',
-        description: `${reportIds.length} reports ${action} successfully`
-      });
+      showToast(`${reportIds.length} reports ${action} successfully`);
     } catch (err) {
-      toast({
-        title: 'Error',
-        description: 'Some operations failed',
-        variant: 'destructive'
-      });
+      showToast('Some operations failed', 'error');
     }
-  }, [selectedReports, handleStatusChange, toast]);
+  }, [selectedReports, handleStatusChange]);
 
   // Filtered reports with enhanced search (useMemo to avoid re-computing on every render)
   const filteredReports = useMemo(() => {
@@ -392,17 +647,11 @@ export function AdminReportsMobile({
     try {
       if (action === 'ban') {
         await banUser(userId);
-        toast({
-          title: 'Success',
-          description: 'User banned successfully'
-        });
+        showToast('User banned successfully');
         await loadBannedUsers();
       } else if (action === 'unban') {
         await unbanUser(userId);
-        toast({
-          title: 'Success',
-          description: 'User unbanned successfully'
-        });
+        showToast('User unbanned successfully');
         await loadBannedUsers();
       }
       
@@ -410,11 +659,7 @@ export function AdminReportsMobile({
         onActionComplete();
       }
     } catch (err: any) {
-      toast({
-        title: 'Error',
-        description: err.message,
-        variant: 'destructive'
-      });
+      showToast(err.message || 'Failed to update user', 'error');
       
       if (onError) {
         onError(err.message);
@@ -426,7 +671,7 @@ export function AdminReportsMobile({
         return newSet;
       });
     }
-  }, [actionLoading, toast, loadBannedUsers, onActionComplete, onError]);
+  }, [actionLoading, loadBannedUsers, onActionComplete, onError]);
 
   // Handle unban with confirmation
   const handleUnbanUser = useCallback(async (userId: string, displayName: string) => {
@@ -455,10 +700,7 @@ export function AdminReportsMobile({
 
       if (error) throw error;
 
-      toast({
-        title: 'Success',
-        description: `Prayer request ${action === 'close' ? 'closed' : 'marked as answered'} successfully`
-      });
+      showToast(`Prayer request ${action === 'close' ? 'closed' : 'marked as answered'} successfully`);
 
       loadPrayerRequests();
       
@@ -466,11 +708,7 @@ export function AdminReportsMobile({
         onActionComplete();
       }
     } catch (err: any) {
-      toast({
-        title: 'Error',
-        description: err.message,
-        variant: 'destructive'
-      });
+      showToast(err.message || 'Failed to update prayer request', 'error');
       
       if (onError) {
         onError(err.message);
@@ -482,7 +720,7 @@ export function AdminReportsMobile({
         return newSet;
       });
     }
-  }, [toast, loadPrayerRequests, onActionComplete, onError]);
+  }, [loadPrayerRequests, onActionComplete, onError]);
 
   // Handle delete commitment
   const handleDeleteCommitment = useCallback(async (requestId: string, warriorId: string) => {
@@ -498,10 +736,7 @@ export function AdminReportsMobile({
 
       if (error) throw error;
 
-      toast({
-        title: 'Success',
-        description: 'Commitment deleted successfully'
-      });
+      showToast('Commitment deleted successfully');
 
       loadPrayerRequests();
       if (selectedRequest) {
@@ -514,11 +749,7 @@ export function AdminReportsMobile({
         onActionComplete();
       }
     } catch (err: any) {
-      toast({
-        title: 'Error',
-        description: err.message,
-        variant: 'destructive'
-      });
+      showToast(err.message || 'Failed to delete commitment', 'error');
       
       if (onError) {
         onError(err.message);
@@ -530,187 +761,245 @@ export function AdminReportsMobile({
         return newSet;
       });
     }
-  }, [toast, loadPrayerRequests, selectedRequest, prayerRequests, onActionComplete, onError]);
+  }, [loadPrayerRequests, selectedRequest, prayerRequests, onActionComplete, onError]);
 
   if (!isVisible) {
     return null;
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-background">
+    <div style={ADMIN_STYLES.container}>
       {/* Header */}
-      <div className="sticky top-0 bg-background border-b z-10 p-4">
-        <div className="flex items-center gap-3 mb-4">
-          <Button
-            variant="ghost"
-            size="icon"
+      <div style={ADMIN_STYLES.header}>
+        <div style={ADMIN_STYLES.headerRow}>
+          <button
             onClick={onBack}
             data-testid="button-back"
+            style={ADMIN_STYLES.buttonIcon}
           >
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <h1 className="text-lg font-semibold">Admin Panel</h1>
+            <ArrowLeft size={20} />
+          </button>
+          <div style={ADMIN_STYLES.headerTitle}>Admin Panel</div>
         </div>
 
         {/* Search */}
-        <div className="relative mb-4">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
+        <div style={ADMIN_STYLES.searchContainer}>
+          <div style={ADMIN_STYLES.searchIcon}>
+            <Search size={16} />
+          </div>
+          <input
+            type="text"
             placeholder="Search by target, reporter, or content..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
+            style={ADMIN_STYLES.searchInput}
             data-testid="input-search"
           />
         </div>
 
         {/* Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="reports" data-testid="tab-reports">
+        <div>
+          <div style={ADMIN_STYLES.tabList}>
+            <button
+              onClick={() => setActiveTab("reports")}
+              data-testid="tab-reports"
+              style={{...ADMIN_STYLES.tab, ...(activeTab === "reports" ? ADMIN_STYLES.tabActive : {})}}
+            >
               Reports ({filteredReports.length})
-            </TabsTrigger>
-            <TabsTrigger value="prayer" data-testid="tab-prayer">
+            </button>
+            <button
+              onClick={() => setActiveTab("prayer")}
+              data-testid="tab-prayer"
+              style={{...ADMIN_STYLES.tab, ...(activeTab === "prayer" ? ADMIN_STYLES.tabActive : {})}}
+            >
               Prayer ({prayerRequests.length})
-            </TabsTrigger>
-            <TabsTrigger value="banned-users" data-testid="tab-banned">
+            </button>
+            <button
+              onClick={() => setActiveTab("banned-users")}
+              data-testid="tab-banned"
+              style={{...ADMIN_STYLES.tab, ...(activeTab === "banned-users" ? ADMIN_STYLES.tabActive : {})}}
+            >
               Banned ({bannedUsers.length})
-            </TabsTrigger>
-          </TabsList>
+            </button>
+          </div>
 
           {/* Reports Tab */}
-          <TabsContent value="reports" className="mt-4 space-y-4">
-            {/* Status Filter */}
-            <div className="flex gap-2">
-              {['open', 'resolved', 'dismissed'].map((status) => (
-                <Button
-                  key={status}
-                  variant={statusFilter === status ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => {
-                    setStatusFilter(status);
-                    loadReports(status);
-                  }}
-                  data-testid={`button-filter-${status}`}
-                  className="flex-1"
-                >
-                  {status.charAt(0).toUpperCase() + status.slice(1)}
-                </Button>
-              ))}
-            </div>
+          <div style={{display: activeTab === "reports" ? 'block' : 'none'}}>
+            <div style={ADMIN_STYLES.content}>
+              {/* Status Filter */}
+              <div style={ADMIN_STYLES.filterRow}>
+                {['open', 'resolved', 'dismissed'].map((status) => (
+                  <button
+                    key={status}
+                    onClick={() => {
+                      setStatusFilter(status);
+                      loadReports(status);
+                    }}
+                    data-testid={`button-filter-${status}`}
+                    style={{
+                      ...ADMIN_STYLES.filterButton,
+                      ...(statusFilter === status ? ADMIN_STYLES.filterButtonActive : {}),
+                      flex: 1,
+                    }}
+                  >
+                    {status.charAt(0).toUpperCase() + status.slice(1)}
+                  </button>
+                ))}
+              </div>
 
-            {/* Bulk Actions */}
-            {selectedReports.size > 0 && (
-              <Card className="bg-blue-50 dark:bg-blue-900/20">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-sm font-medium">
+              {/* Bulk Actions */}
+              {selectedReports.size > 0 && (
+                <div style={{...ADMIN_STYLES.card, background: '#eff6ff', marginBottom: '12px'}}>
+                  <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px'}}>
+                    <span style={{fontSize: '13px', fontWeight: 600}}>
                       {selectedReports.size} selected
                     </span>
-                    <div className="flex gap-2">
-                      <Button 
-                        size="sm" 
+                    <div style={{display: 'flex', gap: '8px'}}>
+                      <button 
                         onClick={() => handleBulkAction('resolved')}
                         disabled={statusFilter === 'resolved'}
                         data-testid="button-bulk-resolve"
+                        style={{
+                          ...ADMIN_STYLES.button,
+                          ...ADMIN_STYLES.buttonSmall,
+                          ...(statusFilter === 'resolved' ? {opacity: 0.5, cursor: 'not-allowed'} : {})
+                        }}
                       >
                         Resolve Selected
-                      </Button>
-                      <Button 
-                        size="sm" 
-                        variant="outline"
+                      </button>
+                      <button 
                         onClick={() => handleBulkAction('dismissed')}
                         disabled={statusFilter === 'dismissed'}
                         data-testid="button-bulk-dismiss"
+                        style={{
+                          ...ADMIN_STYLES.button,
+                          ...ADMIN_STYLES.buttonSecondary,
+                          ...ADMIN_STYLES.buttonSmall,
+                          ...(statusFilter === 'dismissed' ? {opacity: 0.5, cursor: 'not-allowed'} : {})
+                        }}
                       >
                         Dismiss Selected
-                      </Button>
+                      </button>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
-            )}
+                </div>
+              )}
 
-            {/* Select All */}
-            {filteredReports.length > 0 && (
-              <div className="flex items-center gap-2 px-1">
-                <Checkbox
-                  checked={selectedReports.size === filteredReports.length && filteredReports.length > 0}
-                  onCheckedChange={handleSelectAll}
-                  data-testid="checkbox-select-all"
-                />
-                <label className="text-sm font-medium">
-                  Select All ({filteredReports.length})
-                </label>
-              </div>
-            )}
+              {/* Select All */}
+              {filteredReports.length > 0 && (
+                <div style={{display: 'flex', alignItems: 'center', gap: '8px', padding: '4px', marginBottom: '12px'}}>
+                  <div
+                    role="checkbox"
+                    aria-checked={selectedReports.size === filteredReports.length && filteredReports.length > 0}
+                    tabIndex={0}
+                    onClick={handleSelectAll}
+                    onKeyDown={(e) => {
+                      if (e.key === ' ' || e.key === 'Enter') {
+                        e.preventDefault();
+                        handleSelectAll();
+                      }
+                    }}
+                    data-testid="checkbox-select-all"
+                    style={{
+                      ...ADMIN_STYLES.checkbox,
+                      ...(selectedReports.size === filteredReports.length && filteredReports.length > 0 ? ADMIN_STYLES.checkboxChecked : {})
+                    }}
+                  >
+                    {selectedReports.size === filteredReports.length && filteredReports.length > 0 && <Check size={14} color="#ffffff" />}
+                  </div>
+                  <label style={{fontSize: '13px', fontWeight: 600}}>
+                    Select All ({filteredReports.length})
+                  </label>
+                </div>
+              )}
 
-            {/* Reports List */}
-            {loading ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2" />
-                Loading reports...
-              </div>
-            ) : filteredReports.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                No reports found matching your criteria
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {filteredReports.map((report) => (
-                  <Card key={report.id} data-testid={`card-report-${report.id}`}>
-                    <CardContent className="p-4">
-                      <div className="flex items-start gap-3">
-                        <Checkbox
-                          checked={selectedReports.has(report.id)}
-                          onCheckedChange={(checked) => {
+              {/* Reports List */}
+              {loading ? (
+                <div style={ADMIN_STYLES.loadingContainer}>
+                  <div style={{textAlign: 'center'}}>
+                    <Loader2 size={32} className="animate-spin" style={{margin: '0 auto 8px'}} />
+                    <div>Loading reports...</div>
+                  </div>
+                </div>
+              ) : filteredReports.length === 0 ? (
+                <div style={ADMIN_STYLES.emptyState}>
+                  No reports found matching your criteria
+                </div>
+              ) : (
+                <div>
+                  {filteredReports.map((report) => (
+                    <div key={report.id} data-testid={`card-report-${report.id}`} style={ADMIN_STYLES.card}>
+                      <div style={{display: 'flex', alignItems: 'start', gap: '12px'}}>
+                        <div
+                          role="checkbox"
+                          aria-checked={selectedReports.has(report.id)}
+                          tabIndex={0}
+                          onClick={() => {
                             const newSet = new Set(selectedReports);
-                            if (checked) {
-                              newSet.add(report.id);
-                            } else {
+                            if (selectedReports.has(report.id)) {
                               newSet.delete(report.id);
+                            } else {
+                              newSet.add(report.id);
                             }
                             setSelectedReports(newSet);
                           }}
+                          onKeyDown={(e) => {
+                            if (e.key === ' ' || e.key === 'Enter') {
+                              e.preventDefault();
+                              const newSet = new Set(selectedReports);
+                              if (selectedReports.has(report.id)) {
+                                newSet.delete(report.id);
+                              } else {
+                                newSet.add(report.id);
+                              }
+                              setSelectedReports(newSet);
+                            }
+                          }}
                           data-testid={`checkbox-report-${report.id}`}
-                          className="mt-1"
-                        />
-                        <div className="flex-1 min-w-0">
+                          style={{
+                            ...ADMIN_STYLES.checkbox,
+                            marginTop: '4px',
+                            ...(selectedReports.has(report.id) ? ADMIN_STYLES.checkboxChecked : {})
+                          }}
+                        >
+                          {selectedReports.has(report.id) && <Check size={14} color="#ffffff" />}
+                        </div>
+                        <div style={{flex: 1, minWidth: 0}}>
                           {/* Report Header */}
-                          <div className="flex items-start justify-between gap-2 mb-2">
-                            <div className="flex-1">
-                              <h3 className="font-medium text-sm mb-1">
+                          <div style={{display: 'flex', alignItems: 'start', justifyContent: 'space-between', gap: '8px', marginBottom: '8px'}}>
+                            <div style={{flex: 1}}>
+                              <h3 style={{fontWeight: 600, fontSize: '13px', marginBottom: '4px'}}>
                                 {report.reason || 'No reason provided'}
                               </h3>
-                              <div className="text-xs text-muted-foreground space-y-0.5">
+                              <div style={{fontSize: '12px', color: '#8e8e8e'}}>
                                 <div>By: {report.reporter?.display_name || 'Unknown'}</div>
                                 <div>{report.reporter?.email}</div>
                                 <div>{formatDate(report.created_at)}</div>
                               </div>
                             </div>
-                            <Badge variant={getStatusBadgeVariant(report.status)}>
+                            <span style={getStatusBadgeStyle(report.status)}>
                               {report.status}
-                            </Badge>
+                            </span>
                           </div>
 
                           {/* Target Info */}
                           {(report.post || report.comment) && (
-                            <div className="mb-3 p-2 bg-muted rounded text-xs">
-                              <div className="font-medium mb-1">
+                            <div style={{marginBottom: '12px', padding: '8px', background: '#f2f2f2', borderRadius: '6px', fontSize: '12px'}}>
+                              <div style={{fontWeight: 600, marginBottom: '4px'}}>
                                 Target: {report.post ? 'Post' : 'Comment'}
                               </div>
                               {report.post && (
                                 <>
-                                  <div className="font-medium">{report.post.title}</div>
+                                  <div style={{fontWeight: 600}}>{report.post.title}</div>
                                   {report.post.content && (
-                                    <div className="text-muted-foreground truncate">
+                                    <div style={{color: '#8e8e8e', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'}}>
                                       {report.post.content.substring(0, 100)}...
                                     </div>
                                   )}
                                 </>
                               )}
                               {report.comment && report.comment.content && (
-                                <div className="text-muted-foreground truncate">
+                                <div style={{color: '#8e8e8e', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'}}>
                                   {report.comment.content.substring(0, 100)}...
                                 </div>
                               )}
@@ -718,333 +1007,405 @@ export function AdminReportsMobile({
                           )}
 
                           {/* Actions */}
-                          <div className="flex items-center gap-2">
+                          <div style={{display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap'}}>
                             {report.status === 'open' && (
                               <>
-                                <Button
-                                  size="sm"
+                                <button
                                   onClick={() => handleStatusChange(report.id, 'resolved')}
                                   disabled={actionLoading.has(report.id)}
                                   data-testid={`button-resolve-${report.id}`}
+                                  style={{
+                                    ...ADMIN_STYLES.button,
+                                    ...ADMIN_STYLES.buttonSmall,
+                                    ...(actionLoading.has(report.id) ? {opacity: 0.5, cursor: 'not-allowed'} : {})
+                                  }}
                                 >
                                   {actionLoading.has(report.id) ? (
-                                    <Loader2 className="h-3 w-3 animate-spin" />
+                                    <Loader2 size={12} className="animate-spin" />
                                   ) : (
                                     'Resolve'
                                   )}
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
+                                </button>
+                                <button
                                   onClick={() => handleStatusChange(report.id, 'dismissed')}
                                   disabled={actionLoading.has(report.id)}
                                   data-testid={`button-dismiss-${report.id}`}
+                                  style={{
+                                    ...ADMIN_STYLES.button,
+                                    ...ADMIN_STYLES.buttonSecondary,
+                                    ...ADMIN_STYLES.buttonSmall,
+                                    ...(actionLoading.has(report.id) ? {opacity: 0.5, cursor: 'not-allowed'} : {})
+                                  }}
                                 >
                                   Dismiss
-                                </Button>
+                                </button>
                               </>
                             )}
 
                             {/* User Actions Dropdown */}
                             {(report.post || report.comment) && (
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button size="sm" variant="ghost">
-                                    <MoreVertical className="h-4 w-4" />
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                  <DropdownMenuItem
-                                    onClick={() => handleUserAction(report.reporter?.id, 'ban')}
-                                    disabled={actionLoading.has(`user-${report.reporter?.id}`)}
-                                  >
-                                    <Ban className="h-4 w-4 mr-2" />
-                                    Ban Reporter
-                                  </DropdownMenuItem>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
-          </TabsContent>
-
-          {/* Prayer Requests Tab */}
-          <TabsContent value="prayer" className="mt-4 space-y-4">
-            {loading ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2" />
-                Loading prayer requests...
-              </div>
-            ) : prayerRequests.length === 0 ? (
-              <div className="text-center py-8">
-                <Heart className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-medium mb-2">No prayer requests</h3>
-                <p className="text-muted-foreground">No prayer requests have been submitted yet.</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {prayerRequests.map((request) => (
-                  <Card key={request.id} data-testid={`card-prayer-${request.id}`}>
-                    <CardContent className="p-4">
-                      <div className="space-y-3">
-                        {/* Header */}
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-2 flex-wrap">
-                              <h3 className="font-medium text-sm">{request.title}</h3>
-                              <Badge variant={request.status === 'open' ? 'destructive' : 
-                                            request.status === 'answered' ? 'default' : 'secondary'}>
-                                {request.status}
-                              </Badge>
-                              {request.is_anonymous && (
-                                <Badge variant="outline" className="text-xs">Anonymous</Badge>
-                              )}
-                            </div>
-                            <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
-                              {request.content}
-                            </p>
-                            <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
-                              <span>By: {request.is_anonymous ? 'Anonymous' : request.profiles?.display_name || 'Unknown'}</span>
-                              <span>{formatDate(request.created_at)}</span>
-                              <span>{request.prayer_commitments?.length || 0} commitments</span>
-                              <span>{request.prayer_commitments?.filter((c: any) => c.status === 'prayed').length || 0} prayed</span>
-                            </div>
-                            {request.tags && request.tags.length > 0 && (
-                              <div className="flex gap-1 mt-2 flex-wrap">
-                                {request.tags.map((tag: string, index: number) => (
-                                  <Badge key={index} variant="outline" className="text-xs">
-                                    {tag}
-                                  </Badge>
-                                ))}
+                              <div style={ADMIN_STYLES.menuContainer}>
+                                <button
+                                  onClick={() => setShowUserMenu(showUserMenu === report.reporter?.id ? null : report.reporter?.id)}
+                                  style={{...ADMIN_STYLES.button, ...ADMIN_STYLES.buttonSecondary, ...ADMIN_STYLES.buttonSmall}}
+                                >
+                                  <MoreVertical size={16} />
+                                </button>
+                                {showUserMenu === report.reporter?.id && (
+                                  <>
+                                    <div 
+                                      style={{position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 9}}
+                                      onClick={() => setShowUserMenu(null)}
+                                    />
+                                    <div style={ADMIN_STYLES.menu}>
+                                      <button
+                                        onClick={() => {
+                                          handleUserAction(report.reporter?.id, 'ban');
+                                          setShowUserMenu(null);
+                                        }}
+                                        disabled={actionLoading.has(`user-${report.reporter?.id}`)}
+                                        style={{
+                                          ...ADMIN_STYLES.menuItem,
+                                          ...(actionLoading.has(`user-${report.reporter?.id}`) ? {opacity: 0.5, cursor: 'not-allowed'} : {})
+                                        }}
+                                        onMouseEnter={(e) => e.currentTarget.style.background = ADMIN_STYLES.menuItemHover.background}
+                                        onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+                                      >
+                                        <Ban size={16} />
+                                        Ban Reporter
+                                      </button>
+                                    </div>
+                                  </>
+                                )}
                               </div>
                             )}
                           </div>
                         </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
 
-                        {/* Actions */}
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => {
-                              setSelectedRequest(request);
-                              setShowCommitments(true);
-                            }}
-                            data-testid={`button-view-commitments-${request.id}`}
-                          >
-                            <Users className="h-3 w-3 mr-1" />
-                            View Commitments
-                          </Button>
-                          {request.status === 'open' && (
-                            <>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handlePrayerRequestAction(request.id, 'answered')}
-                                disabled={actionLoading.has(request.id)}
-                                className="text-green-600 hover:text-green-700"
-                                data-testid={`button-answered-${request.id}`}
-                              >
-                                {actionLoading.has(request.id) ? (
-                                  <Loader2 className="h-3 w-3 animate-spin mr-1" />
-                                ) : (
-                                  <CheckCircle className="h-3 w-3 mr-1" />
-                                )}
-                                Mark Answered
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handlePrayerRequestAction(request.id, 'close')}
-                                disabled={actionLoading.has(request.id)}
-                                className="text-red-600 hover:text-red-700"
-                                data-testid={`button-close-${request.id}`}
-                              >
-                                <X className="h-3 w-3 mr-1" />
-                                Close
-                              </Button>
-                            </>
+          {/* Prayer Requests Tab */}
+          <div style={{display: activeTab === "prayer" ? 'block' : 'none'}}>
+            <div style={ADMIN_STYLES.content}>
+              {loading ? (
+                <div style={ADMIN_STYLES.loadingContainer}>
+                  <div style={{textAlign: 'center'}}>
+                    <Loader2 size={32} className="animate-spin" style={{margin: '0 auto 8px'}} />
+                    <div>Loading prayer requests...</div>
+                  </div>
+                </div>
+              ) : prayerRequests.length === 0 ? (
+                <div style={ADMIN_STYLES.emptyState}>
+                  <Heart size={48} style={{margin: '0 auto 16px', color: '#8e8e8e'}} />
+                  <h3 style={{fontSize: '16px', fontWeight: 600, marginBottom: '8px'}}>No prayer requests</h3>
+                  <p>No prayer requests have been submitted yet.</p>
+                </div>
+              ) : (
+                <div>
+                  {prayerRequests.map((request) => (
+                    <div key={request.id} data-testid={`card-prayer-${request.id}`} style={ADMIN_STYLES.card}>
+                      {/* Header */}
+                      <div style={{display: 'flex', alignItems: 'start', justifyContent: 'space-between', gap: '8px', marginBottom: '12px'}}>
+                        <div style={{flex: 1}}>
+                          <div style={{display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', flexWrap: 'wrap'}}>
+                            <h3 style={{fontWeight: 600, fontSize: '13px'}}>{request.title}</h3>
+                            <span style={getStatusBadgeStyle(request.status === 'open' ? 'open' : request.status === 'answered' ? 'resolved' : 'dismissed')}>
+                              {request.status}
+                            </span>
+                            {request.is_anonymous && (
+                              <span style={{...ADMIN_STYLES.badge, background: '#f3f4f6', color: '#4b5563', fontSize: '10px'}}>Anonymous</span>
+                            )}
+                          </div>
+                          <p style={{fontSize: '13px', color: '#8e8e8e', marginBottom: '8px', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical'}}>
+                            {request.content}
+                          </p>
+                          <div style={{display: 'flex', alignItems: 'center', gap: '12px', fontSize: '12px', color: '#8e8e8e', flexWrap: 'wrap'}}>
+                            <span>By: {request.is_anonymous ? 'Anonymous' : request.profiles?.display_name || 'Unknown'}</span>
+                            <span>{formatDate(request.created_at)}</span>
+                            <span>{request.prayer_commitments?.length || 0} commitments</span>
+                            <span>{request.prayer_commitments?.filter((c: any) => c.status === 'prayed').length || 0} prayed</span>
+                          </div>
+                          {request.tags && request.tags.length > 0 && (
+                            <div style={{display: 'flex', gap: '4px', marginTop: '8px', flexWrap: 'wrap'}}>
+                              {request.tags.map((tag: string, index: number) => (
+                                <span key={index} style={{...ADMIN_STYLES.badge, background: '#f3f4f6', color: '#4b5563', fontSize: '10px'}}>
+                                  {tag}
+                                </span>
+                              ))}
+                            </div>
                           )}
                         </div>
                       </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
-          </TabsContent>
+
+                      {/* Actions */}
+                      <div style={{display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap'}}>
+                        <button
+                          onClick={() => {
+                            setSelectedRequest(request);
+                            setShowCommitments(true);
+                          }}
+                          data-testid={`button-view-commitments-${request.id}`}
+                          style={{...ADMIN_STYLES.button, ...ADMIN_STYLES.buttonSecondary, ...ADMIN_STYLES.buttonSmall, display: 'flex', alignItems: 'center', gap: '4px'}}
+                        >
+                          <Users size={12} />
+                          View Commitments
+                        </button>
+                        {request.status === 'open' && (
+                          <>
+                            <button
+                              onClick={() => handlePrayerRequestAction(request.id, 'answered')}
+                              disabled={actionLoading.has(request.id)}
+                              data-testid={`button-answered-${request.id}`}
+                              style={{
+                                ...ADMIN_STYLES.button,
+                                ...ADMIN_STYLES.buttonSecondary,
+                                ...ADMIN_STYLES.buttonSmall,
+                                color: '#16a34a',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                ...(actionLoading.has(request.id) ? {opacity: 0.5, cursor: 'not-allowed'} : {})
+                              }}
+                            >
+                              {actionLoading.has(request.id) ? (
+                                <Loader2 size={12} className="animate-spin" />
+                              ) : (
+                                <CheckCircle size={12} />
+                              )}
+                              Mark Answered
+                            </button>
+                            <button
+                              onClick={() => handlePrayerRequestAction(request.id, 'close')}
+                              disabled={actionLoading.has(request.id)}
+                              data-testid={`button-close-${request.id}`}
+                              style={{
+                                ...ADMIN_STYLES.button,
+                                ...ADMIN_STYLES.buttonSecondary,
+                                ...ADMIN_STYLES.buttonSmall,
+                                color: '#dc2626',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                ...(actionLoading.has(request.id) ? {opacity: 0.5, cursor: 'not-allowed'} : {})
+                              }}
+                            >
+                              <X size={12} />
+                              Close
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
 
           {/* Banned Users Tab */}
-          <TabsContent value="banned-users" className="mt-4 space-y-4">
-            {loading ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2" />
-                Loading banned users...
-              </div>
-            ) : bannedUsers.length === 0 ? (
-              <div className="text-center py-8">
-                <UserCheck className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-medium mb-2">No banned users</h3>
-                <p className="text-muted-foreground">All users currently have access to the platform.</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {bannedUsers.map((user) => (
-                  <Card key={user.id} data-testid={`card-banned-user-${user.id}`}>
-                    <CardContent className="p-4">
-                      <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
-                          <span className="text-sm font-medium">
+          <div style={{display: activeTab === "banned-users" ? 'block' : 'none'}}>
+            <div style={ADMIN_STYLES.content}>
+              {loading ? (
+                <div style={ADMIN_STYLES.loadingContainer}>
+                  <div style={{textAlign: 'center'}}>
+                    <Loader2 size={32} className="animate-spin" style={{margin: '0 auto 8px'}} />
+                    <div>Loading banned users...</div>
+                  </div>
+                </div>
+              ) : bannedUsers.length === 0 ? (
+                <div style={ADMIN_STYLES.emptyState}>
+                  <UserCheck size={48} style={{margin: '0 auto 16px', color: '#8e8e8e'}} />
+                  <h3 style={{fontSize: '16px', fontWeight: 600, marginBottom: '8px'}}>No banned users</h3>
+                  <p>All users currently have access to the platform.</p>
+                </div>
+              ) : (
+                <div>
+                  {bannedUsers.map((user) => (
+                    <div key={user.id} data-testid={`card-banned-user-${user.id}`} style={ADMIN_STYLES.card}>
+                      <div style={{display: 'flex', alignItems: 'center', gap: '12px'}}>
+                        <div style={{height: '40px', width: '40px', borderRadius: '50%', background: '#f2f2f2', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0}}>
+                          <span style={{fontSize: '13px', fontWeight: 600}}>
                             {(user.display_name || user.email)?.charAt(0)?.toUpperCase() || 'U'}
                           </span>
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium text-sm truncate">
+                        <div style={{flex: 1, minWidth: 0}}>
+                          <p style={{fontWeight: 600, fontSize: '13px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'}}>
                             {user.display_name || 'Unknown User'}
                           </p>
-                          <p className="text-xs text-muted-foreground truncate">
+                          <p style={{fontSize: '12px', color: '#8e8e8e', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'}}>
                             {user.email}
                           </p>
-                          <p className="text-xs text-muted-foreground">
+                          <p style={{fontSize: '12px', color: '#8e8e8e'}}>
                             Banned: {formatDate(user.updated_at || user.created_at)}
                           </p>
                         </div>
-                        <Button
-                          size="sm"
+                        <button
                           onClick={() => handleUnbanUser(user.id, user.display_name || user.email)}
                           disabled={actionLoading.has(user.id)}
-                          className="bg-green-600 hover:bg-green-700 flex-shrink-0"
                           data-testid={`button-unban-${user.id}`}
+                          style={{
+                            ...ADMIN_STYLES.button,
+                            ...ADMIN_STYLES.buttonSmall,
+                            background: '#16a34a',
+                            flexShrink: 0,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            ...(actionLoading.has(user.id) ? {opacity: 0.5, cursor: 'not-allowed'} : {})
+                          }}
                         >
                           {actionLoading.has(user.id) ? (
                             <>
-                              <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                              <Loader2 size={12} className="animate-spin" />
                               Unbanning...
                             </>
                           ) : (
                             <>
-                              <UserCheck className="h-3 w-3 mr-1" />
+                              <UserCheck size={12} />
                               Unban
                             </>
                           )}
-                        </Button>
+                        </button>
                       </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
-          </TabsContent>
-        </Tabs>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Commitments Sheet */}
-      <Sheet open={showCommitments} onOpenChange={setShowCommitments}>
-        <SheetContent side="bottom" className="h-[80vh]">
-          <SheetHeader>
-            <SheetTitle>
+      {showCommitments && (
+        <div style={ADMIN_STYLES.modalFullscreen}>
+          <div style={{...ADMIN_STYLES.header, display: 'flex', alignItems: 'center', justifyContent: 'space-between'}}>
+            <div style={ADMIN_STYLES.headerTitle}>
               Prayer Commitments for "{selectedRequest?.title}"
-            </SheetTitle>
-            <SheetDescription>
+            </div>
+            <button
+              onClick={() => setShowCommitments(false)}
+              style={ADMIN_STYLES.buttonIcon}
+            >
+              <X size={24} />
+            </button>
+          </div>
+          <div style={{...ADMIN_STYLES.content, maxHeight: 'calc(100vh - 60px)', overflow: 'auto'}}>
+            <div style={{...ADMIN_STYLES.modalDescription, marginBottom: '16px'}}>
               View and manage commitments for this prayer request
-            </SheetDescription>
-          </SheetHeader>
-          <div className="mt-6 space-y-3 overflow-y-auto max-h-[calc(80vh-8rem)]">
+            </div>
             {selectedRequest?.prayer_commitments?.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
+              <div style={ADMIN_STYLES.emptyState}>
                 No commitments yet for this prayer request.
               </div>
             ) : (
               selectedRequest?.prayer_commitments?.map((commitment: any) => (
-                <Card key={`${commitment.request_id}-${commitment.warrior}`}>
-                  <CardContent className="p-4">
-                    <div className="space-y-3">
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-2 flex-wrap">
-                            <span className="font-medium text-sm">
-                              {commitment.profiles?.display_name || 'Unknown User'}
-                            </span>
-                            <Badge variant={commitment.status === 'prayed' ? 'default' : 'secondary'}>
-                              {commitment.status}
-                            </Badge>
-                            {commitment.profiles?.role === 'banned' && (
-                              <Badge variant="destructive" className="text-xs">Banned</Badge>
-                            )}
-                          </div>
-                          <div className="text-xs text-muted-foreground space-y-0.5">
-                            <div>Committed: {formatDate(commitment.committed_at)}</div>
-                            {commitment.prayed_at && (
-                              <div>Prayed: {formatDate(commitment.prayed_at)}</div>
-                            )}
-                          </div>
-                          {commitment.note && (
-                            <p className="text-sm text-muted-foreground mt-2 italic">
-                              "{commitment.note}"
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleDeleteCommitment(commitment.request_id, commitment.warrior)}
-                          disabled={actionLoading.has(`${commitment.request_id}-${commitment.warrior}`)}
-                          className="text-red-600 hover:text-red-700"
-                        >
-                          {actionLoading.has(`${commitment.request_id}-${commitment.warrior}`) ? (
-                            <Loader2 className="h-3 w-3 animate-spin mr-1" />
-                          ) : (
-                            <X className="h-3 w-3 mr-1" />
-                          )}
-                          Delete
-                        </Button>
-                        {commitment.profiles?.role !== 'banned' && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleUserAction(commitment.warrior, 'ban')}
-                            disabled={actionLoading.has(`user-${commitment.warrior}`)}
-                            className="text-red-600 hover:text-red-700"
-                          >
-                            <Ban className="h-3 w-3 mr-1" />
-                            Ban User
-                          </Button>
-                        )}
-                      </div>
+                <div key={`${commitment.request_id}-${commitment.warrior}`} style={ADMIN_STYLES.card}>
+                  <div style={{marginBottom: '12px'}}>
+                    <div style={{display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', flexWrap: 'wrap'}}>
+                      <span style={{fontWeight: 600, fontSize: '13px'}}>
+                        {commitment.profiles?.display_name || 'Unknown User'}
+                      </span>
+                      <span style={getStatusBadgeStyle(commitment.status === 'prayed' ? 'resolved' : 'dismissed')}>
+                        {commitment.status}
+                      </span>
+                      {commitment.profiles?.role === 'banned' && (
+                        <span style={{...ADMIN_STYLES.badge, background: '#fee2e2', color: '#991b1b', fontSize: '10px'}}>Banned</span>
+                      )}
                     </div>
-                  </CardContent>
-                </Card>
+                    <div style={{fontSize: '12px', color: '#8e8e8e'}}>
+                      <div>Committed: {formatDate(commitment.committed_at)}</div>
+                      {commitment.prayed_at && (
+                        <div>Prayed: {formatDate(commitment.prayed_at)}</div>
+                      )}
+                    </div>
+                    {commitment.note && (
+                      <p style={{fontSize: '13px', color: '#8e8e8e', marginTop: '8px', fontStyle: 'italic'}}>
+                        "{commitment.note}"
+                      </p>
+                    )}
+                  </div>
+                  <div style={{display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap'}}>
+                    <button
+                      onClick={() => handleDeleteCommitment(commitment.request_id, commitment.warrior)}
+                      disabled={actionLoading.has(`${commitment.request_id}-${commitment.warrior}`)}
+                      style={{
+                        ...ADMIN_STYLES.button,
+                        ...ADMIN_STYLES.buttonSecondary,
+                        ...ADMIN_STYLES.buttonSmall,
+                        color: '#dc2626',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        ...(actionLoading.has(`${commitment.request_id}-${commitment.warrior}`) ? {opacity: 0.5, cursor: 'not-allowed'} : {})
+                      }}
+                    >
+                      {actionLoading.has(`${commitment.request_id}-${commitment.warrior}`) ? (
+                        <Loader2 size={12} className="animate-spin" />
+                      ) : (
+                        <X size={12} />
+                      )}
+                      Delete
+                    </button>
+                    {commitment.profiles?.role !== 'banned' && (
+                      <button
+                        onClick={() => handleUserAction(commitment.warrior, 'ban')}
+                        disabled={actionLoading.has(`user-${commitment.warrior}`)}
+                        style={{
+                          ...ADMIN_STYLES.button,
+                          ...ADMIN_STYLES.buttonSecondary,
+                          ...ADMIN_STYLES.buttonSmall,
+                          color: '#dc2626',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          ...(actionLoading.has(`user-${commitment.warrior}`) ? {opacity: 0.5, cursor: 'not-allowed'} : {})
+                        }}
+                      >
+                        <Ban size={12} />
+                        Ban User
+                      </button>
+                    )}
+                  </div>
+                </div>
               ))
             )}
           </div>
-        </SheetContent>
-      </Sheet>
+        </div>
+      )}
 
       {/* Unban Confirmation Dialog */}
-      <AlertDialog open={!!unbanDialogUser} onOpenChange={() => setUnbanDialogUser(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Unban User?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to unban "{unbanDialogUser?.name}"? They will be able to post and comment again.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmUnban}>
-              Confirm Unban
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {unbanDialogUser && (
+        <div style={ADMIN_STYLES.overlay} onClick={() => setUnbanDialogUser(null)}>
+          <div style={ADMIN_STYLES.modal} onClick={(e) => e.stopPropagation()}>
+            <div style={ADMIN_STYLES.modalHeader}>
+              <div style={ADMIN_STYLES.modalTitle}>Unban User?</div>
+              <div style={ADMIN_STYLES.modalDescription}>
+                Are you sure you want to unban "{unbanDialogUser?.name}"? They will be able to post and comment again.
+              </div>
+            </div>
+            <div style={{display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '16px'}}>
+              <button
+                onClick={() => setUnbanDialogUser(null)}
+                style={{...ADMIN_STYLES.button, ...ADMIN_STYLES.buttonSecondary}}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmUnban}
+                style={ADMIN_STYLES.button}
+              >
+                Confirm Unban
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
