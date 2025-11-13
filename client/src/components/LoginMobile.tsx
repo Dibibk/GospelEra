@@ -85,8 +85,8 @@ export function LoginMobile({ onSuccess }: LoginMobileProps) {
             src={logoImage}
             alt="Gospel Era Logo"
             style={{
-              width: '120px',
-              height: '120px',
+              width: '180px',
+              height: '180px',
               objectFit: 'contain',
             }}
           />
