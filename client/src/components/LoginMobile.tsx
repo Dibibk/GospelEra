@@ -1,6 +1,6 @@
 import { useState, useRef, type RefObject } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import logoImage from '@assets/FaithCore (4)_1763048849861.png';
+import logoImage from '@assets/FaithCore (6)_1763052773869.png';
 
 interface LoginMobileProps {
   onSuccess: () => void;
@@ -85,11 +85,10 @@ export function LoginMobile({ onSuccess }: LoginMobileProps) {
             src={logoImage}
             alt="Faith Logo"
             style={{
-              width: '70px',
-              height: '70px',
+              width: '60px',
+              height: '60px',
               objectFit: 'contain',
-              border: '2px solid #b0b8bc',
-              borderRadius: '0',
+              borderRadius: '8px',
             }}
           />
         </div>
