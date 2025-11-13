@@ -88,9 +88,8 @@ export function LoginMobile({ onSuccess }: LoginMobileProps) {
               width: '70px',
               height: '70px',
               objectFit: 'contain',
-              border: '2px solid #2c5f6f',
-              borderRadius: '12px',
-              padding: '8px',
+              border: '2px solid #b0b8bc',
+              borderRadius: '0',
             }}
           />
         </div>
