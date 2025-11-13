@@ -65,6 +65,7 @@ import { PrayerDetailView } from "@/components/PrayerDetailView";
 import { FullLeaderboardView } from "@/components/FullLeaderboardView";
 import { MobilePublicProfilePage } from "@/components/MobilePublicProfilePage";
 import { MobileSavedPostsPage } from "@/components/MobileSavedPostsPage";
+import { LoginMobile } from "@/components/LoginMobile";
 import { getDailyVerse } from "@/lib/scripture";
 import {
   createDonationPledge,
@@ -291,7 +292,7 @@ const STYLES = {
 
 // Complete Instagram-style Gospel Era Mobile App with Real API Integration
 export default function MobileApp() {
-  const { user, loading: authLoading, signIn, signUp, signOut } = useAuth();
+  const { user, loading: authLoading, signOut } = useAuth();
   const { isBanned, isAdmin } = useRole();
   const [activeTab, setActiveTab] = useState(0);
   const [posts, setPosts] = useState<any[]>([]);
@@ -333,11 +334,6 @@ export default function MobileApp() {
   );
   const [confirmingId, setConfirmingId] = useState<number | null>(null);
   const [leaderboardData, setLeaderboardData] = useState<any[]>([]);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [isSignUp, setIsSignUp] = useState(false);
-  const [loginError, setLoginError] = useState("");
-  const [faithAffirmed, setFaithAffirmed] = useState(false);
   const [deletingPostId, setDeletingPostId] = useState<number | null>(null);
   const [editingPostId, setEditingPostId] = useState<number | null>(null);
   const [reportModalOpen, setReportModalOpen] = useState(false);
@@ -382,9 +378,6 @@ export default function MobileApp() {
     [postId: number]: boolean;
   }>({});
   const isLoading = useRef(false);
-
-  const emailRef = useRef<HTMLInputElement>(null);
-  const passwordRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!user) {
@@ -1343,29 +1336,6 @@ export default function MobileApp() {
     setReportTarget(null);
   };
 
-  const handleLogin = async () => {
-    if (!email.trim() || !password.trim()) return;
-
-    // Check faith affirmation for signup
-    if (isSignUp && !faithAffirmed) {
-      setLoginError("Please affirm your faith to create an account.");
-      return;
-    }
-
-    setLoginError("");
-    const { error } = isSignUp
-      ? await signUp(email, password)
-      : await signIn(email, password);
-
-    if (error) {
-      setLoginError(error.message);
-    } else {
-      setEmail("");
-      setPassword("");
-      setFaithAffirmed(false);
-    }
-  };
-
   const formatTimeAgo = useCallback((dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
@@ -1377,222 +1347,6 @@ export default function MobileApp() {
     if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d`;
     return `${Math.floor(diffInSeconds / 604800)}w`;
   }, []);
-
-  // ——— Focus safety helpers ———
-  const isEditableEl = (el: EventTarget | null) =>
-    el instanceof HTMLElement &&
-    (el.tagName === "INPUT" ||
-      el.tagName === "TEXTAREA" ||
-      el.tagName === "SELECT" ||
-      el.isContentEditable);
-
-  const startedInsideFormField = (
-    evt: MouseEvent | PointerEvent | TouchEvent,
-  ) => {
-    const path = (evt as any).composedPath?.() as EventTarget[] | undefined;
-    const first = path && path[0];
-    return isEditableEl(first ?? evt.target);
-  };
-
-  const keepFocus = (
-    ref: React.RefObject<HTMLInputElement | HTMLTextAreaElement>,
-  ) => {
-    const node = ref.current;
-    if (!node) return;
-    if (document.activeElement !== node) {
-      node.focus({ preventScroll: true });
-      // place caret at end without scrolling
-      try {
-        node.setSelectionRange(node.value.length, node.value.length);
-      } catch {}
-    }
-  };
-
-  // Login Component
-  function renderLoginPage() {
-    return (
-      <div style={{ padding: "16px" }}>
-        <div style={{ textAlign: "center", marginBottom: "32px" }}>
-          <div
-            style={{
-              fontSize: "32px",
-              fontWeight: 700,
-              color: "#262626",
-              marginBottom: "8px",
-            }}
-          >
-            Gospel Era
-          </div>
-          <div style={{ fontSize: "14px", color: "#8e8e8e" }}>
-            Connect with believers worldwide
-          </div>
-        </div>
-
-        {loginError && (
-          <div
-            style={{
-              background: "#fee",
-              border: "1px solid #fcc",
-              color: "#c00",
-              padding: "12px",
-              borderRadius: "8px",
-              marginBottom: "16px",
-              fontSize: "14px",
-              textAlign: "center",
-            }}
-          >
-            {loginError}
-          </div>
-        )}
-
-        <div style={{ marginBottom: "16px" }}>
-          <input
-            ref={emailRef}
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={(e) => {
-              setEmail(e.target.value);
-              keepFocus(emailRef);
-            }}
-            //onBlur={() => keepFocus(emailRef)}
-            style={{
-              width: "100%",
-              padding: "12px 16px",
-              border: "1px solid #dbdbdb",
-              borderRadius: "8px",
-              fontSize: "16px",
-              marginBottom: "12px",
-              outline: "none",
-            }}
-            inputMode="email"
-            autoCapitalize="none"
-            autoCorrect="off"
-            spellCheck={false}
-          />
-          <input
-            ref={passwordRef}
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e) => {
-              setPassword(e.target.value);
-              keepFocus(passwordRef);
-            }}
-            // onBlur={() => keepFocus(passwordRef)}
-            style={{
-              width: "100%",
-              padding: "12px 16px",
-              border: "1px solid #dbdbdb",
-              borderRadius: "8px",
-              fontSize: "16px",
-              outline: "none",
-            }}
-            inputMode="text"
-            autoCapitalize="none"
-            autoCorrect="off"
-            spellCheck={false}
-          />
-        </div>
-
-        {/* Faith Affirmation for Signup */}
-        {isSignUp && (
-          <div
-            style={{
-              marginBottom: "16px",
-              padding: "16px",
-              border: "1px solid #dbdbdb",
-              borderRadius: "8px",
-              background: "#f9f9f9",
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                alignItems: "flex-start",
-                marginBottom: "8px",
-              }}
-            >
-              <input
-                type="checkbox"
-                checked={faithAffirmed}
-                onChange={(e) => setFaithAffirmed(e.target.checked)}
-                style={{ marginRight: "8px", marginTop: "2px" }}
-              />
-              <label
-                style={{
-                  fontSize: "14px",
-                  color: "#262626",
-                  lineHeight: "1.4",
-                }}
-              >
-                <span style={{ color: "#dc2626" }}>*</span> I affirm that I am a
-                follower of Jesus Christ and I believe in His saving blood. I
-                agree that prayers in this app are directed to Jesus.
-              </label>
-            </div>
-            {isSignUp && !faithAffirmed && (
-              <div
-                style={{
-                  fontSize: "12px",
-                  color: "#dc2626",
-                  marginLeft: "20px",
-                }}
-              >
-                This affirmation is required to join our Christian prayer
-                community.
-              </div>
-            )}
-          </div>
-        )}
-
-        <button
-          onClick={handleLogin}
-          disabled={
-            !email.trim() || !password.trim() || (isSignUp && !faithAffirmed)
-          }
-          style={{
-            width: "100%",
-            background:
-              email.trim() && password.trim() && (!isSignUp || faithAffirmed)
-                ? "#262626"
-                : "#dbdbdb",
-            color: "#ffffff",
-            border: "none",
-            padding: "12px",
-            borderRadius: "8px",
-            fontSize: "16px",
-            fontWeight: 600,
-            marginBottom: "16px",
-            cursor:
-              email.trim() && password.trim() && (!isSignUp || faithAffirmed)
-                ? "pointer"
-                : "not-allowed",
-          }}
-        >
-          {isSignUp ? "Sign Up" : "Log In"}
-        </button>
-
-        <div style={{ textAlign: "center" }}>
-          <button
-            onClick={() => setIsSignUp(!isSignUp)}
-            style={{
-              background: "none",
-              border: "none",
-              color: "#262626",
-              fontSize: "14px",
-              cursor: "pointer",
-              textDecoration: "underline",
-            }}
-          >
-            {isSignUp
-              ? "Already have an account? Log in"
-              : "Don't have an account? Sign up"}
-          </button>
-        </div>
-      </div>
-    );
-  }
 
   // Home Feed Component
   function renderHomeFeed() {
@@ -3914,7 +3668,7 @@ export default function MobileApp() {
       {/* Content */}
       <div style={STYLES.content}>
         {!user ? (
-          renderLoginPage()
+          <LoginMobile onSuccess={() => {}} />
         ) : showMobileReviewReports ? (
           <AdminReportsMobile
             isVisible={showMobileReviewReports}
