@@ -82,13 +82,13 @@ export function LoginMobile({ onSuccess }: LoginMobileProps) {
         >
           <svg
             width="48"
-            height="48"
-            viewBox="0 0 48 48"
+            height="64"
+            viewBox="0 0 48 64"
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
           >
             <path
-              d="M26 8h-4v12H10v4h12v16h4V24h12v-4H26V8z"
+              d="M26 4h-4v12H10v4h12v40h4V20h12v-4H26V4z"
               fill="#0095f6"
             />
           </svg>
