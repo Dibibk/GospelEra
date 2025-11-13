@@ -81,17 +81,16 @@ export function LoginMobile({ onSuccess }: LoginMobileProps) {
           }}
         >
           <svg
-            width="100"
-            height="100"
-            viewBox="0 0 100 100"
+            width="80"
+            height="80"
+            viewBox="0 0 24 32"
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
+            style={{ color: '#262626' }}
           >
-            <rect width="100" height="100" fill="white" rx="4"/>
-            <rect x="8" y="8" width="84" height="84" stroke="#2196F3" strokeWidth="6" fill="none" rx="2"/>
             <path
-              d="M50 25 L50 45 L35 45 L35 55 L50 55 L50 75 L60 75 L60 55 L75 55 L75 45 L60 45 L60 25 Z"
-              fill="#2196F3"
+              d="M13 2h-2v8H3v2h8v18h2V12h8v-2h-8V2z"
+              fill="currentColor"
             />
           </svg>
         </div>
