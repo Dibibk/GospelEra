@@ -1,6 +1,6 @@
 import { useState, useRef, type RefObject } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import logoImage from '@assets/1_1763000930776.png';
+import logoImage from '@assets/FaithCore_1763002005282.png';
 
 interface LoginMobileProps {
   onSuccess: () => void;
