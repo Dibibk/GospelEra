@@ -74,14 +74,25 @@ export function LoginMobile({ onSuccess }: LoginMobileProps) {
       <div style={{ textAlign: 'center', marginBottom: '32px' }}>
         <div
           style={{
-            fontSize: '48px',
             marginBottom: '16px',
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',
           }}
         >
-          ✝️
+          <svg
+            width="48"
+            height="48"
+            viewBox="0 0 24 24"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+            style={{ color: '#262626' }}
+          >
+            <path
+              d="M13.5 2h-3v7.5H3v3h7.5V22h3v-9.5H22v-3h-8.5V2z"
+              fill="currentColor"
+            />
+          </svg>
         </div>
         <div style={{ fontSize: '14px', color: '#8e8e8e' }}>
           {isSignUp
