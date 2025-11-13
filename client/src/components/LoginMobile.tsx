@@ -1,6 +1,5 @@
 import { useState, useRef, type RefObject } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import logoImage from '@assets/FaithCore (1)_1763003127704.png';
 
 interface LoginMobileProps {
   onSuccess: () => void;
@@ -81,15 +80,20 @@ export function LoginMobile({ onSuccess }: LoginMobileProps) {
             alignItems: 'center',
           }}
         >
-          <img
-            src={logoImage}
-            alt="Gospel Era Cross"
-            style={{
-              width: '100px',
-              height: '100px',
-              objectFit: 'contain',
-            }}
-          />
+          <svg
+            width="100"
+            height="100"
+            viewBox="0 0 100 100"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <rect width="100" height="100" fill="white" rx="4"/>
+            <rect x="8" y="8" width="84" height="84" stroke="#2196F3" strokeWidth="6" fill="none" rx="2"/>
+            <path
+              d="M50 25 L50 45 L35 45 L35 55 L50 55 L50 75 L60 75 L60 55 L75 55 L75 45 L60 45 L60 25 Z"
+              fill="#2196F3"
+            />
+          </svg>
         </div>
         <div style={{ fontSize: '14px', color: '#8e8e8e' }}>
           {isSignUp
