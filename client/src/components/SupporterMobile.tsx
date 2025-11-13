@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { validateDonationAmount, createStripeCheckout } from '@/lib/donations';
 
 interface SupporterMobileProps {
   onBack: () => void;
@@ -33,55 +34,20 @@ export function SupporterMobile({ onBack }: SupporterMobileProps) {
     return selectedAmount || (customAmount ? parseFloat(customAmount) : 0);
   };
 
-  const validateDonationAmount = (
-    amount: number
-  ): { valid: boolean; error?: string } => {
-    if (amount <= 0) {
-      return { valid: false, error: 'Amount must be greater than $0' };
-    }
-    if (amount < 2) {
-      return { valid: false, error: 'Minimum donation is $2' };
-    }
-    if (amount > 200) {
-      return { valid: false, error: 'Maximum donation is $200' };
-    }
-    return { valid: true };
-  };
-
-  const createStripeCheckout = async (data: {
-    amount: number;
-    note?: string;
-  }): Promise<{ url: string } | { error: string }> => {
-    try {
-      const response = await fetch('/api/stripe/create-checkout-session', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        return {
-          error: errorData.error || 'Failed to create checkout session',
-        };
-      }
-
-      const result = await response.json();
-      return { url: result.url };
-    } catch (error) {
-      console.error('Error creating Stripe checkout:', error);
-      return { error: 'Network error occurred' };
-    }
-  };
-
-  const handleStripePayment = async () => {
+  const handleSupport = async () => {
     const amount = getSelectedAmount();
 
+    // Validate amount
     const validation = validateDonationAmount(amount);
     if (!validation.valid) {
       setError(validation.error || 'Invalid amount');
+      return;
+    }
+
+    if (!paymentsEnabled || activeTab !== 'stripe') {
+      alert(
+        `Thank you for wanting to support with $${amount}! Payment processing will be implemented soon.`
+      );
       return;
     }
 
@@ -96,31 +62,16 @@ export function SupporterMobile({ onBack }: SupporterMobileProps) {
 
       if ('error' in result) {
         setError(result.error);
+        setIsProcessing(false);
       } else {
+        // Navigate to Stripe Checkout
         window.location.href = result.url;
+        // Note: Keep isProcessing true while redirecting
       }
     } catch (error) {
       console.error('Stripe payment error:', error);
       setError('An unexpected error occurred. Please try again.');
-    } finally {
       setIsProcessing(false);
-    }
-  };
-
-  const handleSupport = () => {
-    if (paymentsEnabled && activeTab === 'stripe') {
-      handleStripePayment();
-    } else {
-      const amount = getSelectedAmount();
-      const validation = validateDonationAmount(amount);
-      if (!validation.valid) {
-        setError(validation.error || 'Invalid amount');
-        return;
-      }
-
-      alert(
-        `Thank you for wanting to support with $${amount}! Payment processing will be implemented soon.`
-      );
     }
   };
 
