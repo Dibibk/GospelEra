@@ -85,9 +85,12 @@ export function LoginMobile({ onSuccess }: LoginMobileProps) {
             src={logoImage}
             alt="Faith Logo"
             style={{
-              width: '100px',
-              height: '100px',
+              width: '70px',
+              height: '70px',
               objectFit: 'contain',
+              border: '2px solid #2c5f6f',
+              borderRadius: '12px',
+              padding: '8px',
             }}
           />
         </div>
