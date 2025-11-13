@@ -12,7 +12,11 @@ export function LoginMobile({ onSuccess }: LoginMobileProps) {
   const [password, setPassword] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
   const [loginError, setLoginError] = useState('');
+  const [success, setSuccess] = useState('');
   const [faithAffirmed, setFaithAffirmed] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
+  const [loading, setLoading] = useState(false);
   
   const emailRef = useRef<HTMLInputElement>(null);
   const passwordRef = useRef<HTMLInputElement>(null);
@@ -30,7 +34,8 @@ export function LoginMobile({ onSuccess }: LoginMobileProps) {
     }
   };
 
-  const handleLogin = async () => {
+  const handleLogin = async (e?: React.FormEvent) => {
+    e?.preventDefault();
     if (!email.trim() || !password.trim()) return;
 
     if (isSignUp && !faithAffirmed) {
@@ -38,7 +43,10 @@ export function LoginMobile({ onSuccess }: LoginMobileProps) {
       return;
     }
 
+    setLoading(true);
     setLoginError('');
+    setSuccess('');
+    
     const { error } = isSignUp
       ? await signUp(email, password)
       : await signIn(email, password);
@@ -46,15 +54,23 @@ export function LoginMobile({ onSuccess }: LoginMobileProps) {
     if (error) {
       setLoginError(error.message);
     } else {
+      if (isSignUp) {
+        setSuccess(
+          "If this email doesn't already have an account, you'll receive a confirmation email."
+        );
+      }
       setEmail('');
       setPassword('');
       setFaithAffirmed(false);
-      onSuccess();
+      if (!isSignUp) {
+        onSuccess();
+      }
     }
+    setLoading(false);
   };
 
   return (
-    <div style={{ padding: '16px' }}>
+    <form onSubmit={handleLogin} style={{ padding: '16px' }}>
       <div style={{ textAlign: 'center', marginBottom: '32px' }}>
         <div
           style={{
@@ -67,7 +83,9 @@ export function LoginMobile({ onSuccess }: LoginMobileProps) {
           Gospel Era
         </div>
         <div style={{ fontSize: '14px', color: '#8e8e8e' }}>
-          Connect with believers worldwide
+          {isSignUp
+            ? 'Create your account to share faith and fellowship'
+            : 'Sign in to continue your spiritual journey'}
         </div>
       </div>
 
@@ -85,6 +103,23 @@ export function LoginMobile({ onSuccess }: LoginMobileProps) {
           }}
         >
           {loginError}
+        </div>
+      )}
+
+      {success && (
+        <div
+          style={{
+            background: '#e7f5e7',
+            border: '1px solid #9fd99f',
+            color: '#2e7d2e',
+            padding: '12px',
+            borderRadius: '8px',
+            marginBottom: '16px',
+            fontSize: '14px',
+            textAlign: 'center',
+          }}
+        >
+          {success}
         </div>
       )}
 
@@ -112,29 +147,98 @@ export function LoginMobile({ onSuccess }: LoginMobileProps) {
           autoCorrect="off"
           spellCheck={false}
         />
-        <input
-          ref={passwordRef}
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => {
-            setPassword(e.target.value);
-            keepFocus(passwordRef);
-          }}
-          style={{
-            width: '100%',
-            padding: '12px 16px',
-            border: '1px solid #dbdbdb',
-            borderRadius: '8px',
-            fontSize: '16px',
-            outline: 'none',
-          }}
-          inputMode="text"
-          autoCapitalize="none"
-          autoCorrect="off"
-          spellCheck={false}
-        />
+        
+        {/* Password field with visibility toggle */}
+        <div style={{ position: 'relative' }}>
+          <input
+            ref={passwordRef}
+            type={showPassword ? 'text' : 'password'}
+            placeholder="Password"
+            value={password}
+            onChange={(e) => {
+              setPassword(e.target.value);
+              keepFocus(passwordRef);
+            }}
+            style={{
+              width: '100%',
+              padding: '12px 16px',
+              paddingRight: '48px',
+              border: '1px solid #dbdbdb',
+              borderRadius: '8px',
+              fontSize: '16px',
+              outline: 'none',
+            }}
+            inputMode="text"
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            style={{
+              position: 'absolute',
+              right: '12px',
+              top: '50%',
+              transform: 'translateY(-50%)',
+              background: 'none',
+              border: 'none',
+              fontSize: '14px',
+              color: '#8e8e8e',
+              cursor: 'pointer',
+              padding: '4px 8px',
+            }}
+            aria-label={showPassword ? 'Hide password' : 'Show password'}
+          >
+            {showPassword ? '👁️' : '👁️‍🗨️'}
+          </button>
+        </div>
       </div>
+
+      {/* Remember me and Forgot password - only for login */}
+      {!isSignUp && (
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: '16px',
+            fontSize: '14px',
+          }}
+        >
+          <label
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              color: '#262626',
+              cursor: 'pointer',
+            }}
+          >
+            <input
+              type="checkbox"
+              checked={rememberMe}
+              onChange={(e) => setRememberMe(e.target.checked)}
+              style={{ marginRight: '6px' }}
+            />
+            Remember me
+          </label>
+          <button
+            type="button"
+            onClick={() => alert('Password reset feature coming soon!')}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: '#0095f6',
+              fontSize: '14px',
+              fontWeight: 600,
+              cursor: 'pointer',
+              textDecoration: 'none',
+            }}
+          >
+            Forgot password?
+          </button>
+        </div>
+      )}
 
       {/* Faith Affirmation for Signup */}
       {isSignUp && (
@@ -188,16 +292,19 @@ export function LoginMobile({ onSuccess }: LoginMobileProps) {
       )}
 
       <button
-        onClick={handleLogin}
+        type="submit"
         disabled={
-          !email.trim() || !password.trim() || (isSignUp && !faithAffirmed)
+          loading ||
+          !email.trim() ||
+          !password.trim() ||
+          (isSignUp && !faithAffirmed)
         }
         style={{
           width: '100%',
           background:
-            email.trim() && password.trim() && (!isSignUp || faithAffirmed)
-              ? '#262626'
-              : '#dbdbdb',
+            email.trim() && password.trim() && (!isSignUp || faithAffirmed) && !loading
+              ? '#0095f6'
+              : '#b3dffc',
           color: '#ffffff',
           border: 'none',
           padding: '12px',
@@ -206,31 +313,46 @@ export function LoginMobile({ onSuccess }: LoginMobileProps) {
           fontWeight: 600,
           marginBottom: '16px',
           cursor:
-            email.trim() && password.trim() && (!isSignUp || faithAffirmed)
+            email.trim() && password.trim() && (!isSignUp || faithAffirmed) && !loading
               ? 'pointer'
               : 'not-allowed',
         }}
       >
-        {isSignUp ? 'Sign Up' : 'Log In'}
+        {loading
+          ? isSignUp
+            ? 'Creating Account...'
+            : 'Signing In...'
+          : isSignUp
+            ? 'Sign Up'
+            : 'Log In'}
       </button>
 
       <div style={{ textAlign: 'center' }}>
+        <span style={{ fontSize: '14px', color: '#8e8e8e' }}>
+          {isSignUp
+            ? 'Already have an account? '
+            : "Don't have an account? "}
+        </span>
         <button
-          onClick={() => setIsSignUp(!isSignUp)}
+          type="button"
+          onClick={() => {
+            setIsSignUp(!isSignUp);
+            setLoginError('');
+            setSuccess('');
+          }}
           style={{
             background: 'none',
             border: 'none',
-            color: '#262626',
+            color: '#0095f6',
             fontSize: '14px',
+            fontWeight: 600,
             cursor: 'pointer',
-            textDecoration: 'underline',
+            textDecoration: 'none',
           }}
         >
-          {isSignUp
-            ? 'Already have an account? Log in'
-            : "Don't have an account? Sign up"}
+          {isSignUp ? 'Log in' : 'Sign up'}
         </button>
       </div>
-    </div>
+    </form>
   );
 }
