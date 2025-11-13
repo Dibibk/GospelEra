@@ -83,13 +83,13 @@ export function LoginMobile({ onSuccess }: LoginMobileProps) {
           <svg
             width="80"
             height="80"
-            viewBox="0 0 24 24"
+            viewBox="0 0 24 32"
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
             style={{ color: '#262626' }}
           >
             <path
-              d="M13.5 2h-3v7.5H3v3h7.5V22h3v-9.5H22v-3h-8.5V2z"
+              d="M13 2h-2v8H3v2h8v18h2V12h8v-2h-8V2z"
               fill="currentColor"
             />
           </svg>
