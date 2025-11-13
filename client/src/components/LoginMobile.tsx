@@ -1,5 +1,6 @@
 import { useState, useRef, type RefObject } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import logoImage from '@assets/5_1763000813075.png';
 
 interface LoginMobileProps {
   onSuccess: () => void;
@@ -80,19 +81,15 @@ export function LoginMobile({ onSuccess }: LoginMobileProps) {
             alignItems: 'center',
           }}
         >
-          <svg
-            width="48"
-            height="48"
-            viewBox="0 0 24 24"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-            style={{ color: '#262626' }}
-          >
-            <path
-              d="M13.5 2h-3v7.5H3v3h7.5V22h3v-9.5H22v-3h-8.5V2z"
-              fill="currentColor"
-            />
-          </svg>
+          <img
+            src={logoImage}
+            alt="Gospel Era Logo"
+            style={{
+              width: '120px',
+              height: '120px',
+              objectFit: 'contain',
+            }}
+          />
         </div>
         <div style={{ fontSize: '14px', color: '#8e8e8e' }}>
           {isSignUp
