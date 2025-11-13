@@ -74,13 +74,14 @@ export function LoginMobile({ onSuccess }: LoginMobileProps) {
       <div style={{ textAlign: 'center', marginBottom: '32px' }}>
         <div
           style={{
-            fontSize: '32px',
-            fontWeight: 700,
-            color: '#262626',
-            marginBottom: '8px',
+            fontSize: '48px',
+            marginBottom: '16px',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
           }}
         >
-          Gospel Era
+          ✝️
         </div>
         <div style={{ fontSize: '14px', color: '#8e8e8e' }}>
           {isSignUp
