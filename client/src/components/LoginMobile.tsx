@@ -263,28 +263,52 @@ export function LoginMobile({ onSuccess }: LoginMobileProps) {
           }}
         >
           <div
+            onClick={() => setFaithAffirmed(!faithAffirmed)}
             style={{
               display: 'flex',
               alignItems: 'flex-start',
               marginBottom: '8px',
+              cursor: 'pointer',
             }}
           >
-            <input
-              type="checkbox"
-              checked={faithAffirmed}
-              onChange={(e) => setFaithAffirmed(e.target.checked)}
+            <div
               data-testid="checkbox-faith-affirmation"
               style={{ 
                 marginRight: '12px', 
-                marginTop: '4px',
-                width: '20px',
-                height: '20px',
+                marginTop: '2px',
+                width: '24px',
+                height: '24px',
+                minWidth: '24px',
+                minHeight: '24px',
                 flexShrink: 0,
-                cursor: 'pointer',
-                accentColor: '#0095f6',
+                border: '2px solid #0095f6',
+                borderRadius: '4px',
+                background: faithAffirmed ? '#0095f6' : '#ffffff',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'all 0.2s',
               }}
-            />
-            <label
+            >
+              {faithAffirmed && (
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 16 16"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M13 4L6 11L3 8"
+                    stroke="white"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              )}
+            </div>
+            <div
               style={{
                 fontSize: '14px',
                 color: '#262626',
@@ -295,7 +319,7 @@ export function LoginMobile({ onSuccess }: LoginMobileProps) {
               <span style={{ color: '#dc2626' }}>*</span> I affirm that I am a
               follower of Jesus Christ and I believe in His saving blood. I
               agree that prayers in this app are directed to Jesus.
-            </label>
+            </div>
           </div>
           {isSignUp && !faithAffirmed && (
             <div
