@@ -220,38 +220,63 @@ export function PrayerNewMobile({ onBack, onSuccess, isBanned }: PrayerNewMobile
         </div>
 
         {/* Anonymous Checkbox */}
-        <div style={{ marginBottom: '24px', padding: '12px', background: '#f7f7f7', borderRadius: '8px' }}>
-          <label
+        <div 
+          onClick={() => !isBanned && !isSubmitting && setIsAnonymous(!isAnonymous)}
+          style={{ 
+            marginBottom: '24px', 
+            padding: '16px', 
+            background: isAnonymous ? '#e7f3ff' : '#f7f7f7', 
+            border: isAnonymous ? '2px solid #0095f6' : '2px solid #dbdbdb',
+            borderRadius: '8px',
+            cursor: isBanned || isSubmitting ? 'not-allowed' : 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            transition: 'all 0.2s ease',
+          }}
+        >
+          <div
             style={{
+              width: '24px',
+              height: '24px',
+              border: isAnonymous ? '2px solid #0095f6' : '2px solid #8e8e8e',
+              borderRadius: '4px',
+              background: isAnonymous ? '#0095f6' : '#ffffff',
               display: 'flex',
               alignItems: 'center',
-              cursor: 'pointer',
-              gap: '12px',
+              justifyContent: 'center',
+              flexShrink: 0,
+              transition: 'all 0.2s ease',
             }}
           >
-            <input
-              type="checkbox"
-              checked={isAnonymous}
-              onChange={(e) => setIsAnonymous(e.target.checked)}
-              disabled={isBanned || isSubmitting}
-              data-testid="checkbox-anonymous"
-              style={{
-                width: '20px',
-                height: '20px',
-                cursor: 'pointer',
-                accentColor: '#0095f6',
-                flexShrink: 0,
-              }}
-            />
-            <div>
-              <div style={{ fontSize: '15px', fontWeight: 600, color: '#262626', marginBottom: '2px' }}>
-                Post anonymously
-              </div>
-              <div style={{ fontSize: '12px', color: '#8e8e8e' }}>
-                Your identity will remain private
-              </div>
+            {isAnonymous && (
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path
+                  d="M13 4L6 11L3 8"
+                  stroke="white"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            )}
+          </div>
+          <div>
+            <div style={{ fontSize: '15px', fontWeight: 600, color: '#262626', marginBottom: '2px' }}>
+              Post anonymously
             </div>
-          </label>
+            <div style={{ fontSize: '12px', color: '#8e8e8e' }}>
+              Your identity will remain private
+            </div>
+          </div>
+          <input
+            type="checkbox"
+            checked={isAnonymous}
+            onChange={() => {}}
+            disabled={isBanned || isSubmitting}
+            data-testid="checkbox-anonymous"
+            style={{ display: 'none' }}
+          />
         </div>
 
         {/* Error Message */}
