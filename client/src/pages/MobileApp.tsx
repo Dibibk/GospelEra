@@ -323,6 +323,9 @@ export default function MobileApp() {
   const [prayerRoute, setPrayerRoute] = useState<
     "browse" | "new" | "detail" | "my" | "leaderboard"
   >("browse");
+  const [previousPrayerRoute, setPreviousPrayerRoute] = useState<
+    "browse" | "my" | "leaderboard" | "new"
+  >("browse");
   const [prayerDetailId, setPrayerDetailId] = useState<number | null>(null);
   const [selectedPrayerDetail, setSelectedPrayerDetail] = useState<any>(null);
   const [showFullLeaderboard, setShowFullLeaderboard] = useState(false);
@@ -2179,6 +2182,7 @@ export default function MobileApp() {
             onNavigateToMy={() => setPrayerRoute("my")}
             onNavigateToLeaderboard={() => setPrayerRoute("leaderboard")}
             onSelectPrayer={(prayer) => {
+              setPreviousPrayerRoute("browse");
               setPrayerDetailId(prayer.id);
               setSelectedPrayerDetail(prayer);
               setPrayerRoute("detail");
@@ -2207,7 +2211,7 @@ export default function MobileApp() {
             isBanned={isBanned}
             onBack={() => {
               setSelectedPrayerDetail(null);
-              setPrayerRoute("browse");
+              setPrayerRoute(previousPrayerRoute);
             }}
             onCommitToPray={handleCommitToPray}
             onConfirmPrayed={handleConfirmPrayed}
@@ -2222,6 +2226,7 @@ export default function MobileApp() {
             onBack={() => setPrayerRoute("browse")}
             onConfirmPrayed={handleConfirmPrayed}
             onSelectRequest={(request) => {
+              setPreviousPrayerRoute("my");
               setPrayerDetailId(request.id);
               setSelectedPrayerDetail(request);
               setPrayerRoute("detail");
@@ -2244,6 +2249,7 @@ export default function MobileApp() {
             onNavigateToMy={() => setPrayerRoute("my")}
             onNavigateToLeaderboard={() => setPrayerRoute("leaderboard")}
             onSelectPrayer={(prayer) => {
+              setPreviousPrayerRoute("browse");
               setPrayerDetailId(prayer.id);
               setSelectedPrayerDetail(prayer);
               setPrayerRoute("detail");
