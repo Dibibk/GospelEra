@@ -3718,7 +3718,7 @@ export default function MobileApp() {
             profile={profile}
             onBack={() => setShowMobileEditProfile(false)}
             onSuccess={() => {
-              setShowMobileEditProfile(false);
+              // Stay on the edit profile page, just reload the profile data
               loadMobileProfile();
             }}
           />
