@@ -220,13 +220,13 @@ export function PrayerNewMobile({ onBack, onSuccess, isBanned }: PrayerNewMobile
         </div>
 
         {/* Anonymous Checkbox */}
-        <div style={{ marginBottom: '24px' }}>
+        <div style={{ marginBottom: '24px', padding: '12px', background: '#f7f7f7', borderRadius: '8px' }}>
           <label
             style={{
               display: 'flex',
               alignItems: 'center',
               cursor: 'pointer',
-              gap: '8px',
+              gap: '12px',
             }}
           >
             <input
@@ -235,11 +235,22 @@ export function PrayerNewMobile({ onBack, onSuccess, isBanned }: PrayerNewMobile
               onChange={(e) => setIsAnonymous(e.target.checked)}
               disabled={isBanned || isSubmitting}
               data-testid="checkbox-anonymous"
-              style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+              style={{
+                width: '20px',
+                height: '20px',
+                cursor: 'pointer',
+                accentColor: '#0095f6',
+                flexShrink: 0,
+              }}
             />
-            <span style={{ fontSize: '14px', color: '#262626' }}>
-              Post anonymously
-            </span>
+            <div>
+              <div style={{ fontSize: '15px', fontWeight: 600, color: '#262626', marginBottom: '2px' }}>
+                Post anonymously
+              </div>
+              <div style={{ fontSize: '12px', color: '#8e8e8e' }}>
+                Your identity will remain private
+              </div>
+            </div>
           </label>
         </div>
 
