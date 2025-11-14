@@ -2210,7 +2210,10 @@ export default function MobileApp() {
             user={user}
             isBanned={isBanned}
             onBack={() => {
+              // Clear detail IDs FIRST to prevent any effects from reasserting the detail route
               setSelectedPrayerDetail(null);
+              setPrayerDetailId(null);
+              // Then navigate to the previous route
               setPrayerRoute(previousPrayerRoute);
             }}
             onCommitToPray={handleCommitToPray}
