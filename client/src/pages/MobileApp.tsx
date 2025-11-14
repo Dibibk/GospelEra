@@ -33,7 +33,7 @@ import {
 } from "@/lib/engagement";
 import { listComments, createComment, softDeleteComment } from "@/lib/comments";
 import { createReport } from "@/lib/reports";
-import { checkMediaPermission } from "@/lib/mediaRequests";
+import { checkMediaPermission, getCurrentRequestStatus } from "@/lib/mediaRequests";
 import { validateAndNormalizeYouTubeUrl } from "../../../shared/youtube";
 import { validateFaithContent } from "../../../shared/moderation";
 import { supabase } from "@/lib/supabaseClient";
@@ -2296,6 +2296,36 @@ export default function MobileApp() {
       null,
     );
     const [showMediaRequestModal, setShowMediaRequestModal] = useState(false);
+    const [settingsLoading, setSettingsLoading] = useState(true);
+
+    // Load user settings from database on mount
+    useEffect(() => {
+      loadSettingsFromDatabase();
+    }, []);
+
+    const loadSettingsFromDatabase = async () => {
+      setSettingsLoading(true);
+      try {
+        // Load profile settings
+        const { data: profileData } = await ensureMyProfile();
+        if (profileData) {
+          setShowNameOnPrayers(profileData.show_name_on_prayers ?? true);
+          setPrivateProfile(profileData.private_profile ?? false);
+        }
+
+        // Load media status
+        const permissionResult = await checkMediaPermission();
+        setMediaEnabled(permissionResult.hasPermission);
+
+        if (!permissionResult.hasPermission) {
+          const statusResult = await getCurrentRequestStatus();
+          setMediaRequestStatus(statusResult.status);
+        }
+      } catch (error) {
+        console.error('Error loading settings:', error);
+      }
+      setSettingsLoading(false);
+    };
 
     const handleToggle = async (setting: string, value: boolean) => {
       // Haptic feedback simulation
@@ -2364,6 +2394,7 @@ export default function MobileApp() {
           <div style={{ display: "flex", alignItems: "center" }}>
             <button
               onClick={() => setShowMobileSettings(false)}
+              data-testid="button-back-settings"
               style={{
                 background: "none",
                 border: "none",
@@ -2388,7 +2419,12 @@ export default function MobileApp() {
           </div>
         </div>
 
-        <div style={{ padding: "0 16px 16px" }}>
+        {settingsLoading ? (
+          <div style={{ padding: "40px", textAlign: "center", color: "#8e8e8e" }}>
+            Loading settings...
+          </div>
+        ) : (
+          <div style={{ padding: "0 16px 16px" }}>
           {/* Profile Information Section (from web app) */}
           <div
             style={{
@@ -3228,6 +3264,7 @@ export default function MobileApp() {
                 await signOut();
               }
             }}
+            data-testid="button-sign-out"
             style={{
               width: "100%",
               minHeight: "48px",
@@ -3244,6 +3281,7 @@ export default function MobileApp() {
             Sign Out
           </button>
         </div>
+        )}
       </div>
     );
   };
