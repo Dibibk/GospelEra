@@ -595,7 +595,7 @@ export default function MobileApp() {
         alert("Failed to commit to prayer. Please try again.");
       } else {
         // Refresh prayer requests to show updated counts
-        fetchData();
+        await fetchData();
       }
     } catch (error) {
       console.error("Error committing to prayer:", error);
@@ -628,7 +628,7 @@ export default function MobileApp() {
         }, 3000);
 
         // Refresh prayer requests and commitments to show updated counts
-        fetchData();
+        await fetchData();
       }
     } catch (error) {
       console.error("Error confirming prayer:", error);
