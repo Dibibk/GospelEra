@@ -13,6 +13,7 @@ export interface DonationData {
 export interface StripeCheckoutData {
   amount: number;
   note?: string;
+  isMobile?: boolean;
 }
 
 export interface Donation {

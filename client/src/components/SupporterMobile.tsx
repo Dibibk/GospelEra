@@ -58,6 +58,7 @@ export function SupporterMobile({ onBack }: SupporterMobileProps) {
       const result = await createStripeCheckout({
         amount: amount,
         note: message.trim() || undefined,
+        isMobile: true,
       });
 
       if ('error' in result) {

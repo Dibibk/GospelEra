@@ -715,7 +715,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
 
     try {
-      const { amount, note } = req.body;
+      const { amount, note, isMobile } = req.body;
 
       // Validate amount ($2-$200)
       if (!amount || amount < 2 || amount > 200) {
@@ -728,6 +728,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const host = req.get('host');
       const protocol = req.get('x-forwarded-proto') || (host?.includes('localhost') ? 'http' : 'https');
       const baseUrl = `${protocol}://${host}`;
+
+      // Use mobile or web URLs based on context
+      const successUrl = isMobile 
+        ? `${baseUrl}/mobile?payment=success&session_id={CHECKOUT_SESSION_ID}`
+        : `${baseUrl}/support/thanks?session_id={CHECKOUT_SESSION_ID}`;
+      const cancelUrl = isMobile 
+        ? `${baseUrl}/mobile`
+        : `${baseUrl}/support`;
 
       // Create checkout session
       const session = await stripe.checkout.sessions.create({
@@ -744,8 +752,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           },
           quantity: 1,
         }],
-        success_url: `${baseUrl}/support/thanks?session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${baseUrl}/support`,
+        success_url: successUrl,
+        cancel_url: cancelUrl,
         metadata: {
           note: note || '',
         },
