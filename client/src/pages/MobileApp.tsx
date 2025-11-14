@@ -2201,6 +2201,23 @@ export default function MobileApp() {
           />
         );
       case "detail":
+        // Guard: if no prayer is selected, show browse instead
+        if (!selectedPrayerDetail) {
+          return (
+            <PrayerBrowseMobile
+              prayerRequests={prayerRequests}
+              onNavigateToNew={() => setPrayerRoute("new")}
+              onNavigateToMy={() => setPrayerRoute("my")}
+              onNavigateToLeaderboard={() => setPrayerRoute("leaderboard")}
+              onSelectPrayer={(prayer) => {
+                setPreviousPrayerRoute("browse");
+                setPrayerDetailId(prayer.id);
+                setSelectedPrayerDetail(prayer);
+                setPrayerRoute("detail");
+              }}
+            />
+          );
+        }
         return (
           <PrayerDetailMobile
             prayer={selectedPrayerDetail}
