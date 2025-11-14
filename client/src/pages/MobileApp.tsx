@@ -2205,7 +2205,10 @@ export default function MobileApp() {
             )}
             user={user}
             isBanned={isBanned}
-            onBack={() => setPrayerRoute("browse")}
+            onBack={() => {
+              setSelectedPrayerDetail(null);
+              setPrayerRoute("browse");
+            }}
             onCommitToPray={handleCommitToPray}
             onConfirmPrayed={handleConfirmPrayed}
           />
