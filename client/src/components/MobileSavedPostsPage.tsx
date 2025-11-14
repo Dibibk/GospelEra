@@ -6,6 +6,7 @@ interface MobileSavedPostsPageProps {
   onSetProfiles: (updater: (prev: Map<string, any>) => Map<string, any>) => void;
   onToggleBookmark: (postId: number) => void;
   onOpenPostMenu: (postId: number, menuType: string) => void;
+  onSelectPost: (postId: number) => void;
 }
 
 export function MobileSavedPostsPage({
@@ -14,6 +15,7 @@ export function MobileSavedPostsPage({
   onSetProfiles,
   onToggleBookmark,
   onOpenPostMenu,
+  onSelectPost,
 }: MobileSavedPostsPageProps) {
   const [savedPosts, setSavedPosts] = useState<any[]>([]);
   const [savedPostsLoading, setSavedPostsLoading] = useState(true);
@@ -182,9 +184,11 @@ export function MobileSavedPostsPage({
           {savedPosts.map((post) => (
             <div
               key={post.id}
+              onClick={() => onSelectPost(post.id)}
               style={{
                 background: "#ffffff",
                 borderBottom: "1px solid #dbdbdb",
+                cursor: "pointer",
               }}
             >
               {/* Post header */}

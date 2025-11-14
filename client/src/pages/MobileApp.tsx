@@ -2791,6 +2791,10 @@ export default function MobileApp() {
               setPostMenuOpenId(postId);
               setPostMenuType(menuType);
             }}
+            onSelectPost={(postId) => {
+              setShowMobileSavedPosts(false);
+              setActiveTab(0);
+            }}
           />
         ) : showMobileCommunityGuidelines ? (
           <CommunityGuidelinesMobile onBack={() => setShowMobileCommunityGuidelines(false)} />
