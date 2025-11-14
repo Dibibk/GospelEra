@@ -273,13 +273,23 @@ export function LoginMobile({ onSuccess }: LoginMobileProps) {
               type="checkbox"
               checked={faithAffirmed}
               onChange={(e) => setFaithAffirmed(e.target.checked)}
-              style={{ marginRight: '8px', marginTop: '2px' }}
+              data-testid="checkbox-faith-affirmation"
+              style={{ 
+                marginRight: '12px', 
+                marginTop: '4px',
+                width: '20px',
+                height: '20px',
+                flexShrink: 0,
+                cursor: 'pointer',
+                accentColor: '#0095f6',
+              }}
             />
             <label
               style={{
                 fontSize: '14px',
                 color: '#262626',
                 lineHeight: '1.4',
+                flex: 1,
               }}
             >
               <span style={{ color: '#dc2626' }}>*</span> I affirm that I am a
