@@ -109,3 +109,35 @@ export function moderateContent(text: string): ModerationResult {
 export function requiresReview(result: ModerationResult): boolean {
   return result.confidence < 0.6 && result.allowed
 }
+
+/**
+ * AI-powered content validation (more intelligent and flexible)
+ * This replaces the strict keyword-based validation with AI understanding
+ */
+export async function validateContentWithAI(text: string): Promise<ModerationResult> {
+  try {
+    const response = await fetch('/api/validate-content', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ text }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Validation request failed');
+    }
+
+    const result = await response.json();
+    return {
+      allowed: result.allowed ?? true,
+      reason: result.reason,
+      confidence: result.confidence ?? 0.7,
+    };
+  } catch (error) {
+    console.error('AI content validation error, using basic moderation as fallback:', error);
+    // Fallback to basic keyword moderation if AI fails
+    const fallbackResult = moderateContent(text);
+    return fallbackResult;
+  }
+}

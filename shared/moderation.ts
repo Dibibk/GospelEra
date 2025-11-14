@@ -5,31 +5,31 @@ export interface ModerationConfig {
   contextualAllowedPhrases: string[]
 }
 
+export interface AIModerationResult {
+  allowed: boolean
+  reason?: string
+  confidence: number
+  analysis?: string
+}
+
 export const moderationConfig: ModerationConfig = {
   // Terms that indicate non-Christian religious practices
+  // NOTE: Only block explicit non-Christian religious invocations
+  // Let AI handle nuanced cases like legitimate Christian mentions of Mary
   blockedTerms: [
-    'allah', 'muhammad', 'quran', 'mosque',
-    'vishnu', 'shiva', 'krishna', 'brahma', 'hindu gods',
-    'buddha as deity', 'buddhist prayer', 'dharma prayer',
-    'athena', 'zeus', 'thor', 'odin', 'apollo',
-    'gaia worship', 'mother earth prayer', 'nature deity',
-    'tarot reading', 'horoscope prayer', 'astrology prayer',
-    'ouija', 'séance', 'spirit guide',
-    'witchcraft', 'spell casting', 'magic ritual',
-    'occult invocation', 'pagan ritual', 'wiccan prayer',
-    'ancestral worship', 'ancestor spirits',
-    'chakra alignment prayer', 'crystal healing prayer',
-    'new age spirituality', 'universe prayer',
-    // Prayer directed to Mary or saints (non-Protestant practices)
-    'pray to mary', 'hail mary', 'mother mary pray for us',
-    'mary queen of heaven', 'pray to saint', 'saint pray for us',
-    // Block any standalone Mary references (will be overridden by contextual allowances)
-    'mary', 'virgin mary', 'blessed mary', 'saint mary',
-    // Other deities and religious figures
-    'mother goddess', 'divine feminine', 'goddess prayer',
-    'ra the sun god', 'egyptian gods', 'celtic gods',
-    'native american spirits', 'ancestral deities',
-    'bahai prayer', 'zoroastrian prayer', 'sikh prayer'
+    'pray to allah', 'in the name of allah', 'muhammad is the prophet',
+    'praise vishnu', 'om shiva', 'hare krishna mantra',
+    'buddha bless', 'buddhist mantra', 'dharma blessing',
+    'praise zeus', 'invoke thor', 'call upon odin',
+    'worship gaia', 'mother earth goddess', 'nature deity worship',
+    'tarot blessing', 'horoscope ritual', 'astrology spell',
+    'ouija spirit', 'séance prayer', 'channel spirits',
+    'witchcraft spell', 'wiccan ritual', 'magic incantation',
+    'occult ceremony', 'pagan offering', 'ancestral worship ritual',
+    'chakra prayer', 'crystal energy prayer', 'universe manifest',
+    // Only block explicit prayers TO Mary/saints, not mentions OF them
+    'pray to mary', 'hail mary full of grace', 'mary intercede for us',
+    'saint michael protect us', 'saint joseph pray for',
   ],
   
   // Terms that boost Christian content confidence
@@ -204,4 +204,11 @@ export function validateFaithContent(text: string): FaithValidationResult {
 // Helper function to check if content should be flagged for review
 export function requiresReview(result: ModerationResult): boolean {
   return result.confidence < 0.6 && result.allowed
+}
+
+// AI-based content validation (server-side only)
+export async function validateContentWithAI(text: string): Promise<AIModerationResult> {
+  // This function should only be called server-side where OpenAI client is available
+  // It will be implemented in the server routes
+  throw new Error('This function must be called from server-side code')
 }

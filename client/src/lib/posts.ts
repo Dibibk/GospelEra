@@ -1,5 +1,5 @@
 import { supabase } from './supabaseClient'
-import { validateFaithContent } from '../../../shared/moderation'
+import { validateContentWithAI } from './moderation'
 
 export interface CreatePostData {
   title: string
@@ -48,12 +48,12 @@ export async function createPost({ title, content, tags = [], media_urls = [], e
       throw new Error('User must be authenticated to create posts')
     }
 
-    // Validate title and content faith alignment (at least one must pass)
-    const titleValidation = validateFaithContent(title.trim())
-    const contentValidation = validateFaithContent(content.trim())
+    // Validate title and content with AI (more intelligent and flexible)
+    const combinedText = `${title.trim()}\n\n${content.trim()}`
+    const validation = await validateContentWithAI(combinedText)
     
-    if (!titleValidation.isValid && !contentValidation.isValid) {
-      throw new Error(titleValidation.reason || 'Please keep your post centered on Jesus or Scripture.')
+    if (!validation.allowed) {
+      throw new Error(validation.reason || 'Please keep your content Christ-centered and appropriate for our faith community.')
     }
 
     // Insert the post

@@ -8,6 +8,7 @@ import {
 import { HybridStorageService } from "./hybridStorage";
 import { embedsRouter } from "./embeds";
 import Stripe from "stripe";
+import OpenAI from "openai";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Initialize hybrid storage service (S3 or Replit Object Storage)
@@ -24,6 +25,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     apiVersion: "2025-07-30.basil",
   }) : null;
 
+  // Initialize OpenAI for AI-based content moderation
+  const openai = new OpenAI({
+    apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
+    baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
+  });
+
   // Health check endpoint for deployment
   app.get("/health", (req, res) => {
     res.status(200).json({ status: "healthy", timestamp: new Date().toISOString() });
@@ -37,6 +44,93 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Storage status endpoint for debugging
   app.get("/api/storage/status", (req, res) => {
     res.json(hybridStorage.getStorageInfo());
+  });
+
+  // AI-based content validation endpoint
+  app.post("/api/validate-content", async (req, res) => {
+    try {
+      const { text } = req.body;
+
+      if (!text || typeof text !== 'string') {
+        return res.status(400).json({ error: "Text is required" });
+      }
+
+      // First check for hard-blocked terms (non-Christian religious content)
+      const { moderateContent } = await import("@shared/moderation");
+      const basicModeration = moderateContent(text);
+      
+      if (!basicModeration.allowed) {
+        return res.json({
+          allowed: false,
+          reason: basicModeration.reason,
+          confidence: basicModeration.confidence
+        });
+      }
+
+      // Use AI for nuanced validation
+      const completion = await openai.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages: [
+          {
+            role: "system",
+            content: `You are a content moderator for Gospel Era, a Christ-centered Christian community platform.
+
+Your task is to determine if user-submitted content is appropriate for this faith-based community.
+
+ALLOW content that is:
+- Christ-centered or Jesus-focused
+- Biblical or Scripture-based
+- Spiritual encouragement or testimony
+- Prayer requests or praise
+- Questions about faith or Christian living
+- General positive messages that don't conflict with Christian values
+- Personal struggles or requests for support (even without explicit Christian terms)
+- Expressions of gratitude, hope, or encouragement
+
+REJECT content that is:
+- Promoting non-Christian religions or deities
+- Occult, witchcraft, or new age practices
+- Explicitly anti-Christian or mocking faith
+- Hateful, violent, or inappropriate
+- Spam or commercial advertising
+
+Be PERMISSIVE and GRACIOUS. Not every post needs to quote scripture or mention Jesus explicitly. Allow genuine spiritual content, personal struggles, and supportive messages.
+
+Respond in JSON format:
+{
+  "allowed": true/false,
+  "reason": "brief explanation if rejected",
+  "confidence": 0.0-1.0,
+  "analysis": "brief analysis of the content"
+}`
+          },
+          {
+            role: "user",
+            content: `Evaluate this content:\n\n"${text}"`
+          }
+        ],
+        temperature: 0.3,
+        response_format: { type: "json_object" }
+      });
+
+      const result = JSON.parse(completion.choices[0].message.content || '{}');
+      
+      res.json({
+        allowed: result.allowed ?? true,
+        reason: result.reason,
+        confidence: result.confidence ?? 0.7,
+        analysis: result.analysis
+      });
+
+    } catch (error) {
+      console.error('AI validation error:', error);
+      // Fail open - allow content if AI validation fails
+      res.json({
+        allowed: true,
+        confidence: 0.5,
+        reason: "AI validation unavailable, content approved by default"
+      });
+    }
   });
 
   // Embeds verification routes
@@ -205,22 +299,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { db } = await import("../client/src/lib/db");
       const { posts, insertPostSchema } = await import("@shared/schema");
-      const { validateFaithContent } = await import("../shared/moderation");
+      const { moderateContent } = await import("../shared/moderation");
       
       const result = insertPostSchema.safeParse(req.body);
       if (!result.success) {
         return res.status(400).json({ error: "Invalid post data", issues: result.error.issues });
       }
 
-      // Server-side faith validation (backup/enforcement)
-      const titleValidation = validateFaithContent(result.data.title?.trim() || '');
-      const contentValidation = validateFaithContent(result.data.content?.trim() || '');
+      // Server-side AI validation for content
+      const combinedText = `${result.data.title?.trim() || ''}\n\n${result.data.content?.trim() || ''}`;
       
-      if (!titleValidation.isValid && !contentValidation.isValid) {
+      // First check for hard-blocked terms
+      const basicModeration = moderateContent(combinedText);
+      if (!basicModeration.allowed) {
         return res.status(400).json({ 
-          error: "Content must be Christ-centered", 
-          reason: titleValidation.reason || 'Please keep your post centered on Jesus or Scripture.'
+          error: "Content not appropriate", 
+          reason: basicModeration.reason
         });
+      }
+
+      // Use AI for nuanced validation
+      try {
+        const completion = await openai.chat.completions.create({
+          model: "gpt-4o-mini",
+          messages: [
+            {
+              role: "system",
+              content: `You are a content moderator for Gospel Era, a Christ-centered Christian community platform. Determine if this content is appropriate. Allow genuine spiritual content, personal struggles, encouragement. Reject only clearly inappropriate or non-Christian religious content. Respond JSON: {"allowed": true/false, "reason": "if rejected"}`
+            },
+            {
+              role: "user",
+              content: `Evaluate: "${combinedText}"`
+            }
+          ],
+          temperature: 0.3,
+          response_format: { type: "json_object" }
+        });
+
+        const aiResult = JSON.parse(completion.choices[0].message.content || '{"allowed": true}');
+        
+        if (!aiResult.allowed) {
+          return res.status(400).json({ 
+            error: "Content validation failed", 
+            reason: aiResult.reason || 'Please keep content Christ-centered and appropriate'
+          });
+        }
+      } catch (aiError) {
+        // AI failed - use basic moderation as fallback (already passed above)
+        console.error('AI validation error, using basic moderation:', aiError);
       }
 
       const postData = {
