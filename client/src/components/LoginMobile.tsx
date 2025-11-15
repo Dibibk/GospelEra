@@ -1,5 +1,6 @@
 import { useState, useRef, type RefObject } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/lib/supabaseClient';
 
 interface LoginMobileProps {
   onSuccess: () => void;
@@ -17,6 +18,9 @@ export function LoginMobile({ onSuccess }: LoginMobileProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [showPasswordReset, setShowPasswordReset] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetSent, setResetSent] = useState(false);
   
   const emailRef = useRef<HTMLInputElement>(null);
   const passwordRef = useRef<HTMLInputElement>(null);
@@ -68,6 +72,179 @@ export function LoginMobile({ onSuccess }: LoginMobileProps) {
     }
     setLoading(false);
   };
+
+  const handlePasswordReset = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!resetEmail.trim()) return;
+
+    setLoading(true);
+    setLoginError('');
+
+    const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
+      redirectTo: `${window.location.origin}/mobile?reset=true`,
+    });
+
+    if (error) {
+      setLoginError(error.message);
+      setLoading(false);
+    } else {
+      setResetSent(true);
+      setLoading(false);
+    }
+  };
+
+  const handleBackToLogin = () => {
+    setShowPasswordReset(false);
+    setResetEmail('');
+    setResetSent(false);
+    setLoginError('');
+  };
+
+  // If showing password reset form
+  if (showPasswordReset) {
+    return (
+      <div style={{ padding: '24px', background: '#ffffff', minHeight: '100vh' }}>
+        {/* Header */}
+        <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+          <div style={{ fontSize: '28px', color: '#0095f6', marginBottom: '16px' }}>
+            ✝️
+          </div>
+          <h2 style={{ fontSize: '24px', fontWeight: 600, color: '#262626', marginBottom: '8px' }}>
+            Reset Password
+          </h2>
+          <div style={{ fontSize: '14px', color: '#8e8e8e' }}>
+            {resetSent ? 'Check your email' : 'Enter your email address'}
+          </div>
+        </div>
+
+        {resetSent ? (
+          <div>
+            <div
+              style={{
+                background: '#d4edda',
+                border: '1px solid #c3e6cb',
+                borderRadius: '8px',
+                padding: '16px',
+                marginBottom: '24px',
+                color: '#155724',
+                fontSize: '14px',
+                lineHeight: '1.5',
+              }}
+            >
+              ✉️ We've sent a password reset link to <strong>{resetEmail}</strong>. 
+              <br /><br />
+              Please check your email and click the link to reset your password.
+            </div>
+            
+            <button
+              onClick={handleBackToLogin}
+              style={{
+                width: '100%',
+                background: '#0095f6',
+                color: '#ffffff',
+                border: 'none',
+                padding: '12px',
+                borderRadius: '8px',
+                fontSize: '16px',
+                fontWeight: 600,
+                cursor: 'pointer',
+              }}
+              data-testid="button-back-to-login"
+            >
+              Back to Login
+            </button>
+          </div>
+        ) : (
+          <form onSubmit={handlePasswordReset}>
+            {loginError && (
+              <div
+                style={{
+                  background: '#f8d7da',
+                  border: '1px solid #f5c2c7',
+                  borderRadius: '8px',
+                  padding: '12px',
+                  marginBottom: '16px',
+                  color: '#842029',
+                  fontSize: '14px',
+                }}
+              >
+                {loginError}
+              </div>
+            )}
+
+            <div style={{ marginBottom: '16px' }}>
+              <label
+                style={{
+                  display: 'block',
+                  fontSize: '14px',
+                  fontWeight: 600,
+                  color: '#262626',
+                  marginBottom: '8px',
+                }}
+              >
+                Email
+              </label>
+              <input
+                type="email"
+                value={resetEmail}
+                onChange={(e) => setResetEmail(e.target.value)}
+                placeholder="Enter your email"
+                data-testid="input-reset-email"
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  border: '1px solid #dbdbdb',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  background: '#fafafa',
+                }}
+                required
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading || !resetEmail.trim()}
+              style={{
+                width: '100%',
+                background: resetEmail.trim() && !loading ? '#0095f6' : '#b3dffc',
+                color: '#ffffff',
+                border: 'none',
+                padding: '12px',
+                borderRadius: '8px',
+                fontSize: '16px',
+                fontWeight: 600,
+                marginBottom: '16px',
+                cursor: resetEmail.trim() && !loading ? 'pointer' : 'not-allowed',
+              }}
+              data-testid="button-send-reset"
+            >
+              {loading ? 'Sending...' : 'Send Reset Link'}
+            </button>
+
+            <button
+              type="button"
+              onClick={handleBackToLogin}
+              style={{
+                width: '100%',
+                background: 'transparent',
+                color: '#0095f6',
+                border: '1px solid #0095f6',
+                padding: '12px',
+                borderRadius: '8px',
+                fontSize: '16px',
+                fontWeight: 600,
+                cursor: 'pointer',
+              }}
+              data-testid="button-cancel-reset"
+            >
+              Cancel
+            </button>
+          </form>
+        )}
+      </div>
+    );
+  }
 
   return (
     <form onSubmit={handleLogin} style={{ padding: '16px' }}>
@@ -265,7 +442,10 @@ export function LoginMobile({ onSuccess }: LoginMobileProps) {
           </div>
           <button
             type="button"
-            onClick={() => alert('Password reset feature coming soon!')}
+            onClick={() => {
+              setShowPasswordReset(true);
+              setResetEmail(email);
+            }}
             style={{
               background: 'none',
               border: 'none',
@@ -275,6 +455,7 @@ export function LoginMobile({ onSuccess }: LoginMobileProps) {
               cursor: 'pointer',
               textDecoration: 'none',
             }}
+            data-testid="button-forgot-password"
           >
             Forgot password?
           </button>

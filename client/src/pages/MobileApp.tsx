@@ -67,6 +67,7 @@ import { FullLeaderboardView } from "@/components/FullLeaderboardView";
 import { MobilePublicProfilePage } from "@/components/MobilePublicProfilePage";
 import { MobileSavedPostsPage } from "@/components/MobileSavedPostsPage";
 import { LoginMobile } from "@/components/LoginMobile";
+import { PasswordUpdateMobile } from "@/components/PasswordUpdateMobile";
 import { getDailyVerse } from "@/lib/scripture";
 import {
   createDonationPledge,
@@ -692,6 +693,7 @@ export default function MobileApp() {
   const [editAvatarUrl, setEditAvatarUrl] = useState("");
   const [showMobileSavedPosts, setShowMobileSavedPosts] = useState(false);
   const [showMobileSupporter, setShowMobileSupporter] = useState(false);
+  const [showPasswordUpdate, setShowPasswordUpdate] = useState(false);
 
   // Function to reset all modal/page states
   const resetAllModalStates = () => {
@@ -708,7 +710,25 @@ export default function MobileApp() {
     setShowUserDropdown(false);
     setShowMobilePublicProfile(false); //Dibi
     setPublicProfileUserId(null); //Dibi
+    setShowPasswordUpdate(false);
   };
+
+  // Check for password reset on mount
+  useEffect(() => {
+    const checkPasswordReset = async () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('reset') === 'true') {
+        // Check if user has a session from password reset flow
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          setShowPasswordUpdate(true);
+          // Remove the parameter from URL
+          window.history.replaceState({}, '', '/mobile');
+        }
+      }
+    };
+    checkPasswordReset();
+  }, []);
   // Open another user's public profile (mobile) Dibi
   const openPublicProfile = (userId: string) => {
     if (!userId) return;
@@ -2745,6 +2765,15 @@ export default function MobileApp() {
           <AdminSupportMobile
             isVisible={showMobileAdminSupport}
             onBack={() => setShowMobileAdminSupport(false)}
+          />
+        ) : showPasswordUpdate ? (
+          <PasswordUpdateMobile
+            onSuccess={() => {
+              setShowPasswordUpdate(false);
+              // Show success message
+              alert('Password updated successfully! Please log in with your new password.');
+            }}
+            onCancel={() => setShowPasswordUpdate(false)}
           />
         ) : showMobileEditProfile ? (
           <EditProfileMobile 
