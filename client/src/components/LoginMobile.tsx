@@ -217,7 +217,8 @@ export function LoginMobile({ onSuccess }: LoginMobileProps) {
             fontSize: '14px',
           }}
         >
-          <label
+          <div
+            onClick={() => setRememberMe(!rememberMe)}
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -225,14 +226,43 @@ export function LoginMobile({ onSuccess }: LoginMobileProps) {
               cursor: 'pointer',
             }}
           >
-            <input
-              type="checkbox"
-              checked={rememberMe}
-              onChange={(e) => setRememberMe(e.target.checked)}
-              style={{ marginRight: '6px' }}
-            />
-            Remember me
-          </label>
+            <div
+              data-testid="checkbox-remember-me"
+              style={{
+                width: '20px',
+                height: '20px',
+                minWidth: '20px',
+                minHeight: '20px',
+                border: '2px solid #0095f6',
+                borderRadius: '4px',
+                background: rememberMe ? '#0095f6' : '#ffffff',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginRight: '8px',
+                transition: 'all 0.2s',
+              }}
+            >
+              {rememberMe && (
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 16 16"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M13 4L6 11L3 8"
+                    stroke="white"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              )}
+            </div>
+            <span>Remember me</span>
+          </div>
           <button
             type="button"
             onClick={() => alert('Password reset feature coming soon!')}
