@@ -12,6 +12,7 @@ export function PasswordUpdateMobile({ onSuccess, onCancel }: PasswordUpdateMobi
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [success, setSuccess] = useState(false);
 
   const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,9 +39,32 @@ export function PasswordUpdateMobile({ onSuccess, onCancel }: PasswordUpdateMobi
       setLoading(false);
     } else {
       setLoading(false);
-      onSuccess();
+      setSuccess(true);
+      // Wait 2 seconds then call onSuccess
+      setTimeout(() => {
+        onSuccess();
+      }, 2000);
     }
   };
+
+  // If success, show success screen
+  if (success) {
+    return (
+      <div style={{ padding: '24px', background: '#ffffff', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ textAlign: 'center', maxWidth: '320px' }}>
+          <div style={{ fontSize: '64px', marginBottom: '24px' }}>
+            ✅
+          </div>
+          <h2 style={{ fontSize: '24px', fontWeight: 600, color: '#262626', marginBottom: '12px' }}>
+            Password Updated!
+          </h2>
+          <div style={{ fontSize: '14px', color: '#8e8e8e', lineHeight: '1.5' }}>
+            Your password has been successfully updated. You can now log in with your new password.
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ padding: '24px', background: '#ffffff', minHeight: '100vh' }}>

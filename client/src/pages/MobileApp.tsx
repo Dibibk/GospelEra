@@ -2770,8 +2770,7 @@ export default function MobileApp() {
           <PasswordUpdateMobile
             onSuccess={() => {
               setShowPasswordUpdate(false);
-              // Show success message
-              alert('Password updated successfully! Please log in with your new password.');
+              // User will see success screen before this is called
             }}
             onCancel={() => setShowPasswordUpdate(false)}
           />
