@@ -408,9 +408,10 @@ export function AdminReportsMobile({
       const reporterIds = Array.from(new Set(reportsData.map(r => r.reporter_id).filter(Boolean)));
       const postIds = Array.from(new Set(reportsData.filter(r => r.target_type === 'post').map(r => r.target_id)));
       const commentIds = Array.from(new Set(reportsData.filter(r => r.target_type === 'comment').map(r => r.target_id)));
+      const prayerRequestIds = Array.from(new Set(reportsData.filter(r => r.target_type === 'prayer').map(r => parseInt(r.target_id)).filter(id => !isNaN(id))));
 
       // Fetch related data in parallel
-      const [profilesData, postsData, commentsData] = await Promise.all([
+      const [profilesData, postsData, commentsData, prayerRequestsData] = await Promise.all([
         reporterIds.length > 0 
           ? supabase.from('profiles').select('id, display_name, email').in('id', reporterIds).then(r => r.data || [])
           : Promise.resolve([]),
@@ -419,13 +420,17 @@ export function AdminReportsMobile({
           : Promise.resolve([]),
         commentIds.length > 0
           ? supabase.from('comments').select('id, content, author').in('id', commentIds).then(r => r.data || [])
+          : Promise.resolve([]),
+        prayerRequestIds.length > 0
+          ? supabase.from('prayer_requests').select('id, title, details, requester').in('id', prayerRequestIds).then(r => r.data || [])
           : Promise.resolve([])
       ]);
 
-      // Get author IDs from posts and comments
+      // Get author IDs from posts, comments, and prayer requests
       const authorIds = Array.from(new Set([
         ...postsData.map(p => p.author).filter(Boolean),
-        ...commentsData.map(c => c.author).filter(Boolean)
+        ...commentsData.map(c => c.author).filter(Boolean),
+        ...prayerRequestsData.map(pr => pr.requester).filter(Boolean)
       ]));
 
       // Fetch author profiles
@@ -437,6 +442,7 @@ export function AdminReportsMobile({
       const profilesMap = new Map(profilesData.map(p => [p.id, p]));
       const postsMap = new Map(postsData.map(p => [p.id, p]));
       const commentsMap = new Map(commentsData.map(c => [c.id, c]));
+      const prayerRequestsMap = new Map(prayerRequestsData.map(pr => [pr.id, pr]));
       const authorsMap = new Map(authorsData.map(a => [a.id, a]));
 
       // Merge data
@@ -448,7 +454,7 @@ export function AdminReportsMobile({
           enriched.reporter = profilesMap.get(report.reporter_id);
         }
         
-        // Add post/comment with author
+        // Add post/comment/prayer with author
         if (report.target_type === 'post' && report.target_id) {
           const post = postsMap.get(report.target_id);
           if (post) {
@@ -463,6 +469,14 @@ export function AdminReportsMobile({
             enriched.comment = {
               ...comment,
               author: authorsMap.get(comment.author)
+            };
+          }
+        } else if (report.target_type === 'prayer' && report.target_id) {
+          const prayerRequest = prayerRequestsMap.get(parseInt(report.target_id));
+          if (prayerRequest) {
+            enriched.prayer_request = {
+              ...prayerRequest,
+              author: authorsMap.get(prayerRequest.requester)
             };
           }
         }
@@ -624,7 +638,10 @@ export function AdminReportsMobile({
         report.post?.content?.toLowerCase().includes(query) ||
         report.post?.author?.display_name?.toLowerCase().includes(query) ||
         report.comment?.content?.toLowerCase().includes(query) ||
-        report.comment?.author?.display_name?.toLowerCase().includes(query)
+        report.comment?.author?.display_name?.toLowerCase().includes(query) ||
+        report.prayer_request?.title?.toLowerCase().includes(query) ||
+        report.prayer_request?.details?.toLowerCase().includes(query) ||
+        report.prayer_request?.author?.display_name?.toLowerCase().includes(query)
       );
     });
   }, [reports, searchQuery]);
