@@ -605,16 +605,24 @@ export default function MobileApp() {
     setCommittingToId(requestId);
 
     try {
-      const { error } = await commitToPray(requestId);
+      const { data, error } = await commitToPray(requestId);
+      
       if (error) {
-        alert("Failed to commit to prayer. Please try again.");
+        // Show spam-specific error messages
+        showToast(error, "error");
       } else {
+        // Show spam warning if present (non-blocking)
+        if (data?.spamWarning) {
+          showToast(data.spamWarning, "warning");
+        } else {
+          showToast("✓ Committed to pray", "success");
+        }
         // Refresh prayer requests to show updated counts
         await fetchData();
       }
     } catch (error) {
       console.error("Error committing to prayer:", error);
-      alert("Failed to commit to prayer. Please try again.");
+      showToast("Failed to commit to prayer. Please try again.", "error");
     } finally {
       setCommittingToId(null);
     }
