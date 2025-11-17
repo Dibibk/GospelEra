@@ -163,11 +163,13 @@ export const prayerRequests = pgTable("prayer_requests", {
   is_anonymous: boolean("is_anonymous").default(false).notNull(),
   status: text("status").default('open').notNull(),
   created_at: timestamp("created_at").defaultNow().notNull(),
+  updated_at: timestamp("updated_at").defaultNow().notNull(),
 });
 
 export const insertPrayerRequestSchema = createInsertSchema(prayerRequests).omit({
   id: true,
   created_at: true,
+  updated_at: true,
   moderation_status: true,
   moderation_reason: true,
 }).extend({
