@@ -167,10 +167,20 @@ const STYLES = {
     background: "#f2f2f2",
     border: "none",
     borderRadius: "18px",
-    padding: "0 16px",
+    padding: "0 16px 0 40px",
     fontSize: "14px",
     color: "#262626",
     outline: "none",
+  },
+  searchIconWrapper: {
+    position: "absolute" as const,
+    left: "12px",
+    top: "50%",
+    transform: "translateY(-50%)",
+    display: "flex",
+    alignItems: "center",
+    cursor: "pointer",
+    zIndex: 1,
   },
   verseContainer: {
     background: "#ffffff",
@@ -1385,20 +1395,44 @@ export default function MobileApp() {
             gap: "8px",
           }}
         >
-          <input
-            type="text"
-            placeholder="Search Gospel Era"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            inputMode="search"
-            autoCapitalize="none"
-            autoCorrect="off"
-            spellCheck={false}
-            style={{
-              ...STYLES.searchInput,
-              flex: 1,
-            }}
-          />
+          <div style={{ position: "relative", flex: 1 }}>
+            <div
+              style={STYLES.searchIconWrapper}
+              onClick={() => {
+                const searchInput = document.querySelector(
+                  'input[placeholder*="Search"]',
+                ) as HTMLInputElement;
+                if (searchInput) {
+                  searchInput.focus();
+                }
+              }}
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#8e8e8e"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <circle cx="11" cy="11" r="8" />
+                <path d="m21 21-4.35-4.35" />
+              </svg>
+            </div>
+            <input
+              type="text"
+              placeholder="Search Gospel Era"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              inputMode="search"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
+              style={STYLES.searchInput}
+            />
+          </div>
           {(searchQuery || selectedTags.length > 0) && (
             <button
               onClick={() => {
