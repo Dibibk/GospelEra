@@ -57,6 +57,17 @@ This is a full-stack web application built with React (frontend) and Express.js 
 ✅ Prayer leaderboard system with weekly/monthly/all-time rankings
 ✅ Streak tracking with animated counters and real-time updates
 ✅ Supabase realtime subscriptions for live leaderboard updates
+✅ **AI-Powered Spam Detection for Prayer Commitments:**
+  - Multi-factor behavioral analysis combining 4 detection methods
+  - Account age check: 30 points if account < 1 day old
+  - Rate limiting: 40 points if 5+ commitments in 5 minutes
+  - Rapid-fire detection: 60 points if 3+ commitments in 10 seconds
+  - Prayer confirmation ratio: 50 points if <20% confirmation rate (requires 5+ commitments)
+  - Smart scoring thresholds: Block at ≥80 points, warn at ≥50 points
+  - User-friendly error messages explaining why commitment was blocked
+  - Non-blocking warnings to encourage genuine prayer confirmation
+  - Fail-open error handling to avoid false positives
+  - Integrated toast notifications for blocks, warnings, and success states
 
 **Theme System (Added August 2025):**
 ✅ Simple theme switching with 2 clean themes:
