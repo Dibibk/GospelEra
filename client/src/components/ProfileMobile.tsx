@@ -77,11 +77,11 @@ export function ProfileMobile({
 
       setPostsCount(postsCountResult || 0);
 
-      // Load prayer requests count
+      // Load prayer commitments count (prayers user committed to pray for)
       const { count: prayersCountResult } = await supabase
-        .from("prayer_requests")
+        .from("prayer_commitments")
         .select("*", { count: "exact", head: true })
-        .eq("author_id", userId);
+        .eq("warrior", userId);
 
       setPrayersCount(prayersCountResult || 0);
     } catch (err: any) {
