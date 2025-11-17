@@ -217,7 +217,7 @@ export async function getPrayerRequest(id: number): Promise<ApiResponse<any>> {
 }
 
 /**
- * Commit to pray for a request
+ * Commit to pray for a request (with spam detection)
  */
 export async function commitToPray(requestId: number): Promise<ApiResponse<any>> {
   try {
@@ -225,6 +225,14 @@ export async function commitToPray(requestId: number): Promise<ApiResponse<any>>
     
     if (!user?.user?.id) {
       return { data: null, error: 'Authentication required' }
+    }
+
+    // Check for spam before allowing commitment
+    const { checkPrayerCommitmentSpam } = await import('./prayerSpamDetection')
+    const spamCheck = await checkPrayerCommitmentSpam(user.user.id)
+    
+    if (!spamCheck.allowed) {
+      return { data: null, error: spamCheck.reason || 'Unable to commit at this time' }
     }
 
     const { data, error } = await supabase
@@ -254,7 +262,14 @@ export async function commitToPray(requestId: number): Promise<ApiResponse<any>>
         message: 'committed to pray'
       })
 
-    return { data, error: null }
+    // Return data with spam warning if applicable
+    return { 
+      data: {
+        ...data,
+        spamWarning: spamCheck.warningLevel !== 'none' ? spamCheck.reason : null
+      }, 
+      error: null 
+    }
   } catch (err) {
     console.error('Commit to pray error:', err)
     return { data: null, error: 'Unexpected error occurred' }
