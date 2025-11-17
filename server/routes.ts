@@ -812,7 +812,10 @@ Respond in JSON format:
         setTimeout(() => reject(new Error('Database query timeout')), 8000)
       );
       
-      const queryPromise = db.select({ media_enabled: profiles.media_enabled })
+      const queryPromise = db.select({ 
+        media_enabled: profiles.media_enabled,
+        role: profiles.role 
+      })
         .from(profiles)
         .where(eq(profiles.id, userId));
       
@@ -824,7 +827,10 @@ Respond in JSON format:
         return res.json({ hasPermission: false, error: "Database unavailable - assuming no permission" });
       }
       
-      res.json({ hasPermission: profile.media_enabled });
+      // Admins always have media permission
+      const hasPermission = profile.role === 'admin' || profile.media_enabled;
+      
+      res.json({ hasPermission });
     } catch (error) {
       console.error("Error checking media permission:", error);
       // If database connection fails, default to no permission for security
