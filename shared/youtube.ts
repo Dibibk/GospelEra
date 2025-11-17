@@ -7,6 +7,12 @@ export interface YouTubeLinkValidation {
   error?: string;
 }
 
+export interface YouTubeMetadata {
+  title: string;
+  description?: string;
+  author_name?: string;
+}
+
 /**
  * Validates and normalizes YouTube URLs
  * Accepts formats:

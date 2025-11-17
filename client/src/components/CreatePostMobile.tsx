@@ -35,6 +35,7 @@ export function CreatePostMobile({
   const [moderationError, setModerationError] = useState("");
   const [youtubeError, setYoutubeError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [validatingVideo, setValidatingVideo] = useState(false);
 
   // Initialize form when editing
   useEffect(() => {
@@ -101,6 +102,36 @@ export function CreatePostMobile({
         return;
       }
       normalizedYouTubeUrl = validation.normalizedUrl || "";
+
+      // AI validation for YouTube video content
+      setValidatingVideo(true);
+      try {
+        const response = await fetch("/api/validate-youtube", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ videoId: validation.videoId }),
+        });
+
+        const aiValidation = await response.json();
+
+        if (!aiValidation.allowed) {
+          setYoutubeError(
+            aiValidation.reason ||
+              "This video doesn't appear to be Christ-centered content. Please share gospel music, sermons, or Christian testimonies."
+          );
+          setValidatingVideo(false);
+          return;
+        }
+      } catch (error) {
+        console.error("Error validating YouTube video:", error);
+        setYoutubeError(
+          "Unable to validate video. Please try again or choose a different video."
+        );
+        setValidatingVideo(false);
+        return;
+      } finally {
+        setValidatingVideo(false);
+      }
     }
 
     setSaving(true);
@@ -335,6 +366,22 @@ export function CreatePostMobile({
             }}
             title={isBanned ? "Account limited - cannot create posts" : ""}
           />
+          {validatingVideo && (
+            <div
+              style={{
+                color: "#0095f6",
+                fontSize: "12px",
+                marginTop: "4px",
+                paddingLeft: "4px",
+                display: "flex",
+                alignItems: "center",
+                gap: "6px",
+              }}
+            >
+              <span>🔍</span>
+              Checking if video is Christ-centered...
+            </div>
+          )}
           {youtubeError && (
             <div
               style={{
@@ -392,7 +439,7 @@ export function CreatePostMobile({
       {/* Share/Update button */}
       <button
         onClick={handleSubmit}
-        disabled={!title.trim() || !content.trim() || isBanned || saving}
+        disabled={!title.trim() || !content.trim() || isBanned || saving || validatingVideo}
         data-testid="button-submit"
         style={{
           width: "100%",

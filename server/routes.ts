@@ -838,6 +838,108 @@ Respond in JSON format:
     }
   });
 
+  // YouTube Video Validation Route
+  app.post("/api/validate-youtube", async (req, res) => {
+    try {
+      const { videoId } = req.body;
+
+      if (!videoId || typeof videoId !== 'string') {
+        return res.status(400).json({ error: "Video ID is required" });
+      }
+
+      // Fetch video metadata using YouTube oEmbed (no API key needed)
+      const oembedUrl = `https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`;
+      
+      let videoTitle = '';
+      let videoAuthor = '';
+      
+      try {
+        const response = await fetch(oembedUrl);
+        
+        if (!response.ok) {
+          return res.json({
+            allowed: false,
+            reason: "Unable to verify this video. Please make sure it's a valid, public YouTube video.",
+            confidence: 0
+          });
+        }
+        
+        const data = await response.json();
+        videoTitle = data.title || '';
+        videoAuthor = data.author_name || '';
+      } catch (fetchError) {
+        console.error("Error fetching YouTube metadata:", fetchError);
+        return res.json({
+          allowed: false,
+          reason: "Unable to verify this video. Please check the link and try again.",
+          confidence: 0
+        });
+      }
+
+      // Use AI to validate video title is Christ-centered
+      const completion = await openai.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages: [
+          {
+            role: "system",
+            content: `You are a content moderator for a Christian social media platform called Gospel Era. 
+            
+Your role is to determine if YouTube videos are appropriate for our Christ-centered community.
+
+ALLOW videos about:
+- Jesus Christ, His teachings, life, death, and resurrection
+- Bible studies, Scripture readings, and biblical commentary
+- Christian worship music, hymns, and gospel songs
+- Church sermons and Christian teachings
+- Christian testimonies and faith stories
+- Christian ministry and evangelism
+- Prayer and spiritual growth in Christ
+- Christian apologetics and theology
+- Appropriate Christian lifestyle content
+
+REJECT videos about:
+- Non-Christian religious practices (Islam, Hinduism, Buddhism, etc.)
+- Occult, witchcraft, or New Age spirituality
+- Hate speech, violence, or explicit content
+- Content that mocks or attacks Christianity
+- Secular content with no Christian purpose
+
+Respond with JSON only:
+{
+  "allowed": true/false,
+  "reason": "Brief explanation if rejected",
+  "confidence": 0-100 (how confident you are in the decision)
+}`
+          },
+          {
+            role: "user",
+            content: `Video Title: "${videoTitle}"\nChannel: "${videoAuthor}"\n\nIs this video appropriate for a Christ-centered Christian platform?`
+          }
+        ],
+        response_format: { type: "json_object" },
+        temperature: 0.3,
+      });
+
+      const result = JSON.parse(completion.choices[0].message.content || '{"allowed": false, "reason": "Unable to validate", "confidence": 0}');
+      
+      res.json({
+        allowed: result.allowed,
+        reason: result.reason || (!result.allowed ? "This video doesn't appear to be Christ-centered content." : undefined),
+        confidence: result.confidence || 0,
+        videoTitle,
+        videoAuthor
+      });
+
+    } catch (error) {
+      console.error("Error validating YouTube video:", error);
+      res.status(500).json({ 
+        error: "Failed to validate video",
+        allowed: false,
+        reason: "An error occurred while validating the video. Please try again."
+      });
+    }
+  });
+
   // Stripe Routes
   
   // POST /api/stripe/create-checkout-session - Create Stripe checkout session
