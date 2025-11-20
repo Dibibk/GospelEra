@@ -170,6 +170,26 @@ Respond in JSON format:
       if (!req.user) {
         return res.status(401).json({ error: "Authentication required" });
       }
+      
+      // Validate file type and size limits for avatars
+      const { fileType, fileSize } = req.body;
+      
+      // Allow only image types for avatars
+      const allowedAvatarTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+      if (fileType && !allowedAvatarTypes.includes(fileType.toLowerCase())) {
+        return res.status(400).json({ 
+          error: "Invalid file type. Only JPEG, PNG, GIF, and WebP images are allowed for avatars." 
+        });
+      }
+      
+      // Limit avatar size to 5MB
+      const MAX_AVATAR_SIZE = 5 * 1024 * 1024; // 5MB in bytes
+      if (fileSize && fileSize > MAX_AVATAR_SIZE) {
+        return res.status(400).json({ 
+          error: "File too large. Avatar images must be under 5MB." 
+        });
+      }
+      
       const uploadURL = await hybridStorage.getAvatarUploadURL();
       res.json({ uploadURL });
     } catch (error) {
@@ -203,16 +223,44 @@ Respond in JSON format:
   });
 
   // Endpoint for media upload for posts (images and videos)
-  app.post("/api/media/upload", authenticateUser, async (req: AuthenticatedRequest, res) => {
+  app.post("/api/media/upload", authenticateUser, checkNotBanned, async (req: AuthenticatedRequest, res) => {
     try {
       if (!req.user) {
         return res.status(401).json({ error: "Authentication required" });
       }
+      
+      // Validate file type and size limits for media
+      const { fileType, fileSize } = req.body;
+      
+      // Allow images and videos for post media
+      const allowedMediaTypes = [
+        'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp',
+        'video/mp4', 'video/webm', 'video/quicktime', 'video/x-msvideo'
+      ];
+      if (fileType && !allowedMediaTypes.includes(fileType.toLowerCase())) {
+        return res.status(400).json({ 
+          error: "Invalid file type. Only images (JPEG, PNG, GIF, WebP) and videos (MP4, WebM, MOV, AVI) are allowed." 
+        });
+      }
+      
+      // Limit media size: 10MB for images, 50MB for videos
+      const isVideo = fileType && fileType.startsWith('video/');
+      const MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10MB
+      const MAX_VIDEO_SIZE = 50 * 1024 * 1024; // 50MB
+      const maxSize = isVideo ? MAX_VIDEO_SIZE : MAX_IMAGE_SIZE;
+      
+      if (fileSize && fileSize > maxSize) {
+        const sizeLimit = isVideo ? '50MB' : '10MB';
+        return res.status(400).json({ 
+          error: `File too large. ${isVideo ? 'Videos' : 'Images'} must be under ${sizeLimit}.` 
+        });
+      }
+      
       const uploadURL = await hybridStorage.getMediaUploadURL();
       res.json({ uploadURL });
     } catch (error) {
       console.error("Error getting media upload URL:", error);
-      res.status(500).json({ error: "Failed to get media upload URL" });
+      res.status(500).json({ error: "Failed to get upload URL" });
     }
   });
 
