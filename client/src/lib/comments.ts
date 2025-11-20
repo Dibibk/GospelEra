@@ -13,6 +13,7 @@ interface ListCommentsOptions {
 
 /**
  * Creates a new comment on a post with the current user as author
+ * Uses server-side API endpoint with content moderation validation
  * @param {Object} commentData - The comment data
  * @param {number} commentData.postId - ID of the post to comment on
  * @param {string} commentData.content - Comment content
@@ -20,33 +21,33 @@ interface ListCommentsOptions {
  */
 export async function createComment({ postId, content }: CreateCommentData) {
   try {
-    // Get current user
-    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    // Get auth token
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
     
-    if (userError) {
-      throw new Error(`Authentication error: ${userError.message}`)
-    }
-    
-    if (!user) {
-      throw new Error('User must be authenticated to create comments')
+    if (sessionError || !session) {
+      throw new Error('Authentication required to create comments')
     }
 
-    // Insert the comment
-    const { data, error } = await supabase
-      .from('comments')
-      .insert({
+    // Call server-side API endpoint (enforces moderation)
+    const response = await fetch('/api/comments', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`
+      },
+      body: JSON.stringify({
         post_id: postId,
-        content,
-        author_id: user.id
+        content
       })
-      .select()
-      .single()
+    })
 
-    if (error) {
-      throw new Error(`Failed to create comment: ${error.message}`)
+    const result = await response.json()
+
+    if (!response.ok) {
+      throw new Error(result.error || result.reason || 'Failed to create comment')
     }
 
-    return { data, error: null }
+    return { data: result, error: null }
   } catch (err) {
     return { data: null, error: err }
   }

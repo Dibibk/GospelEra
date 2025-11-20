@@ -30,45 +30,39 @@ AI moderation validation is enforced server-side for **Posts** and **Prayer Requ
   3. Enforced on POST `/api/prayer-requests`
 - **Protection**: Cannot be bypassed - validation runs server-side before database insert
 
-#### ❌ **Comments** - VULNERABLE
-- **Location**: Comments are created via **direct Supabase calls** in `client/src/lib/comments.ts`
-- **Validation**: Only client-side in `CommentInputMobile.tsx` (lines 23-28)
-- **Vulnerability**: Users can bypass validation by calling Supabase API directly
-- **Risk Level**: CRITICAL - allows spam, inappropriate content, non-Christian religious content in comments
+#### ✅ **Comments** - FIXED (Requires RLS Update)
+- **Location**: Server-side endpoint created at `server/routes.ts` lines 544-615
+- **Validation**: 
+  1. Hard-blocked terms check via `moderateContent()`
+  2. OpenAI GPT-4o-mini AI validation
+  3. Enforced on POST `/api/comments`
+- **Client Updated**: `client/src/lib/comments.ts` now uses server API instead of direct Supabase
+- **Protection**: ⚠️ **PARTIAL** - Server endpoint is secure, but direct Supabase inserts still allowed by RLS
 
-### Fix Required:
+### Remaining Fix Required:
 
-**Option 1: Create Express API endpoint for comments** (Recommended)
-```typescript
-// server/routes.ts
-app.post("/api/comments", authenticateUser, checkNotBanned, async (req: AuthenticatedRequest, res) => {
-  const { moderateContent } = await import("../shared/moderation");
-  const { content, post_id } = req.body;
-  
-  // Server-side validation
-  const basicModeration = moderateContent(content);
-  if (!basicModeration.allowed) {
-    return res.status(400).json({ 
-      error: "Content not appropriate", 
-      reason: basicModeration.reason
-    });
-  }
-  
-  // Optional: Add AI validation like posts
-  
-  // Insert comment into database
-  const [newComment] = await db.insert(comments).values({
-    content,
-    post_id,
-    author_id: req.user.id
-  }).returning();
-  
-  res.status(201).json(newComment);
-});
+**CRITICAL: Block Direct Supabase Inserts via RLS**
+
+Even though the server-side API endpoint is secure, users can still bypass it by calling Supabase directly with the anon key because the RLS INSERT policy currently allows direct inserts.
+
+**Apply RLS Fix** (Run in Supabase SQL Editor):
+```sql
+-- File: docs/fix_comments_server_only.sql
+-- Drop permissive INSERT policy
+DROP POLICY IF EXISTS "comments_insert_policy" ON public.comments;
+
+-- Block all direct client inserts - force use of server API
+CREATE POLICY "Block direct comment inserts - use API only" ON public.comments
+  FOR INSERT TO authenticated
+  WITH CHECK (false);  -- Always fails, forcing use of server-side API
 ```
 
-**Option 2: Add Supabase Trigger/Function** (Alternative)
-Create a Postgres trigger that validates comment content before insert using a custom function.
+**After applying this RLS fix**:
+- ✅ Comments can ONLY be created via POST `/api/comments`
+- ✅ All comments go through hard-blocked terms + AI moderation
+- ✅ Banned users cannot create comments (checkNotBanned middleware)
+- ✅ Direct Supabase calls will fail with RLS violation
+- ✅ Vulnerability is fully closed
 
 ---
 
@@ -136,17 +130,19 @@ logError("Error creating post", error);
 ## Summary & Recommendations
 
 ### Critical Issues (Fix Before Production):
-1. ❌ **Comments have no server-side validation** - Create API endpoint with moderation
+1. ⚠️ **Comments need RLS lockdown** - Apply `docs/fix_comments_server_only.sql` to block direct Supabase inserts
 2. ⚠️ **Profiles role field vulnerability** - Apply `docs/fix_profiles_role_security.sql`
 
 ### Medium Priority:
 3. ⚠️ **Error logging improvements** - Implement production-safe logger
 
-### Low Priority (Already Secure):
-4. ✅ Posts validation - Working correctly
-5. ✅ Prayer requests validation - Working correctly
-6. ✅ File upload security - Type and size limits enforced
-7. ✅ JWT authentication - All protected endpoints secured
+### Completed (Secure):
+4. ✅ Comments server-side API with moderation - Implemented at `server/routes.ts`
+5. ✅ Comments client updated to use API - Updated `client/src/lib/comments.ts`
+6. ✅ Posts validation - Working correctly
+7. ✅ Prayer requests validation - Working correctly
+8. ✅ File upload security - Type and size limits enforced
+9. ✅ JWT authentication - All protected endpoints secured
 
 ---
 
@@ -154,15 +150,18 @@ logError("Error creating post", error);
 
 Before deploying to production:
 
-- [ ] Apply RLS fix: `docs/fix_profiles_role_security.sql`
-- [ ] Create server-side comments API endpoint with moderation
-- [ ] Update comment creation to use new API endpoint (not direct Supabase)
+- [ ] **CRITICAL**: Apply RLS fix for profiles: `docs/fix_profiles_role_security.sql`
+- [ ] **CRITICAL**: Apply RLS fix for comments: `docs/fix_comments_server_only.sql`
+- [x] ✅ Create server-side comments API endpoint with moderation
+- [x] ✅ Update comment creation to use new API endpoint (not direct Supabase)
 - [ ] Implement production-safe error logger
 - [ ] Replace all `console.error()` with new logger
 - [ ] Run RLS test suite: `docs/test_rls_policies.sql`
 - [ ] Verify all environment variables are set (production)
 - [ ] Enable error monitoring/logging service (e.g., Sentry)
 - [ ] Set `NODE_ENV=production` in production environment
+- [ ] Test comment creation fails via direct Supabase calls
+- [ ] Test comment creation succeeds via POST /api/comments
 
 ---
 

@@ -538,6 +538,79 @@ Respond in JSON format:
     }
   });
 
+  // Comments API Routes
+  app.post("/api/comments", authenticateUser, checkNotBanned, async (req: AuthenticatedRequest, res) => {
+    try {
+      const { db } = await import("../client/src/lib/db");
+      const { comments, insertCommentSchema } = await import("@shared/schema");
+      const { moderateContent } = await import("../shared/moderation");
+      
+      if (!req.user) {
+        return res.status(401).json({ error: "Authentication required" });
+      }
+      
+      const result = insertCommentSchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ error: "Invalid comment data", issues: result.error.issues });
+      }
+
+      // Server-side content moderation for comments
+      const content = result.data.content?.trim() || '';
+      
+      // First check for hard-blocked terms
+      const basicModeration = moderateContent(content);
+      if (!basicModeration.allowed) {
+        return res.status(400).json({ 
+          error: "Content not appropriate", 
+          reason: basicModeration.reason
+        });
+      }
+
+      // Use AI for nuanced validation
+      try {
+        const completion = await openai.chat.completions.create({
+          model: "gpt-4o-mini",
+          messages: [
+            {
+              role: "system",
+              content: `You are a content moderator for Gospel Era, a Christ-centered Christian community platform. Determine if this comment is appropriate. Allow genuine spiritual content, personal struggles, encouragement. Reject only clearly inappropriate or non-Christian religious content. Respond JSON: {"allowed": true/false, "reason": "if rejected"}`
+            },
+            {
+              role: "user",
+              content: `Evaluate: "${content}"`
+            }
+          ],
+          temperature: 0.3,
+          response_format: { type: "json_object" }
+        });
+
+        const aiResult = JSON.parse(completion.choices[0].message.content || '{"allowed": true}');
+        
+        if (!aiResult.allowed) {
+          return res.status(400).json({ 
+            error: "Content validation failed", 
+            reason: aiResult.reason || 'Please keep content Christ-centered and appropriate'
+          });
+        }
+      } catch (aiError) {
+        // AI failed - use basic moderation as fallback (already passed above)
+        console.error('AI validation error for comment, using basic moderation:', aiError);
+      }
+
+      const commentData = {
+        content: result.data.content,
+        post_id: result.data.post_id,
+        author_id: req.user.id  // Use authenticated user ID
+      };
+      
+      const [newComment] = await db.insert(comments).values(commentData).returning();
+      res.status(201).json(newComment);
+    } catch (error) {
+      console.error("Error creating comment:", error);
+      res.status(500).json({ error: "Failed to create comment" });
+    }
+  });
+
   // Prayer Request Routes
   app.get("/api/prayer-requests", async (req, res) => {
     try {

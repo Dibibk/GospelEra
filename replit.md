@@ -26,7 +26,7 @@ Preferred communication style: Simple, everyday language.
 - **Database ORM**: Drizzle ORM for PostgreSQL.
 - **Storage Pattern**: Interface-based abstraction for media storage (Replit Object Storage for dev, AWS S3 for prod).
 - **Security**: JWT-based authentication via Supabase, secure authentication middleware, protected API endpoints, file upload validation (type, size), and banned user restrictions.
-- **Content Moderation**: Server-side AI moderation (hard-blocked terms + GPT-4o-mini) for posts, server-side faith validation for prayer requests.
+- **Content Moderation**: Server-side AI moderation (hard-blocked terms + GPT-4o-mini) for posts and comments, server-side faith validation for prayer requests. See docs/SECURITY_AUDIT.md for complete security documentation.
 - **Error Handling**: Sanitized API error responses.
 
 ## Database Design
