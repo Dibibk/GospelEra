@@ -12,9 +12,9 @@ export async function apiRequest(
   url: string,
   data?: unknown | undefined,
 ): Promise<Response> {
-  // Get current user for authentication
+  // Get Supabase session for JWT authentication
   const { supabase } = await import('./supabaseClient')
-  const { data: { user } } = await supabase.auth.getUser()
+  const { data: { session } } = await supabase.auth.getSession()
   
   const headers: Record<string, string> = {}
   
@@ -22,8 +22,9 @@ export async function apiRequest(
     headers["Content-Type"] = "application/json"
   }
   
-  if (user?.id) {
-    headers["x-user-id"] = user.id
+  // Add JWT token for secure authentication
+  if (session?.access_token) {
+    headers["Authorization"] = `Bearer ${session.access_token}`
   }
 
   const res = await fetch(url, {
@@ -43,14 +44,15 @@ export const getQueryFn: <T>(options: {
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
-    // Get current user for authentication
+    // Get Supabase session for JWT authentication
     const { supabase } = await import('./supabaseClient')
-    const { data: { user } } = await supabase.auth.getUser()
+    const { data: { session } } = await supabase.auth.getSession()
     
     const headers: Record<string, string> = {}
     
-    if (user?.id) {
-      headers["x-user-id"] = user.id
+    // Add JWT token for secure authentication
+    if (session?.access_token) {
+      headers["Authorization"] = `Bearer ${session.access_token}`
     }
 
     const res = await fetch(queryKey.join("/") as string, {

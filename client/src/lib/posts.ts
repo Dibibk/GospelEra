@@ -124,24 +124,26 @@ export async function listPosts({ limit = 20, fromId, authorId }: ListPostsOptio
  */
 export async function softDeletePost(id: number) {
   try {
-    // Get current user
-    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    // Get Supabase session for JWT authentication
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
     
-    if (userError) {
-      throw new Error(`Authentication error: ${userError.message}`)
+    if (sessionError) {
+      throw new Error(`Authentication error: ${sessionError.message}`)
     }
     
-    if (!user) {
+    if (!session?.access_token) {
       throw new Error('User must be authenticated to delete posts')
     }
+
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${session.access_token}`
+    };
 
     // Make DELETE request to server API
     const response = await fetch(`/api/posts/${id}`, {
       method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-user-id': user.id
-      }
+      headers
     });
 
     if (!response.ok) {
@@ -165,24 +167,26 @@ export async function softDeletePost(id: number) {
  */
 export async function updatePost(id: number, postData: CreatePostData) {
   try {
-    // Get current user
-    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    // Get Supabase session for JWT authentication
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
     
-    if (userError) {
-      throw new Error(`Authentication error: ${userError.message}`)
+    if (sessionError) {
+      throw new Error(`Authentication error: ${sessionError.message}`)
     }
     
-    if (!user) {
+    if (!session?.access_token) {
       throw new Error('User must be authenticated to update posts')
     }
+
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${session.access_token}`
+    };
 
     // Make PUT request to server API
     const response = await fetch(`/api/posts/${id}`, {
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-user-id': user.id
-      },
+      headers,
       body: JSON.stringify(postData)
     });
 

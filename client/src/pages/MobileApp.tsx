@@ -1044,11 +1044,18 @@ export default function MobileApp() {
   };
 
   const handleProfileGetUploadParameters = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
+    
+    if (session?.access_token) {
+      headers["Authorization"] = `Bearer ${session.access_token}`;
+    }
+    
     const response = await fetch("/api/objects/upload", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers,
     });
 
     if (!response.ok) {
@@ -1069,11 +1076,18 @@ export default function MobileApp() {
       const uploadURL = uploadedFile.uploadURL;
 
       if (uploadURL) {
+        const { data: { session } } = await supabase.auth.getSession();
+        const headers: Record<string, string> = {
+          "Content-Type": "application/json",
+        };
+        
+        if (session?.access_token) {
+          headers["Authorization"] = `Bearer ${session.access_token}`;
+        }
+        
         const response = await fetch("/api/avatar", {
           method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers,
           body: JSON.stringify({ avatarURL: uploadURL }),
         });
 

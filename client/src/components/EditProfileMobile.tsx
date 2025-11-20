@@ -68,11 +68,19 @@ export function EditProfileMobile({ profile, onBack, onSuccess }: EditProfileMob
       const files = (e.target as HTMLInputElement).files;
       if (files && files[0]) {
         try {
+          const { supabase } = await import('../lib/supabaseClient');
+          const { data: { session } } = await supabase.auth.getSession();
+          const headers: Record<string, string> = {
+            'Content-Type': 'application/json',
+          };
+          
+          if (session?.access_token) {
+            headers['Authorization'] = `Bearer ${session.access_token}`;
+          }
+          
           const response = await fetch('/api/objects/upload', {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
+            headers,
           });
 
           if (!response.ok) {
@@ -90,11 +98,17 @@ export function EditProfileMobile({ profile, onBack, onSuccess }: EditProfileMob
           });
 
           if (uploadResponse.ok) {
+            const headersForAvatar: Record<string, string> = {
+              'Content-Type': 'application/json',
+            };
+            
+            if (session?.access_token) {
+              headersForAvatar['Authorization'] = `Bearer ${session.access_token}`;
+            }
+            
             const avatarResponse = await fetch('/api/avatar', {
               method: 'PUT',
-              headers: {
-                'Content-Type': 'application/json',
-              },
+              headers: headersForAvatar,
               body: JSON.stringify({ avatarURL: uploadURL }),
             });
 
