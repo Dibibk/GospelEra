@@ -134,6 +134,16 @@ This is a full-stack web application built with React (frontend) and Express.js 
 ✅ Banned user restrictions on content creation
 ✅ Client-side Authorization header integration (Bearer token)
 ✅ Replaced insecure x-user-id headers with JWT verification
+
+**Row-Level Security (RLS) Documentation (November 2025):**
+✅ Comprehensive RLS documentation for all database tables (docs/RLS_SECURITY.md)
+✅ RLS test suite for verifying security policies (docs/test_rls_policies.sql)
+✅ Documented RLS policies for: profiles, posts, comments, prayer requests, commitments, bookmarks, reactions
+⚠️ **CRITICAL ISSUE IDENTIFIED**: Profiles table allows users to modify their own `role` field (privilege escalation risk)
+✅ Fix script provided: docs/fix_profiles_role_security.sql (apply before production)
+⚠️ RLS policies need verification for: reports, donations, media_requests tables
+✅ Client-side profile updates already prevent role modifications (upsertMyProfile)
+✅ Database-level fix required to prevent direct Supabase API calls from bypassing client restrictions
 ✅ Mobile-optimized Login component tests with touch interactions and mobile validation
 ✅ Mobile ProtectedRoute testing with mobile-specific authentication flows
 ✅ Mobile useAuth hook testing with mobile session management and transitions
