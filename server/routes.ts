@@ -9,6 +9,13 @@ import { HybridStorageService } from "./hybridStorage";
 import { embedsRouter } from "./embeds";
 import Stripe from "stripe";
 import OpenAI from "openai";
+import { 
+  authenticateUser, 
+  optionalAuth, 
+  requireAdmin, 
+  checkNotBanned,
+  type AuthenticatedRequest 
+} from "./auth";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Initialize hybrid storage service (S3 or Replit Object Storage)
@@ -158,8 +165,11 @@ Respond in JSON format:
   });
 
   // The endpoint for getting the upload URL for avatars
-  app.post("/api/objects/upload", async (req, res) => {
+  app.post("/api/objects/upload", authenticateUser, async (req: AuthenticatedRequest, res) => {
     try {
+      if (!req.user) {
+        return res.status(401).json({ error: "Authentication required" });
+      }
       const uploadURL = await hybridStorage.getAvatarUploadURL();
       res.json({ uploadURL });
     } catch (error) {
@@ -169,7 +179,11 @@ Respond in JSON format:
   });
 
   // Endpoint for updating avatar after upload
-  app.put("/api/avatar", async (req, res) => {
+  app.put("/api/avatar", authenticateUser, async (req: AuthenticatedRequest, res) => {
+    if (!req.user) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+    
     if (!req.body.avatarURL) {
       return res.status(400).json({ error: "avatarURL is required" });
     }
@@ -189,8 +203,11 @@ Respond in JSON format:
   });
 
   // Endpoint for media upload for posts (images and videos)
-  app.post("/api/media/upload", async (req, res) => {
+  app.post("/api/media/upload", authenticateUser, async (req: AuthenticatedRequest, res) => {
     try {
+      if (!req.user) {
+        return res.status(401).json({ error: "Authentication required" });
+      }
       const uploadURL = await hybridStorage.getMediaUploadURL();
       res.json({ uploadURL });
     } catch (error) {
@@ -200,7 +217,11 @@ Respond in JSON format:
   });
 
   // Endpoint for processing media after upload
-  app.put("/api/media", async (req, res) => {
+  app.put("/api/media", authenticateUser, async (req: AuthenticatedRequest, res) => {
+    if (!req.user) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+    
     if (!req.body.mediaURL) {
       return res.status(400).json({ error: "mediaURL is required" });
     }
@@ -221,7 +242,7 @@ Respond in JSON format:
   });
 
   // Admin endpoint to update user roles (ban/unban)
-  app.patch("/api/admin/users/:userId/role", async (req, res) => {
+  app.patch("/api/admin/users/:userId/role", authenticateUser, requireAdmin, async (req: AuthenticatedRequest, res) => {
     try {
       const { userId } = req.params;
       const { role } = req.body;
@@ -240,7 +261,7 @@ Respond in JSON format:
   });
 
   // Admin endpoint to get banned users
-  app.get("/api/admin/banned-users", async (req, res) => {
+  app.get("/api/admin/banned-users", authenticateUser, requireAdmin, async (req: AuthenticatedRequest, res) => {
     try {
       const bannedUsers = await storage.getBannedUsers();
       res.json(bannedUsers);
@@ -295,11 +316,15 @@ Respond in JSON format:
     }
   });
 
-  app.post("/api/posts", async (req, res) => {
+  app.post("/api/posts", authenticateUser, checkNotBanned, async (req: AuthenticatedRequest, res) => {
     try {
       const { db } = await import("../client/src/lib/db");
       const { posts, insertPostSchema } = await import("@shared/schema");
       const { moderateContent } = await import("../shared/moderation");
+      
+      if (!req.user) {
+        return res.status(401).json({ error: "Authentication required" });
+      }
       
       const result = insertPostSchema.safeParse(req.body);
       if (!result.success) {
@@ -354,7 +379,7 @@ Respond in JSON format:
         content: result.data.content,
         tags: result.data.tags || [],
         embed_url: result.data.embed_url || null,
-        author_id: req.headers['x-user-id'] as string || 'anonymous'
+        author_id: req.user.id  // Use authenticated user ID
       };
       
       const [newPost] = await db.insert(posts).values(postData).returning();
@@ -365,16 +390,15 @@ Respond in JSON format:
     }
   });
 
-  app.put("/api/posts/:id", async (req, res) => {
+  app.put("/api/posts/:id", authenticateUser, checkNotBanned, async (req: AuthenticatedRequest, res) => {
     try {
       const { db } = await import("../client/src/lib/db");
       const { posts, insertPostSchema } = await import("@shared/schema");
       const { eq, and } = await import("drizzle-orm");
       
       const postId = parseInt(req.params.id);
-      const userId = req.headers['x-user-id'] as string;
       
-      if (!userId) {
+      if (!req.user) {
         return res.status(401).json({ error: "Authentication required" });
       }
       
@@ -383,7 +407,7 @@ Respond in JSON format:
         return res.status(400).json({ error: "Invalid post data", issues: result.error.issues });
       }
       
-      // First, check if the post exists and belongs to the user (or is null/anonymous and user can claim it)
+      // First, check if the post exists and belongs to the user
       const [existingPost] = await db.select()
         .from(posts)
         .where(eq(posts.id, postId));
@@ -392,8 +416,8 @@ Respond in JSON format:
         return res.status(404).json({ error: "Post not found" });
       }
       
-      // Check ownership: either the user owns it, or it's anonymous (null) and user can edit
-      if (existingPost.author_id !== userId && existingPost.author_id !== null) {
+      // Check ownership
+      if (existingPost.author_id !== req.user.id) {
         return res.status(403).json({ error: "You don't have permission to edit this post" });
       }
       
@@ -418,16 +442,15 @@ Respond in JSON format:
     }
   });
 
-  app.delete("/api/posts/:id", async (req, res) => {
+  app.delete("/api/posts/:id", authenticateUser, async (req: AuthenticatedRequest, res) => {
     try {
       const { db } = await import("../client/src/lib/db");
       const { posts } = await import("@shared/schema");
       const { eq, and } = await import("drizzle-orm");
       
       const postId = parseInt(req.params.id);
-      const userId = req.headers['x-user-id'] as string;
       
-      if (!userId) {
+      if (!req.user) {
         return res.status(401).json({ error: "Authentication required" });
       }
       
@@ -440,23 +463,9 @@ Respond in JSON format:
         return res.status(404).json({ error: "Post not found" });
       }
 
-      // Check if user can delete: post author, anonymous post, or admin
-      console.log(`DELETE request for post ${postId} by user ${userId}`);
-      
-      const { profiles } = await import("@shared/schema");
-      console.log('Querying profiles table for user role...');
-      
-      const [userProfile] = await db.select({ 
-        id: profiles.id, 
-        role: profiles.role 
-      })
-        .from(profiles)
-        .where(eq(profiles.id, userId));
-      
-      console.log('User profile result:', userProfile);
-      
-      const isAdmin = userProfile?.role === 'admin';
-      const isOwner = existingPost.author_id === userId || existingPost.author_id === null;
+      // Check if user can delete: post author or admin
+      const isAdmin = req.user.role === 'admin';
+      const isOwner = existingPost.author_id === req.user.id;
       
       if (!isOwner && !isAdmin) {
         return res.status(403).json({ error: "You don't have permission to delete this post" });
@@ -496,11 +505,15 @@ Respond in JSON format:
     }
   });
 
-  app.post("/api/prayer-requests", async (req, res) => {
+  app.post("/api/prayer-requests", authenticateUser, checkNotBanned, async (req: AuthenticatedRequest, res) => {
     try {
       const { db } = await import("../client/src/lib/db");
       const { prayerRequests, insertPrayerRequestSchema } = await import("@shared/schema");
       const { validateFaithContent } = await import("../shared/moderation");
+      
+      if (!req.user) {
+        return res.status(401).json({ error: "Authentication required" });
+      }
       
       const result = insertPrayerRequestSchema.safeParse(req.body);
       if (!result.success) {
@@ -526,14 +539,18 @@ Respond in JSON format:
     }
   });
 
-  app.post("/api/prayer-requests/:id/pray", async (req, res) => {
+  app.post("/api/prayer-requests/:id/pray", authenticateUser, checkNotBanned, async (req: AuthenticatedRequest, res) => {
     try {
       const { db } = await import("../client/src/lib/db");
       const { prayerRequests, prayerActivity } = await import("@shared/schema");
       const { eq, sql } = await import("drizzle-orm");
       
+      if (!req.user) {
+        return res.status(401).json({ error: "Authentication required" });
+      }
+      
       const requestId = req.params.id;
-      const userId = req.body.userId || 'anonymous'; // Allow anonymous prayers
+      const userId = req.user.id;
       
       // Insert prayer activity
       await db.insert(prayerActivity).values({
