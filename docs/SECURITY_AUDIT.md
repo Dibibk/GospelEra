@@ -30,39 +30,57 @@ AI moderation validation is enforced server-side for **Posts** and **Prayer Requ
   3. Enforced on POST `/api/prayer-requests`
 - **Protection**: Cannot be bypassed - validation runs server-side before database insert
 
-#### ✅ **Comments** - FIXED (Requires RLS Update)
+#### ✅ **Comments** - FULLY FIXED (Requires RLS Application in Supabase)
 - **Location**: Server-side endpoint created at `server/routes.ts` lines 544-615
 - **Validation**: 
-  1. Hard-blocked terms check via `moderateContent()`
-  2. OpenAI GPT-4o-mini AI validation
-  3. Enforced on POST `/api/comments`
-- **Client Updated**: `client/src/lib/comments.ts` now uses server API instead of direct Supabase
-- **Protection**: ⚠️ **PARTIAL** - Server endpoint is secure, but direct Supabase inserts still allowed by RLS
+  1. JWT authentication via `authenticateUser` middleware
+  2. Banned user check via `checkNotBanned` middleware
+  3. Hard-blocked terms check via `moderateContent()`
+  4. OpenAI GPT-4o-mini AI validation
+- **Client Updated**: `client/src/lib/comments.ts` now uses server API with Authorization header
+- **RLS Fix Created**: `docs/fix_comments_server_only.sql` blocks ALL direct Supabase inserts
+- **Protection**: ✅ **FULLY SECURE** (after RLS fix is applied in Supabase)
 
-### Remaining Fix Required:
+### Action Required: Apply RLS Fix in Supabase
 
-**CRITICAL: Block Direct Supabase Inserts via RLS**
+The fix is complete in code, but you must apply the RLS policy in your Supabase database to activate it.
 
-Even though the server-side API endpoint is secure, users can still bypass it by calling Supabase directly with the anon key because the RLS INSERT policy currently allows direct inserts.
-
-**Apply RLS Fix** (Run in Supabase SQL Editor):
+**Step 1: Run RLS Fix** (In Supabase SQL Editor):
 ```sql
--- File: docs/fix_comments_server_only.sql
--- Drop permissive INSERT policy
-DROP POLICY IF EXISTS "comments_insert_policy" ON public.comments;
+-- See docs/fix_comments_server_only.sql for complete script
 
--- Block all direct client inserts - force use of server API
-CREATE POLICY "Block direct comment inserts - use API only" ON public.comments
-  FOR INSERT TO authenticated
-  WITH CHECK (false);  -- Always fails, forcing use of server-side API
+-- Drop old permissive policies
+DROP POLICY IF EXISTS "comments_insert_policy" ON public.comments;
+DROP POLICY IF EXISTS "Users can create comments" ON public.comments;
+
+-- Create policy that blocks ALL client inserts (anon AND authenticated)
+CREATE POLICY "Only service role can insert comments" ON public.comments
+  FOR INSERT TO PUBLIC
+  WITH CHECK (
+    current_setting('request.jwt.claims', true) IS NULL
+    OR 
+    (current_setting('request.jwt.claims', true)::json->>'role') IS NULL
+  );
+```
+
+**Step 2: Verify RLS is Enabled**:
+```sql
+-- Ensure RLS is active
+ALTER TABLE public.comments ENABLE ROW LEVEL SECURITY;
 ```
 
 **After applying this RLS fix**:
 - ✅ Comments can ONLY be created via POST `/api/comments`
 - ✅ All comments go through hard-blocked terms + AI moderation
 - ✅ Banned users cannot create comments (checkNotBanned middleware)
-- ✅ Direct Supabase calls will fail with RLS violation
+- ✅ Direct Supabase calls (anon AND authenticated tokens) fail with RLS violation
+- ✅ Express server inserts via DATABASE_URL work (no JWT claims = allowed)
 - ✅ Vulnerability is fully closed
+
+**Testing** (See `docs/fix_comments_server_only.sql` for detailed tests):
+1. Try direct Supabase insert from browser → Should FAIL
+2. POST to `/api/comments` with valid content → Should SUCCEED
+3. POST to `/api/comments` with spam content → Should FAIL with moderation reason
 
 ---
 
