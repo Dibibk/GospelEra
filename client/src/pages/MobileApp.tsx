@@ -1406,6 +1406,15 @@ export default function MobileApp() {
           <div style={{ position: "relative", flex: 1 }}>
             <div
               style={STYLES.searchIconWrapper}
+              onTouchEnd={(e) => {
+                e.preventDefault();
+                const searchInput = document.querySelector(
+                  'input[placeholder*="Search"]',
+                ) as HTMLInputElement;
+                if (searchInput) {
+                  searchInput.focus();
+                }
+              }}
               onClick={() => {
                 const searchInput = document.querySelector(
                   'input[placeholder*="Search"]',
