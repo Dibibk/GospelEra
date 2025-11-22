@@ -319,6 +319,64 @@ Respond in JSON format:
     }
   });
 
+  // Profile update endpoint - prevents privilege escalation
+  app.patch("/api/profile", authenticateUser, async (req: AuthenticatedRequest, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: "Authentication required" });
+      }
+
+      const { display_name, bio, avatar_url, show_name_on_prayers, private_profile, settings } = req.body;
+
+      // SECURITY: Reject any attempt to modify protected fields
+      if ('role' in req.body || 'media_enabled' in req.body) {
+        return res.status(403).json({ 
+          error: "Cannot modify protected fields. Contact an administrator for role or media permission changes." 
+        });
+      }
+
+      // Validate display_name if provided
+      if (display_name !== undefined && display_name !== null) {
+        const trimmed = display_name.trim();
+        if (trimmed.length < 2 || trimmed.length > 40) {
+          return res.status(400).json({ 
+            error: "Display name must be between 2 and 40 characters" 
+          });
+        }
+      }
+
+      // Import database and schema
+      const { db } = await import("../client/src/lib/db");
+      const { profiles } = await import("@shared/schema");
+      const { eq } = await import("drizzle-orm");
+
+      // Build update object (only include defined fields)
+      const updateData: any = { updated_at: new Date() };
+      if (display_name !== undefined) updateData.display_name = display_name;
+      if (bio !== undefined) updateData.bio = bio;
+      if (avatar_url !== undefined) updateData.avatar_url = avatar_url;
+      if (show_name_on_prayers !== undefined) updateData.show_name_on_prayers = show_name_on_prayers;
+      if (private_profile !== undefined) updateData.private_profile = private_profile;
+      if (settings !== undefined) updateData.settings = settings;
+
+      // Update profile via Drizzle (server-side with DATABASE_URL)
+      const result = await db
+        .update(profiles)
+        .set(updateData)
+        .where(eq(profiles.id, req.user.id))
+        .returning();
+
+      if (!result || result.length === 0) {
+        return res.status(404).json({ error: "Profile not found" });
+      }
+
+      res.json(result[0]);
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      res.status(500).json({ error: "Failed to update profile" });
+    }
+  });
+
   // Posts API Routes
   app.get("/api/posts", async (req, res) => {
     try {

@@ -84,7 +84,111 @@ ALTER TABLE public.comments ENABLE ROW LEVEL SECURITY;
 
 ---
 
-## Issue #6: Error Information Leakage
+## Issue #6: Profiles Role Privilege Escalation
+
+### Status: ✅ FULLY FIXED (Requires RLS Application in Supabase)
+
+### Finding:
+Users could modify their own `role` field via direct Supabase calls to gain admin privileges, bypassing authorization controls.
+
+### Details:
+
+**Vulnerability**:
+- Profile updates use direct Supabase calls (`client/src/lib/profiles.ts`)
+- TypeScript interface restricts fields client-side, but can be bypassed
+- Malicious user could execute: `supabase.from('profiles').update({ role: 'admin' }).eq('id', userId)`
+- Similarly, `media_enabled` could be set without admin approval
+
+**Solution Implemented** (Same pattern as comments moderation):
+
+#### ✅ **1. Server-Side API Endpoint**
+- **Location**: `server/routes.ts` lines 325-381
+- **Endpoint**: PATCH `/api/profile`
+- **Validation**:
+  1. JWT authentication via `authenticateUser` middleware
+  2. Explicit rejection of `role` and `media_enabled` fields (403 Forbidden)
+  3. Display name length validation (2-40 characters)
+  4. Updates via Drizzle using DATABASE_URL connection
+
+```javascript
+// SECURITY: Reject any attempt to modify protected fields
+if ('role' in req.body || 'media_enabled' in req.body) {
+  return res.status(403).json({ 
+    error: "Cannot modify protected fields..." 
+  });
+}
+```
+
+#### ✅ **2. Client Updated**
+- **Location**: `client/src/lib/profiles.ts`
+- **Functions Updated**:
+  - `upsertMyProfile()` - Now calls PATCH `/api/profile` with Authorization header
+  - `updateUserSettings()` - Now calls PATCH `/api/profile` with Authorization header
+- **Removed**: Direct Supabase `.update()` and `.upsert()` calls
+
+#### ✅ **3. RLS Policy Created**
+- **Location**: `docs/fix_profiles_role_security.sql`
+- **Policy**: Blocks ALL direct client updates (anon AND authenticated)
+- **Allows**: Only server updates via DATABASE_URL (no JWT claims)
+
+```sql
+CREATE POLICY "Only service role can update profiles" ON public.profiles
+  FOR UPDATE TO PUBLIC
+  WITH CHECK (
+    current_setting('request.jwt.claims', true) IS NULL
+    OR 
+    (current_setting('request.jwt.claims', true)::json->>'role') IS NULL
+  );
+```
+
+#### ✅ **4. Admin Endpoint Preserved**
+- **Location**: `server/routes.ts` lines 293-309
+- **Endpoint**: PATCH `/api/admin/users/:userId/role`
+- **Security**: Requires `requireAdmin` middleware
+- **Access**: Uses DATABASE_URL (bypasses RLS)
+- **Allowed Values**: 'user', 'banned', 'admin'
+
+### Action Required: Apply RLS Fix in Supabase
+
+The fix is complete in code, but you must apply the RLS policy in your Supabase database to activate it.
+
+**Step 1: Run RLS Fix** (In Supabase SQL Editor):
+```sql
+-- See docs/fix_profiles_role_security.sql for complete script
+
+-- Drop old permissive policies
+DROP POLICY IF EXISTS "Users can update their own profile" ON public.profiles;
+
+-- Create policy that blocks ALL client updates (anon AND authenticated)
+CREATE POLICY "Only service role can update profiles" ON public.profiles
+  FOR UPDATE TO PUBLIC
+  WITH CHECK (
+    current_setting('request.jwt.claims', true) IS NULL
+    OR 
+    (current_setting('request.jwt.claims', true)::json->>'role') IS NULL
+  );
+
+-- Ensure RLS is enabled
+ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+```
+
+**After applying this RLS fix**:
+- ✅ Profiles can ONLY be updated via PATCH `/api/profile`
+- ✅ Protected fields (role, media_enabled) cannot be modified by users
+- ✅ Direct Supabase calls (anon AND authenticated tokens) fail with RLS violation
+- ✅ Admin endpoint can still update roles via DATABASE_URL
+- ✅ Express server updates via DATABASE_URL work (no JWT claims = allowed)
+- ✅ Vulnerability is fully closed
+
+**Testing** (See `docs/fix_profiles_role_security.sql` for detailed tests):
+1. Try direct Supabase update with role change → Should FAIL (RLS violation)
+2. PATCH to `/api/profile` with valid fields → Should SUCCEED
+3. PATCH to `/api/profile` with role field → Should FAIL (403 Forbidden)
+4. Admin endpoint updates role → Should SUCCEED
+
+---
+
+## Issue #7: Error Information Leakage
 
 ### Status: ⚠️ PARTIALLY FIXED
 
@@ -149,18 +253,33 @@ logError("Error creating post", error);
 
 ### Critical Issues (Fix Before Production):
 1. ⚠️ **Comments need RLS lockdown** - Apply `docs/fix_comments_server_only.sql` to block direct Supabase inserts
-2. ⚠️ **Profiles role field vulnerability** - Apply `docs/fix_profiles_role_security.sql`
+2. ⚠️ **Profiles need RLS lockdown** - Apply `docs/fix_profiles_role_security.sql` to block direct Supabase updates
 
 ### Medium Priority:
-3. ⚠️ **Error logging improvements** - Implement production-safe logger
+3. ⚠️ **Error logging improvements** - Implement production-safe logger (low priority, optional)
 
 ### Completed (Secure):
-4. ✅ Comments server-side API with moderation - Implemented at `server/routes.ts`
-5. ✅ Comments client updated to use API - Updated `client/src/lib/comments.ts`
-6. ✅ Posts validation - Working correctly
-7. ✅ Prayer requests validation - Working correctly
-8. ✅ File upload security - Type and size limits enforced
-9. ✅ JWT authentication - All protected endpoints secured
+4. ✅ **Comments moderation** - Server-side API implemented with AI validation
+5. ✅ **Profiles security** - Server-side API prevents privilege escalation
+6. ✅ **Posts validation** - Hard-blocked terms + AI moderation
+7. ✅ **Prayer requests validation** - Faith content validation
+8. ✅ **File upload security** - Type whitelist and size limits enforced
+9. ✅ **JWT authentication** - All protected endpoints secured
+10. ✅ **Banned user restrictions** - checkNotBanned middleware on all content creation
+
+### Implementation Details:
+
+**Comments Moderation Fix**:
+- ✅ Server endpoint: POST `/api/comments` (lines 544-615)
+- ✅ Client updated: `client/src/lib/comments.ts`
+- ✅ RLS script: `docs/fix_comments_server_only.sql`
+- ⚠️ **Pending**: Apply RLS in Supabase database
+
+**Profiles Security Fix**:
+- ✅ Server endpoint: PATCH `/api/profile` (lines 325-381)
+- ✅ Client updated: `client/src/lib/profiles.ts` (upsertMyProfile, updateUserSettings)
+- ✅ RLS script: `docs/fix_profiles_role_security.sql`
+- ⚠️ **Pending**: Apply RLS in Supabase database
 
 ---
 
@@ -168,11 +287,19 @@ logError("Error creating post", error);
 
 Before deploying to production:
 
-- [ ] **CRITICAL**: Apply RLS fix for profiles: `docs/fix_profiles_role_security.sql`
+### Critical Security Fixes (MUST DO):
 - [ ] **CRITICAL**: Apply RLS fix for comments: `docs/fix_comments_server_only.sql`
+- [ ] **CRITICAL**: Apply RLS fix for profiles: `docs/fix_profiles_role_security.sql`
+- [ ] **CRITICAL**: Test both RLS policies work correctly (see test sections in SQL files)
+
+### Code Changes (COMPLETED ✅):
 - [x] ✅ Create server-side comments API endpoint with moderation
 - [x] ✅ Update comment creation to use new API endpoint (not direct Supabase)
-- [ ] Implement production-safe error logger
+- [x] ✅ Create server-side profiles API endpoint with field validation
+- [x] ✅ Update profile updates to use new API endpoint (not direct Supabase)
+
+### Optional Improvements:
+- [ ] Implement production-safe error logger (low priority)
 - [ ] Replace all `console.error()` with new logger
 - [ ] Run RLS test suite: `docs/test_rls_policies.sql`
 - [ ] Verify all environment variables are set (production)

@@ -53,6 +53,7 @@ export async function getMyProfile() {
 
 /**
  * Creates or updates the current authenticated user's profile
+ * SECURITY: Uses server-side API to prevent privilege escalation
  * @param {Object} profileData - The profile data to upsert
  * @param {string} profileData.display_name - Display name (optional)
  * @param {string} profileData.bio - User bio (optional)
@@ -61,44 +62,42 @@ export async function getMyProfile() {
  */
 export async function upsertMyProfile({ display_name, bio, avatar_url, show_name_on_prayers, private_profile }: UpsertProfileData) {
   try {
-    // Get current user
-    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    // Get current user and auth token
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
     
-    if (userError) {
-      throw new Error(`Authentication error: ${userError.message}`)
+    if (sessionError) {
+      throw new Error(`Authentication error: ${sessionError.message}`)
     }
     
-    if (!user) {
+    if (!session) {
       throw new Error('User must be authenticated to update profile')
     }
 
-    // Validate display name if provided (2-40 characters)
-    if (display_name !== undefined) {
-      const trimmed = display_name.trim()
-      if (trimmed.length < 2 || trimmed.length > 40) {
-        throw new Error('Display name must be between 2 and 40 characters')
-      }
-    }
-
     // Prepare update data (only include defined fields)
-    const updateData: any = { id: user.id }
+    const updateData: any = {}
     if (display_name !== undefined) updateData.display_name = display_name
     if (bio !== undefined) updateData.bio = bio
     if (avatar_url !== undefined) updateData.avatar_url = avatar_url
     if (show_name_on_prayers !== undefined) updateData.show_name_on_prayers = show_name_on_prayers
     if (private_profile !== undefined) updateData.private_profile = private_profile
 
-    // Upsert profile
-    const { data, error } = await supabase
-      .from('profiles')
-      .upsert(updateData)
-      .select()
-      .single()
+    // Call server-side API to update profile
+    // Server validates that protected fields (role, media_enabled) are not modified
+    const response = await fetch('/api/profile', {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`
+      },
+      body: JSON.stringify(updateData)
+    })
 
-    if (error) {
-      throw new Error(`Failed to update profile: ${error.message}`)
+    if (!response.ok) {
+      const errorData = await response.json()
+      throw new Error(errorData.error || 'Failed to update profile')
     }
 
+    const data = await response.json()
     return { data, error: null }
   } catch (err) {
     return { data: null, error: err }
@@ -218,37 +217,39 @@ export async function ensureMyProfile() {
 
 /**
  * Updates user settings in the profile
+ * SECURITY: Uses server-side API to prevent privilege escalation
  * @param {Object} settings - The settings object to save
  * @returns {Promise<{data: any|null, error: Error|null}>}
  */
 export async function updateUserSettings(settings: Record<string, any>) {
   try {
-    // Get current user
-    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    // Get current session
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
     
-    if (userError) {
-      throw new Error(`Authentication error: ${userError.message}`)
+    if (sessionError) {
+      throw new Error(`Authentication error: ${sessionError.message}`)
     }
     
-    if (!user) {
+    if (!session) {
       throw new Error('User must be authenticated to update settings')
     }
 
-    // Update settings in profile
-    const { data, error } = await supabase
-      .from('profiles')
-      .update({ 
-        settings: settings,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', user.id)
-      .select()
-      .single()
+    // Call server-side API to update settings
+    const response = await fetch('/api/profile', {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`
+      },
+      body: JSON.stringify({ settings })
+    })
 
-    if (error) {
-      throw new Error(`Failed to update settings: ${error.message}`)
+    if (!response.ok) {
+      const errorData = await response.json()
+      throw new Error(errorData.error || 'Failed to update settings')
     }
 
+    const data = await response.json()
     return { data, error: null }
   } catch (err) {
     return { data: null, error: err }
