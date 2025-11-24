@@ -2,7 +2,7 @@ import { Routes, Route, useLocation } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 import { ProtectedRoute } from "./ProtectedRoute";
 import { PageTransition } from "./PageTransition";
-import { Capacitor } from "@capacitor/core";
+import { useIsNativeApp } from "../hooks/useIsNativeApp";
 
 import Login from "../pages/Login";
 import Dashboard from "../pages/Dashboard";
@@ -28,10 +28,16 @@ import MobileApp from "../pages/MobileApp";
 
 export function AnimatedRoutes() {
   const location = useLocation();
+  const { isNative, isLoading } = useIsNativeApp();
+  
   const isMobile =
-    typeof window !== "undefined" &&
-    (window.matchMedia("(max-width: 768px)").matches || 
-     Capacitor.isNativePlatform());
+    isNative ||
+    (typeof window !== "undefined" &&
+      window.matchMedia("(max-width: 768px)").matches);
+
+  if (isLoading) {
+    return null;
+  }
 
   if (isMobile) {
     // No AnimatePresence, no key={location.pathname} on mobile
