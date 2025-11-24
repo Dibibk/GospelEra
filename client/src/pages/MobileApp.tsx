@@ -397,12 +397,18 @@ export default function MobileApp() {
   const isLoading = useRef(false);
 
   useEffect(() => {
+    console.log("🔍 MobileApp fetchData effect", { hasUser: !!user, postsLength: posts.length });
     if (!user) {
+      console.log("🔍 No user, skipping fetchData");
       setLoading(false);
       return;
     }
-    if (posts.length > 0) return; // already loaded
+    if (posts.length > 0) {
+      console.log("🔍 Posts already loaded, skipping fetchData");
+      return; // already loaded
+    }
 
+    console.log("🔍 Calling fetchData now...");
     let cancelled = false;
 
     (async () => {
@@ -412,8 +418,9 @@ export default function MobileApp() {
           fetchData(), // load posts
           checkUserMediaPermission(), // any permission checks
         ]);
+        console.log("🔍 fetchData completed");
       } catch (err) {
-        // optional: console.error(err);
+        console.error("🔍 fetchData error:", err);
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -503,9 +510,12 @@ export default function MobileApp() {
     setLoading(true);
     try {
       // Fetch real posts from API
+      console.log("🔍 fetchData: calling listPosts...");
       const postsResult = await listPosts({ limit: 20 });
+      console.log("🔍 fetchData: listPosts result", { hasData: !!postsResult.data, count: postsResult.data?.length });
       if (postsResult.data) {
         setPosts(postsResult.data);
+        console.log("🔍 fetchData: setPosts called with", postsResult.data.length, "posts");
 
         // Load author profiles
         const authorIds = postsResult.data.map((post: any) => post.author_id);
@@ -1631,14 +1641,15 @@ export default function MobileApp() {
               </div>
             ))
         ) : posts.length > 0 ? (
-          posts
-            .filter(
+          (() => {
+            const filteredPosts = posts.filter(
               (post) =>
                 !searchQuery ||
                 post.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 post.content?.toLowerCase().includes(searchQuery.toLowerCase()),
-            )
-            .map((post, index) => (
+            );
+            console.log("🔍 Rendering posts:", { totalPosts: posts.length, filteredPosts: filteredPosts.length, searchQuery });
+            return filteredPosts.map((post, index) => (
               <div
                 key={post.id}
                 style={{
@@ -2231,7 +2242,8 @@ export default function MobileApp() {
                   {formatTimeAgo(post.created_at).toUpperCase()}
                 </div>
               </div>
-            ))
+            ));
+          })()
         ) : (
           <div
             style={{
