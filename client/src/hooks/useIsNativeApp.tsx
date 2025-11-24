@@ -9,9 +9,14 @@ export function useIsNativeApp() {
     async function detectPlatform() {
       try {
         const platform = Capacitor.getPlatform();
+        console.log("🔍 Capacitor.getPlatform():", platform);
+        
         const isNativePlatform = platform === "ios" || platform === "android";
+        console.log("🔍 isNativePlatform:", isNativePlatform);
+        
         setIsNative(isNativePlatform);
       } catch (error) {
+        console.error("🔍 Error detecting platform:", error);
         setIsNative(false);
       } finally {
         setIsLoading(false);
@@ -21,5 +26,6 @@ export function useIsNativeApp() {
     detectPlatform();
   }, []);
 
+  console.log("🔍 useIsNativeApp returning:", { isNative, isLoading });
   return { isNative, isLoading };
 }

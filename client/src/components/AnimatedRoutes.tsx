@@ -30,12 +30,25 @@ export function AnimatedRoutes() {
   const location = useLocation();
   const { isNative, isLoading } = useIsNativeApp();
   
+  const windowWidth = typeof window !== "undefined" ? window.innerWidth : 0;
+  const mediaQueryMatches = typeof window !== "undefined" && window.matchMedia("(max-width: 768px)").matches;
+  
   const isMobile =
     isNative ||
     (typeof window !== "undefined" &&
       window.matchMedia("(max-width: 768px)").matches);
 
+  console.log("🔍 AnimatedRoutes Debug:", {
+    isNative,
+    isLoading,
+    windowWidth,
+    mediaQueryMatches,
+    isMobile,
+    willShowMobile: isMobile ? "YES - MobileApp" : "NO - Dashboard"
+  });
+
   if (isLoading) {
+    console.log("🔍 Still loading platform detection...");
     return null;
   }
 
