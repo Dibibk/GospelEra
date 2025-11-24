@@ -54,13 +54,14 @@ export function AnimatedRoutes() {
 
   if (isMobile) {
     // No AnimatePresence, no key={location.pathname} on mobile
+    // MobileApp handles login, forgot-password, and reset-password internally
     return (
       <Routes location={location}>
         <Route
           path="/login"
           element={
             <PageTransition>
-              <Login />
+              <MobileApp />
             </PageTransition>
           }
         />
@@ -68,7 +69,7 @@ export function AnimatedRoutes() {
           path="/forgot-password"
           element={
             <PageTransition>
-              <ForgotPassword />
+              <MobileApp />
             </PageTransition>
           }
         />
@@ -76,7 +77,7 @@ export function AnimatedRoutes() {
           path="/reset-password"
           element={
             <PageTransition>
-              <ResetPassword />
+              <MobileApp />
             </PageTransition>
           }
         />
