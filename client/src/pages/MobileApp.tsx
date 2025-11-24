@@ -1584,7 +1584,10 @@ export default function MobileApp() {
         </div>
 
         {/* Posts feed */}
-        {loading ? (
+        {(() => {
+          console.log("🔍 Posts feed render check:", { loading, postsLength: posts.length, postsArray: posts });
+          return loading;
+        })() ? (
           Array(3)
             .fill(0)
             .map((_, index) => (
