@@ -414,7 +414,8 @@ export default function MobileApp() {
     (async () => {
       setLoading(true);
       try {
-        await Promise.all([
+        // Run fetchData and media permission check in parallel, but don't let permission errors block loading
+        await Promise.allSettled([
           fetchData(), // load posts
           checkUserMediaPermission(), // any permission checks
         ]);
@@ -422,7 +423,10 @@ export default function MobileApp() {
       } catch (err) {
         console.error("🔍 fetchData error:", err);
       } finally {
-        if (!cancelled) setLoading(false);
+        if (!cancelled) {
+          console.log("🔍 Setting loading to FALSE");
+          setLoading(false);
+        }
       }
     })();
 
