@@ -3,7 +3,17 @@ import type { CapacitorConfig } from '@capacitor/cli';
 const config: CapacitorConfig = {
   appId: 'com.gospelera.app',
   appName: 'Gospel Era',
-  webDir: 'dist/public'
+  webDir: 'dist/public',
+  server: {
+    androidScheme: 'https',
+    allowNavigation: [
+      '*.youtube.com',
+      '*.ytimg.com',
+      '*.googlevideo.com',
+      '*.youtube-nocookie.com',
+      '*.googleapis.com'
+    ]
+  }
 };
 
 export default config;
