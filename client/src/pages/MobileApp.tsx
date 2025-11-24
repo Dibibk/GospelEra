@@ -122,6 +122,8 @@ const STYLES = {
     flexDirection: "column" as const,
     fontSize: "14px",
     position: "relative" as const,
+    paddingTop: "env(safe-area-inset-top)",
+    paddingBottom: "env(safe-area-inset-bottom)",
   },
   header: {
     background: "#ffffff",
