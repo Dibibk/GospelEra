@@ -66,7 +66,7 @@ export function AnimatedRoutes() {
           element={
             <ProtectedRoute>
               <PageTransition>
-                <Dashboard />
+                <MobileApp />
               </PageTransition>
             </ProtectedRoute>
           }
@@ -76,7 +76,17 @@ export function AnimatedRoutes() {
           element={
             <ProtectedRoute>
               <PageTransition>
-                <Dashboard />
+                <MobileApp />
+              </PageTransition>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/mobile"
+          element={
+            <ProtectedRoute>
+              <PageTransition>
+                <MobileApp />
               </PageTransition>
             </ProtectedRoute>
           }
