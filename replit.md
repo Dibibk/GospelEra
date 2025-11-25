@@ -4,6 +4,14 @@
 
 Gospel Era is a full-stack web application designed as a social platform for the Gospel Community. It features Instagram-like media uploads, user authentication, and community interaction. Built with React (frontend) and Express.js (backend), it leverages TypeScript, shadcn/ui, Tailwind CSS, PostgreSQL with Drizzle ORM, and Replit Object Storage (with AWS S3 for production). The platform emphasizes a faith-centered UI, comprehensive prayer request system with AI-powered spam detection, real-time leaderboards, and robust content moderation to ensure a Christ-centered environment. It is designed to be production-ready with PWA capabilities, extensive testing, and strong security measures.
 
+# Recent Changes
+
+**November 25, 2025 - iOS Capacitor App Fixes**
+- Added CORS middleware to backend (server/index.ts) to allow requests from Capacitor apps (capacitor://localhost, ionic://localhost)
+- Fixed YouTube embeds in iOS app: Native apps now show clickable YouTube thumbnails that open in YouTube app/Safari instead of broken iframes
+- Fixed status bar overlap issue: Sticky header now uses `top: env(safe-area-inset-top)` to prevent status bar overlap when scrolling
+- Updated EmbedCard component to detect native platform and render appropriate YouTube UI
+
 # User Preferences
 
 Preferred communication style: Simple, everyday language.

@@ -133,7 +133,7 @@ const STYLES = {
     alignItems: "center",
     justifyContent: "space-between",
     position: "sticky" as const,
-    top: 0,
+    top: "env(safe-area-inset-top, 0px)",
     zIndex: 1100,
   },
   content: {
