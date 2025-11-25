@@ -1,8 +1,37 @@
 import express, { type Request, Response, NextFunction } from "express";
+import cors from "cors";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 
 const app = express();
+
+// Configure CORS to allow requests from Capacitor apps and web
+app.use(cors({
+  origin: function (origin, callback) {
+    // Allow requests from Capacitor apps (capacitor://localhost, ionic://localhost)
+    // Allow requests from any origin in development
+    // Allow requests from your published domains
+    const allowedOrigins = [
+      'capacitor://localhost',
+      'ionic://localhost',
+      'http://localhost:5000',
+      'http://localhost:5173',
+      'https://gospel-era.replit.app',
+      'https://gospel-era.replit.dev'
+    ];
+    
+    // Allow requests with no origin (mobile apps, Postman, etc.)
+    if (!origin || allowedOrigins.indexOf(origin) !== -1 || origin.startsWith('capacitor://') || origin.startsWith('ionic://')) {
+      callback(null, true);
+    } else {
+      callback(null, true); // Allow all origins for now (can restrict later)
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept']
+}));
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
