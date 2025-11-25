@@ -108,6 +108,20 @@ const stopIfTextField = (e: React.SyntheticEvent) => {
   if (isTextField) e.stopPropagation();
 };
 
+// YouTube embed helper function
+function getYoutubeEmbedSrc(url: string): string | null {
+  try {
+    const u = new URL(url);
+    const id = 
+      u.searchParams.get("v") ||
+      u.pathname.split("/").filter(Boolean).pop();
+    if (!id) return null;
+    return `https://www.youtube-nocookie.com/embed/${id}`;
+  } catch {
+    return null;
+  }
+}
+
 // Module-level style constants to prevent recreation on each render
 const STYLES = {
   container: {
@@ -1917,34 +1931,28 @@ export default function MobileApp() {
                   )}
 
                   {/* YouTube embed */}
-                  {post.embed_url && (
-                    <div style={{ marginBottom: "8px" }}>
-                      <div
-                        style={{
-                          position: "relative",
-                          width: "100%",
-                          paddingBottom: "56.25%",
-                          background: "#f2f2f2",
-                          borderRadius: "8px",
-                          overflow: "hidden",
-                        }}
-                      >
+                  {post.embed_url && (() => {
+                    const embedSrc = getYoutubeEmbedSrc(post.embed_url);
+                    if (!embedSrc) return null;
+                    return (
+                      <div style={{ marginBottom: "8px" }}>
                         <iframe
-                          src={post.embed_url.replace("watch?v=", "embed/")}
-                          style={{
-                            position: "absolute",
-                            top: 0,
-                            left: 0,
-                            width: "100%",
-                            height: "100%",
-                          }}
-                          frameBorder="0"
+                          src={embedSrc}
+                          title={post.title || "YouTube video"}
+                          loading="lazy"
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                           allowFullScreen
-                          title="YouTube video"
+                          referrerPolicy="strict-origin-when-cross-origin"
+                          style={{
+                            width: "100%",
+                            aspectRatio: "16 / 9",
+                            border: "none",
+                            display: "block",
+                          }}
                         />
                       </div>
-                    </div>
-                  )}
+                    );
+                  })()}
                 </div>
 
                 {/* Post actions - All 6 icons matching webapp */}
