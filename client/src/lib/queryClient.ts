@@ -5,8 +5,8 @@ import { Capacitor } from '@capacitor/core';
 function getApiBaseUrl(): string {
   // Check if running in native app
   if (Capacitor.isNativePlatform()) {
-    // Use Replit dev URL or production URL
-    const apiUrl = import.meta.env.VITE_API_URL || 'https://gospel-era.replit.dev';
+    // Use production URL for native apps
+    const apiUrl = import.meta.env.VITE_API_URL || 'https://gospel-era.replit.app';
     console.log('🌐 Native app detected - using API URL:', apiUrl);
     return apiUrl;
   }
