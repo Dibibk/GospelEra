@@ -76,6 +76,7 @@ import {
   createStripeCheckout,
 } from "@/lib/donations";
 import { PAYMENTS } from "@/config/payments";
+import { EmbedCard } from "@/components/EmbedCard";
 // at top of MobileApp.tsx
 
 // focus helpers (no hooks here)
@@ -108,15 +109,14 @@ const stopIfTextField = (e: React.SyntheticEvent) => {
   if (isTextField) e.stopPropagation();
 };
 
-// YouTube embed helper function
+// YouTube video ID extractor
 function getYoutubeEmbedSrc(url: string): string | null {
   try {
     const u = new URL(url);
     const id = 
       u.searchParams.get("v") ||
       u.pathname.split("/").filter(Boolean).pop();
-    if (!id) return null;
-    return `https://www.youtube-nocookie.com/embed/${id}`;
+    return id || null;
   } catch {
     return null;
   }
@@ -1932,23 +1932,13 @@ export default function MobileApp() {
 
                   {/* YouTube embed */}
                   {post.embed_url && (() => {
-                    const embedSrc = getYoutubeEmbedSrc(post.embed_url);
-                    if (!embedSrc) return null;
+                    const videoId = getYoutubeEmbedSrc(post.embed_url);
+                    if (!videoId) return null;
                     return (
                       <div style={{ marginBottom: "8px" }}>
-                        <iframe
-                          src={embedSrc}
-                          title={post.title || "YouTube video"}
-                          loading="lazy"
-                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                          allowFullScreen
-                          referrerPolicy="strict-origin-when-cross-origin"
-                          style={{
-                            width: "100%",
-                            aspectRatio: "16 / 9",
-                            border: "none",
-                            display: "block",
-                          }}
+                        <EmbedCard 
+                          videoId={videoId}
+                          title={post.title || undefined}
                         />
                       </div>
                     );
