@@ -8,9 +8,9 @@ Gospel Era is a full-stack web application designed as a social platform for the
 
 **November 25, 2025 - iOS Capacitor App Fixes**
 - Added CORS middleware to backend (server/index.ts) to allow requests from Capacitor apps (capacitor://localhost, ionic://localhost)
-- Fixed YouTube embeds in iOS app: Native apps now show clickable YouTube thumbnails that open in YouTube app/Safari instead of broken iframes
-- Fixed status bar overlap issue: Sticky header now uses `top: env(safe-area-inset-top)` to prevent status bar overlap when scrolling
-- Updated EmbedCard component to detect native platform and render appropriate YouTube UI
+- Fixed YouTube embeds in iOS app: Replaced iframe-based embeds with EmbedCard component that shows clickable thumbnails for native apps (opens in YouTube app/Safari) and iframe embeds for web
+- Fixed status bar overlap issue: Moved safe-area-inset padding from container to sticky header (paddingTop and minHeight) to prevent content from scrolling under iOS status bar
+- Root cause: iOS WebView blocks YouTube iframe embeds (Error 153), and sticky positioning requires safe-area padding on the sticky element itself, not its parent container
 
 # User Preferences
 
