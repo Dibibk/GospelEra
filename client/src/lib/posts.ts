@@ -34,6 +34,18 @@ interface ListPostsOptions {
   authorId?: string
 }
 
+interface FeedOptions {
+  limit?: number
+  fromId?: number
+}
+
+interface FeedResponse {
+  posts: any[]
+  profiles: Record<string, any>
+  engagement: Record<number, { amenCount: number; userAmened: boolean; commentCount: number }>
+  nextCursor: number | null
+}
+
 interface SearchPostsOptions {
   q?: string
   tags?: string[]
@@ -146,6 +158,55 @@ export async function listPosts({ limit = 20, fromId, authorId }: ListPostsOptio
     console.error('📡 [listPosts] Exception:', err);
     console.error('📡 [listPosts] Error message:', err instanceof Error ? err.message : 'Unknown error');
     console.error('📡 [listPosts] Error stack:', err instanceof Error ? err.stack : 'No stack');
+    return { data: null, error: err }
+  }
+}
+
+/**
+ * OPTIMIZED: Fetches feed with posts + author profiles + engagement in ONE request
+ * @param {Object} options - Query options
+ * @param {number} options.limit - Number of posts to return (default: 20)
+ * @param {number} options.fromId - ID to start pagination from (optional)
+ * @returns {Promise<{data: FeedResponse|null, error: Error|null}>}
+ */
+export async function fetchFeed({ limit = 20, fromId }: FeedOptions = {}): Promise<{ data: FeedResponse | null; error: any }> {
+  try {
+    const params = new URLSearchParams()
+    params.append('limit', limit.toString())
+    
+    if (fromId) {
+      params.append('fromId', fromId.toString())
+    }
+
+    const { data: { session } } = await supabase.auth.getSession()
+    
+    const headers: HeadersInit = {
+      'Accept': 'application/json',
+    }
+    
+    if (session?.access_token) {
+      headers['Authorization'] = `Bearer ${session.access_token}`
+    }
+
+    const url = buildApiUrl(`/api/feed?${params.toString()}`)
+    console.log('📡 [fetchFeed] Fetching from:', url)
+    
+    const response = await fetch(url, {
+      headers,
+      mode: 'cors',
+    })
+    
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error('📡 [fetchFeed] Error response:', errorText)
+      throw new Error(`Failed to fetch feed: ${response.statusText}`)
+    }
+    
+    const data: FeedResponse = await response.json()
+    console.log('📡 [fetchFeed] Data received:', data.posts?.length, 'posts')
+    return { data, error: null }
+  } catch (err) {
+    console.error('📡 [fetchFeed] Exception:', err)
     return { data: null, error: err }
   }
 }

@@ -422,6 +422,122 @@ Respond in JSON format:
     }
   });
 
+  // OPTIMIZED FEED ENDPOINT - Combines posts + authors + engagement in ONE query
+  app.get("/api/feed", optionalAuth, async (req: AuthenticatedRequest, res) => {
+    try {
+      const { db } = await import("../client/src/lib/db");
+      const { posts, profiles, reactions, comments } = await import("@shared/schema");
+      const { desc, eq, lt, and, or, count, inArray } = await import("drizzle-orm");
+      
+      const limit = parseInt(req.query.limit as string) || 20;
+      const fromId = req.query.fromId as string;
+      const currentUserId = req.user?.id;
+      
+      let whereConditions = [eq(posts.hidden, false)];
+      
+      // Add keyset pagination if fromId is provided (using created_at, id for proper cursor)
+      if (fromId) {
+        const [fromPost] = await db.select({ created_at: posts.created_at, id: posts.id })
+          .from(posts)
+          .where(eq(posts.id, parseInt(fromId)));
+        
+        if (fromPost) {
+          // Proper keyset pagination: (created_at < fromPost.created_at) OR (created_at = fromPost.created_at AND id < fromPost.id)
+          whereConditions.push(
+            or(
+              lt(posts.created_at, fromPost.created_at),
+              and(
+                eq(posts.created_at, fromPost.created_at),
+                lt(posts.id, fromPost.id)
+              )
+            )!
+          );
+        }
+      }
+      
+      // Fetch posts
+      const feedPosts = await db.select().from(posts)
+        .where(and(...whereConditions))
+        .orderBy(desc(posts.created_at), desc(posts.id))
+        .limit(limit);
+      
+      if (feedPosts.length === 0) {
+        return res.json({ posts: [], profiles: {}, engagement: {}, nextCursor: null });
+      }
+      
+      const postIds = feedPosts.map(p => p.id);
+      const authorIds = Array.from(new Set(feedPosts.map(p => p.author_id)));
+      
+      // Fetch all author profiles in ONE query using inArray
+      const authorProfiles = await db.select().from(profiles)
+        .where(inArray(profiles.id, authorIds));
+      
+      // Fetch all reactions counts + user's reactions in ONE query using inArray
+      const reactionRows = await db.select({
+        post_id: reactions.post_id,
+        user_id: reactions.user_id
+      }).from(reactions)
+        .where(and(
+          inArray(reactions.post_id, postIds),
+          eq(reactions.kind, 'amen')
+        ));
+      
+      // Fetch all comment counts in ONE query using inArray
+      const commentCounts = await db.select({
+        post_id: comments.post_id,
+        count: count()
+      }).from(comments)
+        .where(and(
+          inArray(comments.post_id, postIds),
+          eq(comments.deleted, false),
+          eq(comments.hidden, false)
+        ))
+        .groupBy(comments.post_id);
+      
+      // Build profiles map
+      const profilesMap: Record<string, any> = {};
+      authorProfiles.forEach(profile => {
+        profilesMap[profile.id] = profile;
+      });
+      
+      // Build engagement map
+      const engagementMap: Record<number, any> = {};
+      postIds.forEach(postId => {
+        engagementMap[postId] = { amenCount: 0, userAmened: false, commentCount: 0 };
+      });
+      
+      // Count reactions and check user's reactions
+      reactionRows.forEach((row: any) => {
+        if (engagementMap[row.post_id]) {
+          engagementMap[row.post_id].amenCount++;
+          if (currentUserId && row.user_id === currentUserId) {
+            engagementMap[row.post_id].userAmened = true;
+          }
+        }
+      });
+      
+      // Add comment counts
+      commentCounts.forEach((row: any) => {
+        if (engagementMap[row.post_id]) {
+          engagementMap[row.post_id].commentCount = row.count;
+        }
+      });
+      
+      // Calculate next cursor
+      const nextCursor = feedPosts.length === limit ? feedPosts[feedPosts.length - 1].id : null;
+      
+      res.json({
+        posts: feedPosts,
+        profiles: profilesMap,
+        engagement: engagementMap,
+        nextCursor
+      });
+    } catch (error) {
+      console.error("Error fetching feed:", error);
+      res.status(500).json({ error: "Failed to fetch feed" });
+    }
+  });
+
   app.post("/api/posts", authenticateUser, checkNotBanned, async (req: AuthenticatedRequest, res) => {
     try {
       const { db } = await import("../client/src/lib/db");

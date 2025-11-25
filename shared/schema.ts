@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, timestamp, integer, boolean, bigserial, bigint, primaryKey, uuid, json } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, timestamp, integer, boolean, bigserial, bigint, primaryKey, uuid, json, index } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -61,7 +61,12 @@ export const posts = pgTable("posts", {
   hidden: boolean("hidden").default(false).notNull(),
   created_at: timestamp("created_at").defaultNow().notNull(),
   updated_at: timestamp("updated_at").defaultNow().notNull(),
-});
+}, (table) => ({
+  // Index for feed queries: WHERE hidden=false ORDER BY created_at DESC
+  feedIdx: index("posts_feed_idx").on(table.hidden, table.created_at.desc()),
+  // Index for author profile queries
+  authorIdx: index("posts_author_idx").on(table.author_id),
+}));
 
 export const insertPostSchema = createInsertSchema(posts).pick({
   title: true,

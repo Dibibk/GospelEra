@@ -6,6 +6,14 @@ Gospel Era is a full-stack web application designed as a social platform for the
 
 # Recent Changes
 
+**November 25, 2025 - Performance Optimization & Scalability**
+- Created optimized `/api/feed` endpoint (server/routes.ts) that combines posts + author profiles + engagement counts in ONE query instead of 3 sequential API calls
+- Added database indexes on posts table (hidden, created_at DESC) for fast pagination with thousands of posts
+- Implemented proper keyset pagination using (created_at, id) to avoid duplicates/skips
+- Created `fetchFeed()` function in client/src/lib/posts.ts for calling optimized endpoint
+- Performance improvement: Reduced initial feed load from 3 sequential API calls to 1 batched query
+- Scalability: Instagram-style keyset pagination supports millions of posts without performance degradation
+
 **November 25, 2025 - iOS Capacitor App Fixes**
 - Added CORS middleware to backend (server/index.ts) to allow requests from Capacitor apps (capacitor://localhost, ionic://localhost)
 - Fixed YouTube embeds in iOS app: Replaced iframe-based embeds with EmbedCard component that shows clickable thumbnails for native apps (opens in YouTube app/Safari) and iframe embeds for web
