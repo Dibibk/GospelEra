@@ -1,5 +1,24 @@
 import { supabase } from './supabaseClient'
 import { validateContentWithAI } from './moderation'
+import { Capacitor } from '@capacitor/core'
+
+// Get API base URL - use full URL for native apps, relative for web
+function getApiBaseUrl(): string {
+  if (Capacitor.isNativePlatform()) {
+    const apiUrl = import.meta.env.VITE_API_URL || 'https://gospel-era.replit.app';
+    console.log('🌐 [posts.ts] Native app - using API URL:', apiUrl);
+    return apiUrl;
+  }
+  return '';
+}
+
+// Helper to build full URL for API calls
+function buildApiUrl(path: string): string {
+  const baseUrl = getApiBaseUrl();
+  const fullUrl = path.startsWith('http') ? path : `${baseUrl}${path}`;
+  console.log('🔗 [posts.ts] Building URL:', fullUrl);
+  return fullUrl;
+}
 
 export interface CreatePostData {
   title: string
@@ -103,15 +122,23 @@ export async function listPosts({ limit = 20, fromId, authorId }: ListPostsOptio
     }
 
     // Make request to backend API (which properly filters out hidden posts)
-    const response = await fetch(`/api/posts?${params.toString()}`)
+    const url = buildApiUrl(`/api/posts?${params.toString()}`);
+    console.log('📡 [listPosts] Fetching from:', url);
+    
+    const response = await fetch(url)
+    console.log('📡 [listPosts] Response status:', response.status, response.ok);
     
     if (!response.ok) {
+      const errorText = await response.text();
+      console.error('📡 [listPosts] Error response:', errorText);
       throw new Error(`Failed to fetch posts: ${response.statusText}`)
     }
     
     const data = await response.json()
+    console.log('📡 [listPosts] Data received:', data?.length, 'posts');
     return { data, error: null }
   } catch (err) {
+    console.error('📡 [listPosts] Exception:', err);
     return { data: null, error: err }
   }
 }
@@ -141,7 +168,8 @@ export async function softDeletePost(id: number) {
     };
 
     // Make DELETE request to server API
-    const response = await fetch(`/api/posts/${id}`, {
+    const url = buildApiUrl(`/api/posts/${id}`);
+    const response = await fetch(url, {
       method: 'DELETE',
       headers
     });
@@ -184,7 +212,8 @@ export async function updatePost(id: number, postData: CreatePostData) {
     };
 
     // Make PUT request to server API
-    const response = await fetch(`/api/posts/${id}`, {
+    const url = buildApiUrl(`/api/posts/${id}`);
+    const response = await fetch(url, {
       method: 'PUT',
       headers,
       body: JSON.stringify(postData)
