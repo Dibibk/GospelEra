@@ -11,8 +11,13 @@ const config: CapacitorConfig = {
       '*.ytimg.com',
       '*.googlevideo.com',
       '*.youtube-nocookie.com',
-      '*.googleapis.com'
-    ]
+      '*.googleapis.com',
+      '*.replit.app',
+      '*.replit.dev',
+      'gospel-era.replit.app'
+    ],
+    cleartext: true,
+    iosScheme: 'https'
   }
 };
 

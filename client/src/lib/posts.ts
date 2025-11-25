@@ -125,7 +125,12 @@ export async function listPosts({ limit = 20, fromId, authorId }: ListPostsOptio
     const url = buildApiUrl(`/api/posts?${params.toString()}`);
     console.log('📡 [listPosts] Fetching from:', url);
     
-    const response = await fetch(url)
+    const response = await fetch(url, {
+      headers: {
+        'Accept': 'application/json',
+      },
+      mode: 'cors',
+    })
     console.log('📡 [listPosts] Response status:', response.status, response.ok);
     
     if (!response.ok) {
@@ -139,6 +144,8 @@ export async function listPosts({ limit = 20, fromId, authorId }: ListPostsOptio
     return { data, error: null }
   } catch (err) {
     console.error('📡 [listPosts] Exception:', err);
+    console.error('📡 [listPosts] Error message:', err instanceof Error ? err.message : 'Unknown error');
+    console.error('📡 [listPosts] Error stack:', err instanceof Error ? err.stack : 'No stack');
     return { data: null, error: err }
   }
 }
