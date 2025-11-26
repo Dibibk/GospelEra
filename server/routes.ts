@@ -468,8 +468,15 @@ Respond in JSON format:
       const postIds = feedPosts.map(p => p.id);
       const authorIds = Array.from(new Set(feedPosts.map(p => p.author_id)));
       
-      // Fetch all author profiles in ONE query using inArray
-      const authorProfiles = await db.select().from(profiles)
+      // Fetch all author profiles in ONE query using inArray (select only essential columns)
+      const authorProfiles = await db.select({
+        id: profiles.id,
+        email: profiles.email,
+        display_name: profiles.display_name,
+        bio: profiles.bio,
+        avatar_url: profiles.avatar_url,
+        role: profiles.role,
+      }).from(profiles)
         .where(inArray(profiles.id, authorIds));
       
       // Fetch all reactions counts + user's reactions in ONE query using inArray
