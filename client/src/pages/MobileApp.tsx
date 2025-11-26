@@ -122,6 +122,29 @@ function getYoutubeEmbedSrc(url: string): string | null {
   }
 }
 
+// Helper to convert relative image URLs to full URLs for native apps
+function getImageUrl(url: string | undefined | null): string | null {
+  if (!url) return null;
+  
+  // Already a full URL
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    return url;
+  }
+  
+  // Check if running on native platform
+  const isNative = typeof window !== 'undefined' && 
+    window.location.protocol === 'capacitor:';
+  
+  if (isNative) {
+    // Prepend production backend URL for native apps
+    const baseUrl = import.meta.env.VITE_API_URL || 'https://gospel-era.replit.app';
+    return `${baseUrl}${url.startsWith('/') ? '' : '/'}${url}`;
+  }
+  
+  // For web, return as-is (relative URLs work)
+  return url;
+}
+
 // Module-level style constants to prevent recreation on each render
 const STYLES = {
   container: {
@@ -1716,9 +1739,9 @@ export default function MobileApp() {
                       color: "#8e8e8e",
                     }}
                   >
-                    {profiles.get(post.author_id)?.avatar_url ? (
+                    {getImageUrl(profiles.get(post.author_id)?.avatar_url) ? (
                       <img
-                        src={profiles.get(post.author_id).avatar_url}
+                        src={getImageUrl(profiles.get(post.author_id)?.avatar_url)!}
                         alt="Avatar"
                         style={{
                           width: "100%",
@@ -2125,13 +2148,9 @@ export default function MobileApp() {
                                     color: "#8e8e8e",
                                   }}
                                 >
-                                  {profiles.get(comment.author_id)
-                                    ?.avatar_url ? (
+                                  {getImageUrl(profiles.get(comment.author_id)?.avatar_url) ? (
                                     <img
-                                      src={
-                                        profiles.get(comment.author_id)
-                                          .avatar_url
-                                      }
+                                      src={getImageUrl(profiles.get(comment.author_id)?.avatar_url)!}
                                       alt="Avatar"
                                       style={{
                                         width: "100%",
@@ -2502,22 +2521,16 @@ export default function MobileApp() {
                   width: "28px",
                   height: "28px",
                   borderRadius: "50%",
-                  background: userProfile?.avatar_url ? "none" : "#dbdbdb",
+                  background: getImageUrl(userProfile?.avatar_url) ? "none" : "#dbdbdb",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                   overflow: "hidden",
                 }}
               >
-                {userProfile?.avatar_url ? (
+                {getImageUrl(userProfile?.avatar_url) ? (
                   <img
-                    src={
-                      userProfile.avatar_url.startsWith("/objects/")
-                        ? userProfile.avatar_url
-                        : userProfile.avatar_url.startsWith("/")
-                          ? userProfile.avatar_url
-                          : `/public-objects/${userProfile.avatar_url}`
-                    }
+                    src={getImageUrl(userProfile?.avatar_url)!}
                     alt="Profile"
                     style={{
                       width: "28px",
