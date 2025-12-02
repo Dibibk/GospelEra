@@ -14,6 +14,7 @@ import {
   softDeletePost,
   searchPosts,
   getTopTags,
+  fetchFeed,
 } from "@/lib/posts";
 import {
   listPrayerRequests,
@@ -556,24 +557,38 @@ export default function MobileApp() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      // Fetch real posts from API
-      console.log("🔍 fetchData: calling listPosts...");
-      const postsResult = await listPosts({ limit: 20 });
-      console.log("🔍 fetchData: listPosts result", { hasData: !!postsResult.data, count: postsResult.data?.length });
-      if (postsResult.data) {
-        setPosts(postsResult.data);
-        console.log("🔍 fetchData: setPosts called with", postsResult.data.length, "posts");
+      // Use optimized feed endpoint - combines posts + profiles + engagement in ONE request
+      console.log("🔍 fetchData: calling fetchFeed (optimized)...");
+      const feedResult = await fetchFeed({ limit: 20 });
+      console.log("🔍 fetchData: fetchFeed result", { hasData: !!feedResult.data, count: feedResult.data?.posts?.length });
+      
+      if (feedResult.data) {
+        // Set posts directly from feed
+        setPosts(feedResult.data.posts);
+        console.log("🔍 fetchData: setPosts called with", feedResult.data.posts.length, "posts");
 
-        // Load author profiles
-        const authorIds = postsResult.data.map((post: any) => post.author_id);
-        await loadProfiles(authorIds);
+        // Set profiles from feed response (already a map)
+        if (feedResult.data.profiles) {
+          const profilesMap = new Map(Object.entries(feedResult.data.profiles));
+          setProfiles(prev => new Map([...Array.from(prev), ...Array.from(profilesMap)]));
+        }
 
-        // Load engagement data
-        const postIds = postsResult.data.map((post: any) => post.id);
-        await loadEngagementData(postIds);
+        // Set engagement data from feed response
+        if (feedResult.data.engagement) {
+          const engagementMap = new Map();
+          for (const [postId, data] of Object.entries(feedResult.data.engagement)) {
+            engagementMap.set(parseInt(postId), {
+              isBookmarked: false, // Will be loaded separately if needed
+              hasAmened: (data as any).userAmened || false,
+              amenCount: (data as any).amenCount || 0,
+              commentCount: (data as any).commentCount || 0,
+            });
+          }
+          setEngagementData(prev => new Map([...Array.from(prev), ...Array.from(engagementMap)]));
+        }
       }
 
-      // Fetch real prayer requests from API
+      // Fetch real prayer requests from API (in parallel)
       const prayerResult = await listPrayerRequests({ limit: 10 });
       if (prayerResult.data) {
         setPrayerRequests(prayerResult.data);
