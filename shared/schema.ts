@@ -262,3 +262,31 @@ export const insertMediaRequestSchema = createInsertSchema(mediaRequests).omit({
 
 export type InsertMediaRequest = z.infer<typeof insertMediaRequestSchema>;
 export type MediaRequest = typeof mediaRequests.$inferSelect;
+
+// Notifications table for in-app notifications
+export const notifications = pgTable("notifications", {
+  id: bigserial("id", { mode: "number" }).primaryKey(),
+  recipient_id: varchar("recipient_id").notNull(), // user receiving the notification
+  actor_id: varchar("actor_id"), // user who triggered the notification (nullable for system notifications)
+  event_type: text("event_type").notNull(), // 'comment', 'amen', 'prayer_commitment', 'prayer_update', 'prayer_prayed'
+  post_id: integer("post_id"), // related post (nullable)
+  comment_id: integer("comment_id"), // related comment (nullable)
+  prayer_request_id: integer("prayer_request_id"), // related prayer request (nullable)
+  commitment_id: integer("commitment_id"), // related commitment (nullable)
+  message: text("message").notNull(), // notification message text
+  is_read: boolean("is_read").default(false).notNull(),
+  read_at: timestamp("read_at"),
+  created_at: timestamp("created_at").defaultNow().notNull(),
+}, (table) => ({
+  recipientUnreadIdx: index("notifications_recipient_unread_idx").on(table.recipient_id, table.is_read, table.created_at.desc()),
+}));
+
+export const insertNotificationSchema = createInsertSchema(notifications).omit({
+  id: true,
+  is_read: true,
+  read_at: true,
+  created_at: true,
+});
+
+export type InsertNotification = z.infer<typeof insertNotificationSchema>;
+export type Notification = typeof notifications.$inferSelect;
