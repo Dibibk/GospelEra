@@ -228,10 +228,7 @@ export async function updateReportStatus(id, status) {
   try {
     const { data, error } = await supabase
       .from('reports')
-      .update({ 
-        status,
-        updated_at: new Date().toISOString()
-      })
+      .update({ status })
       .eq('id', id)
       .select()
       .single()
