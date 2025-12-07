@@ -36,6 +36,7 @@ export const moderationConfig: ModerationConfig = {
   christianTerms: [
     'jesus', 'christ', 'lord jesus', 'savior',
     'god', 'lord', 'almighty', 'creator',
+    'prayer', 'pray', 'praying', 'prayers', 'prayed',
     'god the father', 'heavenly father', 'abba father',
     'holy spirit', 'holy ghost', 'comforter',
     'bible', 'scripture', 'word of god',
