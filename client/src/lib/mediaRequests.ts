@@ -1,5 +1,14 @@
 import { supabase } from './supabaseClient'
+import { Capacitor } from '@capacitor/core'
 import type { InsertMediaRequest, MediaRequest } from '@shared/schema'
+
+// Get API base URL - use full URL for native apps, relative for web
+function getApiBaseUrl(): string {
+  if (Capacitor.isNativePlatform()) {
+    return import.meta.env.VITE_API_URL || 'https://gospel-era.replit.app';
+  }
+  return '';
+}
 
 export interface MediaRequestWithUser extends MediaRequest {
   user?: {
@@ -26,7 +35,8 @@ export async function requestMediaAccess(reason: string) {
       return { data: null, error: { message: 'You must be logged in to request media access' } }
     }
 
-    const response = await fetch('/api/media-requests', {
+    const baseUrl = getApiBaseUrl();
+    const response = await fetch(`${baseUrl}/api/media-requests`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -58,7 +68,8 @@ export async function listMyRequests() {
       return { data: null, error: { message: 'You must be logged in to view requests' } }
     }
 
-    const response = await fetch('/api/media-requests/my', {
+    const baseUrl = getApiBaseUrl();
+    const response = await fetch(`${baseUrl}/api/media-requests/my`, {
       headers: {
         'Content-Type': 'application/json',
         'x-user-id': user.id,
@@ -89,7 +100,8 @@ export async function listAllRequests(): Promise<{ data: MediaRequestWithUser[] 
       return { data: null, error: { message: 'Authentication required' } }
     }
 
-    const response = await fetch('/api/admin/media-requests', {
+    const baseUrl = getApiBaseUrl();
+    const response = await fetch(`${baseUrl}/api/admin/media-requests`, {
       headers: {
         'Content-Type': 'application/json',
         'x-user-id': user.id,
@@ -119,7 +131,8 @@ export async function approveMediaRequest(requestId: number) {
       return { data: null, error: { message: 'Admin authentication required' } }
     }
 
-    const response = await fetch(`/api/admin/media-requests/${requestId}/approve`, {
+    const baseUrl = getApiBaseUrl();
+    const response = await fetch(`${baseUrl}/api/admin/media-requests/${requestId}/approve`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -151,7 +164,8 @@ export async function denyMediaRequest(requestId: number) {
       return { data: null, error: { message: 'Admin authentication required' } }
     }
 
-    const response = await fetch(`/api/admin/media-requests/${requestId}/deny`, {
+    const baseUrl = getApiBaseUrl();
+    const response = await fetch(`${baseUrl}/api/admin/media-requests/${requestId}/deny`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -187,7 +201,8 @@ export async function checkMediaPermission(userId?: string) {
       userId = user.id
     }
     
-    const url = `/api/media-permission/${userId}`
+    const baseUrl = getApiBaseUrl();
+    const url = `${baseUrl}/api/media-permission/${userId}`
     
     // Add client-side timeout for faster user experience
     const controller = new AbortController()
@@ -224,7 +239,8 @@ export async function checkMediaPermission(userId?: string) {
  */
 export async function getCurrentRequestStatus() {
   try {
-    const response = await fetch('/api/media-requests/my')
+    const baseUrl = getApiBaseUrl();
+    const response = await fetch(`${baseUrl}/api/media-requests/my`)
 
     if (!response.ok) {
       return { status: null, error: 'Failed to fetch request status' }
