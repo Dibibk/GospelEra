@@ -498,6 +498,37 @@ export default function MobileApp() {
     };
   }, [user]);
 
+  // Fetch unread notification count
+  const fetchNotificationCount = async () => {
+    if (!user) return;
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) return;
+      
+      const baseUrl = Capacitor.isNativePlatform() ? 'https://gospel-era.replit.app' : '';
+      const response = await fetch(`${baseUrl}/api/notifications/unread-count`, {
+        headers: { 'Authorization': `Bearer ${session.access_token}` }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setUnreadNotificationCount(data.count || 0);
+      }
+    } catch (error) {
+      console.error('Error fetching notification count:', error);
+    }
+  };
+
+  // Load notification count
+  useEffect(() => {
+    if (!user) return;
+    fetchNotificationCount();
+    
+    // Refresh count every 30 seconds
+    const interval = setInterval(fetchNotificationCount, 30000);
+    return () => clearInterval(interval);
+  }, [user]);
+
   // Load daily scripture verse
   const loadDailyVerse = async () => {
     try {
@@ -766,6 +797,8 @@ export default function MobileApp() {
     following_count?: number;
   } | null>(null);
   const [showUserDropdown, setShowUserDropdown] = useState(false);
+  const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
+  const [showNotifications, setShowNotifications] = useState(false);
   // Mobile page states
   const [showMobileSettings, setShowMobileSettings] = useState(false);
   const [showMobileCommunityGuidelines, setShowMobileCommunityGuidelines] =
@@ -2508,10 +2541,62 @@ export default function MobileApp() {
             style={{
               display: "flex",
               alignItems: "center",
-              gap: "16px",
+              gap: "12px",
               position: "relative",
             }}
           >
+            {/* Notification Bell */}
+            <button
+              onClick={() => setShowNotifications(true)}
+              data-testid="button-notifications"
+              style={{
+                position: "relative",
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                padding: "8px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <svg
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#262626"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+              </svg>
+              {unreadNotificationCount > 0 && (
+                <span
+                  style={{
+                    position: "absolute",
+                    top: "4px",
+                    right: "4px",
+                    background: "#dc2626",
+                    color: "#ffffff",
+                    fontSize: "10px",
+                    fontWeight: 700,
+                    minWidth: "16px",
+                    height: "16px",
+                    borderRadius: "8px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    padding: "0 4px",
+                  }}
+                >
+                  {unreadNotificationCount > 99 ? "99+" : unreadNotificationCount}
+                </span>
+              )}
+            </button>
+            
             {/* User Name and Avatar */}
             <button
               onClick={() => setShowUserDropdown(!showUserDropdown)}
