@@ -785,6 +785,39 @@ Respond in JSON format:
       };
       
       const [newComment] = await db.insert(comments).values(commentData).returning();
+      
+      // Create notification for post author (if not commenting on own post)
+      try {
+        const { posts, notifications, profiles } = await import("@shared/schema");
+        const { eq } = await import("drizzle-orm");
+        
+        const [post] = await db.select({ author_id: posts.author_id, title: posts.title })
+          .from(posts)
+          .where(eq(posts.id, result.data.post_id));
+        
+        if (post && post.author_id !== req.user.id) {
+          // Get commenter's display name
+          const [commenterProfile] = await db.select({ display_name: profiles.display_name })
+            .from(profiles)
+            .where(eq(profiles.id, req.user.id));
+          
+          const commenterName = commenterProfile?.display_name || 'Someone';
+          const postTitle = post.title?.slice(0, 30) || 'your post';
+          
+          await db.insert(notifications).values({
+            recipient_id: post.author_id,
+            actor_id: req.user.id,
+            event_type: 'comment',
+            post_id: result.data.post_id,
+            comment_id: newComment.id,
+            message: `${commenterName} commented on "${postTitle}${post.title?.length > 30 ? '...' : ''}"`
+          });
+        }
+      } catch (notifError) {
+        console.error("Error creating comment notification:", notifError);
+        // Don't fail the comment creation if notification fails
+      }
+      
       res.status(201).json(newComment);
     } catch (error) {
       console.error("Error creating comment:", error);
@@ -1433,7 +1466,7 @@ Respond with JSON only:
       const unreadCount = unreadCountResult.length;
       
       // Get actor profiles for notifications with actors
-      const actorIds = [...new Set(notificationList.map(n => n.actor_id).filter(Boolean))];
+      const actorIds = Array.from(new Set(notificationList.map(n => n.actor_id).filter(Boolean)));
       let actorProfiles: Record<string, any> = {};
       
       if (actorIds.length > 0) {
