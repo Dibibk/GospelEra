@@ -1374,6 +1374,182 @@ Respond with JSON only:
     res.json({ received: true });
   });
 
+  // ============ NOTIFICATIONS API ROUTES ============
+  
+  // Get user's notifications with pagination
+  app.get("/api/notifications", authenticateUser, async (req: AuthenticatedRequest, res) => {
+    try {
+      const { db } = await import("../client/src/lib/db");
+      const { notifications, profiles } = await import("@shared/schema");
+      const { desc, eq, and, lt } = await import("drizzle-orm");
+      
+      if (!req.user) {
+        return res.status(401).json({ error: "Authentication required" });
+      }
+      
+      const limit = parseInt(req.query.limit as string) || 20;
+      const fromId = req.query.fromId as string;
+      const unreadOnly = req.query.unread === 'true';
+      
+      // Build conditions
+      const conditions = [eq(notifications.recipient_id, req.user.id)];
+      
+      if (fromId) {
+        conditions.push(lt(notifications.id, parseInt(fromId)));
+      }
+      
+      if (unreadOnly) {
+        conditions.push(eq(notifications.is_read, false));
+      }
+      
+      // Fetch notifications with actor profile info
+      const notificationList = await db.select({
+        id: notifications.id,
+        recipient_id: notifications.recipient_id,
+        actor_id: notifications.actor_id,
+        event_type: notifications.event_type,
+        post_id: notifications.post_id,
+        comment_id: notifications.comment_id,
+        prayer_request_id: notifications.prayer_request_id,
+        commitment_id: notifications.commitment_id,
+        message: notifications.message,
+        is_read: notifications.is_read,
+        read_at: notifications.read_at,
+        created_at: notifications.created_at,
+      })
+        .from(notifications)
+        .where(and(...conditions))
+        .orderBy(desc(notifications.created_at))
+        .limit(limit);
+      
+      // Get unread count
+      const unreadCountResult = await db.select({ count: notifications.id })
+        .from(notifications)
+        .where(and(
+          eq(notifications.recipient_id, req.user.id),
+          eq(notifications.is_read, false)
+        ));
+      
+      const unreadCount = unreadCountResult.length;
+      
+      // Get actor profiles for notifications with actors
+      const actorIds = [...new Set(notificationList.map(n => n.actor_id).filter(Boolean))];
+      let actorProfiles: Record<string, any> = {};
+      
+      if (actorIds.length > 0) {
+        const { inArray } = await import("drizzle-orm");
+        const profileList = await db.select({
+          id: profiles.id,
+          display_name: profiles.display_name,
+          avatar_url: profiles.avatar_url,
+        })
+          .from(profiles)
+          .where(inArray(profiles.id, actorIds as string[]));
+        
+        profileList.forEach(p => {
+          actorProfiles[p.id] = p;
+        });
+      }
+      
+      // Enrich notifications with actor info
+      const enrichedNotifications = notificationList.map(n => ({
+        ...n,
+        actor: n.actor_id ? actorProfiles[n.actor_id] : null,
+      }));
+      
+      res.json({
+        notifications: enrichedNotifications,
+        unreadCount,
+        nextCursor: notificationList.length === limit ? notificationList[notificationList.length - 1].id : null,
+      });
+    } catch (error) {
+      console.error("Error fetching notifications:", error);
+      res.status(500).json({ error: "Failed to fetch notifications" });
+    }
+  });
+  
+  // Get unread notification count only
+  app.get("/api/notifications/unread-count", authenticateUser, async (req: AuthenticatedRequest, res) => {
+    try {
+      const { db } = await import("../client/src/lib/db");
+      const { notifications } = await import("@shared/schema");
+      const { eq, and, count } = await import("drizzle-orm");
+      
+      if (!req.user) {
+        return res.status(401).json({ error: "Authentication required" });
+      }
+      
+      const [result] = await db.select({ count: count() })
+        .from(notifications)
+        .where(and(
+          eq(notifications.recipient_id, req.user.id),
+          eq(notifications.is_read, false)
+        ));
+      
+      res.json({ count: result?.count || 0 });
+    } catch (error) {
+      console.error("Error fetching unread count:", error);
+      res.status(500).json({ error: "Failed to fetch unread count" });
+    }
+  });
+  
+  // Mark notification as read
+  app.patch("/api/notifications/:id/read", authenticateUser, async (req: AuthenticatedRequest, res) => {
+    try {
+      const { db } = await import("../client/src/lib/db");
+      const { notifications } = await import("@shared/schema");
+      const { eq, and } = await import("drizzle-orm");
+      
+      if (!req.user) {
+        return res.status(401).json({ error: "Authentication required" });
+      }
+      
+      const notificationId = parseInt(req.params.id);
+      
+      const [updated] = await db.update(notifications)
+        .set({ is_read: true, read_at: new Date() })
+        .where(and(
+          eq(notifications.id, notificationId),
+          eq(notifications.recipient_id, req.user.id)
+        ))
+        .returning();
+      
+      if (!updated) {
+        return res.status(404).json({ error: "Notification not found" });
+      }
+      
+      res.json(updated);
+    } catch (error) {
+      console.error("Error marking notification as read:", error);
+      res.status(500).json({ error: "Failed to mark notification as read" });
+    }
+  });
+  
+  // Mark all notifications as read
+  app.post("/api/notifications/mark-all-read", authenticateUser, async (req: AuthenticatedRequest, res) => {
+    try {
+      const { db } = await import("../client/src/lib/db");
+      const { notifications } = await import("@shared/schema");
+      const { eq, and } = await import("drizzle-orm");
+      
+      if (!req.user) {
+        return res.status(401).json({ error: "Authentication required" });
+      }
+      
+      await db.update(notifications)
+        .set({ is_read: true, read_at: new Date() })
+        .where(and(
+          eq(notifications.recipient_id, req.user.id),
+          eq(notifications.is_read, false)
+        ));
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error marking all notifications as read:", error);
+      res.status(500).json({ error: "Failed to mark all notifications as read" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;
