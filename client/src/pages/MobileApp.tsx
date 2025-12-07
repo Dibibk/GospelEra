@@ -477,7 +477,7 @@ export default function MobileApp() {
     return () => {
       cancelled = true;
     };
-  }, [user, posts.length]);
+  }, [user, posts.length, isAdmin]);
 
   // Load daily verse separately to ensure it always loads
   useEffect(() => {
@@ -544,6 +544,13 @@ export default function MobileApp() {
 
     setIsCheckingPermission(true);
     try {
+      // Admins always have media permission
+      if (isAdmin) {
+        setHasMediaPermission(true);
+        setIsCheckingPermission(false);
+        return;
+      }
+      
       const result = await checkMediaPermission(user.id);
       setHasMediaPermission(result.hasPermission);
     } catch (error) {
