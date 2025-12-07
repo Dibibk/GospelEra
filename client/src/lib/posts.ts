@@ -3,7 +3,7 @@ import { validateContentWithAI } from './moderation'
 import { Capacitor } from '@capacitor/core'
 
 // Get API base URL - use full URL for native apps, relative for web
-function getApiBaseUrl(): string {
+export function getApiBaseUrl(): string {
   if (Capacitor.isNativePlatform()) {
     const apiUrl = import.meta.env.VITE_API_URL || 'https://gospel-era.replit.app';
     console.log('🌐 [posts.ts] Native app - using API URL:', apiUrl);

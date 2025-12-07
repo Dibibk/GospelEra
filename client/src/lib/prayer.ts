@@ -1,9 +1,38 @@
 import { supabase } from './supabaseClient'
+import { getApiBaseUrl } from './posts'
 
 /**
  * Comprehensive Prayer Request API Library
  * All functions return { data, error } format and handle RLS errors gracefully
  */
+
+/**
+ * Helper to create a notification via the backend API
+ */
+async function createNotification(params: {
+  recipientId: string;
+  eventType: string;
+  prayerRequestId?: number;
+  commitmentId?: number;
+  message?: string;
+}): Promise<void> {
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.access_token) return;
+    
+    const baseUrl = getApiBaseUrl();
+    await fetch(`${baseUrl}/api/notifications`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`
+      },
+      body: JSON.stringify(params)
+    });
+  } catch (error) {
+    console.error('Failed to create notification:', error);
+  }
+}
 
 export interface PrayerRequestCreateParams {
   title: string
@@ -262,6 +291,23 @@ export async function commitToPray(requestId: number): Promise<ApiResponse<any>>
         message: 'committed to pray'
       })
 
+    // Notify prayer request owner (if not self)
+    const { data: prayerRequest } = await supabase
+      .from('prayer_requests')
+      .select('requester')
+      .eq('id', requestId)
+      .single();
+    
+    if (prayerRequest?.requester && prayerRequest.requester !== user.user.id) {
+      createNotification({
+        recipientId: prayerRequest.requester,
+        eventType: 'prayer_commitment',
+        prayerRequestId: requestId,
+        commitmentId: data.id,
+        message: 'committed to pray for your prayer request'
+      });
+    }
+
     // Return data with spam warning if applicable
     return { 
       data: {
@@ -353,6 +399,23 @@ export async function confirmPrayed(requestId: number, { note = null }: { note?:
         kind: 'prayer_completed',
         message: note ? `prayed with note: ${note}` : 'completed prayer'
       })
+
+    // Notify prayer request owner (if not self)
+    const { data: prayerRequest } = await supabase
+      .from('prayer_requests')
+      .select('requester')
+      .eq('id', requestId)
+      .single();
+    
+    if (prayerRequest?.requester && prayerRequest.requester !== user.user.id) {
+      createNotification({
+        recipientId: prayerRequest.requester,
+        eventType: 'prayer_completed',
+        prayerRequestId: requestId,
+        commitmentId: data.id,
+        message: 'prayed for your prayer request'
+      });
+    }
 
     return { data, error: null }
   } catch (err) {

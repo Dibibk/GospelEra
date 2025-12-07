@@ -1583,6 +1583,48 @@ Respond with JSON only:
       res.status(500).json({ error: "Failed to mark all notifications as read" });
     }
   });
+  
+  // Create notification (for prayer commitments, etc.)
+  app.post("/api/notifications", authenticateUser, async (req: AuthenticatedRequest, res) => {
+    try {
+      const { db } = await import("../client/src/lib/db");
+      const { notifications } = await import("@shared/schema");
+      
+      if (!req.user) {
+        return res.status(401).json({ error: "Authentication required" });
+      }
+      
+      const { recipientId, eventType, postId, commentId, prayerRequestId, commitmentId, message } = req.body;
+      
+      if (!recipientId || !eventType) {
+        return res.status(400).json({ error: "recipientId and eventType are required" });
+      }
+      
+      // Don't create notification for yourself
+      if (recipientId === req.user.id) {
+        return res.json({ success: true, skipped: true });
+      }
+      
+      const [notification] = await db.insert(notifications)
+        .values({
+          recipient_id: recipientId,
+          actor_id: req.user.id,
+          event_type: eventType,
+          post_id: postId || null,
+          comment_id: commentId || null,
+          prayer_request_id: prayerRequestId || null,
+          commitment_id: commitmentId || null,
+          message: message || null,
+          is_read: false,
+        })
+        .returning();
+      
+      res.json({ success: true, notification });
+    } catch (error) {
+      console.error("Error creating notification:", error);
+      res.status(500).json({ error: "Failed to create notification" });
+    }
+  });
 
   const httpServer = createServer(app);
 
