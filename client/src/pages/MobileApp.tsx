@@ -441,6 +441,18 @@ export default function MobileApp() {
     [postId: number]: boolean;
   }>({});
   const isLoading = useRef(false);
+  
+  // Banned user modal state
+  const [showBannedModal, setShowBannedModal] = useState(false);
+  const bannedModalShownRef = useRef(false);
+  
+  // Show banned modal when user is banned
+  useEffect(() => {
+    if (isBanned && user && !bannedModalShownRef.current) {
+      bannedModalShownRef.current = true;
+      setShowBannedModal(true);
+    }
+  }, [isBanned, user]);
 
   useEffect(() => {
     console.log("🔍 MobileApp fetchData effect", { hasUser: !!user, postsLength: posts.length });
@@ -3518,6 +3530,116 @@ export default function MobileApp() {
                 Request
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Banned User Modal */}
+      {showBannedModal && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(0,0,0,0.6)",
+            zIndex: 9999,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <div
+            style={{
+              background: "#ffffff",
+              padding: "28px",
+              borderRadius: "16px",
+              maxWidth: "320px",
+              margin: "16px",
+              textAlign: "center",
+              boxShadow: "0 10px 40px rgba(0,0,0,0.3)",
+            }}
+          >
+            <div
+              style={{
+                width: "60px",
+                height: "60px",
+                background: "#fee2e2",
+                borderRadius: "50%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                margin: "0 auto 16px auto",
+              }}
+            >
+              <svg
+                width="32"
+                height="32"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#dc2626"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <circle cx="12" cy="12" r="10" />
+                <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
+              </svg>
+            </div>
+            <h3
+              style={{
+                margin: "0 0 12px 0",
+                fontSize: "20px",
+                fontWeight: 700,
+                color: "#dc2626",
+              }}
+            >
+              Account Restricted
+            </h3>
+            <p
+              style={{
+                margin: "0 0 20px 0",
+                fontSize: "15px",
+                color: "#4b5563",
+                lineHeight: 1.5,
+              }}
+            >
+              Your account has been restricted due to a violation of our community guidelines. 
+              You can still browse content, but posting and interactions are limited.
+            </p>
+            <p
+              style={{
+                margin: "0 0 24px 0",
+                fontSize: "14px",
+                color: "#6b7280",
+              }}
+            >
+              If you believe this is a mistake, please contact us at{" "}
+              <a 
+                href="mailto:support@gospelera.app" 
+                style={{ color: "#2563eb", textDecoration: "underline" }}
+              >
+                support@gospelera.app
+              </a>
+            </p>
+            <button
+              onClick={() => setShowBannedModal(false)}
+              data-testid="button-close-banned-modal"
+              style={{
+                width: "100%",
+                padding: "12px",
+                border: "none",
+                borderRadius: "8px",
+                background: "#dc2626",
+                color: "#ffffff",
+                fontSize: "16px",
+                fontWeight: 600,
+                cursor: "pointer",
+              }}
+            >
+              I Understand
+            </button>
           </div>
         </div>
       )}
