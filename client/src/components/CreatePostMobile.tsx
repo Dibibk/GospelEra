@@ -221,7 +221,7 @@ export function CreatePostMobile({
           ✏️
         </div>
         <div style={{ fontWeight: 600, color: "#262626" }}>
-          {editingPost ? "Edit Post" : "Create Post"}
+          {editingPost ? "Edit Testimony" : "Share Your Testimony"}
         </div>
       </div>
 
@@ -263,7 +263,7 @@ export function CreatePostMobile({
       {/* Title input */}
       <input
         type="text"
-        placeholder="Post title..."
+        placeholder="Testimony title..."
         value={title}
         onChange={(e) => setTitle(e.target.value)}
         disabled={isBanned}
@@ -288,7 +288,7 @@ export function CreatePostMobile({
 
       {/* Content textarea */}
       <textarea
-        placeholder="Share your faith, testimony, or encouragement..."
+        placeholder="Share how God is working in your life to strengthen others' faith..."
         value={content}
         onChange={(e) => setContent(e.target.value)}
         rows={6}
