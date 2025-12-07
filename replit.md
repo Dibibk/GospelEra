@@ -6,6 +6,13 @@ Gospel Era is a full-stack web application designed as a social platform for the
 
 # Recent Changes
 
+**December 7, 2025 - Enhanced Signup Form**
+- Added first_name and last_name columns to profiles table (shared/schema.ts)
+- Updated signup form in LoginMobile.tsx to require: First Name, Last Name, Display Name, and Email
+- Modified useAuth.tsx signUp function to accept and store profile data during registration
+- Added getDisplayName helper function in MobileApp.tsx for consistent name display with email username fallback
+- All name fields are mandatory during signup with validation
+
 **December 7, 2025 - In-App Notification System**
 - Added notifications table to database schema (shared/schema.ts) with event_type, actor_id, recipient_id, post_id, etc.
 - Created backend API routes: GET /api/notifications, GET /api/notifications/unread-count, PATCH /api/notifications/:id/read, POST /api/notifications/mark-all-read, POST /api/notifications

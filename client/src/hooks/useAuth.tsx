@@ -39,13 +39,19 @@ async function ensureUserProfile(user: User) {
   }
 }
 
+interface SignUpProfileData {
+  firstName: string
+  lastName: string
+  displayName: string
+}
+
 interface AuthContextType {
   user: User | null
   session: Session | null
   loading: boolean
   authTransition: 'idle' | 'signing-in' | 'signing-out' | 'signing-up'
   signIn: (email: string, password: string) => Promise<{ error: AuthError | null }>
-  signUp: (email: string, password: string) => Promise<{ error: AuthError | null }>
+  signUp: (email: string, password: string, profileData?: SignUpProfileData) => Promise<{ error: AuthError | null }>
   signOut: () => Promise<{ error: AuthError | null }>
   resetPasswordForEmail: (email: string) => Promise<{ error: AuthError | null }>
   resetPassword: (password: string) => Promise<{ error: AuthError | null }>
@@ -92,9 +98,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return { error }
   }
 
-  const signUp = async (email: string, password: string) => {
+  const signUp = async (email: string, password: string, profileData?: SignUpProfileData) => {
     setAuthTransition('signing-up')
-    const { error } = await supabase.auth.signUp({ email, password })
+    const { error, data } = await supabase.auth.signUp({ 
+      email, 
+      password,
+      options: {
+        data: profileData ? {
+          first_name: profileData.firstName,
+          last_name: profileData.lastName,
+          display_name: profileData.displayName,
+        } : undefined
+      }
+    })
+    
+    // If signup successful and we have a user, create their profile immediately
+    if (!error && data?.user && profileData) {
+      try {
+        await supabase.from('profiles').upsert({
+          id: data.user.id,
+          email: email,
+          first_name: profileData.firstName,
+          last_name: profileData.lastName,
+          display_name: profileData.displayName,
+        })
+      } catch (profileError) {
+        console.error('Error creating profile during signup:', profileError)
+      }
+    }
     
     // Add a slight delay for smooth animation
     if (!error) {

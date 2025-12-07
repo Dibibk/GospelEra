@@ -20,6 +20,8 @@ export type User = typeof users.$inferSelect;
 export const profiles = pgTable("profiles", {
   id: varchar("id").primaryKey(),
   email: text("email"),
+  first_name: text("first_name"),
+  last_name: text("last_name"),
   display_name: text("display_name"),
   bio: text("bio"),
   avatar_url: text("avatar_url"),
@@ -35,6 +37,8 @@ export const profiles = pgTable("profiles", {
 });
 
 export const insertProfileSchema = createInsertSchema(profiles).pick({
+  first_name: true,
+  last_name: true,
   display_name: true,
   bio: true,
   avatar_url: true,

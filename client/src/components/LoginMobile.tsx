@@ -11,6 +11,9 @@ export function LoginMobile({ onSuccess }: LoginMobileProps) {
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [displayName, setDisplayName] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
   const [loginError, setLoginError] = useState('');
   const [success, setSuccess] = useState('');
@@ -24,6 +27,9 @@ export function LoginMobile({ onSuccess }: LoginMobileProps) {
   
   const emailRef = useRef<HTMLInputElement>(null);
   const passwordRef = useRef<HTMLInputElement>(null);
+  const firstNameRef = useRef<HTMLInputElement>(null);
+  const lastNameRef = useRef<HTMLInputElement>(null);
+  const displayNameRef = useRef<HTMLInputElement>(null);
 
   const keepFocus = (
     ref: RefObject<HTMLInputElement | HTMLTextAreaElement>,
@@ -42,9 +48,23 @@ export function LoginMobile({ onSuccess }: LoginMobileProps) {
     e?.preventDefault();
     if (!email.trim() || !password.trim()) return;
 
-    if (isSignUp && !faithAffirmed) {
-      setLoginError('Please affirm your faith to create an account.');
-      return;
+    if (isSignUp) {
+      if (!firstName.trim()) {
+        setLoginError('Please enter your first name.');
+        return;
+      }
+      if (!lastName.trim()) {
+        setLoginError('Please enter your last name.');
+        return;
+      }
+      if (!displayName.trim()) {
+        setLoginError('Please enter a display name.');
+        return;
+      }
+      if (!faithAffirmed) {
+        setLoginError('Please affirm your faith to create an account.');
+        return;
+      }
     }
 
     setLoading(true);
@@ -52,7 +72,11 @@ export function LoginMobile({ onSuccess }: LoginMobileProps) {
     setSuccess('');
     
     const { error } = isSignUp
-      ? await signUp(email, password)
+      ? await signUp(email, password, {
+          firstName: firstName.trim(),
+          lastName: lastName.trim(),
+          displayName: displayName.trim(),
+        })
       : await signIn(email, password);
 
     if (error) {
@@ -65,6 +89,9 @@ export function LoginMobile({ onSuccess }: LoginMobileProps) {
       }
       setEmail('');
       setPassword('');
+      setFirstName('');
+      setLastName('');
+      setDisplayName('');
       setFaithAffirmed(false);
       if (!isSignUp) {
         onSuccess();
@@ -312,10 +339,85 @@ export function LoginMobile({ onSuccess }: LoginMobileProps) {
       )}
 
       <div style={{ marginBottom: '16px' }}>
+        {/* Name fields - only for signup */}
+        {isSignUp && (
+          <>
+            <div style={{ display: 'flex', gap: '12px', marginBottom: '12px' }}>
+              <input
+                ref={firstNameRef}
+                type="text"
+                placeholder="First Name *"
+                value={firstName}
+                onChange={(e) => {
+                  setFirstName(e.target.value);
+                  keepFocus(firstNameRef);
+                }}
+                style={{
+                  flex: 1,
+                  padding: '12px 16px',
+                  border: '1px solid #dbdbdb',
+                  borderRadius: '8px',
+                  fontSize: '16px',
+                  outline: 'none',
+                }}
+                autoCapitalize="words"
+                autoCorrect="off"
+                spellCheck={false}
+                data-testid="input-first-name"
+              />
+              <input
+                ref={lastNameRef}
+                type="text"
+                placeholder="Last Name *"
+                value={lastName}
+                onChange={(e) => {
+                  setLastName(e.target.value);
+                  keepFocus(lastNameRef);
+                }}
+                style={{
+                  flex: 1,
+                  padding: '12px 16px',
+                  border: '1px solid #dbdbdb',
+                  borderRadius: '8px',
+                  fontSize: '16px',
+                  outline: 'none',
+                }}
+                autoCapitalize="words"
+                autoCorrect="off"
+                spellCheck={false}
+                data-testid="input-last-name"
+              />
+            </div>
+            <input
+              ref={displayNameRef}
+              type="text"
+              placeholder="Display Name * (shown publicly)"
+              value={displayName}
+              onChange={(e) => {
+                setDisplayName(e.target.value);
+                keepFocus(displayNameRef);
+              }}
+              style={{
+                width: '100%',
+                padding: '12px 16px',
+                border: '1px solid #dbdbdb',
+                borderRadius: '8px',
+                fontSize: '16px',
+                marginBottom: '12px',
+                outline: 'none',
+              }}
+              autoCapitalize="words"
+              autoCorrect="off"
+              spellCheck={false}
+              data-testid="input-display-name"
+            />
+          </>
+        )}
+        
         <input
           ref={emailRef}
           type="email"
-          placeholder="Email"
+          placeholder="Email *"
           value={email}
           onChange={(e) => {
             setEmail(e.target.value);
@@ -334,6 +436,7 @@ export function LoginMobile({ onSuccess }: LoginMobileProps) {
           autoCapitalize="none"
           autoCorrect="off"
           spellCheck={false}
+          data-testid="input-email"
         />
         
         {/* Password field with visibility toggle */}
@@ -553,12 +656,12 @@ export function LoginMobile({ onSuccess }: LoginMobileProps) {
           loading ||
           !email.trim() ||
           !password.trim() ||
-          (isSignUp && !faithAffirmed)
+          (isSignUp && (!faithAffirmed || !firstName.trim() || !lastName.trim() || !displayName.trim()))
         }
         style={{
           width: '100%',
           background:
-            email.trim() && password.trim() && (!isSignUp || faithAffirmed) && !loading
+            email.trim() && password.trim() && (!isSignUp || (faithAffirmed && firstName.trim() && lastName.trim() && displayName.trim())) && !loading
               ? '#0095f6'
               : '#b3dffc',
           color: '#ffffff',
@@ -569,10 +672,11 @@ export function LoginMobile({ onSuccess }: LoginMobileProps) {
           fontWeight: 600,
           marginBottom: '16px',
           cursor:
-            email.trim() && password.trim() && (!isSignUp || faithAffirmed) && !loading
+            email.trim() && password.trim() && (!isSignUp || (faithAffirmed && firstName.trim() && lastName.trim() && displayName.trim())) && !loading
               ? 'pointer'
               : 'not-allowed',
         }}
+        data-testid="button-submit"
       >
         {loading
           ? isSignUp
