@@ -1,4 +1,14 @@
 import { supabase } from './supabaseClient'
+import { Capacitor } from '@capacitor/core'
+
+// Get API base URL - use full URL for native apps, relative for web
+function getApiBaseUrl(): string {
+  if (Capacitor.isNativePlatform()) {
+    const apiUrl = import.meta.env.VITE_API_URL || 'https://gospel-era.replit.app';
+    return apiUrl;
+  }
+  return '';
+}
 
 interface CreateCommentData {
   postId: number
@@ -29,7 +39,8 @@ export async function createComment({ postId, content }: CreateCommentData) {
     }
 
     // Call server-side API endpoint (enforces moderation)
-    const response = await fetch('/api/comments', {
+    const apiUrl = `${getApiBaseUrl()}/api/comments`;
+    const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
