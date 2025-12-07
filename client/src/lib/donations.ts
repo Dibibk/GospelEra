@@ -1,6 +1,15 @@
 /**
  * Donations API library for handling pledges and payment processing
  */
+import { Capacitor } from '@capacitor/core';
+
+// Get API base URL - use full URL for native apps, relative for web
+function getApiBaseUrl(): string {
+  if (Capacitor.isNativePlatform()) {
+    return import.meta.env.VITE_API_URL || 'https://gospel-era.replit.app';
+  }
+  return '';
+}
 
 export interface DonationData {
   amount_cents: number;
@@ -33,7 +42,8 @@ export interface Donation {
  */
 export async function createDonationPledge(donationData: DonationData): Promise<{ donation: Donation } | { error: string }> {
   try {
-    const response = await fetch('/api/donations', {
+    const baseUrl = getApiBaseUrl();
+    const response = await fetch(`${baseUrl}/api/donations`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -63,7 +73,8 @@ export async function createDonationPledge(donationData: DonationData): Promise<
  */
 export async function getUserDonations(): Promise<{ donations: Donation[] } | { error: string }> {
   try {
-    const response = await fetch('/api/donations', {
+    const baseUrl = getApiBaseUrl();
+    const response = await fetch(`${baseUrl}/api/donations`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -88,7 +99,8 @@ export async function getUserDonations(): Promise<{ donations: Donation[] } | { 
  */
 export async function getAllDonations(): Promise<{ donations: Donation[] } | { error: string }> {
   try {
-    const response = await fetch('/api/admin/donations', {
+    const baseUrl = getApiBaseUrl();
+    const response = await fetch(`${baseUrl}/api/admin/donations`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -143,7 +155,8 @@ export function validateDonationAmount(amount: number): { valid: boolean; error?
  */
 export async function createStripeCheckout(data: StripeCheckoutData): Promise<{ url: string } | { error: string }> {
   try {
-    const response = await fetch('/api/stripe/create-checkout-session', {
+    const baseUrl = getApiBaseUrl();
+    const response = await fetch(`${baseUrl}/api/stripe/create-checkout-session`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
