@@ -6,6 +6,7 @@ import React, {
   useMemo,
   memo,
 } from "react";
+import { Capacitor } from "@capacitor/core";
 import { useAuth } from "@/hooks/useAuth";
 import {
   listPosts,
@@ -61,6 +62,7 @@ import { ProfileMobile } from "@/components/ProfileMobile";
 import { CreatePostMobile } from "@/components/CreatePostMobile";
 import { PrayerBrowseMobile } from "@/components/PrayerBrowseMobile";
 import { PrayerDetailMobile } from "@/components/PrayerDetailMobile";
+import { NotificationsMobile } from "@/components/NotificationsMobile";
 import { PrayerMyMobile } from "@/components/PrayerMyMobile";
 import { PrayerLeaderboardMobile } from "@/components/PrayerLeaderboardMobile";
 import { PrayerDetailView } from "@/components/PrayerDetailView";
@@ -2498,6 +2500,25 @@ export default function MobileApp() {
         }}
         onCommitToPray={handleCommitToPray}
         onConfirmPrayed={handleConfirmPrayed}
+      />
+    );
+  }
+
+  // Handle notifications view
+  if (showNotifications) {
+    return (
+      <NotificationsMobile
+        onBack={() => setShowNotifications(false)}
+        onCountChange={setUnreadNotificationCount}
+        onNotificationClick={(notification) => {
+          setShowNotifications(false);
+          // Navigate to the relevant content
+          if (notification.post_id) {
+            // Could navigate to post detail if implemented
+          } else if (notification.prayer_request_id) {
+            // Could navigate to prayer request
+          }
+        }}
       />
     );
   }

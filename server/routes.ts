@@ -1456,14 +1456,15 @@ Respond with JSON only:
         .limit(limit);
       
       // Get unread count
-      const unreadCountResult = await db.select({ count: notifications.id })
+      const { count: countFn } = await import("drizzle-orm");
+      const [unreadCountResult] = await db.select({ count: countFn() })
         .from(notifications)
         .where(and(
           eq(notifications.recipient_id, req.user.id),
           eq(notifications.is_read, false)
         ));
       
-      const unreadCount = unreadCountResult.length;
+      const unreadCount = unreadCountResult?.count || 0;
       
       // Get actor profiles for notifications with actors
       const actorIds = Array.from(new Set(notificationList.map(n => n.actor_id).filter(Boolean)));
