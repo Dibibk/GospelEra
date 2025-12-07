@@ -148,6 +148,27 @@ function getImageUrl(url: string | undefined | null): string | null {
   return url;
 }
 
+// Helper to get display name with proper fallbacks (handles null, undefined, empty strings)
+function getDisplayName(profile: any, fallbackEmail?: string | null): string {
+  // Check if profile has a valid display_name (not null, undefined, or empty/whitespace)
+  const displayName = profile?.display_name?.trim();
+  if (displayName) {
+    return displayName;
+  }
+  
+  // Try email username as fallback
+  const email = profile?.email || fallbackEmail;
+  if (email) {
+    const username = email.split('@')[0];
+    if (username) {
+      return username;
+    }
+  }
+  
+  // Ultimate fallback
+  return 'Gospel User';
+}
+
 // Module-level style constants to prevent recreation on each render
 const STYLES = {
   container: {
@@ -1840,8 +1861,7 @@ export default function MobileApp() {
                         color: "#262626",
                       }}
                     >
-                      {profiles.get(post.author_id)?.display_name ||
-                        "Gospel User"}
+                      {getDisplayName(profiles.get(post.author_id))}
                     </div>
                     <div style={{ fontSize: "12px", color: "#8e8e8e" }}>
                       {formatTimeAgo(post.created_at)}
@@ -2241,8 +2261,7 @@ export default function MobileApp() {
                                         marginRight: "6px",
                                       }}
                                     >
-                                      {profiles.get(comment.author_id)
-                                        ?.display_name || "Gospel User"}
+                                      {getDisplayName(profiles.get(comment.author_id))}
                                     </span>
                                     <span style={{ color: "#262626" }}>
                                       {comment.content}
@@ -2731,7 +2750,7 @@ export default function MobileApp() {
                       color: "#262626",
                     }}
                   >
-                    {userProfile?.display_name || "Gospel User"}
+                    {getDisplayName(userProfile, user?.email)}
                   </div>
                   <div style={{ fontSize: "12px", color: "#8e8e8e" }}>
                     {user?.email}
