@@ -84,10 +84,14 @@ export function PrayerDetailView({
 
   return (
     <div style={{ background: "#ffffff", minHeight: "100vh" }}>
-      {/* Header */}
+      {/* Header with iOS safe area */}
       <div
         style={{
-          padding: "16px",
+          paddingTop: "max(16px, env(safe-area-inset-top, 16px))",
+          paddingLeft: "16px",
+          paddingRight: "16px",
+          paddingBottom: "16px",
+          minHeight: "calc(56px + env(safe-area-inset-top, 0px))",
           borderBottom: "1px solid #dbdbdb",
           display: "flex",
           alignItems: "center",

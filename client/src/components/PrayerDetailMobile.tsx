@@ -34,13 +34,19 @@ export function PrayerDetailMobile({
   }, []);
 
   const handleAction = async () => {
+    console.log("🙏 [PrayerDetailMobile] handleAction called", { prayerId: prayer.id, hasCommitment: !!commitment });
     setIsCommitting(true);
     try {
       if (commitment && !commitment.has_prayed) {
+        console.log("🙏 [PrayerDetailMobile] Confirming prayed...");
         await onConfirmPrayed(prayer.id);
       } else if (!commitment) {
+        console.log("🙏 [PrayerDetailMobile] Committing to pray...");
         await onCommitToPray(prayer.id);
       }
+      console.log("🙏 [PrayerDetailMobile] Action completed successfully");
+    } catch (err) {
+      console.error("🙏 [PrayerDetailMobile] Action error:", err);
     } finally {
       setIsCommitting(false);
     }
@@ -68,12 +74,16 @@ export function PrayerDetailMobile({
 
   return (
     <div style={{ minHeight: "100vh", background: "#ffffff" }}>
-      {/* Header */}
+      {/* Header with iOS safe area */}
       <div
         style={{
           display: "flex",
           alignItems: "center",
-          padding: "16px",
+          paddingTop: "max(16px, env(safe-area-inset-top, 16px))",
+          paddingLeft: "16px",
+          paddingRight: "16px",
+          paddingBottom: "16px",
+          minHeight: "calc(56px + env(safe-area-inset-top, 0px))",
           borderBottom: "1px solid #dbdbdb",
           background: "#ffffff",
           position: "sticky",
