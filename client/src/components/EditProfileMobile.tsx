@@ -1,6 +1,17 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { upsertMyProfile } from '@/lib/profiles';
+import { Capacitor } from '@capacitor/core';
+import { getApiBaseUrl } from '@/lib/posts';
+
+// Helper to get avatar URL with proper base for native apps
+function getAvatarSrc(url: string): string {
+  if (!url) return '';
+  if (url.startsWith('/objects/') && Capacitor.isNativePlatform()) {
+    return `${getApiBaseUrl()}${url}`;
+  }
+  return url;
+}
 
 interface EditProfileMobileProps {
   profile: any;
@@ -70,6 +81,7 @@ export function EditProfileMobile({ profile, onBack, onSuccess }: EditProfileMob
         try {
           const { supabase } = await import('../lib/supabaseClient');
           const { data: { session } } = await supabase.auth.getSession();
+          const baseUrl = getApiBaseUrl();
           const headers: Record<string, string> = {
             'Content-Type': 'application/json',
           };
@@ -78,7 +90,7 @@ export function EditProfileMobile({ profile, onBack, onSuccess }: EditProfileMob
             headers['Authorization'] = `Bearer ${session.access_token}`;
           }
           
-          const response = await fetch('/api/objects/upload', {
+          const response = await fetch(`${baseUrl}/api/objects/upload`, {
             method: 'POST',
             headers,
           });
@@ -106,7 +118,7 @@ export function EditProfileMobile({ profile, onBack, onSuccess }: EditProfileMob
               headersForAvatar['Authorization'] = `Bearer ${session.access_token}`;
             }
             
-            const avatarResponse = await fetch('/api/avatar', {
+            const avatarResponse = await fetch(`${baseUrl}/api/avatar`, {
               method: 'PUT',
               headers: headersForAvatar,
               body: JSON.stringify({ avatarURL: uploadURL }),
@@ -189,7 +201,7 @@ export function EditProfileMobile({ profile, onBack, onSuccess }: EditProfileMob
               >
                 {avatarUrl ? (
                   <img
-                    src={avatarUrl}
+                    src={getAvatarSrc(avatarUrl)}
                     alt="Profile"
                     style={{
                       width: '32px',
@@ -252,7 +264,7 @@ export function EditProfileMobile({ profile, onBack, onSuccess }: EditProfileMob
           <div style={{ marginBottom: '16px' }}>
             {avatarUrl ? (
               <img
-                src={avatarUrl}
+                src={getAvatarSrc(avatarUrl)}
                 alt="Avatar"
                 style={{
                   width: '80px',

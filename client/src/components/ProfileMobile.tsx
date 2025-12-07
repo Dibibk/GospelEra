@@ -1,4 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
+import { Capacitor } from "@capacitor/core";
+import { getApiBaseUrl } from "@/lib/posts";
 
 interface ProfileMobileProps {
   isVisible: boolean;
@@ -344,8 +346,8 @@ export function ProfileMobile({
             {profile?.avatar_url ? (
               <img
                 src={
-                  profile.avatar_url.startsWith("/objects/")
-                    ? profile.avatar_url
+                  profile.avatar_url.startsWith("/objects/") && Capacitor.isNativePlatform()
+                    ? `${getApiBaseUrl()}${profile.avatar_url}`
                     : profile.avatar_url
                 }
                 alt="Avatar"
