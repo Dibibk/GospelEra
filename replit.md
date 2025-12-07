@@ -6,6 +6,16 @@ Gospel Era is a full-stack web application designed as a social platform for the
 
 # Recent Changes
 
+**December 7, 2025 - In-App Notification System**
+- Added notifications table to database schema (shared/schema.ts) with event_type, actor_id, recipient_id, post_id, etc.
+- Created backend API routes: GET /api/notifications, GET /api/notifications/unread-count, PATCH /api/notifications/:id/read, POST /api/notifications/mark-all-read
+- Integrated notification creation when users comment on posts (server/routes.ts)
+- Added notification bell icon with unread count badge in mobile header (MobileApp.tsx)
+- Built NotificationsMobile component for viewing and managing notifications
+- Fixed unread count calculation to use proper SQL COUNT aggregate instead of row length
+- Fixed markAsRead to calculate unread count from updated state (not stale state)
+- Added Capacitor import for native platform detection
+
 **November 25, 2025 - Performance Optimization & Scalability**
 - Created optimized `/api/feed` endpoint (server/routes.ts) that combines posts + author profiles + engagement counts in ONE query instead of 3 sequential API calls
 - Added database indexes on posts table (hidden, created_at DESC) for fast pagination with thousands of posts
