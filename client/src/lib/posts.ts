@@ -199,10 +199,15 @@ export async function fetchFeed({ limit = 20, fromId }: FeedOptions = {}): Promi
     const url = buildApiUrl(`/api/feed?${params.toString()}`)
     console.log('📡 [fetchFeed] Fetching from:', url)
     
-    const response = await fetch(url, {
+    // Native apps don't need CORS mode - it can cause issues with the iOS Network Process
+    const isNative = Capacitor.isNativePlatform();
+    const fetchOptions: RequestInit = {
       headers,
-      mode: 'cors',
-    })
+      ...(isNative ? {} : { mode: 'cors' as RequestMode }),
+    };
+    console.log('📡 [fetchFeed] Fetch options:', { isNative, hasMode: !isNative });
+    
+    const response = await fetch(url, fetchOptions)
     
     console.log('📡 [fetchFeed] Response:', { status: response.status, ok: response.ok, statusText: response.statusText });
     

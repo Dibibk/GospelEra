@@ -17,7 +17,12 @@ const config: CapacitorConfig = {
       'gospel-era.replit.app'
     ],
     cleartext: true,
-    iosScheme: 'https'
+    iosScheme: 'capacitor'
+  },
+  plugins: {
+    CapacitorHttp: {
+      enabled: true
+    }
   }
 };
 
