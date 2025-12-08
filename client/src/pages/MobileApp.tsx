@@ -3321,17 +3321,15 @@ export default function MobileApp() {
               height="24"
               viewBox="0 0 24 24"
               fill="none"
-              stroke={activeTab === 2 ? "#4285f4" : "#333333"}
-              strokeWidth="2"
+              stroke={activeTab === 2 ? "#000000" : "#8e8e8e"}
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
             >
-              <path d="M14 2v6a2 2 0 01-2 2 2 2 0 01-2-2V2" />
-              <path d="M10 2C8 2 8 4 10 6c0 1 0 2-2 2s-4-1-4-4" />
-              <path d="M14 2c2 0 2 2 0 4 0 1 0 2 2 2s4-1 4-4" />
-              <path d="M9 16v3a1 1 0 002 0v-3" />
-              <path d="M13 16v3a1 1 0 002 0v-3" />
-              <path d="M9 16h6" />
+              <path d="M12 3C12 3 9 6 9 9C9 10.5 9.5 11.5 10 12L8 14C7 15 7 16 8 17L10 19C10 19 11 20 12 20C13 20 14 19 14 19L16 17C17 16 17 15 16 14L14 12C14.5 11.5 15 10.5 15 9C15 6 12 3 12 3Z" />
+              <path d="M12 12V20" />
             </svg>
-            <span style={{ fontSize: "10px", marginTop: "2px" }}>Prayer</span>
+            <span style={{ fontSize: "10px", marginTop: "2px", color: activeTab === 2 ? "#000000" : "#8e8e8e" }}>Prayer</span>
           </div>
           <div
             onClick={() => {
