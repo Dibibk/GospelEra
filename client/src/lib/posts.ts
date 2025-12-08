@@ -212,16 +212,7 @@ export async function fetchFeed({ limit = 20, fromId }: FeedOptions = {}): Promi
       throw new Error(`Failed to fetch feed: ${response.status} ${response.statusText}`)
     }
     
-    // CapacitorHttp may return data differently - read as text first, then parse
-    const responseText = await response.text();
-    console.log('📡 [fetchFeed] Response text length:', responseText.length, 'first 200 chars:', responseText.substring(0, 200));
-    
-    let data: FeedResponse;
-    if (responseText && responseText.trim()) {
-      data = JSON.parse(responseText);
-    } else {
-      throw new Error('Empty response from feed API');
-    }
+    const data: FeedResponse = await response.json()
     console.log('📡 [fetchFeed] Data received:', data.posts?.length, 'posts')
     return { data, error: null }
   } catch (err) {
