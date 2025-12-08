@@ -36,19 +36,30 @@ export function PrayerDetailView({
   const [isProcessing, setIsProcessing] = useState(false);
 
   const handleAction = async () => {
-    if (!user || isBanned) return;
+    if (!user || isBanned) {
+      console.log('[PrayerDetailView] Cannot commit: user=', !!user, 'isBanned=', isBanned);
+      return;
+    }
     
     setIsProcessing(true);
+    console.log('[PrayerDetailView] Processing prayer action for request:', prayer.id);
     try {
       const commitment = myCommitments.find(
         (c) => c.prayer_request_id === prayer.id
       );
       
+      console.log('[PrayerDetailView] Existing commitment:', commitment);
+      
       if (commitment && !commitment.has_prayed) {
+        console.log('[PrayerDetailView] Calling onConfirmPrayed');
         await onConfirmPrayed(prayer.id);
       } else if (!commitment) {
+        console.log('[PrayerDetailView] Calling onCommitToPray');
         await onCommitToPray(prayer.id);
       }
+      console.log('[PrayerDetailView] Action completed successfully');
+    } catch (error) {
+      console.error('[PrayerDetailView] Error during action:', error);
     } finally {
       setIsProcessing(false);
     }
