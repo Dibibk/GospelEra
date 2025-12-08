@@ -1626,6 +1626,101 @@ Respond with JSON only:
     }
   });
 
+  // ============ PUSH NOTIFICATIONS API ROUTES ============
+  
+  // Get VAPID public key for Web Push
+  app.get("/api/push/vapid-key", (req, res) => {
+    const vapidPublicKey = process.env.VAPID_PUBLIC_KEY;
+    if (!vapidPublicKey) {
+      return res.status(500).json({ error: "VAPID public key not configured" });
+    }
+    res.json({ publicKey: vapidPublicKey });
+  });
+  
+  // Register push notification token
+  app.post("/api/push/register", authenticateUser, async (req: AuthenticatedRequest, res) => {
+    try {
+      const { db } = await import("../client/src/lib/db");
+      const { pushTokens } = await import("@shared/schema");
+      const { eq, and } = await import("drizzle-orm");
+      
+      if (!req.user) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      const { subscription, platform = 'web' } = req.body;
+      
+      if (!subscription) {
+        return res.status(400).json({ error: "Subscription data is required" });
+      }
+      
+      const tokenString = JSON.stringify(subscription);
+      
+      // Check if token already exists for this user
+      const existing = await db.select()
+        .from(pushTokens)
+        .where(and(
+          eq(pushTokens.user_id, req.user.id),
+          eq(pushTokens.token, tokenString)
+        ))
+        .limit(1);
+      
+      if (existing.length > 0) {
+        // Update existing token
+        await db.update(pushTokens)
+          .set({ updated_at: new Date() })
+          .where(eq(pushTokens.id, existing[0].id));
+        return res.json({ success: true, message: "Token already registered" });
+      }
+      
+      // Insert new token
+      const [token] = await db.insert(pushTokens)
+        .values({
+          user_id: req.user.id,
+          token: tokenString,
+          platform,
+        })
+        .returning();
+      
+      res.json({ success: true, token });
+    } catch (error) {
+      console.error("Error registering push token:", error);
+      res.status(500).json({ error: "Failed to register push token" });
+    }
+  });
+  
+  // Unregister push notification token
+  app.post("/api/push/unregister", authenticateUser, async (req: AuthenticatedRequest, res) => {
+    try {
+      const { db } = await import("../client/src/lib/db");
+      const { pushTokens } = await import("@shared/schema");
+      const { eq, and } = await import("drizzle-orm");
+      
+      if (!req.user) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      const { subscription } = req.body;
+      
+      if (!subscription) {
+        return res.status(400).json({ error: "Subscription data is required" });
+      }
+      
+      const tokenString = JSON.stringify(subscription);
+      
+      await db.delete(pushTokens)
+        .where(and(
+          eq(pushTokens.user_id, req.user.id),
+          eq(pushTokens.token, tokenString)
+        ));
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error unregistering push token:", error);
+      res.status(500).json({ error: "Failed to unregister push token" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;
