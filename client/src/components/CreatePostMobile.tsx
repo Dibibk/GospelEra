@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { validateFaithContent } from "../../../shared/moderation";
 import { validateAndNormalizeYouTubeUrl } from "../../../shared/youtube";
+import { getApiBaseUrl } from "../lib/posts";
 
 interface CreatePostMobileProps {
   isVisible: boolean;
@@ -106,7 +107,8 @@ export function CreatePostMobile({
       // AI validation for YouTube video content
       setValidatingVideo(true);
       try {
-        const response = await fetch("/api/validate-youtube", {
+        const baseUrl = getApiBaseUrl();
+        const response = await fetch(`${baseUrl}/api/validate-youtube`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ videoId: validation.videoId }),
