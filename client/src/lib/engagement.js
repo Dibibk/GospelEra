@@ -231,6 +231,11 @@ export async function toggleAmen(postId) {
         throw new Error(`Failed to add reaction: ${insertError.message}`)
       }
 
+      // Create notification for post author (don't await - fire and forget)
+      createReactionNotification(postId, user.id).catch(err => 
+        console.error('Failed to create reaction notification:', err)
+      )
+
       return { success: true, hasReacted: true, error: null }
     }
   } catch (err) {
@@ -289,5 +294,59 @@ export async function getAmenInfo(postIds) {
     return { data: result, error: null }
   } catch (err) {
     return { data: null, error: err }
+  }
+}
+
+/**
+ * Helper to create a notification when someone reacts to a post
+ * @param {number} postId - The post that was reacted to
+ * @param {string} actorId - The user who reacted
+ */
+async function createReactionNotification(postId, actorId) {
+  try {
+    // Get the post author
+    const { data: post, error: postError } = await supabase
+      .from('posts')
+      .select('author_id, title')
+      .eq('id', postId)
+      .single()
+
+    if (postError || !post) {
+      return
+    }
+
+    // Don't notify if reacting to own post
+    if (post.author_id === actorId) {
+      return
+    }
+
+    // Get session for API call
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session?.access_token) return
+
+    // Determine API base URL
+    const isNative = typeof window !== 'undefined' && 
+      (window.location?.protocol === 'capacitor:' || 
+       window.location?.protocol === 'ionic:' ||
+       navigator?.userAgent?.includes('Capacitor'))
+    
+    const baseUrl = isNative ? 'https://gospel-era.replit.app' : ''
+
+    // Create the notification
+    await fetch(`${baseUrl}/api/notifications`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`
+      },
+      body: JSON.stringify({
+        recipientId: post.author_id,
+        eventType: 'amen',
+        postId: postId,
+        message: `Someone said Amen to your post "${post.title?.substring(0, 30) || 'Untitled'}${post.title?.length > 30 ? '...' : ''}"`
+      })
+    })
+  } catch (error) {
+    console.error('Error creating reaction notification:', error)
   }
 }
