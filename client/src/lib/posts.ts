@@ -4,11 +4,16 @@ import { Capacitor } from '@capacitor/core'
 
 // Get API base URL - use full URL for native apps, relative for web
 export function getApiBaseUrl(): string {
-  if (Capacitor.isNativePlatform()) {
+  const platform = Capacitor.getPlatform();
+  const isNative = Capacitor.isNativePlatform();
+  console.log('🌐 [posts.ts] Platform detection:', { platform, isNative });
+  
+  if (isNative) {
     const apiUrl = import.meta.env.VITE_API_URL || 'https://gospel-era.replit.app';
     console.log('🌐 [posts.ts] Native app - using API URL:', apiUrl);
     return apiUrl;
   }
+  console.log('🌐 [posts.ts] Web app - using relative URLs');
   return '';
 }
 
@@ -171,6 +176,7 @@ export async function listPosts({ limit = 20, fromId, authorId }: ListPostsOptio
  */
 export async function fetchFeed({ limit = 20, fromId }: FeedOptions = {}): Promise<{ data: FeedResponse | null; error: any }> {
   try {
+    console.log('📡 [fetchFeed] Starting feed fetch...');
     const params = new URLSearchParams()
     params.append('limit', limit.toString())
     
@@ -178,7 +184,9 @@ export async function fetchFeed({ limit = 20, fromId }: FeedOptions = {}): Promi
       params.append('fromId', fromId.toString())
     }
 
-    const { data: { session } } = await supabase.auth.getSession()
+    console.log('📡 [fetchFeed] Getting Supabase session...');
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+    console.log('📡 [fetchFeed] Session result:', { hasSession: !!session, hasToken: !!session?.access_token, error: sessionError?.message });
     
     const headers: HeadersInit = {
       'Accept': 'application/json',
@@ -196,17 +204,21 @@ export async function fetchFeed({ limit = 20, fromId }: FeedOptions = {}): Promi
       mode: 'cors',
     })
     
+    console.log('📡 [fetchFeed] Response:', { status: response.status, ok: response.ok, statusText: response.statusText });
+    
     if (!response.ok) {
       const errorText = await response.text()
-      console.error('📡 [fetchFeed] Error response:', errorText)
-      throw new Error(`Failed to fetch feed: ${response.statusText}`)
+      console.error('📡 [fetchFeed] Error response body:', errorText)
+      throw new Error(`Failed to fetch feed: ${response.status} ${response.statusText}`)
     }
     
     const data: FeedResponse = await response.json()
     console.log('📡 [fetchFeed] Data received:', data.posts?.length, 'posts')
     return { data, error: null }
   } catch (err) {
-    console.error('📡 [fetchFeed] Exception:', err)
+    console.error('📡 [fetchFeed] Exception caught:', err)
+    console.error('📡 [fetchFeed] Error name:', err instanceof Error ? err.name : 'Unknown')
+    console.error('📡 [fetchFeed] Error message:', err instanceof Error ? err.message : String(err))
     return { data: null, error: err }
   }
 }
