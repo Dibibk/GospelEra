@@ -34,6 +34,7 @@ export function SettingsMobile({ onBack, onEditProfile, onSuccess }: SettingsMob
   const [mediaRequestStatus, setMediaRequestStatus] = useState<string | null>(null);
   const [showMediaRequestModal, setShowMediaRequestModal] = useState(false);
   const [settingsLoading, setSettingsLoading] = useState(true);
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
 
   // Load user settings from database on mount
   useEffect(() => {
@@ -179,6 +180,57 @@ export function SettingsMobile({ onBack, onEditProfile, onSuccess }: SettingsMob
       } catch (error) {
         console.warn("Failed to sync profile settings:", error);
       }
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    const confirmed = confirm(
+      "Are you sure you want to delete your account?\n\n" +
+      "This will permanently delete:\n" +
+      "• All your posts and media\n" +
+      "• All your comments\n" +
+      "• Your prayer commitments\n" +
+      "• Your profile and settings\n\n" +
+      "This action CANNOT be undone."
+    );
+    
+    if (!confirmed) return;
+    
+    const doubleConfirmed = confirm(
+      "This is your final warning.\n\n" +
+      "Are you absolutely sure you want to permanently delete your account and all your data?"
+    );
+    
+    if (!doubleConfirmed) return;
+    
+    setIsDeletingAccount(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        alert("You must be logged in to delete your account.");
+        return;
+      }
+      
+      const response = await fetch('/api/account', {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        alert("Your account has been deleted. You will now be signed out.");
+        await signOut();
+      } else {
+        const data = await response.json();
+        alert(data.error || "Failed to delete account. Please try again.");
+      }
+    } catch (error) {
+      console.error("Error deleting account:", error);
+      alert("An error occurred while deleting your account. Please try again.");
+    } finally {
+      setIsDeletingAccount(false);
     }
   };
 
@@ -755,9 +807,8 @@ export function SettingsMobile({ onBack, onEditProfile, onSuccess }: SettingsMob
             </div>
 
             <button
-              onClick={() =>
-                alert("Account deletion - This action cannot be undone")
-              }
+              onClick={handleDeleteAccount}
+              disabled={isDeletingAccount}
               data-testid="button-delete-account"
               style={{
                 width: "100%",
@@ -767,15 +818,16 @@ export function SettingsMobile({ onBack, onEditProfile, onSuccess }: SettingsMob
                 borderTop: "1px solid #e5e5e5",
                 padding: "16px",
                 textAlign: "left",
-                cursor: "pointer",
+                cursor: isDeletingAccount ? "not-allowed" : "pointer",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "space-between",
+                opacity: isDeletingAccount ? 0.6 : 1,
               }}
             >
               <div>
                 <div style={{ fontSize: "16px", color: "#ff3b30" }}>
-                  Delete Account
+                  {isDeletingAccount ? "Deleting Account..." : "Delete Account"}
                 </div>
                 <div style={{ fontSize: "14px", color: "#8e8e8e" }}>
                   Permanently delete your account and all data

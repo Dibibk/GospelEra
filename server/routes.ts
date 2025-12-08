@@ -1824,6 +1824,57 @@ Respond with JSON only:
     }
   });
 
+  // Delete user account and all associated data
+  app.delete("/api/account", authenticateUser, async (req: AuthenticatedRequest, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ error: "Authentication required" });
+      }
+
+      const { db } = await import("../client/src/lib/db");
+      const { 
+        posts, comments, bookmarks, reactions, 
+        prayerCommitments, reports, notifications, pushTokens, profiles 
+      } = await import("@shared/schema");
+      const { eq } = await import("drizzle-orm");
+
+      // Delete in order respecting foreign key constraints
+      // 1. Delete push tokens
+      await db.delete(pushTokens).where(eq(pushTokens.user_id, userId));
+      
+      // 2. Delete notifications (both received and sent)
+      await db.delete(notifications).where(eq(notifications.recipient_id, userId));
+      
+      // 3. Delete prayer commitments
+      await db.delete(prayerCommitments).where(eq(prayerCommitments.warrior, userId));
+      
+      // 4. Delete reports
+      await db.delete(reports).where(eq(reports.reporter_id, userId));
+      
+      // 5. Delete reactions
+      await db.delete(reactions).where(eq(reactions.user_id, userId));
+      
+      // 6. Delete bookmarks
+      await db.delete(bookmarks).where(eq(bookmarks.user_id, userId));
+      
+      // 7. Delete comments
+      await db.delete(comments).where(eq(comments.author_id, userId));
+      
+      // 8. Delete posts
+      await db.delete(posts).where(eq(posts.author_id, userId));
+      
+      // 9. Delete profile (this should cascade other data with onDelete: 'cascade')
+      await db.delete(profiles).where(eq(profiles.id, userId));
+
+      console.log(`Account deleted for user: ${userId}`);
+      res.json({ success: true, message: "Account deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting account:", error);
+      res.status(500).json({ error: "Failed to delete account" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;
