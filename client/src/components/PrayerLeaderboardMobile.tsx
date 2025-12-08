@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { getTopPrayerWarriors } from "../lib/leaderboard.js";
 
 interface PrayerLeaderboardMobileProps {
   leaderboardData: any[];
@@ -6,12 +7,34 @@ interface PrayerLeaderboardMobileProps {
 }
 
 export function PrayerLeaderboardMobile({
-  leaderboardData,
+  leaderboardData: initialData,
   onBack,
 }: PrayerLeaderboardMobileProps) {
   const [timeframe, setTimeframe] = useState<"week" | "month" | "alltime">(
-    "week"
+    "alltime"
   );
+  const [leaderboardData, setLeaderboardData] = useState<any[]>(initialData);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchLeaderboard = async () => {
+      setLoading(true);
+      console.log("🏆 [LeaderboardMobile] Fetching for timeframe:", timeframe);
+      try {
+        const result = await getTopPrayerWarriors({ timeframe, limit: 50 });
+        console.log("🏆 [LeaderboardMobile] Result:", result);
+        if (result.data) {
+          setLeaderboardData(result.data);
+        }
+      } catch (error) {
+        console.error("Error fetching leaderboard:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchLeaderboard();
+  }, [timeframe]);
 
   return (
     <div style={{ minHeight: "100vh", background: "#ffffff" }}>
@@ -77,7 +100,12 @@ export function PrayerLeaderboardMobile({
 
       {/* Leaderboard */}
       <div style={{ padding: "16px" }}>
-        {leaderboardData.length > 0 ? (
+        {loading ? (
+          <div style={{ textAlign: "center", padding: "40px 20px" }}>
+            <div style={{ fontSize: "24px", marginBottom: "8px" }}>⏳</div>
+            <div style={{ color: "#8e8e8e" }}>Loading...</div>
+          </div>
+        ) : leaderboardData.length > 0 ? (
           leaderboardData.map((warrior, index) => (
             <div
               key={warrior.user_id}
@@ -162,7 +190,11 @@ export function PrayerLeaderboardMobile({
               No Prayer Warriors Yet
             </div>
             <div style={{ color: "#8e8e8e", fontSize: "14px" }}>
-              Start praying to appear on the leaderboard
+              {timeframe === "week"
+                ? "No prayers confirmed this week yet"
+                : timeframe === "month"
+                  ? "No prayers confirmed this month yet"
+                  : "Start praying to appear on the leaderboard"}
             </div>
           </div>
         )}
