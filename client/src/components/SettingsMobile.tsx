@@ -2,6 +2,13 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { ensureMyProfile, upsertMyProfile } from '@/lib/profiles';
 import { checkMediaPermission, getCurrentRequestStatus } from '@/lib/mediaRequests';
+import { 
+  isPushSupported, 
+  getNotificationPermission, 
+  requestNotificationPermission, 
+  subscribeToPush, 
+  unsubscribeFromPush 
+} from '@/lib/pushNotifications';
 
 interface SettingsMobileProps {
   onBack: () => void;
@@ -50,6 +57,14 @@ export function SettingsMobile({ onBack, onEditProfile, onSuccess }: SettingsMob
         const statusResult = await getCurrentRequestStatus();
         setMediaRequestStatus(statusResult.status);
       }
+      
+      // Check push notification status
+      if (isPushSupported()) {
+        const permission = getNotificationPermission();
+        setPushNotifications(permission === 'granted');
+      } else {
+        setPushNotifications(false);
+      }
     } catch (error) {
       console.error('Error loading settings:', error);
     }
@@ -73,8 +88,27 @@ export function SettingsMobile({ onBack, onEditProfile, onSuccess }: SettingsMob
         setEmailNotifications(value);
         break;
       case "pushNotifications":
-        setPushNotifications(value);
-        break;
+        // Handle push notification toggle
+        if (value) {
+          // Enable push notifications
+          if (!isPushSupported()) {
+            console.log('Push notifications not supported on this device');
+            return;
+          }
+          const permission = await requestNotificationPermission();
+          if (permission === 'granted') {
+            await subscribeToPush();
+            setPushNotifications(true);
+          } else {
+            console.log('Push notification permission denied');
+            setPushNotifications(false);
+          }
+        } else {
+          // Disable push notifications
+          await unsubscribeFromPush();
+          setPushNotifications(false);
+        }
+        return; // Don't fall through to other logic
       case "commentNotifications":
         setCommentNotifications(value);
         break;

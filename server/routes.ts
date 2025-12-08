@@ -803,6 +803,7 @@ Respond in JSON format:
           
           const commenterName = commenterProfile?.display_name || 'Someone';
           const postTitle = post.title?.slice(0, 30) || 'your post';
+          const message = `${commenterName} commented on "${postTitle}${post.title?.length > 30 ? '...' : ''}"`;
           
           await db.insert(notifications).values({
             recipient_id: post.author_id,
@@ -810,8 +811,20 @@ Respond in JSON format:
             event_type: 'comment',
             post_id: result.data.post_id,
             comment_id: newComment.id,
-            message: `${commenterName} commented on "${postTitle}${post.title?.length > 30 ? '...' : ''}"`
+            message
           });
+          
+          // Send push notification
+          try {
+            const { sendPushNotification } = await import('./pushNotifications');
+            await sendPushNotification(post.author_id, {
+              title: 'New Comment',
+              body: message,
+              url: '/'
+            });
+          } catch (pushError) {
+            console.error("Error sending push notification:", pushError);
+          }
         }
       } catch (notifError) {
         console.error("Error creating comment notification:", notifError);
@@ -1618,6 +1631,26 @@ Respond with JSON only:
           is_read: false,
         })
         .returning();
+      
+      // Send push notification
+      if (message) {
+        try {
+          const { sendPushNotification } = await import('./pushNotifications');
+          const eventTitles: Record<string, string> = {
+            'amen': 'New Reaction',
+            'prayer_commitment': 'Prayer Commitment',
+            'prayer_prayed': 'Prayer Answered',
+            'comment': 'New Comment',
+          };
+          await sendPushNotification(recipientId, {
+            title: eventTitles[eventType] || 'Gospel Era',
+            body: message,
+            url: '/'
+          });
+        } catch (pushError) {
+          console.error("Error sending push notification:", pushError);
+        }
+      }
       
       res.json({ success: true, notification });
     } catch (error) {
