@@ -40,6 +40,13 @@ import { validateAndNormalizeYouTubeUrl } from "../../../shared/youtube";
 import { validateFaithContent } from "../../../shared/moderation";
 import { supabase } from "@/lib/supabaseClient";
 import { useRole } from "@/hooks/useRole";
+import { 
+  subscribeToFeed, 
+  unsubscribeFromFeed, 
+  subscribeToNotifications, 
+  unsubscribeFromNotifications,
+  cleanupAllSubscriptions 
+} from "@/lib/realtime";
 import { getTopPrayerWarriors } from "@/lib/leaderboard";
 import {
   updateUserSettings,
@@ -562,6 +569,21 @@ export default function MobileApp() {
     // Refresh count every 30 seconds
     const interval = setInterval(fetchNotificationCount, 30000);
     return () => clearInterval(interval);
+  }, [user]);
+
+  // Subscribe to real-time updates
+  useEffect(() => {
+    if (!user) return;
+    
+    // Subscribe to feed changes for new posts
+    subscribeToFeed();
+    
+    // Subscribe to notifications for this user
+    subscribeToNotifications(user.id);
+    
+    return () => {
+      cleanupAllSubscriptions();
+    };
   }, [user]);
 
   // Load daily scripture verse
