@@ -294,3 +294,25 @@ export const insertNotificationSchema = createInsertSchema(notifications).omit({
 
 export type InsertNotification = z.infer<typeof insertNotificationSchema>;
 export type Notification = typeof notifications.$inferSelect;
+
+// Push notification tokens for FCM
+export const pushTokens = pgTable("push_tokens", {
+  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+  user_id: varchar("user_id").notNull(),
+  token: text("token").notNull(),
+  platform: text("platform").notNull().default('web'), // 'web', 'ios', 'android'
+  created_at: timestamp("created_at").defaultNow().notNull(),
+  updated_at: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => ({
+  userIdx: index("push_tokens_user_idx").on(table.user_id),
+  tokenIdx: index("push_tokens_token_idx").on(table.token),
+}));
+
+export const insertPushTokenSchema = createInsertSchema(pushTokens).omit({
+  id: true,
+  created_at: true,
+  updated_at: true,
+});
+
+export type InsertPushToken = z.infer<typeof insertPushTokenSchema>;
+export type PushToken = typeof pushTokens.$inferSelect;
