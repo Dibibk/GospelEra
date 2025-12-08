@@ -301,6 +301,7 @@ export const pushTokens = pgTable("push_tokens", {
   user_id: varchar("user_id").notNull(),
   token: text("token").notNull(),
   platform: text("platform").notNull().default('web'), // 'web', 'ios', 'android'
+  daily_verse_enabled: boolean("daily_verse_enabled").default(false).notNull(),
   created_at: timestamp("created_at").defaultNow().notNull(),
   updated_at: timestamp("updated_at").defaultNow().notNull(),
 }, (table) => ({

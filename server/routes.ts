@@ -1754,6 +1754,76 @@ Respond with JSON only:
     }
   });
 
+  // Update daily verse reminder preference
+  app.patch("/api/push/daily-verse", authenticateUser, async (req: AuthenticatedRequest, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      const { enabled } = req.body;
+      
+      if (typeof enabled !== 'boolean') {
+        return res.status(400).json({ error: "enabled must be a boolean" });
+      }
+      
+      const { updateDailyVersePreference } = await import('./pushNotifications');
+      await updateDailyVersePreference(req.user.id, enabled);
+      
+      res.json({ success: true, daily_verse_enabled: enabled });
+    } catch (error) {
+      console.error("Error updating daily verse preference:", error);
+      res.status(500).json({ error: "Failed to update daily verse preference" });
+    }
+  });
+
+  // Get user's daily verse preference
+  app.get("/api/push/daily-verse", authenticateUser, async (req: AuthenticatedRequest, res) => {
+    try {
+      const { db } = await import("../client/src/lib/db");
+      const { pushTokens } = await import("@shared/schema");
+      const { eq } = await import("drizzle-orm");
+      
+      if (!req.user) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      const tokens = await db.select({ daily_verse_enabled: pushTokens.daily_verse_enabled })
+        .from(pushTokens)
+        .where(eq(pushTokens.user_id, req.user.id))
+        .limit(1);
+      
+      res.json({ 
+        enabled: tokens.length > 0 ? tokens[0].daily_verse_enabled : false,
+        hasToken: tokens.length > 0
+      });
+    } catch (error) {
+      console.error("Error getting daily verse preference:", error);
+      res.status(500).json({ error: "Failed to get daily verse preference" });
+    }
+  });
+
+  // Trigger daily verse reminders (for cron jobs - requires admin or secret key)
+  app.post("/api/push/send-daily-verse", async (req, res) => {
+    try {
+      const cronSecret = req.headers['x-cron-secret'];
+      const expectedSecret = process.env.CRON_SECRET;
+      
+      // Verify cron secret if set, otherwise allow (for development)
+      if (expectedSecret && cronSecret !== expectedSecret) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      const { sendDailyVerseReminders } = await import('./pushNotifications');
+      const result = await sendDailyVerseReminders();
+      
+      res.json({ success: true, ...result });
+    } catch (error) {
+      console.error("Error sending daily verse reminders:", error);
+      res.status(500).json({ error: "Failed to send daily verse reminders" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;

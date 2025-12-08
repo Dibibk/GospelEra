@@ -9,6 +9,7 @@ import {
   subscribeToPush, 
   unsubscribeFromPush 
 } from '@/lib/pushNotifications';
+import { supabase } from '@/lib/supabaseClient';
 
 interface SettingsMobileProps {
   onBack: () => void;
@@ -62,8 +63,25 @@ export function SettingsMobile({ onBack, onEditProfile, onSuccess }: SettingsMob
       if (isPushSupported()) {
         const permission = getNotificationPermission();
         setPushNotifications(permission === 'granted');
+        
+        // Load daily verse preference from API
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session?.access_token) {
+            const response = await fetch('/api/push/daily-verse', {
+              headers: { 'Authorization': `Bearer ${session.access_token}` }
+            });
+            if (response.ok) {
+              const data = await response.json();
+              setDailyVerseReminders(data.enabled);
+            }
+          }
+        } catch (error) {
+          console.error('Error loading daily verse preference:', error);
+        }
       } else {
         setPushNotifications(false);
+        setDailyVerseReminders(false);
       }
     } catch (error) {
       console.error('Error loading settings:', error);
@@ -122,8 +140,30 @@ export function SettingsMobile({ onBack, onEditProfile, onSuccess }: SettingsMob
         setRealTimeUpdates(value);
         break;
       case "dailyVerseReminders":
-        setDailyVerseReminders(value);
-        break;
+        // Handle daily verse toggle - requires push notifications to be enabled
+        if (!pushNotifications) {
+          console.log('Push notifications must be enabled for daily verse reminders');
+          return;
+        }
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session?.access_token) {
+            const response = await fetch('/api/push/daily-verse', {
+              method: 'PATCH',
+              headers: { 
+                'Authorization': `Bearer ${session.access_token}`,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({ enabled: value })
+            });
+            if (response.ok) {
+              setDailyVerseReminders(value);
+            }
+          }
+        } catch (error) {
+          console.error('Error updating daily verse preference:', error);
+        }
+        return;
     }
 
     // Sync profile settings to Supabase
