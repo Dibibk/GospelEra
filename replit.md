@@ -6,6 +6,17 @@ Gospel Era is a full-stack web application designed as a social platform for the
 
 # Recent Changes
 
+**December 8, 2025 - Real-Time Updates & Push Notifications**
+- Implemented Supabase Realtime for live updates across the app (client/src/lib/realtime.ts)
+- Real-time feed updates: new posts appear automatically without refresh
+- Real-time notifications: new notifications update badge count instantly
+- Real-time comments: comment counts and lists update live
+- Added push notification system using web-push with VAPID authentication
+- Created push_tokens table for storing device tokens (shared/schema.ts)
+- Backend push notification sending integrated with comments and notifications (server/pushNotifications.ts)
+- Service worker updated with push event handlers (public/sw.js)
+- Settings toggle connected to subscribe/unsubscribe from push notifications
+
 **December 7, 2025 - Enhanced Signup Form**
 - Added first_name and last_name columns to profiles table (shared/schema.ts)
 - Updated signup form in LoginMobile.tsx to require: First Name, Last Name, Display Name, and Email
