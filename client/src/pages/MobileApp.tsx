@@ -3326,12 +3326,12 @@ export default function MobileApp() {
               strokeLinecap="round"
               strokeLinejoin="round"
             >
-              <path d="M7 21C7 21 5 19 5 15C5 12 6 10 7 9L9 7C9 7 10 6 10 4C10 3 10.5 2 11 2" />
-              <path d="M17 21C17 21 19 19 19 15C19 12 18 10 17 9L15 7C15 7 14 6 14 4C14 3 13.5 2 13 2" />
-              <path d="M11 2C11.5 2 12 2.5 12 3L12 8" />
-              <path d="M13 2C12.5 2 12 2.5 12 3" />
-              <path d="M9 9C9 9 10 8 12 8C14 8 15 9 15 9" />
-              <path d="M7 15C7 15 9 14 12 14C15 14 17 15 17 15" />
+              <path d="M9.5 3C8.5 3 7.5 4 7 5.5C6.5 7 6.5 9 7 11C7.5 13 8 15 7.5 17C7 19 6 21 6 21" />
+              <path d="M14.5 3C15.5 3 16.5 4 17 5.5C17.5 7 17.5 9 17 11C16.5 13 16 15 16.5 17C17 19 18 21 18 21" />
+              <path d="M9.5 3C10.5 3 11.5 4 12 5L12 10" />
+              <path d="M14.5 3C13.5 3 12.5 4 12 5" />
+              <path d="M8 8C8 8 9 7 10 8" />
+              <path d="M16 8C16 8 15 7 14 8" />
             </svg>
             <span style={{ fontSize: "10px", marginTop: "2px", color: activeTab === 2 ? "#000000" : "#8e8e8e" }}>Prayer</span>
           </div>
