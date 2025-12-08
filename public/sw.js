@@ -216,4 +216,73 @@ self.addEventListener('sync', (event) => {
   }
 });
 
+// Push notification event handler
+self.addEventListener('push', (event) => {
+  console.log('[SW] Push notification received');
+  
+  let data = {
+    title: 'Gospel Era',
+    body: 'You have a new notification',
+    icon: '/icon-192.png',
+    badge: '/icon-192.png',
+    url: '/'
+  };
+  
+  try {
+    if (event.data) {
+      const payload = event.data.json();
+      data = {
+        title: payload.title || 'Gospel Era',
+        body: payload.body || 'You have a new notification',
+        icon: payload.icon || '/icon-192.png',
+        badge: '/icon-192.png',
+        url: payload.url || '/',
+        tag: payload.tag || 'gospel-era-notification'
+      };
+    }
+  } catch (e) {
+    console.error('[SW] Error parsing push data:', e);
+  }
+  
+  const options = {
+    body: data.body,
+    icon: data.icon,
+    badge: data.badge,
+    tag: data.tag,
+    data: { url: data.url },
+    vibrate: [100, 50, 100],
+    requireInteraction: false
+  };
+  
+  event.waitUntil(
+    self.registration.showNotification(data.title, options)
+  );
+});
+
+// Notification click handler - open the app when clicked
+self.addEventListener('notificationclick', (event) => {
+  console.log('[SW] Notification clicked');
+  
+  event.notification.close();
+  
+  const urlToOpen = event.notification.data?.url || '/';
+  
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true })
+      .then((clientList) => {
+        // Check if there's already a window open
+        for (const client of clientList) {
+          if (client.url.includes(self.location.origin) && 'focus' in client) {
+            client.navigate(urlToOpen);
+            return client.focus();
+          }
+        }
+        // Open new window if none exists
+        if (clients.openWindow) {
+          return clients.openWindow(urlToOpen);
+        }
+      })
+  );
+});
+
 console.log('[SW] Service worker script loaded');
