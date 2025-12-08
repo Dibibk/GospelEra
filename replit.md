@@ -6,7 +6,7 @@ Gospel Era is a full-stack web application designed as a social platform for the
 
 # Recent Changes
 
-**December 8, 2025 - Real-Time Updates & Push Notifications**
+**December 8, 2025 - Real-Time Updates, Push Notifications & Daily Verse Reminders**
 - Implemented Supabase Realtime for live updates across the app (client/src/lib/realtime.ts)
 - Real-time feed updates: new posts appear automatically without refresh
 - Real-time notifications: new notifications update badge count instantly
@@ -16,6 +16,10 @@ Gospel Era is a full-stack web application designed as a social platform for the
 - Backend push notification sending integrated with comments and notifications (server/pushNotifications.ts)
 - Service worker updated with push event handlers (public/sw.js)
 - Settings toggle connected to subscribe/unsubscribe from push notifications
+- Daily verse reminder system: users can opt-in to receive daily Bible verse push notifications
+- Added daily_verse_enabled column to push_tokens table
+- Created API endpoints: GET/PATCH /api/push/daily-verse (user preference), POST /api/push/send-daily-verse (cron trigger)
+- Settings toggle for daily verse reminders connected to API
 
 **December 7, 2025 - Enhanced Signup Form**
 - Added first_name and last_name columns to profiles table (shared/schema.ts)
