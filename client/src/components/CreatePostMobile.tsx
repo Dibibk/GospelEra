@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { PenLine } from "lucide-react";
 import { validateFaithContent } from "../../../shared/moderation";
 import { validateAndNormalizeYouTubeUrl } from "../../../shared/youtube";
 import { getApiBaseUrl } from "../lib/posts";
@@ -210,17 +211,14 @@ export function CreatePostMobile({
             width: "32px",
             height: "32px",
             borderRadius: "50%",
-            background: "#0095f6",
+            background: "#f5f5f5",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             marginRight: "12px",
-            color: "#ffffff",
-            fontSize: "18px",
-            fontWeight: "bold",
           }}
         >
-          ✏️
+          <PenLine size={18} color="#262626" strokeWidth={2} />
         </div>
         <div style={{ fontWeight: 600, color: "#262626" }}>
           {editingPost ? "Edit Testimony" : "Share Your Testimony"}
