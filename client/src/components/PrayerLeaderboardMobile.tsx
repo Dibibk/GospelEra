@@ -19,10 +19,8 @@ export function PrayerLeaderboardMobile({
   useEffect(() => {
     const fetchLeaderboard = async () => {
       setLoading(true);
-      console.log("🏆 [LeaderboardMobile] Fetching for timeframe:", timeframe);
       try {
         const result = await getTopPrayerWarriors({ timeframe, limit: 50 });
-        console.log("🏆 [LeaderboardMobile] Result:", result);
         if (result.data) {
           setLeaderboardData(result.data);
         }

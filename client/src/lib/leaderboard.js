@@ -15,22 +15,17 @@ export async function getTopPrayerWarriors({ timeframe = 'week', limit = 10 } = 
                      timeframe === 'alltime' ? 'vw_prayer_leaderboard_alltime' :
                      'vw_prayer_leaderboard_week'
 
-    console.log('🏆 [Leaderboard] Fetching from view:', viewName);
-
     const { data: leaderboardData, error: leaderboardError } = await supabase
       .from(viewName)
       .select('*')
       .limit(limit)
 
-    console.log('🏆 [Leaderboard] Result:', { data: leaderboardData, error: leaderboardError });
-
     if (leaderboardError) {
-      console.error('🏆 [Leaderboard] Error fetching leaderboard:', leaderboardError)
+      console.error('Error fetching leaderboard:', leaderboardError)
       return { data: null, error: leaderboardError.message }
     }
 
     if (!leaderboardData || leaderboardData.length === 0) {
-      console.log('🏆 [Leaderboard] No data returned from view');
       return { data: [], error: null }
     }
 
