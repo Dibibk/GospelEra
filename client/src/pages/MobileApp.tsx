@@ -48,6 +48,7 @@ import {
   cleanupAllSubscriptions 
 } from "@/lib/realtime";
 import { getTopPrayerWarriors } from "@/lib/leaderboard";
+import prayIconPath from "@assets/pray_7139204_1765217804830.png";
 import {
   updateUserSettings,
   getUserSettings,
@@ -3317,7 +3318,7 @@ export default function MobileApp() {
             }}
           >
             <img 
-              src="/pray-icon.png" 
+              src={prayIconPath} 
               alt="Prayer" 
               width="24" 
               height="24"
