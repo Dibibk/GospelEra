@@ -3317,13 +3317,12 @@ export default function MobileApp() {
             }}
           >
             <img 
-              src="/attached_assets/pray_7139204_1765217804830.png" 
+              src="/pray-icon.png" 
               alt="Prayer" 
               width="24" 
               height="24"
               style={{ 
-                opacity: activeTab === 2 ? 1 : 0.5,
-                filter: activeTab === 2 ? "none" : "grayscale(100%)"
+                opacity: activeTab === 2 ? 1 : 0.5
               }}
             />
             <span style={{ fontSize: "10px", marginTop: "2px", color: activeTab === 2 ? "#000000" : "#8e8e8e" }}>Prayer</span>
