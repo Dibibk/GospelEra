@@ -3320,18 +3320,11 @@ export default function MobileApp() {
               width="24"
               height="24"
               viewBox="0 0 24 24"
-              fill="none"
-              stroke={activeTab === 2 ? "#000000" : "#8e8e8e"}
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
+              fill={activeTab === 2 ? "#000000" : "#8e8e8e"}
             >
-              <path d="M9.5 3C8.5 3 7.5 4 7 5.5C6.5 7 6.5 9 7 11C7.5 13 8 15 7.5 17C7 19 6 21 6 21" />
-              <path d="M14.5 3C15.5 3 16.5 4 17 5.5C17.5 7 17.5 9 17 11C16.5 13 16 15 16.5 17C17 19 18 21 18 21" />
-              <path d="M9.5 3C10.5 3 11.5 4 12 5L12 10" />
-              <path d="M14.5 3C13.5 3 12.5 4 12 5" />
-              <path d="M8 8C8 8 9 7 10 8" />
-              <path d="M16 8C16 8 15 7 14 8" />
+              <path d="M8.5 2C7.5 2 6.5 3 6 4.5C5.5 6 5 8 5.5 11C6 14 5 17 4 20C4 20.5 4.5 21 5 21C5.5 21 6 20.5 6.5 19C7.5 16 8 13 8 10C8 8 9 6 10 5C10.5 4.5 11 4 11.5 4C11.8 4 12 4.5 12 5V11C12 11.5 12 12 12 12C12 12 12 11.5 12 11V5C12 4.5 12.2 4 12.5 4C13 4 13.5 4.5 14 5C15 6 16 8 16 10C16 13 16.5 16 17.5 19C18 20.5 18.5 21 19 21C19.5 21 20 20.5 20 20C19 17 18 14 18.5 11C19 8 18.5 6 18 4.5C17.5 3 16.5 2 15.5 2C14.5 2 13.5 3 13 4C12.7 4.5 12.3 4.5 12 4.5C11.7 4.5 11.3 4.5 11 4C10.5 3 9.5 2 8.5 2Z" />
+              <path d="M9 7C9 7 9.5 9 10 11" stroke="white" strokeWidth="1" fill="none" strokeLinecap="round"/>
+              <path d="M15 7C15 7 14.5 9 14 11" stroke="white" strokeWidth="1" fill="none" strokeLinecap="round"/>
             </svg>
             <span style={{ fontSize: "10px", marginTop: "2px", color: activeTab === 2 ? "#000000" : "#8e8e8e" }}>Prayer</span>
           </div>
