@@ -1,4 +1,5 @@
 import { supabase } from './supabaseClient'
+import { getApiBaseUrl } from './posts'
 
 interface UpsertProfileData {
   display_name?: string
@@ -83,7 +84,8 @@ export async function upsertMyProfile({ display_name, bio, avatar_url, show_name
 
     // Call server-side API to update profile
     // Server validates that protected fields (role, media_enabled) are not modified
-    const response = await fetch('/api/profile', {
+    const baseUrl = getApiBaseUrl();
+    const response = await fetch(`${baseUrl}/api/profile`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
@@ -235,7 +237,8 @@ export async function updateUserSettings(settings: Record<string, any>) {
     }
 
     // Call server-side API to update settings
-    const response = await fetch('/api/profile', {
+    const baseUrl = getApiBaseUrl();
+    const response = await fetch(`${baseUrl}/api/profile`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
