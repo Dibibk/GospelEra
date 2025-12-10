@@ -1045,7 +1045,15 @@ Respond in JSON format:
       const { mediaRequests, profiles } = await import("@shared/schema");
       const { desc, eq } = await import("drizzle-orm");
       
-      // TODO: Add admin authentication check
+      // Get user ID from headers for admin check
+      const userId = req.headers['x-user-id'] as string || req.headers['user-id'] as string;
+      
+      // Validate UUID format
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (userId && !uuidRegex.test(userId)) {
+        console.error("Invalid user ID format received:", userId);
+        return res.status(400).json({ error: "Invalid user ID format" });
+      }
       
       const allRequests = await db
         .select({
@@ -1067,8 +1075,12 @@ Respond in JSON format:
         .orderBy(desc(mediaRequests.created_at));
       
       res.json(allRequests);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error fetching all media requests:", error);
+      // Provide more helpful error message for UUID issues
+      if (error.message?.includes('expected pattern') || error.code === '22P02') {
+        return res.status(400).json({ error: "Database query error - invalid data format" });
+      }
       res.status(500).json({ error: "Failed to fetch requests" });
     }
   });

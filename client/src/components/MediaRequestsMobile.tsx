@@ -32,12 +32,27 @@ export function MediaRequestsMobile({
     setLoading(true);
     setError("");
     try {
-      const {
-        data: { user },
-        error: authError,
-      } = await supabase.auth.getUser();
+      let userId: string | undefined;
+      
+      try {
+        const {
+          data: { user },
+          error: authError,
+        } = await supabase.auth.getUser();
 
-      if (authError || !user) {
+        if (authError) {
+          console.error("Auth error in MediaRequests:", authError);
+        }
+        
+        userId = user?.id;
+      } catch (authErr: any) {
+        console.error("Exception getting user:", authErr);
+        // Try to get session instead as fallback
+        const { data: { session } } = await supabase.auth.getSession();
+        userId = session?.user?.id;
+      }
+      
+      if (!userId) {
         throw new Error("Authentication required");
       }
 
@@ -45,7 +60,7 @@ export function MediaRequestsMobile({
       const response = await fetch(`${baseUrl}/api/admin/media-requests`, {
         headers: {
           "Content-Type": "application/json",
-          "x-user-id": user.id,
+          "x-user-id": userId,
         },
       });
 
@@ -57,7 +72,14 @@ export function MediaRequestsMobile({
       const data = await response.json();
       setMediaRequests(data || []);
     } catch (err: any) {
-      setError(err.message || "Failed to load media requests");
+      console.error("Error loading media requests:", err);
+      // Provide a more user-friendly error message
+      const errorMessage = err.message || "Failed to load media requests";
+      if (errorMessage.includes("pattern") || errorMessage.includes("Invalid")) {
+        setError("Unable to authenticate. Please try logging out and back in.");
+      } else {
+        setError(errorMessage);
+      }
     } finally {
       setLoading(false);
     }
