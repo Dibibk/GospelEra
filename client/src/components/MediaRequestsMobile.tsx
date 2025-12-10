@@ -77,6 +77,8 @@ export function MediaRequestsMobile({
       const errorMessage = err.message || "Failed to load media requests";
       if (errorMessage.includes("pattern") || errorMessage.includes("Invalid")) {
         setError("Unable to authenticate. Please try logging out and back in.");
+      } else if (errorMessage.includes("Failed to fetch") || errorMessage.includes("Load failed") || errorMessage.includes("NetworkError")) {
+        setError("Network error. Please check your connection and try again.");
       } else {
         setError(errorMessage);
       }
