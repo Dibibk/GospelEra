@@ -2685,13 +2685,14 @@ export default function MobileApp() {
               }}
               style={{
                 display: "flex",
+                flexDirection: "column",
                 alignItems: "center",
-                gap: "8px",
+                gap: "2px",
                 background: "none",
                 border: "none",
                 cursor: "pointer",
                 padding: "4px 8px",
-                borderRadius: "20px",
+                borderRadius: "12px",
                 WebkitTapHighlightColor: "transparent",
                 touchAction: "manipulation",
                 userSelect: "none",
@@ -2700,8 +2701,8 @@ export default function MobileApp() {
             >
               <div
                 style={{
-                  width: "28px",
-                  height: "28px",
+                  width: "32px",
+                  height: "32px",
                   borderRadius: "50%",
                   background: getImageUrl(userProfile?.avatar_url) ? "none" : "#dbdbdb",
                   display: "flex",
@@ -2715,8 +2716,8 @@ export default function MobileApp() {
                     src={getImageUrl(userProfile?.avatar_url)!}
                     alt="Profile"
                     style={{
-                      width: "28px",
-                      height: "28px",
+                      width: "32px",
+                      height: "32px",
                       borderRadius: "50%",
                       objectFit: "cover",
                     }}
@@ -2726,22 +2727,21 @@ export default function MobileApp() {
                         .parentElement;
                       if (parent) {
                         parent.innerHTML =
-                          '<span style="fontSize: 14px; color: #8e8e8e">👤</span>';
+                          '<span style="fontSize: 16px; color: #8e8e8e">👤</span>';
                       }
                     }}
                   />
                 ) : (
-                  <span style={{ fontSize: "14px", color: "#8e8e8e" }}>👤</span>
+                  <span style={{ fontSize: "16px", color: "#8e8e8e" }}>👤</span>
                 )}
               </div>
               <span
-                style={{ fontSize: "14px", fontWeight: 600, color: "#262626" }}
+                style={{ fontSize: "10px", fontWeight: 600, color: "#262626", maxWidth: "60px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
               >
                 {userProfile?.display_name ||
                   user?.email?.split("@")[0] ||
                   "User"}
               </span>
-              <span style={{ fontSize: "12px", color: "#8e8e8e" }}>▼</span>
             </button>
 
             {/* Dropdown Menu */}
