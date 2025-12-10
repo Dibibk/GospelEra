@@ -25,6 +25,7 @@ import AdminDonations from "../pages/AdminDonations";
 import ForgotPassword from "../pages/ForgotPassword";
 import ResetPassword from "../pages/ResetPassword";
 import MobileApp from "../pages/MobileApp";
+import EmailConfirmed from "../pages/EmailConfirmed";
 
 export function AnimatedRoutes() {
   const location = useLocation();
@@ -78,6 +79,14 @@ export function AnimatedRoutes() {
           element={
             <PageTransition>
               <MobileApp />
+            </PageTransition>
+          }
+        />
+        <Route
+          path="/email-confirmed"
+          element={
+            <PageTransition>
+              <EmailConfirmed />
             </PageTransition>
           }
         />
@@ -307,6 +316,14 @@ export function AnimatedRoutes() {
           element={
             <PageTransition>
               <ResetPassword />
+            </PageTransition>
+          }
+        />
+        <Route
+          path="/email-confirmed"
+          element={
+            <PageTransition>
+              <EmailConfirmed />
             </PageTransition>
           }
         />
