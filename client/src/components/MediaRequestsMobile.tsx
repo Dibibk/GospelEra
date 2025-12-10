@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/lib/supabaseClient";
+import { getApiBaseUrl } from "@/lib/posts";
 
 interface MediaRequestsMobileProps {
   isVisible: boolean;
@@ -40,7 +41,8 @@ export function MediaRequestsMobile({
         throw new Error("Authentication required");
       }
 
-      const response = await fetch("/api/admin/media-requests", {
+      const baseUrl = getApiBaseUrl();
+      const response = await fetch(`${baseUrl}/api/admin/media-requests`, {
         headers: {
           "Content-Type": "application/json",
           "x-user-id": user.id,
@@ -76,8 +78,9 @@ export function MediaRequestsMobile({
         throw new Error("Authentication required");
       }
 
+      const baseUrl = getApiBaseUrl();
       const response = await fetch(
-        `/api/admin/media-requests/${requestId}/approve`,
+        `${baseUrl}/api/admin/media-requests/${requestId}/approve`,
         {
           method: "PUT",
           headers: {
@@ -137,8 +140,9 @@ export function MediaRequestsMobile({
         throw new Error("Authentication required");
       }
 
+      const baseUrl = getApiBaseUrl();
       const response = await fetch(
-        `/api/admin/media-requests/${requestId}/deny`,
+        `${baseUrl}/api/admin/media-requests/${requestId}/deny`,
         {
           method: "PUT",
           headers: {
