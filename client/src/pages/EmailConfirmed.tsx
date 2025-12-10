@@ -4,29 +4,30 @@ import { CheckCircle, Loader2 } from "lucide-react";
 
 export default function EmailConfirmed() {
   const [processing, setProcessing] = useState(true);
-  const [confirmed, setConfirmed] = useState(false);
 
   useEffect(() => {
     const processConfirmation = async () => {
-      // Wait for Supabase to process the URL hash tokens
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Immediately sign out to prevent auto-login behavior
+      // The email is already confirmed by Supabase before redirecting here
+      await supabase.auth.signOut();
       
-      // Check if there's a session (means confirmation worked)
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (session) {
-        setConfirmed(true);
-        // Sign out so user can log in fresh on the app
-        await supabase.auth.signOut();
-      } else {
-        // Still might be confirmed, just no session
-        setConfirmed(true);
-      }
+      // Small delay to ensure sign out completes
+      await new Promise(resolve => setTimeout(resolve, 500));
       
       setProcessing(false);
     };
 
     processConfirmation();
+    
+    // Also listen for any auth state changes and sign out immediately
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (session && event !== 'SIGNED_OUT') {
+        // If we get signed in for any reason, sign out immediately
+        await supabase.auth.signOut();
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   if (processing) {
