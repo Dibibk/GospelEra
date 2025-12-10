@@ -300,7 +300,7 @@ export function LoginMobile({ onSuccess }: LoginMobileProps) {
         <div style={{ fontSize: '14px', color: '#8e8e8e' }}>
           {isSignUp
             ? 'Create your account to share faith and fellowship'
-            : 'Connect with believers worldwide'}
+            : 'Connect with Believers worldwide'}
         </div>
       </div>
 
