@@ -100,10 +100,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signUp = async (email: string, password: string, profileData?: SignUpProfileData) => {
     setAuthTransition('signing-up')
+    // Get the correct base URL for email redirect
+    const baseUrl = import.meta.env.VITE_SITE_URL || 'https://gospel-era.replit.app'
+    
     const { error, data } = await supabase.auth.signUp({ 
       email, 
       password,
       options: {
+        emailRedirectTo: `${baseUrl}/email-confirmed`,
         data: profileData ? {
           first_name: profileData.firstName,
           last_name: profileData.lastName,
