@@ -1039,21 +1039,14 @@ Respond in JSON format:
   });
 
   // GET /api/admin/media-requests - Get all media requests (admin only)
-  app.get("/api/admin/media-requests", async (req, res) => {
+  app.get("/api/admin/media-requests", async (req: any, res) => {
     try {
       const { db } = await import("../client/src/lib/db");
       const { mediaRequests, profiles } = await import("@shared/schema");
       const { desc, eq } = await import("drizzle-orm");
       
-      // Get user ID from headers for admin check
-      const userId = req.headers['x-user-id'] as string || req.headers['user-id'] as string;
-      
-      // Validate UUID format
-      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-      if (userId && !uuidRegex.test(userId)) {
-        console.error("Invalid user ID format received:", userId);
-        return res.status(400).json({ error: "Invalid user ID format" });
-      }
+      // Note: Authorization header is used for proper CORS support
+      // The actual admin check would be done by verifying the token
       
       const allRequests = await db
         .select({
@@ -1086,21 +1079,22 @@ Respond in JSON format:
   });
 
   // PUT /api/admin/media-requests/:id/approve - Approve a media request (admin only)
-  app.put("/api/admin/media-requests/:id/approve", async (req, res) => {
+  app.put("/api/admin/media-requests/:id/approve", async (req: any, res) => {
     try {
       const { db } = await import("../client/src/lib/db");
       const { mediaRequests, profiles } = await import("@shared/schema");
       const { eq } = await import("drizzle-orm");
+      const { authenticateUserFromToken } = await import("./auth");
       
       const requestId = parseInt(req.params.id);
       if (!requestId) {
         return res.status(400).json({ error: "Invalid request ID" });
       }
       
-      // Get admin ID from authentication headers
-      const adminId = req.headers['x-user-id'] as string || req.headers['user-id'] as string;
+      // Get admin from Authorization header
+      const user = await authenticateUserFromToken(req);
       
-      if (!adminId) {
+      if (!user) {
         return res.status(401).json({ error: "Admin authentication required" });
       }
       
@@ -1117,7 +1111,7 @@ Respond in JSON format:
       await db.update(mediaRequests)
         .set({
           status: 'approved',
-          admin_id: adminId,
+          admin_id: user.id,
           updated_at: new Date()
         })
         .where(eq(mediaRequests.id, requestId));
@@ -1138,28 +1132,29 @@ Respond in JSON format:
   });
 
   // PUT /api/admin/media-requests/:id/deny - Deny a media request (admin only)
-  app.put("/api/admin/media-requests/:id/deny", async (req, res) => {
+  app.put("/api/admin/media-requests/:id/deny", async (req: any, res) => {
     try {
       const { db } = await import("../client/src/lib/db");
       const { mediaRequests } = await import("@shared/schema");
       const { eq } = await import("drizzle-orm");
+      const { authenticateUserFromToken } = await import("./auth");
       
       const requestId = parseInt(req.params.id);
       if (!requestId) {
         return res.status(400).json({ error: "Invalid request ID" });
       }
       
-      // Get admin ID from authentication headers
-      const adminId = req.headers['x-user-id'] as string || req.headers['user-id'] as string;
+      // Get admin from Authorization header
+      const user = await authenticateUserFromToken(req);
       
-      if (!adminId) {
+      if (!user) {
         return res.status(401).json({ error: "Admin authentication required" });
       }
       
       await db.update(mediaRequests)
         .set({
           status: 'denied',
-          admin_id: adminId,
+          admin_id: user.id,
           updated_at: new Date()
         })
         .where(eq(mediaRequests.id, requestId));

@@ -173,4 +173,44 @@ export function checkNotBanned(
   next();
 }
 
+/**
+ * Helper function to extract user from Authorization header without middleware
+ * Returns user object or null if not authenticated
+ */
+export async function authenticateUserFromToken(req: Request): Promise<{id: string; email?: string; role?: string} | null> {
+  try {
+    if (!supabase) {
+      return null;
+    }
+
+    const authHeader = req.headers.authorization;
+    
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return null;
+    }
+
+    const token = authHeader.substring(7);
+    const { data: { user }, error } = await supabase.auth.getUser(token);
+
+    if (error || !user) {
+      return null;
+    }
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single();
+
+    return {
+      id: user.id,
+      email: user.email,
+      role: profile?.role || 'user'
+    };
+  } catch (error) {
+    console.error('Error authenticating from token:', error);
+    return null;
+  }
+}
+
 export { supabase as serverSupabase };

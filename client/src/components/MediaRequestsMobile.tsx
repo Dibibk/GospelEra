@@ -32,35 +32,20 @@ export function MediaRequestsMobile({
     setLoading(true);
     setError("");
     try {
-      let userId: string | undefined;
+      // Use getSession for auth token (same pattern as fetchFeed)
+      const { data: { session } } = await supabase.auth.getSession();
       
-      try {
-        const {
-          data: { user },
-          error: authError,
-        } = await supabase.auth.getUser();
-
-        if (authError) {
-          console.error("Auth error in MediaRequests:", authError);
-        }
-        
-        userId = user?.id;
-      } catch (authErr: any) {
-        console.error("Exception getting user:", authErr);
-        // Try to get session instead as fallback
-        const { data: { session } } = await supabase.auth.getSession();
-        userId = session?.user?.id;
-      }
-      
-      if (!userId) {
+      if (!session?.access_token) {
         throw new Error("Authentication required");
       }
 
       const baseUrl = getApiBaseUrl();
       const response = await fetch(`${baseUrl}/api/admin/media-requests`, {
+        method: 'GET',
+        mode: 'cors',
         headers: {
-          "Content-Type": "application/json",
-          "x-user-id": userId,
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
         },
       });
 
@@ -93,12 +78,9 @@ export function MediaRequestsMobile({
     setSuccess("");
 
     try {
-      const {
-        data: { user },
-        error: authError,
-      } = await supabase.auth.getUser();
+      const { data: { session } } = await supabase.auth.getSession();
 
-      if (authError || !user) {
+      if (!session?.access_token) {
         throw new Error("Authentication required");
       }
 
@@ -107,9 +89,10 @@ export function MediaRequestsMobile({
         `${baseUrl}/api/admin/media-requests/${requestId}/approve`,
         {
           method: "PUT",
+          mode: 'cors',
           headers: {
-            "Content-Type": "application/json",
-            "x-user-id": user.id,
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
           },
         },
       );
@@ -126,7 +109,7 @@ export function MediaRequestsMobile({
       setMediaRequests((prev) =>
         prev.map((req) =>
           req.id === requestId
-            ? { ...req, status: "approved", admin_id: user.id }
+            ? { ...req, status: "approved", admin_id: session.user.id }
             : req,
         ),
       );
@@ -155,12 +138,9 @@ export function MediaRequestsMobile({
     setSuccess("");
 
     try {
-      const {
-        data: { user },
-        error: authError,
-      } = await supabase.auth.getUser();
+      const { data: { session } } = await supabase.auth.getSession();
 
-      if (authError || !user) {
+      if (!session?.access_token) {
         throw new Error("Authentication required");
       }
 
@@ -169,9 +149,10 @@ export function MediaRequestsMobile({
         `${baseUrl}/api/admin/media-requests/${requestId}/deny`,
         {
           method: "PUT",
+          mode: 'cors',
           headers: {
-            "Content-Type": "application/json",
-            "x-user-id": user.id,
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
           },
         },
       );
@@ -188,7 +169,7 @@ export function MediaRequestsMobile({
       setMediaRequests((prev) =>
         prev.map((req) =>
           req.id === requestId
-            ? { ...req, status: "denied", admin_id: user.id }
+            ? { ...req, status: "denied", admin_id: session.user.id }
             : req,
         ),
       );
