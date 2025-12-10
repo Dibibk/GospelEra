@@ -1,11 +1,51 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
-import { CheckCircle } from "lucide-react";
+import { CheckCircle, Loader2 } from "lucide-react";
 
 export default function EmailConfirmed() {
+  const [processing, setProcessing] = useState(true);
+  const [confirmed, setConfirmed] = useState(false);
+
   useEffect(() => {
-    supabase.auth.signOut();
+    const processConfirmation = async () => {
+      // Wait for Supabase to process the URL hash tokens
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Check if there's a session (means confirmation worked)
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (session) {
+        setConfirmed(true);
+        // Sign out so user can log in fresh on the app
+        await supabase.auth.signOut();
+      } else {
+        // Still might be confirmed, just no session
+        setConfirmed(true);
+      }
+      
+      setProcessing(false);
+    };
+
+    processConfirmation();
   }, []);
+
+  if (processing) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-white to-gray-50 dark:from-gray-900 dark:to-gray-950 px-4">
+        <div className="text-center max-w-md">
+          <div className="flex justify-center mb-6">
+            <Loader2 className="w-16 h-16 text-blue-500 animate-spin" />
+          </div>
+          <h1 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
+            Confirming your email...
+          </h1>
+          <p className="text-gray-600 dark:text-gray-300">
+            Please wait while we verify your email address.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-white to-gray-50 dark:from-gray-900 dark:to-gray-950 px-4">
