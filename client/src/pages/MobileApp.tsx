@@ -692,8 +692,10 @@ export default function MobileApp() {
 
       // Fetch real prayer requests from API (in parallel)
       const prayerResult = await listPrayerRequests({ limit: 10 });
+      console.log("🙏 fetchData: prayerResult", { hasData: !!prayerResult.data, count: prayerResult.data?.length, error: prayerResult.error });
       if (prayerResult.data) {
         setPrayerRequests(prayerResult.data);
+        console.log("🙏 fetchData: setPrayerRequests called with", prayerResult.data.length, "requests");
       }
 
       // Fetch user's prayer commitments and requests if authenticated

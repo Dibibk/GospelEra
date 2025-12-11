@@ -113,6 +113,7 @@ export async function listPrayerRequests({
   cursor = null as number | null
 }: PrayerRequestListParams): Promise<ApiResponse<any[]>> {
   try {
+    console.log('🙏 [listPrayerRequests] Starting prayer requests fetch...', { status, limit });
     let query = supabase
       .from('prayer_requests')
       .select(`
@@ -154,6 +155,8 @@ export async function listPrayerRequests({
       .limit(Math.min(limit, 50)) // Cap at 50 for performance
 
     const { data, error } = await query
+
+    console.log('🙏 [listPrayerRequests] Query result:', { dataCount: data?.length, error: error?.message });
 
     if (error) {
       console.error('Failed to list prayer requests:', error)
