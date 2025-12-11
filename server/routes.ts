@@ -2156,6 +2156,7 @@ Respond with JSON only:
         prayerCommitments, reports, notifications, pushTokens, profiles 
       } = await import("@shared/schema");
       const { eq } = await import("drizzle-orm");
+      const { deleteSupabaseAuthUser } = await import("./supabaseAdmin");
 
       // Delete in order respecting foreign key constraints
       // 1. Delete push tokens
@@ -2185,7 +2186,15 @@ Respond with JSON only:
       // 9. Delete profile (this should cascade other data with onDelete: 'cascade')
       await db.delete(profiles).where(eq(profiles.id, userId));
 
-      console.log(`Account deleted for user: ${userId}`);
+      // 10. Delete user from Supabase Auth (requires service role key)
+      const authDeleteResult = await deleteSupabaseAuthUser(userId);
+      if (!authDeleteResult.success) {
+        console.error(`Failed to delete Supabase Auth user ${userId}:`, authDeleteResult.error);
+        // Data is already deleted from Neon, but auth user remains
+        // Return success but log the issue - user data is gone, they just might have a stale auth record
+      }
+
+      console.log(`Account fully deleted for user: ${userId}`);
       res.json({ success: true, message: "Account deleted successfully" });
     } catch (error) {
       console.error("Error deleting account:", error);
