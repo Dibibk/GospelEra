@@ -2856,13 +2856,21 @@ export default function MobileApp() {
                 )}
               </div>
               <span
-                style={{ fontSize: "14px", fontWeight: 600, color: "#262626" }}
+                style={{ 
+                  fontSize: "14px", 
+                  fontWeight: 600, 
+                  color: "#262626",
+                  maxWidth: "120px",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap"
+                }}
               >
                 {userProfile?.display_name ||
                   user?.email?.split("@")[0] ||
                   "User"}
               </span>
-              <span style={{ fontSize: "12px", color: "#8e8e8e" }}>▼</span>
+              <span style={{ fontSize: "12px", color: "#8e8e8e", flexShrink: 0 }}>▼</span>
             </button>
 
             {/* Dropdown Menu */}

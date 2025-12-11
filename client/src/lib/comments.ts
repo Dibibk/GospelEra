@@ -66,6 +66,7 @@ export async function createComment({ postId, content }: CreateCommentData) {
 
 /**
  * Lists comments for a post with pagination support (newest first)
+ * Uses API endpoint to query Neon database via Drizzle (fixes dual-database issue)
  * @param {Object} options - Query options
  * @param {number} options.postId - Post ID to get comments for
  * @param {number} options.limit - Number of comments to return (default: 20)
@@ -74,91 +75,64 @@ export async function createComment({ postId, content }: CreateCommentData) {
  */
 export async function listComments({ postId, limit = 20, fromId }: ListCommentsOptions) {
   try {
-    let query = supabase
-      .from('comments')
-      .select(`
-        id,
-        post_id,
-        content,
-        created_at,
-        author_id
-      `)
-      .eq('post_id', postId)
-      .eq('deleted', false)
-
-    // Filter out hidden comments
-    query = query
-      .eq('hidden', false)
-      .order('created_at', { ascending: false })
-      .limit(limit)
-
-    // Add keyset pagination if fromId is provided
+    const baseUrl = getApiBaseUrl();
+    
+    // Build query params
+    const params = new URLSearchParams({
+      post_id: postId.toString(),
+      limit: limit.toString()
+    });
+    
     if (fromId) {
-      // Get the created_at timestamp of the fromId comment for keyset pagination
-      const { data: fromComment, error: fromError } = await supabase
-        .from('comments')
-        .select('created_at')
-        .eq('id', fromId)
-        .single()
-
-      if (fromError) {
-        throw new Error(`Failed to get pagination reference: ${fromError.message}`)
-      }
-
-      if (fromComment) {
-        query = query.lt('created_at', fromComment.created_at)
-      }
+      params.set('from_id', fromId.toString());
     }
-
-    const { data, error } = await query
-
-    if (error) {
-      throw new Error(`Failed to fetch comments: ${error.message}`)
+    
+    const response = await fetch(`${baseUrl}/api/comments?${params}`);
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Failed to fetch comments');
     }
-
-    return { data, error: null }
+    
+    const data = await response.json();
+    return { data, error: null };
   } catch (err) {
-    return { data: null, error: err }
+    return { data: null, error: err };
   }
 }
 
 /**
- * Soft deletes a comment by setting is_deleted=true
+ * Soft deletes a comment by setting deleted=true
+ * Uses API endpoint to delete from Neon database via Drizzle
  * Only the author can delete their own comments
  * @param {number} id - Comment ID to delete
  * @returns {Promise<{data: Object|null, error: Error|null}>}
  */
 export async function softDeleteComment(id: number) {
   try {
-    // Get current user
-    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    // Get auth token
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
     
-    if (userError) {
-      throw new Error(`Authentication error: ${userError.message}`)
+    if (sessionError || !session) {
+      throw new Error('Authentication required to delete comments')
     }
     
-    if (!user) {
-      throw new Error('User must be authenticated to delete comments')
-    }
-
-    // Use secure RPC function that only allows deleting your own comments
-    const { data, error } = await supabase
-      .rpc('soft_delete_comment', { comment_id: id })
-
-    if (error) {
-      // If it's an RLS error, provide a more user-friendly message
-      if (error.message.includes('row-level security') || error.message.includes('new row violates')) {
-        throw new Error('You can only delete your own comments')
+    const baseUrl = getApiBaseUrl();
+    const response = await fetch(`${baseUrl}/api/comments/${id}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${session.access_token}`
       }
-      throw new Error(`Failed to delete comment: ${error.message}`)
+    });
+    
+    const result = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(result.error || 'Failed to delete comment');
     }
-
-    if (!data) {
-      throw new Error('Comment not found, already deleted, or you do not have permission to delete it')
-    }
-
-    return { data, error: null }
+    
+    return { data: result.data, error: null };
   } catch (err) {
-    return { data: null, error: err }
+    return { data: null, error: err };
   }
 }

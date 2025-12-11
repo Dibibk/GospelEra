@@ -395,15 +395,39 @@ Respond in JSON format:
       if (private_profile !== undefined) updateData.private_profile = private_profile;
       if (settings !== undefined) updateData.settings = settings;
 
-      // Update profile via Drizzle (server-side with DATABASE_URL)
-      const result = await db
-        .update(profiles)
-        .set(updateData)
-        .where(eq(profiles.id, req.user.id))
-        .returning();
+      // Check if profile exists first
+      const [existingProfile] = await db
+        .select()
+        .from(profiles)
+        .where(eq(profiles.id, req.user.id));
+
+      let result;
+      if (existingProfile) {
+        // Update existing profile
+        result = await db
+          .update(profiles)
+          .set(updateData)
+          .where(eq(profiles.id, req.user.id))
+          .returning();
+      } else {
+        // Create new profile (upsert pattern)
+        // Profile might exist in Supabase but not in Neon - create it here
+        result = await db
+          .insert(profiles)
+          .values({
+            id: req.user.id,
+            display_name: updateData.display_name || 'User',
+            bio: updateData.bio || null,
+            avatar_url: updateData.avatar_url || null,
+            show_name_on_prayers: updateData.show_name_on_prayers ?? true,
+            private_profile: updateData.private_profile ?? false,
+            settings: updateData.settings || null,
+          })
+          .returning();
+      }
 
       if (!result || result.length === 0) {
-        return res.status(404).json({ error: "Profile not found" });
+        return res.status(500).json({ error: "Failed to save profile" });
       }
 
       res.json(result[0]);
@@ -1010,6 +1034,118 @@ Respond in JSON format:
     } catch (error) {
       console.error("Error creating comment:", error);
       res.status(500).json({ error: "Failed to create comment" });
+    }
+  });
+
+  // DELETE comment - only author can delete their own comments
+  app.delete("/api/comments/:id", authenticateUser, async (req: AuthenticatedRequest, res) => {
+    try {
+      const { db } = await import("../client/src/lib/db");
+      const { comments } = await import("@shared/schema");
+      const { eq, and } = await import("drizzle-orm");
+      
+      if (!req.user) {
+        return res.status(401).json({ error: "Authentication required" });
+      }
+      
+      const commentId = parseInt(req.params.id);
+      if (isNaN(commentId)) {
+        return res.status(400).json({ error: "Invalid comment ID" });
+      }
+      
+      // Verify the comment exists and belongs to the user
+      const [existingComment] = await db
+        .select({ author_id: comments.author_id, deleted: comments.deleted })
+        .from(comments)
+        .where(eq(comments.id, commentId));
+      
+      if (!existingComment) {
+        return res.status(404).json({ error: "Comment not found" });
+      }
+      
+      if (existingComment.deleted) {
+        return res.status(400).json({ error: "Comment already deleted" });
+      }
+      
+      // Only allow author or admin to delete
+      const isAdmin = req.user.role === 'admin';
+      const isOwner = existingComment.author_id === req.user.id;
+      
+      if (!isOwner && !isAdmin) {
+        return res.status(403).json({ error: "You can only delete your own comments" });
+      }
+      
+      // Soft delete by setting deleted = true
+      const [deletedComment] = await db
+        .update(comments)
+        .set({ deleted: true })
+        .where(eq(comments.id, commentId))
+        .returning();
+      
+      res.json({ success: true, data: deletedComment });
+    } catch (error) {
+      console.error("Error deleting comment:", error);
+      res.status(500).json({ error: "Failed to delete comment" });
+    }
+  });
+
+  // GET comments for a post - queries Neon/Replit database via Drizzle
+  app.get("/api/comments", async (req, res) => {
+    try {
+      const { db } = await import("../client/src/lib/db");
+      const { comments } = await import("@shared/schema");
+      const { desc, eq, and, lt } = await import("drizzle-orm");
+      
+      const postId = parseInt(req.query.post_id as string);
+      const limit = Math.min(parseInt(req.query.limit as string) || 20, 100);
+      const fromId = req.query.from_id ? parseInt(req.query.from_id as string) : null;
+      
+      if (isNaN(postId)) {
+        return res.status(400).json({ error: "post_id is required and must be a number" });
+      }
+      
+      // Build base conditions
+      const conditions = [
+        eq(comments.post_id, postId),
+        eq(comments.deleted, false),
+        eq(comments.hidden, false)
+      ];
+      
+      // Add keyset pagination if fromId provided
+      if (fromId) {
+        // Get the created_at of the from comment for proper keyset pagination
+        // Only consider visible comments for pagination reference
+        const [fromComment] = await db
+          .select({ created_at: comments.created_at })
+          .from(comments)
+          .where(and(
+            eq(comments.id, fromId),
+            eq(comments.deleted, false),
+            eq(comments.hidden, false)
+          ));
+        
+        if (fromComment) {
+          conditions.push(lt(comments.created_at, fromComment.created_at));
+        }
+      }
+      
+      const result = await db
+        .select({
+          id: comments.id,
+          post_id: comments.post_id,
+          content: comments.content,
+          created_at: comments.created_at,
+          author_id: comments.author_id
+        })
+        .from(comments)
+        .where(and(...conditions))
+        .orderBy(desc(comments.created_at))
+        .limit(limit);
+      
+      res.json(result);
+    } catch (error) {
+      console.error("Error fetching comments:", error);
+      res.status(500).json({ error: "Failed to fetch comments" });
     }
   });
 

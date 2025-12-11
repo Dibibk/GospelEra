@@ -6,6 +6,13 @@ Gospel Era is a full-stack web application designed as a social platform for the
 
 # Recent Changes
 
+**December 11, 2025 - Comments & Profile API (Dual-Database Architecture Fix)**
+- Unified comments API: Created GET `/api/comments` and DELETE `/api/comments/:id` endpoints (server/routes.ts)
+- Comments now read/write to Neon database via Drizzle instead of direct Supabase queries (fixes iOS native app issues)
+- Updated client/src/lib/comments.ts: listComments and softDeleteComment now use API endpoints
+- Profile upsert fix: PATCH `/api/profile` now creates profile if not exists (fixes profile save failing for new users)
+- Root cause: Comments/profiles stored in Neon, but client was querying non-existent Supabase tables
+
 **December 11, 2025 - Prayer Requests Backend API (Dual-Database Architecture Fix)**
 - Identified dual-database architecture: Supabase holds prayer_* tables, Neon/Replit holds posts tables
 - Created `/api/prayer-requests` backend endpoint (server/routes.ts) to proxy prayer requests from Supabase
