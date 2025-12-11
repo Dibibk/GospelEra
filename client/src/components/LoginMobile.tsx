@@ -136,9 +136,22 @@ export function LoginMobile({ onSuccess }: LoginMobileProps) {
         {/* Header */}
         <div style={{ textAlign: "center", marginBottom: "32px" }}>
           <div
-            style={{ fontSize: "28px", color: "#0095f6", marginBottom: "16px" }}
+            style={{
+              marginBottom: "16px",
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+            }}
           >
-            ✝️
+            <svg
+              width="48"
+              height="64"
+              viewBox="0 0 48 64"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path d="M26 4h-4v12H10v4h12v40h4V20h12v-4H26V4z" fill="#0095f6" />
+            </svg>
           </div>
           <h2
             style={{
