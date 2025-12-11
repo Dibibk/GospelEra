@@ -6,6 +6,14 @@ Gospel Era is a full-stack web application designed as a social platform for the
 
 # Recent Changes
 
+**December 11, 2025 - Prayer Requests Backend API (Dual-Database Architecture Fix)**
+- Identified dual-database architecture: Supabase holds prayer_* tables, Neon/Replit holds posts tables
+- Created `/api/prayer-requests` backend endpoint (server/routes.ts) to proxy prayer requests from Supabase
+- Fixed iOS native app RLS issue: Backend API uses user's JWT token to query Supabase, inheriting their permissions
+- Backend creates server-side Supabase client with user's Authorization header for authenticated queries
+- Prayer requests now load correctly on both web and native apps via unified API endpoint
+- Updated prayer.ts to use API endpoint exclusively instead of direct Supabase queries (works across all platforms)
+
 **December 8, 2025 - Real-Time Updates, Push Notifications & Daily Verse Reminders**
 - Implemented Supabase Realtime for live updates across the app (client/src/lib/realtime.ts)
 - Real-time feed updates: new posts appear automatically without refresh

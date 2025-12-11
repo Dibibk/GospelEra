@@ -581,6 +581,145 @@ Respond in JSON format:
     }
   });
 
+  // PRAYER REQUESTS API ENDPOINT - Queries Supabase database (where prayer data lives)
+  app.get("/api/prayer-requests", optionalAuth, async (req: AuthenticatedRequest, res) => {
+    try {
+      const { createClient } = await import("@supabase/supabase-js");
+      
+      // Use server-side Supabase client
+      const supabaseUrl = process.env.VITE_SUPABASE_URL;
+      const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY;
+      
+      if (!supabaseUrl || !supabaseAnonKey) {
+        return res.status(500).json({ error: "Supabase not configured" });
+      }
+      
+      // Extract user token if available and create authenticated Supabase client
+      const authHeader = req.headers.authorization;
+      const token = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : null;
+      
+      // Create Supabase client - if we have a token, use it for authenticated queries
+      const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+        global: {
+          headers: token ? { Authorization: `Bearer ${token}` } : {}
+        }
+      });
+      
+      const limit = Math.min(parseInt(req.query.limit as string) || 20, 50);
+      const status = (req.query.status as string) || 'open';
+      const cursor = req.query.cursor as string;
+      const searchQuery = req.query.q as string;
+      const tagsParam = req.query.tags as string;
+      const currentUserId = req.user?.id;
+      
+      // Query prayer requests from Supabase
+      let query = supabase
+        .from('prayer_requests')
+        .select(`
+          id, requester, title, details, tags, is_anonymous, status, created_at, updated_at,
+          profiles!prayer_requests_requester_fkey (
+            id, display_name, avatar_url
+          ),
+          prayer_commitments (
+            request_id, warrior, status, committed_at, prayed_at
+          )
+        `)
+        .eq('status', status)
+        .order('created_at', { ascending: false })
+        .limit(limit);
+      
+      if (cursor) {
+        query = query.lt('id', parseInt(cursor));
+      }
+      
+      // Text search filter
+      if (searchQuery && searchQuery.trim()) {
+        query = query.or(`title.ilike.%${searchQuery}%,details.ilike.%${searchQuery}%`);
+      }
+      
+      // Tags filter
+      if (tagsParam) {
+        const tags = tagsParam.split(',').filter(t => t.trim());
+        if (tags.length > 0) {
+          query = query.contains('tags', tags);
+        }
+      }
+      
+      const { data: requests, error } = await query;
+      
+      if (error) {
+        console.error("Supabase prayer query error:", error);
+        return res.status(500).json({ error: "Failed to fetch prayer requests" });
+      }
+      
+      if (!requests || requests.length === 0) {
+        return res.json({ 
+          requests: [], 
+          profiles: {}, 
+          stats: {},
+          myCommitments: [],
+          nextCursor: null 
+        });
+      }
+      
+      // Build profiles map
+      const profilesMap: Record<string, any> = {};
+      requests.forEach((r: any) => {
+        if (r.profiles && r.requester) {
+          profilesMap[r.requester] = r.profiles;
+        }
+      });
+      
+      // Build stats map and collect commitments
+      const statsMap: Record<number, { committed_count: number; prayed_count: number; total_warriors: number }> = {};
+      let allCommitments: any[] = [];
+      
+      requests.forEach((r: any) => {
+        const reqId = Number(r.id);
+        const commitments = r.prayer_commitments || [];
+        allCommitments = allCommitments.concat(commitments.map((c: any) => ({ ...c, request_id: reqId })));
+        
+        statsMap[reqId] = {
+          committed_count: commitments.filter((c: any) => c.status === 'committed').length,
+          prayed_count: commitments.filter((c: any) => c.status === 'prayed').length,
+          total_warriors: commitments.length
+        };
+      });
+      
+      // Get current user's commitments if logged in
+      const myCommitments = currentUserId 
+        ? allCommitments.filter(c => c.warrior === currentUserId)
+        : [];
+      
+      // Calculate next cursor
+      const nextCursor = requests.length === limit ? requests[requests.length - 1].id : null;
+      
+      // Clean up the response (remove nested data)
+      const cleanRequests = requests.map((r: any) => ({
+        id: r.id,
+        requester: r.requester,
+        title: r.title,
+        details: r.details,
+        tags: r.tags,
+        is_anonymous: r.is_anonymous,
+        status: r.status,
+        created_at: r.created_at,
+        updated_at: r.updated_at
+      }));
+      
+      res.json({
+        requests: cleanRequests,
+        profiles: profilesMap,
+        stats: statsMap,
+        myCommitments,
+        nextCursor
+      });
+    } catch (error) {
+      console.error("Error fetching prayer requests:", error);
+      res.status(500).json({ error: "Failed to fetch prayer requests" });
+    }
+  });
+
   app.post("/api/posts", authenticateUser, checkNotBanned, async (req: AuthenticatedRequest, res) => {
     try {
       const { db } = await import("../client/src/lib/db");
