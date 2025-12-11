@@ -10,6 +10,8 @@ import {
   unsubscribeFromPush 
 } from '@/lib/pushNotifications';
 import { supabase } from '@/lib/supabaseClient';
+import { getApiBaseUrl } from '@/lib/posts';
+import { Capacitor } from '@capacitor/core';
 
 interface SettingsMobileProps {
   onBack: () => void;
@@ -61,7 +63,14 @@ export function SettingsMobile({ onBack, onEditProfile, onSuccess }: SettingsMob
       }
       
       // Check push notification status
-      if (isPushSupported()) {
+      // Note: Web Push is NOT supported on native iOS/Android apps via Capacitor
+      const isNative = Capacitor.isNativePlatform();
+      
+      if (isNative) {
+        // Native apps don't support web push - disable these toggles
+        setPushNotifications(false);
+        setDailyVerseReminders(false);
+      } else if (isPushSupported()) {
         const permission = getNotificationPermission();
         setPushNotifications(permission === 'granted');
         
@@ -69,7 +78,8 @@ export function SettingsMobile({ onBack, onEditProfile, onSuccess }: SettingsMob
         try {
           const { data: { session } } = await supabase.auth.getSession();
           if (session?.access_token) {
-            const response = await fetch('/api/push/daily-verse', {
+            const baseUrl = getApiBaseUrl();
+            const response = await fetch(`${baseUrl}/api/push/daily-verse`, {
               headers: { 'Authorization': `Bearer ${session.access_token}` }
             });
             if (response.ok) {
@@ -108,6 +118,11 @@ export function SettingsMobile({ onBack, onEditProfile, onSuccess }: SettingsMob
         break;
       case "pushNotifications":
         // Handle push notification toggle
+        // Web Push is NOT supported on native iOS/Android apps
+        if (Capacitor.isNativePlatform()) {
+          alert('Push notifications are not available in the native app. Please use the web version for push notification features.');
+          return;
+        }
         if (value) {
           // Enable push notifications
           if (!isPushSupported()) {
@@ -142,14 +157,20 @@ export function SettingsMobile({ onBack, onEditProfile, onSuccess }: SettingsMob
         break;
       case "dailyVerseReminders":
         // Handle daily verse toggle - requires push notifications to be enabled
+        // Web Push is NOT supported on native iOS/Android apps
+        if (Capacitor.isNativePlatform()) {
+          alert('Daily verse reminders are not available in the native app. Please use the web version for this feature.');
+          return;
+        }
         if (!pushNotifications) {
-          console.log('Push notifications must be enabled for daily verse reminders');
+          alert('Please enable push notifications first to receive daily verse reminders.');
           return;
         }
         try {
           const { data: { session } } = await supabase.auth.getSession();
           if (session?.access_token) {
-            const response = await fetch('/api/push/daily-verse', {
+            const baseUrl = getApiBaseUrl();
+            const response = await fetch(`${baseUrl}/api/push/daily-verse`, {
               method: 'PATCH',
               headers: { 
                 'Authorization': `Bearer ${session.access_token}`,
@@ -159,6 +180,8 @@ export function SettingsMobile({ onBack, onEditProfile, onSuccess }: SettingsMob
             });
             if (response.ok) {
               setDailyVerseReminders(value);
+            } else {
+              console.error('Failed to update daily verse preference');
             }
           }
         } catch (error) {
@@ -208,10 +231,12 @@ export function SettingsMobile({ onBack, onEditProfile, onSuccess }: SettingsMob
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.access_token) {
         alert("You must be logged in to delete your account.");
+        setIsDeletingAccount(false);
         return;
       }
       
-      const response = await fetch('/api/account', {
+      const baseUrl = getApiBaseUrl();
+      const response = await fetch(`${baseUrl}/api/account`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${session.access_token}`,

@@ -6,6 +6,13 @@ Gospel Era is a full-stack web application designed as a social platform for the
 
 # Recent Changes
 
+**December 11, 2025 - Settings Page Fixes (Native App Compatibility)**
+- Fixed push notification and daily verse toggles to use proper API URLs (getApiBaseUrl) for native apps
+- Added native app detection: Push notifications and daily verse reminders are not supported in iOS/Android native apps (Web Push limitation)
+- Settings toggles now show informative alerts when users try to enable push features on native apps
+- Fixed account deletion to use proper API URL with getApiBaseUrl() for native app compatibility
+- Note: Web Push (Service Workers) is not available in Capacitor/native apps - users should use the web version for push notification features
+
 **December 11, 2025 - Comments & Profile API (Dual-Database Architecture Fix)**
 - Unified comments API: Created GET `/api/comments` and DELETE `/api/comments/:id` endpoints (server/routes.ts)
 - Comments now read/write to Neon database via Drizzle instead of direct Supabase queries (fixes iOS native app issues)
