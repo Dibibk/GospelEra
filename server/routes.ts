@@ -2153,40 +2153,68 @@ Respond with JSON only:
       const { db } = await import("../client/src/lib/db");
       const { 
         posts, comments, bookmarks, reactions, 
-        prayerCommitments, reports, notifications, pushTokens, profiles 
+        prayerCommitments, prayerActivity, donations, mediaRequests,
+        reports, notifications, pushTokens, profiles 
       } = await import("@shared/schema");
-      const { eq } = await import("drizzle-orm");
+      const { eq, or } = await import("drizzle-orm");
       const { deleteSupabaseAuthUser } = await import("./supabaseAdmin");
+
+      console.log(`Starting account deletion for user: ${userId}`);
 
       // Delete in order respecting foreign key constraints
       // 1. Delete push tokens
       await db.delete(pushTokens).where(eq(pushTokens.user_id, userId));
+      console.log("Deleted push tokens");
       
-      // 2. Delete notifications (both received and sent)
-      await db.delete(notifications).where(eq(notifications.recipient_id, userId));
+      // 2. Delete notifications (both received and sent by the user)
+      await db.delete(notifications).where(
+        or(eq(notifications.recipient_id, userId), eq(notifications.actor_id, userId))
+      );
+      console.log("Deleted notifications");
       
-      // 3. Delete prayer commitments
+      // 3. Delete prayer activity
+      await db.delete(prayerActivity).where(eq(prayerActivity.actor, userId));
+      console.log("Deleted prayer activity");
+      
+      // 4. Delete prayer commitments
       await db.delete(prayerCommitments).where(eq(prayerCommitments.warrior, userId));
+      console.log("Deleted prayer commitments");
       
-      // 4. Delete reports
+      // 5. Delete donations
+      await db.delete(donations).where(eq(donations.user_id, userId));
+      console.log("Deleted donations");
+      
+      // 6. Delete media requests (both as user and admin)
+      await db.delete(mediaRequests).where(
+        or(eq(mediaRequests.user_id, userId), eq(mediaRequests.admin_id, userId))
+      );
+      console.log("Deleted media requests");
+      
+      // 7. Delete reports
       await db.delete(reports).where(eq(reports.reporter_id, userId));
+      console.log("Deleted reports");
       
-      // 5. Delete reactions
+      // 8. Delete reactions
       await db.delete(reactions).where(eq(reactions.user_id, userId));
+      console.log("Deleted reactions");
       
-      // 6. Delete bookmarks
+      // 9. Delete bookmarks
       await db.delete(bookmarks).where(eq(bookmarks.user_id, userId));
+      console.log("Deleted bookmarks");
       
-      // 7. Delete comments
+      // 10. Delete comments
       await db.delete(comments).where(eq(comments.author_id, userId));
+      console.log("Deleted comments");
       
-      // 8. Delete posts
+      // 11. Delete posts
       await db.delete(posts).where(eq(posts.author_id, userId));
+      console.log("Deleted posts");
       
-      // 9. Delete profile (this should cascade other data with onDelete: 'cascade')
+      // 12. Delete profile (this should cascade other data with onDelete: 'cascade')
       await db.delete(profiles).where(eq(profiles.id, userId));
+      console.log("Deleted profile");
 
-      // 10. Delete user from Supabase Auth (requires service role key)
+      // 13. Delete user from Supabase Auth (requires service role key)
       const authDeleteResult = await deleteSupabaseAuthUser(userId);
       if (!authDeleteResult.success) {
         console.error(`Failed to delete Supabase Auth user ${userId}:`, authDeleteResult.error);
