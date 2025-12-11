@@ -56,6 +56,16 @@ export function CreatePostMobile({
     setYoutubeError("");
   }, [editingPost]);
 
+  // Clear errors and reset state when navigating away from this screen
+  useEffect(() => {
+    if (!isVisible) {
+      setModerationError("");
+      setYoutubeError("");
+      setSaving(false);
+      setValidatingVideo(false);
+    }
+  }, [isVisible]);
+
   const handleSubmit = useCallback(async () => {
     if (!title.trim() || !content.trim()) return;
 
