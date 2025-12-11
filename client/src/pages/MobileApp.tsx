@@ -471,6 +471,12 @@ export default function MobileApp() {
   }>({});
   const isLoading = useRef(false);
   
+  // Pull-to-refresh state
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [pullDistance, setPullDistance] = useState(0);
+  const pullStartY = useRef<number | null>(null);
+  const feedContainerRef = useRef<HTMLDivElement>(null);
+  
   // Banned user modal state
   const [showBannedModal, setShowBannedModal] = useState(false);
   const bannedModalShownRef = useRef(false);
@@ -716,6 +722,58 @@ export default function MobileApp() {
       console.error("Error fetching data:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Pull-to-refresh handler
+  const handlePullRefresh = async () => {
+    if (isRefreshing) return;
+    setIsRefreshing(true);
+    try {
+      await fetchData();
+    } finally {
+      setIsRefreshing(false);
+      setPullDistance(0);
+    }
+  };
+
+  // Pull-to-refresh touch handlers
+  const handleTouchStart = (e: React.TouchEvent) => {
+    const container = feedContainerRef.current;
+    if (!container || container.scrollTop > 0) {
+      pullStartY.current = null;
+      return;
+    }
+    pullStartY.current = e.touches[0].clientY;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (pullStartY.current === null || isRefreshing) return;
+    
+    const container = feedContainerRef.current;
+    if (!container || container.scrollTop > 0) {
+      pullStartY.current = null;
+      setPullDistance(0);
+      return;
+    }
+
+    const currentY = e.touches[0].clientY;
+    const diff = currentY - pullStartY.current;
+    
+    if (diff > 0) {
+      const resistance = 0.4;
+      setPullDistance(Math.min(diff * resistance, 80));
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (pullStartY.current === null) return;
+    pullStartY.current = null;
+    
+    if (pullDistance >= 60 && !isRefreshing) {
+      handlePullRefresh();
+    } else {
+      setPullDistance(0);
     }
   };
 
@@ -1579,7 +1637,68 @@ export default function MobileApp() {
   // Home Feed Component
   function renderHomeFeed() {
     return (
-      <>
+      <div
+        ref={feedContainerRef}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        style={{
+          flex: 1,
+          overflowY: "auto",
+          overflowX: "hidden",
+          WebkitOverflowScrolling: "touch",
+        }}
+      >
+        {/* Pull-to-refresh indicator */}
+        <div
+          style={{
+            height: pullDistance > 0 || isRefreshing ? `${Math.max(pullDistance, isRefreshing ? 50 : 0)}px` : "0px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            overflow: "hidden",
+            transition: pullDistance === 0 && !isRefreshing ? "height 0.2s ease-out" : "none",
+            background: "#f5f5f5",
+          }}
+        >
+          {isRefreshing ? (
+            <div
+              style={{
+                width: "24px",
+                height: "24px",
+                border: "3px solid #e0e0e0",
+                borderTopColor: "#4285f4",
+                borderRadius: "50%",
+                animation: "spin 0.8s linear infinite",
+              }}
+            />
+          ) : pullDistance > 0 ? (
+            <div style={{ 
+              color: "#8e8e8e", 
+              fontSize: "12px",
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+            }}>
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                style={{
+                  transform: pullDistance >= 60 ? "rotate(180deg)" : "rotate(0deg)",
+                  transition: "transform 0.2s ease",
+                }}
+              >
+                <path d="M12 5v14M19 12l-7 7-7-7" />
+              </svg>
+              {pullDistance >= 60 ? "Release to refresh" : "Pull down to refresh"}
+            </div>
+          ) : null}
+        </div>
+
         {/* Search bar with clear button */}
         <div
           style={{
@@ -2404,7 +2523,7 @@ export default function MobileApp() {
             </div>
           </div>
         )}
-      </>
+      </div>
     );
   }
 
