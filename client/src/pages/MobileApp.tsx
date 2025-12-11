@@ -3381,6 +3381,9 @@ export default function MobileApp() {
           <div
             onClick={() => {
               resetAllModalStates();
+              // Clear editing state to ensure fresh create form
+              setEditingPostId(null);
+              setEditingPost(null);
               setActiveTab(1);
             }}
             onTouchStart={(e) => {
