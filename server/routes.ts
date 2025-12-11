@@ -319,6 +319,42 @@ Respond in JSON format:
     }
   });
 
+  // Get profile by ID - used by useRole hook to get user's role
+  app.get("/api/profiles/:id", async (req, res) => {
+    try {
+      const { db } = await import("../client/src/lib/db");
+      const { profiles } = await import("@shared/schema");
+      const { eq } = await import("drizzle-orm");
+      
+      const userId = req.params.id;
+      if (!userId) {
+        return res.status(400).json({ error: "User ID required" });
+      }
+      
+      const [profile] = await db.select({
+        id: profiles.id,
+        email: profiles.email,
+        display_name: profiles.display_name,
+        bio: profiles.bio,
+        avatar_url: profiles.avatar_url,
+        role: profiles.role,
+        media_enabled: profiles.media_enabled,
+        show_name_on_prayers: profiles.show_name_on_prayers,
+        private_profile: profiles.private_profile,
+      }).from(profiles)
+        .where(eq(profiles.id, userId));
+      
+      if (!profile) {
+        return res.status(404).json({ error: "Profile not found" });
+      }
+      
+      res.json(profile);
+    } catch (error) {
+      console.error("Error fetching profile:", error);
+      res.status(500).json({ error: "Failed to fetch profile" });
+    }
+  });
+
   // Profile update endpoint - prevents privilege escalation
   app.patch("/api/profile", authenticateUser, async (req: AuthenticatedRequest, res) => {
     try {
