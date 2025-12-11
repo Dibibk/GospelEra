@@ -6,6 +6,13 @@ Gospel Era is a full-stack web application designed as a social platform for the
 
 # Recent Changes
 
+**December 11, 2025 - Notification Navigation & Account Deletion**
+- Fixed comment notification clicks: Now navigates to the correct post and opens its comments section
+- Added `pendingPostNavigation` state to scroll to post after closing notifications view
+- Each post now has an id attribute (`post-{id}`) for smooth scrolling navigation
+- Account deletion now fully removes user from both Neon database AND Supabase Auth (using service role key)
+- Created server/supabaseAdmin.ts with admin client for privileged Supabase operations
+
 **December 11, 2025 - Settings Page Fixes (Native App Compatibility)**
 - Fixed push notification and daily verse toggles to use proper API URLs (getApiBaseUrl) for native apps
 - Added native app detection: Push notifications and daily verse reminders are not supported in iOS/Android native apps (Web Push limitation)

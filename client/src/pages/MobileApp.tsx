@@ -917,6 +917,7 @@ export default function MobileApp() {
   const [showUserDropdown, setShowUserDropdown] = useState(false);
   const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [pendingPostNavigation, setPendingPostNavigation] = useState<number | null>(null);
   // Mobile page states
   const [showMobileSettings, setShowMobileSettings] = useState(false);
   const [showMobileCommunityGuidelines, setShowMobileCommunityGuidelines] =
@@ -1007,6 +1008,26 @@ export default function MobileApp() {
   useEffect(() => {
     setIsSearchMode(searchQuery.length > 0 || selectedTags.length > 0);
   }, [searchQuery, selectedTags]);
+
+  // Handle pending post navigation from notifications
+  useEffect(() => {
+    if (pendingPostNavigation !== null && !loading) {
+      // Wait a tick for the DOM to update
+      setTimeout(() => {
+        const postElement = document.getElementById(`post-${pendingPostNavigation}`);
+        if (postElement) {
+          postElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          // Open the comment section for this post
+          setCommentForms(prev => ({ ...prev, [pendingPostNavigation]: true }));
+          // Load comments if not already loaded
+          if (!postComments[pendingPostNavigation]) {
+            loadComments(pendingPostNavigation);
+          }
+        }
+        setPendingPostNavigation(null);
+      }, 300);
+    }
+  }, [pendingPostNavigation, loading, postComments]);
 
   // Handle search functionality - matching web app
   const handleSearch = async (fromId?: number) => {
@@ -1936,6 +1957,7 @@ export default function MobileApp() {
             return filteredPosts.map((post, index) => (
               <div
                 key={post.id}
+                id={`post-${post.id}`}
                 style={{
                   background: "#ffffff",
                   borderBottom: "1px solid #dbdbdb",
@@ -2689,9 +2711,13 @@ export default function MobileApp() {
           setShowNotifications(false);
           // Navigate to the relevant content
           if (notification.post_id) {
-            // Could navigate to post detail if implemented
+            // Switch to home tab and scroll to the post
+            setActiveTab(0);
+            setPendingPostNavigation(notification.post_id);
           } else if (notification.prayer_request_id) {
-            // Could navigate to prayer request
+            // Switch to prayer tab and open the prayer request
+            setActiveTab(1);
+            handlePrayerClick(notification.prayer_request_id);
           }
         }}
       />
