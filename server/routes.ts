@@ -1424,8 +1424,11 @@ Respond in JSON format:
   // POST /api/media-requests - Submit a media access request
   app.post("/api/media-requests", async (req, res) => {
     try {
-      const { db } = await import("../client/src/lib/db");
-      const { mediaRequests } = await import("@shared/schema");
+      const { supabaseAdmin } = await import("./supabaseClient");
+      
+      if (!supabaseAdmin) {
+        return res.status(500).json({ error: "Supabase admin client not configured" });
+      }
       
       const { reason } = req.body;
       
@@ -1440,11 +1443,20 @@ Respond in JSON format:
         return res.status(401).json({ error: "User authentication required" });
       }
       
-      const [newRequest] = await db.insert(mediaRequests).values({
-        user_id: userId,
-        reason: reason.trim(),
-        status: 'pending'
-      }).returning();
+      const { data: newRequest, error } = await supabaseAdmin
+        .from('media_requests')
+        .insert({
+          user_id: userId,
+          reason: reason.trim(),
+          status: 'pending'
+        })
+        .select()
+        .single();
+      
+      if (error) {
+        console.error("Error creating media request:", error);
+        return res.status(500).json({ error: "Failed to create media request" });
+      }
       
       res.status(201).json(newRequest);
     } catch (error) {
@@ -1456,9 +1468,11 @@ Respond in JSON format:
   // GET /api/media-requests/my - Get current user's requests
   app.get("/api/media-requests/my", async (req, res) => {
     try {
-      const { db } = await import("../client/src/lib/db");
-      const { mediaRequests } = await import("@shared/schema");
-      const { eq, desc } = await import("drizzle-orm");
+      const { supabaseAdmin } = await import("./supabaseClient");
+      
+      if (!supabaseAdmin) {
+        return res.status(500).json({ error: "Supabase admin client not configured" });
+      }
       
       // Get user ID from headers (set by frontend auth)  
       const userId = req.headers['x-user-id'] as string || req.headers['user-id'] as string;
@@ -1467,12 +1481,18 @@ Respond in JSON format:
         return res.status(401).json({ error: "User authentication required" });
       }
       
-      const userRequests = await db.select()
-        .from(mediaRequests)
-        .where(eq(mediaRequests.user_id, userId))
-        .orderBy(desc(mediaRequests.created_at));
+      const { data: userRequests, error } = await supabaseAdmin
+        .from('media_requests')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
       
-      res.json(userRequests);
+      if (error) {
+        console.error("Error fetching user media requests:", error);
+        return res.status(500).json({ error: "Failed to fetch requests" });
+      }
+      
+      res.json(userRequests || []);
     } catch (error) {
       console.error("Error fetching user media requests:", error);
       res.status(500).json({ error: "Failed to fetch requests" });
@@ -1482,32 +1502,44 @@ Respond in JSON format:
   // GET /api/admin/media-requests - Get all media requests (admin only)
   app.get("/api/admin/media-requests", async (req: any, res) => {
     try {
-      const { db } = await import("../client/src/lib/db");
-      const { mediaRequests, profiles } = await import("@shared/schema");
-      const { desc, sql } = await import("drizzle-orm");
+      const { supabaseAdmin } = await import("./supabaseClient");
       
-      // Note: Authorization header is used for proper CORS support
-      // The actual admin check would be done by verifying the token
+      if (!supabaseAdmin) {
+        return res.status(500).json({ error: "Supabase admin client not configured" });
+      }
       
-      // Use SQL to cast uuid to text for comparison with varchar profiles.id
-      const allRequests = await db
-        .select({
-          id: mediaRequests.id,
-          user_id: mediaRequests.user_id,
-          status: mediaRequests.status,
-          reason: mediaRequests.reason,
-          admin_id: mediaRequests.admin_id,
-          created_at: mediaRequests.created_at,
-          updated_at: mediaRequests.updated_at,
-          user: {
-            id: profiles.id,
-            display_name: profiles.display_name,
-            email: profiles.email
-          }
-        })
-        .from(mediaRequests)
-        .leftJoin(profiles, sql`${mediaRequests.user_id}::text = ${profiles.id}`)
-        .orderBy(desc(mediaRequests.created_at));
+      // Fetch all media requests from Supabase
+      const { data: requests, error: requestsError } = await supabaseAdmin
+        .from('media_requests')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (requestsError) {
+        console.error("Error fetching media requests:", requestsError);
+        return res.status(500).json({ error: "Failed to fetch media requests" });
+      }
+      
+      // Collect user IDs for profile lookup
+      const userIds = [...new Set((requests || []).map(r => r.user_id).filter(Boolean))];
+      
+      // Fetch profiles separately
+      let profilesMap = new Map<string, any>();
+      if (userIds.length > 0) {
+        const { data: profilesData } = await supabaseAdmin
+          .from('profiles')
+          .select('id, display_name, email')
+          .in('id', userIds);
+        
+        if (profilesData) {
+          profilesData.forEach(p => profilesMap.set(p.id, p));
+        }
+      }
+      
+      // Combine requests with user profiles
+      const allRequests = (requests || []).map(r => ({
+        ...r,
+        user: profilesMap.get(r.user_id) || null
+      }));
       
       res.json(allRequests);
     } catch (error: any) {
@@ -1523,10 +1555,12 @@ Respond in JSON format:
   // PUT /api/admin/media-requests/:id/approve - Approve a media request (admin only)
   app.put("/api/admin/media-requests/:id/approve", async (req: any, res) => {
     try {
-      const { db } = await import("../client/src/lib/db");
-      const { mediaRequests, profiles } = await import("@shared/schema");
-      const { eq } = await import("drizzle-orm");
+      const { supabaseAdmin } = await import("./supabaseClient");
       const { authenticateUserFromToken } = await import("./auth");
+      
+      if (!supabaseAdmin) {
+        return res.status(500).json({ error: "Supabase admin client not configured" });
+      }
       
       const requestId = parseInt(req.params.id);
       if (!requestId) {
@@ -1541,30 +1575,43 @@ Respond in JSON format:
       }
       
       // Get the request to find the user
-      const [request] = await db.select()
-        .from(mediaRequests)
-        .where(eq(mediaRequests.id, requestId));
+      const { data: request, error: fetchError } = await supabaseAdmin
+        .from('media_requests')
+        .select('*')
+        .eq('id', requestId)
+        .single();
       
-      if (!request) {
+      if (fetchError || !request) {
         return res.status(404).json({ error: "Request not found" });
       }
       
       // Update request status
-      await db.update(mediaRequests)
-        .set({
+      const { error: updateError } = await supabaseAdmin
+        .from('media_requests')
+        .update({
           status: 'approved',
           admin_id: user.id,
           updated_at: new Date()
         })
-        .where(eq(mediaRequests.id, requestId));
+        .eq('id', requestId);
       
-      // Enable media uploads for the user  
-      await db.update(profiles)
-        .set({
+      if (updateError) {
+        console.error("Error updating media request:", updateError);
+        return res.status(500).json({ error: "Failed to update request" });
+      }
+      
+      // Enable media uploads for the user in profiles
+      const { error: profileError } = await supabaseAdmin
+        .from('profiles')
+        .update({
           media_enabled: true,
-          updated_at: new Date()
+          updated_at: new Date().toISOString()
         })
-        .where(eq(profiles.id, request.user_id));
+        .eq('id', request.user_id);
+      
+      if (profileError) {
+        console.error("Error updating profile:", profileError);
+      }
       
       res.json({ success: true, message: "Request approved successfully" });
     } catch (error) {
@@ -1576,10 +1623,12 @@ Respond in JSON format:
   // PUT /api/admin/media-requests/:id/deny - Deny a media request (admin only)
   app.put("/api/admin/media-requests/:id/deny", async (req: any, res) => {
     try {
-      const { db } = await import("../client/src/lib/db");
-      const { mediaRequests } = await import("@shared/schema");
-      const { eq } = await import("drizzle-orm");
+      const { supabaseAdmin } = await import("./supabaseClient");
       const { authenticateUserFromToken } = await import("./auth");
+      
+      if (!supabaseAdmin) {
+        return res.status(500).json({ error: "Supabase admin client not configured" });
+      }
       
       const requestId = parseInt(req.params.id);
       if (!requestId) {
@@ -1593,13 +1642,19 @@ Respond in JSON format:
         return res.status(401).json({ error: "Admin authentication required" });
       }
       
-      await db.update(mediaRequests)
-        .set({
+      const { error: updateError } = await supabaseAdmin
+        .from('media_requests')
+        .update({
           status: 'denied',
           admin_id: user.id,
-          updated_at: new Date()
+          updated_at: new Date().toISOString()
         })
-        .where(eq(mediaRequests.id, requestId));
+        .eq('id', requestId);
+      
+      if (updateError) {
+        console.error("Error denying media request:", updateError);
+        return res.status(500).json({ error: "Failed to deny request" });
+      }
       
       res.json({ success: true, message: "Request denied successfully" });
     } catch (error) {
