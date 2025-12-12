@@ -81,13 +81,7 @@ export async function createPrayerRequest({ title, details, tags = [], is_anonym
         is_anonymous: Boolean(is_anonymous),
         status: 'open'
       })
-      .select(`
-        *,
-        profiles!prayer_requests_requester_fkey (
-          display_name,
-          avatar_url
-        )
-      `)
+      .select('*')
       .single()
 
     if (error) {
@@ -177,31 +171,18 @@ export async function getPrayerRequest(id: number): Promise<ApiResponse<any>> {
       .from('prayer_requests')
       .select(`
         *,
-        profiles!prayer_requests_requester_fkey (
-          display_name,
-          avatar_url,
-          role
-        ),
         prayer_commitments (
           status,
           prayed_at,
           committed_at,
           note,
-          warrior,
-          profiles!prayer_commitments_warrior_fkey (
-            display_name,
-            avatar_url
-          )
+          warrior
         ),
         prayer_activity (
           kind,
           message,
           created_at,
-          actor,
-          profiles!prayer_activity_actor_fkey (
-            display_name,
-            avatar_url
-          )
+          actor
         )
       `)
       .eq('id', id)
@@ -437,10 +418,7 @@ export async function getMyCommitments({ status, limit = 20, cursor }: PrayerCom
           status,
           created_at,
           is_anonymous,
-          profiles!prayer_requests_requester_fkey (
-            display_name,
-            avatar_url
-          )
+          requester
         )
       `)
       .eq('warrior', user.user.id)
@@ -493,18 +471,10 @@ export async function getMyRequests({ status, limit = 20, cursor }: PrayerCommit
       .from('prayer_requests')
       .select(`
         *,
-        profiles!prayer_requests_requester_fkey (
-          display_name,
-          avatar_url
-        ),
         prayer_commitments (
           status,
           prayed_at,
-          warrior,
-          profiles!prayer_commitments_warrior_fkey (
-            display_name,
-            avatar_url
-          )
+          warrior
         )
       `)
       .eq('requester', user.user.id)
