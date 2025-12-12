@@ -6,6 +6,16 @@ Gospel Era is a full-stack web application designed as a social platform for the
 
 # Recent Changes
 
+**December 12, 2025 - Media Permission & Guidelines Fixes**
+- Fixed media permission check: `/api/media-permission/:userId` now uses `supabaseAdmin` to bypass RLS and correctly read `media_enabled` and `role` from Supabase profiles table
+- IMPORTANT: Media permissions (media_enabled, role) are stored in Supabase profiles table - always use supabaseAdmin for reading these fields
+- Admin users always have media permission (role === 'admin' || media_enabled === true)
+- Client-side admin check in MobileApp.tsx `checkUserMediaPermission()` also short-circuits for admins
+- Added community guidelines acceptance modal: Users must scroll through and accept guidelines before using the app
+- Added `accepted_guidelines` column to profiles table
+- Created `/api/guidelines/accept` and `/api/guidelines/status` endpoints
+- GuidelinesAcceptanceModal component blocks app access until accepted
+
 **December 12, 2025 - Supabase-Only Database Migration**
 - MAJOR ARCHITECTURE CHANGE: Migrated from dual-database (Supabase Auth + Neon/Replit DB) to unified Supabase-only architecture
 - Created all 13 data tables in Supabase: profiles, posts, comments, bookmarks, reactions, reports, prayer_requests, prayer_commitments, prayer_activity, donations, media_requests, notifications, push_tokens
