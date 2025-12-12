@@ -37,7 +37,7 @@ export function PrayerDetailMobile({
     console.log("🙏 [PrayerDetailMobile] handleAction called", { prayerId: prayer.id, hasCommitment: !!commitment });
     setIsCommitting(true);
     try {
-      if (commitment && !commitment.has_prayed) {
+      if (commitment && commitment.status !== 'prayed') {
         console.log("🙏 [PrayerDetailMobile] Confirming prayed...");
         await onConfirmPrayed(prayer.id);
       } else if (!commitment) {
@@ -250,7 +250,7 @@ export function PrayerDetailMobile({
             style={{
               width: "100%",
               background:
-                commitment && commitment.has_prayed ? "#28a745" : "#4285f4",
+                commitment && commitment.status === 'prayed' ? "#28a745" : "#4285f4",
               color: "#ffffff",
               border: "none",
               padding: "16px",
@@ -266,9 +266,9 @@ export function PrayerDetailMobile({
           >
             {isCommitting
               ? "..."
-              : commitment && commitment.has_prayed
+              : commitment && commitment.status === 'prayed'
                 ? "✓ Prayed"
-                : commitment && !commitment.has_prayed
+                : commitment && commitment.status !== 'prayed'
                   ? "Confirm I Prayed"
                   : "I Will Pray"}
           </button>

@@ -45,12 +45,12 @@ export function PrayerDetailView({
     console.log('[PrayerDetailView] Processing prayer action for request:', prayer.id);
     try {
       const commitment = myCommitments.find(
-        (c) => c.prayer_request_id === prayer.id
+        (c) => c.request_id === prayer.id
       );
       
       console.log('[PrayerDetailView] Existing commitment:', commitment);
       
-      if (commitment && !commitment.has_prayed) {
+      if (commitment && commitment.status !== 'prayed') {
         console.log('[PrayerDetailView] Calling onConfirmPrayed');
         await onConfirmPrayed(prayer.id);
       } else if (!commitment) {
@@ -71,10 +71,10 @@ export function PrayerDetailView({
     if (prayedJustNow.has(prayer.id)) return "✓ Prayed just now";
     
     const hasCommitment = myCommitments.some(
-      (c) => c.prayer_request_id === prayer.id && !c.has_prayed
+      (c) => c.request_id === prayer.id && c.status !== 'prayed'
     );
     const hasPrayed = myCommitments.some(
-      (c) => c.prayer_request_id === prayer.id && c.has_prayed
+      (c) => c.request_id === prayer.id && c.status === 'prayed'
     );
     
     if (isProcessing) return "...";
@@ -87,7 +87,7 @@ export function PrayerDetailView({
     if (!user || isBanned) return "#dbdbdb";
     
     const hasCommitment = myCommitments.some(
-      (c) => c.prayer_request_id === prayer.id && !c.has_prayed
+      (c) => c.request_id === prayer.id && c.status !== 'prayed'
     );
     
     return hasCommitment ? "#28a745" : "#4285f4";
