@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { getApiBaseUrl } from "@/lib/posts";
+import { ImagePlus, ArrowLeft } from "lucide-react";
 
 interface MediaRequestsMobileProps {
   isVisible: boolean;
@@ -262,19 +263,21 @@ export function MediaRequestsMobile({
             style={{
               background: "none",
               border: "none",
-              fontSize: "20px",
               padding: "0",
               marginRight: "12px",
               cursor: "pointer",
               color: "#262626",
+              display: "flex",
+              alignItems: "center",
             }}
           >
-            ←
+            <ArrowLeft size={22} />
           </button>
+          <ImagePlus size={20} color="#262626" style={{ marginRight: "8px" }} />
           <div
             style={{ fontSize: "18px", fontWeight: 600, color: "#262626" }}
           >
-            📤 Media Requests
+            Media Requests
           </div>
         </div>
 
