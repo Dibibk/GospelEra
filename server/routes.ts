@@ -16,6 +16,7 @@ import {
   checkNotBanned,
   type AuthenticatedRequest 
 } from "./auth";
+import { createServerSupabase, extractToken, supabaseAdmin } from "./supabaseClient";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Initialize hybrid storage service (S3 or Replit Object Storage)
@@ -322,30 +323,26 @@ Respond in JSON format:
   // Get profile by ID - used by useRole hook to get user's role
   app.get("/api/profiles/:id", async (req, res) => {
     try {
-      const { db } = await import("../client/src/lib/db");
-      const { profiles } = await import("@shared/schema");
-      const { eq } = await import("drizzle-orm");
-      
       const userId = req.params.id;
       if (!userId) {
         return res.status(400).json({ error: "User ID required" });
       }
       
-      const [profile] = await db.select({
-        id: profiles.id,
-        email: profiles.email,
-        display_name: profiles.display_name,
-        bio: profiles.bio,
-        avatar_url: profiles.avatar_url,
-        role: profiles.role,
-        media_enabled: profiles.media_enabled,
-        show_name_on_prayers: profiles.show_name_on_prayers,
-        private_profile: profiles.private_profile,
-      }).from(profiles)
-        .where(eq(profiles.id, userId));
+      const token = extractToken(req.headers.authorization);
+      const supabase = createServerSupabase(token);
       
-      if (!profile) {
-        return res.status(404).json({ error: "Profile not found" });
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('id, email, display_name, bio, avatar_url, role, media_enabled, show_name_on_prayers, private_profile')
+        .eq('id', userId)
+        .single();
+      
+      if (error) {
+        if (error.code === 'PGRST116') {
+          return res.status(404).json({ error: "Profile not found" });
+        }
+        console.error("Error fetching profile:", error);
+        return res.status(500).json({ error: "Failed to fetch profile" });
       }
       
       res.json(profile);
@@ -381,13 +378,11 @@ Respond in JSON format:
         }
       }
 
-      // Import database and schema
-      const { db } = await import("../client/src/lib/db");
-      const { profiles } = await import("@shared/schema");
-      const { eq } = await import("drizzle-orm");
+      const token = extractToken(req.headers.authorization);
+      const supabase = createServerSupabase(token);
 
       // Build update object (only include defined fields)
-      const updateData: any = { updated_at: new Date() };
+      const updateData: any = { updated_at: new Date().toISOString() };
       if (display_name !== undefined) updateData.display_name = display_name;
       if (bio !== undefined) updateData.bio = bio;
       if (avatar_url !== undefined) updateData.avatar_url = avatar_url;
@@ -396,25 +391,29 @@ Respond in JSON format:
       if (settings !== undefined) updateData.settings = settings;
 
       // Check if profile exists first
-      const [existingProfile] = await db
-        .select()
-        .from(profiles)
-        .where(eq(profiles.id, req.user.id));
+      const { data: existingProfile } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('id', req.user.id)
+        .single();
 
       let result;
       if (existingProfile) {
         // Update existing profile
-        result = await db
-          .update(profiles)
-          .set(updateData)
-          .where(eq(profiles.id, req.user.id))
-          .returning();
+        const { data, error } = await supabase
+          .from('profiles')
+          .update(updateData)
+          .eq('id', req.user.id)
+          .select()
+          .single();
+        
+        if (error) throw error;
+        result = data;
       } else {
         // Create new profile (upsert pattern)
-        // Profile might exist in Supabase but not in Neon - create it here
-        result = await db
-          .insert(profiles)
-          .values({
+        const { data, error } = await supabase
+          .from('profiles')
+          .insert({
             id: req.user.id,
             display_name: updateData.display_name || 'User',
             bio: updateData.bio || null,
@@ -423,14 +422,18 @@ Respond in JSON format:
             private_profile: updateData.private_profile ?? false,
             settings: updateData.settings || {},
           })
-          .returning();
+          .select()
+          .single();
+        
+        if (error) throw error;
+        result = data;
       }
 
-      if (!result || result.length === 0) {
+      if (!result) {
         return res.status(500).json({ error: "Failed to save profile" });
       }
 
-      res.json(result[0]);
+      res.json(result);
     } catch (error) {
       console.error("Error updating profile:", error);
       res.status(500).json({ error: "Failed to update profile" });
@@ -440,42 +443,46 @@ Respond in JSON format:
   // Posts API Routes
   app.get("/api/posts", async (req, res) => {
     try {
-      const { db } = await import("../client/src/lib/db");
-      const { posts } = await import("@shared/schema");
-      const { desc, eq, lt } = await import("drizzle-orm");
+      const token = extractToken(req.headers.authorization);
+      const supabase = createServerSupabase(token);
       
       const limit = parseInt(req.query.limit as string) || 20;
       const fromId = req.query.fromId as string;
       const authorId = req.query.authorId as string;
       
-      // Build where conditions
-      const { and } = await import("drizzle-orm");
-      let whereConditions = [eq(posts.hidden, false)];  // Only show non-hidden posts
+      let query = supabase
+        .from('posts')
+        .select('*')
+        .eq('hidden', false)
+        .order('created_at', { ascending: false })
+        .limit(limit);
       
       // Add author filter if provided
       if (authorId) {
-        whereConditions.push(eq(posts.author_id, authorId));
+        query = query.eq('author_id', authorId);
       }
       
       // Add keyset pagination if fromId is provided
       if (fromId) {
-        // Get the created_at timestamp of the fromId post for keyset pagination
-        const [fromPost] = await db.select({ created_at: posts.created_at })
-          .from(posts)
-          .where(eq(posts.id, parseInt(fromId)));
+        const { data: fromPost } = await supabase
+          .from('posts')
+          .select('created_at')
+          .eq('id', parseInt(fromId))
+          .single();
         
         if (fromPost) {
-          whereConditions.push(lt(posts.created_at, fromPost.created_at));
+          query = query.lt('created_at', fromPost.created_at);
         }
       }
       
-      const query = db.select().from(posts)
-        .where(and(...whereConditions))
-        .orderBy(desc(posts.created_at))
-        .limit(limit);
+      const { data: allPosts, error } = await query;
       
-      const allPosts = await query;
-      res.json(allPosts);
+      if (error) {
+        console.error("Error fetching posts:", error);
+        return res.status(500).json({ error: "Failed to fetch posts" });
+      }
+      
+      res.json(allPosts || []);
     } catch (error) {
       console.error("Error fetching posts:", error);
       res.status(500).json({ error: "Failed to fetch posts" });
@@ -485,85 +492,72 @@ Respond in JSON format:
   // OPTIMIZED FEED ENDPOINT - Combines posts + authors + engagement in ONE query
   app.get("/api/feed", optionalAuth, async (req: AuthenticatedRequest, res) => {
     try {
-      const { db } = await import("../client/src/lib/db");
-      const { posts, profiles, reactions, comments } = await import("@shared/schema");
-      const { desc, eq, lt, and, or, count, inArray } = await import("drizzle-orm");
+      const token = extractToken(req.headers.authorization);
+      const supabase = createServerSupabase(token);
       
       const limit = parseInt(req.query.limit as string) || 20;
       const fromId = req.query.fromId as string;
       const currentUserId = req.user?.id;
       
-      let whereConditions = [eq(posts.hidden, false)];
+      // Build the query with proper pagination
+      let query = supabase
+        .from('posts')
+        .select('*')
+        .eq('hidden', false)
+        .order('created_at', { ascending: false })
+        .limit(limit);
       
-      // Add keyset pagination if fromId is provided (using created_at, id for proper cursor)
+      // Add keyset pagination if fromId is provided
       if (fromId) {
-        const [fromPost] = await db.select({ created_at: posts.created_at, id: posts.id })
-          .from(posts)
-          .where(eq(posts.id, parseInt(fromId)));
+        const { data: fromPost } = await supabase
+          .from('posts')
+          .select('created_at')
+          .eq('id', parseInt(fromId))
+          .single();
         
         if (fromPost) {
-          // Proper keyset pagination: (created_at < fromPost.created_at) OR (created_at = fromPost.created_at AND id < fromPost.id)
-          whereConditions.push(
-            or(
-              lt(posts.created_at, fromPost.created_at),
-              and(
-                eq(posts.created_at, fromPost.created_at),
-                lt(posts.id, fromPost.id)
-              )
-            )!
-          );
+          query = query.lt('created_at', fromPost.created_at);
         }
       }
       
-      // Fetch posts
-      const feedPosts = await db.select().from(posts)
-        .where(and(...whereConditions))
-        .orderBy(desc(posts.created_at), desc(posts.id))
-        .limit(limit);
+      const { data: feedPosts, error: postsError } = await query;
       
-      if (feedPosts.length === 0) {
+      if (postsError) {
+        console.error("Error fetching posts:", postsError);
+        return res.status(500).json({ error: "Failed to fetch feed" });
+      }
+      
+      if (!feedPosts || feedPosts.length === 0) {
         return res.json({ posts: [], profiles: {}, engagement: {}, nextCursor: null });
       }
       
       const postIds = feedPosts.map(p => p.id);
       const authorIds = Array.from(new Set(feedPosts.map(p => p.author_id)));
       
-      // Fetch all author profiles in ONE query using inArray (select only essential columns)
-      const authorProfiles = await db.select({
-        id: profiles.id,
-        email: profiles.email,
-        display_name: profiles.display_name,
-        bio: profiles.bio,
-        avatar_url: profiles.avatar_url,
-        role: profiles.role,
-      }).from(profiles)
-        .where(inArray(profiles.id, authorIds));
+      // Fetch all author profiles in ONE query
+      const { data: authorProfiles } = await supabase
+        .from('profiles')
+        .select('id, email, display_name, bio, avatar_url, role')
+        .in('id', authorIds);
       
-      // Fetch all reactions counts + user's reactions in ONE query using inArray
-      const reactionRows = await db.select({
-        post_id: reactions.post_id,
-        user_id: reactions.user_id
-      }).from(reactions)
-        .where(and(
-          inArray(reactions.post_id, postIds),
-          eq(reactions.kind, 'amen')
-        ));
+      // Fetch all reactions
+      const { data: reactionRows } = await supabase
+        .from('reactions')
+        .select('post_id, user_id')
+        .in('post_id', postIds)
+        .eq('kind', 'amen');
       
-      // Fetch all comment counts in ONE query using inArray
-      const commentCounts = await db.select({
-        post_id: comments.post_id,
-        count: count()
-      }).from(comments)
-        .where(and(
-          inArray(comments.post_id, postIds),
-          eq(comments.deleted, false),
-          eq(comments.hidden, false)
-        ))
-        .groupBy(comments.post_id);
+      // Fetch comment counts - we need to count in JS since Supabase doesn't support GROUP BY easily
+      const { data: commentsData } = await supabase
+        .from('comments')
+        .select('post_id')
+        .in('post_id', postIds)
+        .eq('deleted', false)
+        .eq('hidden', false);
       
       // Build profiles map
       const profilesMap: Record<string, any> = {};
-      authorProfiles.forEach(profile => {
+      (authorProfiles || []).forEach(profile => {
         profilesMap[profile.id] = profile;
       });
       
@@ -574,7 +568,7 @@ Respond in JSON format:
       });
       
       // Count reactions and check user's reactions
-      reactionRows.forEach((row: any) => {
+      (reactionRows || []).forEach((row: any) => {
         if (engagementMap[row.post_id]) {
           engagementMap[row.post_id].amenCount++;
           if (currentUserId && row.user_id === currentUserId) {
@@ -584,9 +578,9 @@ Respond in JSON format:
       });
       
       // Add comment counts
-      commentCounts.forEach((row: any) => {
+      (commentsData || []).forEach((row: any) => {
         if (engagementMap[row.post_id]) {
-          engagementMap[row.post_id].commentCount = row.count;
+          engagementMap[row.post_id].commentCount++;
         }
       });
       
@@ -605,29 +599,11 @@ Respond in JSON format:
     }
   });
 
-  // PRAYER REQUESTS API ENDPOINT - Queries Supabase database (where prayer data lives)
+  // PRAYER REQUESTS API ENDPOINT - Queries Supabase database
   app.get("/api/prayer-requests", optionalAuth, async (req: AuthenticatedRequest, res) => {
     try {
-      const { createClient } = await import("@supabase/supabase-js");
-      
-      // Use server-side Supabase client
-      const supabaseUrl = process.env.VITE_SUPABASE_URL;
-      const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY;
-      
-      if (!supabaseUrl || !supabaseAnonKey) {
-        return res.status(500).json({ error: "Supabase not configured" });
-      }
-      
-      // Extract user token if available and create authenticated Supabase client
-      const authHeader = req.headers.authorization;
-      const token = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : null;
-      
-      // Create Supabase client - if we have a token, use it for authenticated queries
-      const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-        global: {
-          headers: token ? { Authorization: `Bearer ${token}` } : {}
-        }
-      });
+      const token = extractToken(req.headers.authorization);
+      const supabase = createServerSupabase(token);
       
       const limit = Math.min(parseInt(req.query.limit as string) || 20, 50);
       const status = (req.query.status as string) || 'open';
@@ -636,18 +612,10 @@ Respond in JSON format:
       const tagsParam = req.query.tags as string;
       const currentUserId = req.user?.id;
       
-      // Query prayer requests from Supabase
+      // Query prayer requests (without joins to avoid FK issues)
       let query = supabase
         .from('prayer_requests')
-        .select(`
-          id, requester, title, details, tags, is_anonymous, status, created_at, updated_at,
-          profiles!prayer_requests_requester_fkey (
-            id, display_name, avatar_url
-          ),
-          prayer_commitments (
-            request_id, warrior, status, committed_at, prayed_at
-          )
-        `)
+        .select('id, requester, title, details, tags, is_anonymous, status, created_at, updated_at')
         .eq('status', status)
         .order('created_at', { ascending: false })
         .limit(limit);
@@ -673,9 +641,7 @@ Respond in JSON format:
       
       if (error) {
         console.error("Supabase prayer query error:", error);
-        // Handle missing tables gracefully - return empty results instead of error
-        // This happens when Supabase prayer tables don't exist
-        if (error.code === 'PGRST200' || error.code === '42P01' || error.message?.includes('does not exist')) {
+        if (error.code === '42P01' || error.message?.includes('does not exist')) {
           return res.json({ 
             requests: [], 
             profiles: {}, 
@@ -697,23 +663,33 @@ Respond in JSON format:
         });
       }
       
+      // Get requester IDs and request IDs for additional queries
+      const requesterIds = Array.from(new Set(requests.map(r => r.requester)));
+      const requestIds = requests.map(r => r.id);
+      
+      // Fetch profiles separately
+      const { data: profilesData } = await supabase
+        .from('profiles')
+        .select('id, display_name, avatar_url')
+        .in('id', requesterIds);
+      
+      // Fetch commitments separately
+      const { data: commitmentsData } = await supabase
+        .from('prayer_commitments')
+        .select('request_id, warrior, status, committed_at, prayed_at')
+        .in('request_id', requestIds);
+      
       // Build profiles map
       const profilesMap: Record<string, any> = {};
-      requests.forEach((r: any) => {
-        if (r.profiles && r.requester) {
-          profilesMap[r.requester] = r.profiles;
-        }
+      (profilesData || []).forEach((p: any) => {
+        profilesMap[p.id] = p;
       });
       
       // Build stats map and collect commitments
       const statsMap: Record<number, { committed_count: number; prayed_count: number; total_warriors: number }> = {};
-      let allCommitments: any[] = [];
       
-      requests.forEach((r: any) => {
-        const reqId = Number(r.id);
-        const commitments = r.prayer_commitments || [];
-        allCommitments = allCommitments.concat(commitments.map((c: any) => ({ ...c, request_id: reqId })));
-        
+      requestIds.forEach(reqId => {
+        const commitments = (commitmentsData || []).filter((c: any) => c.request_id === reqId);
         statsMap[reqId] = {
           committed_count: commitments.filter((c: any) => c.status === 'committed').length,
           prayed_count: commitments.filter((c: any) => c.status === 'prayed').length,
@@ -723,27 +699,14 @@ Respond in JSON format:
       
       // Get current user's commitments if logged in
       const myCommitments = currentUserId 
-        ? allCommitments.filter(c => c.warrior === currentUserId)
+        ? (commitmentsData || []).filter((c: any) => c.warrior === currentUserId)
         : [];
       
       // Calculate next cursor
       const nextCursor = requests.length === limit ? requests[requests.length - 1].id : null;
       
-      // Clean up the response (remove nested data)
-      const cleanRequests = requests.map((r: any) => ({
-        id: r.id,
-        requester: r.requester,
-        title: r.title,
-        details: r.details,
-        tags: r.tags,
-        is_anonymous: r.is_anonymous,
-        status: r.status,
-        created_at: r.created_at,
-        updated_at: r.updated_at
-      }));
-      
       res.json({
-        requests: cleanRequests,
+        requests: requests,
         profiles: profilesMap,
         stats: statsMap,
         myCommitments,
@@ -757,8 +720,7 @@ Respond in JSON format:
 
   app.post("/api/posts", authenticateUser, checkNotBanned, async (req: AuthenticatedRequest, res) => {
     try {
-      const { db } = await import("../client/src/lib/db");
-      const { posts, insertPostSchema } = await import("@shared/schema");
+      const { insertPostSchema } = await import("@shared/schema");
       const { moderateContent } = await import("../shared/moderation");
       
       if (!req.user) {
@@ -813,15 +775,24 @@ Respond in JSON format:
         console.error('AI validation error, using basic moderation:', aiError);
       }
 
+      const token = extractToken(req.headers.authorization);
+      const supabase = createServerSupabase(token);
+
       const postData = {
         title: result.data.title,
         content: result.data.content,
         tags: result.data.tags || [],
         embed_url: result.data.embed_url || null,
-        author_id: req.user.id  // Use authenticated user ID
+        author_id: req.user.id
       };
       
-      const [newPost] = await db.insert(posts).values(postData).returning();
+      const { data: newPost, error } = await supabase
+        .from('posts')
+        .insert(postData)
+        .select()
+        .single();
+      
+      if (error) throw error;
       res.status(201).json(newPost);
     } catch (error) {
       console.error("Error creating post:", error);
@@ -831,9 +802,7 @@ Respond in JSON format:
 
   app.put("/api/posts/:id", authenticateUser, checkNotBanned, async (req: AuthenticatedRequest, res) => {
     try {
-      const { db } = await import("../client/src/lib/db");
-      const { posts, insertPostSchema } = await import("@shared/schema");
-      const { eq, and } = await import("drizzle-orm");
+      const { insertPostSchema } = await import("@shared/schema");
       
       const postId = parseInt(req.params.id);
       
@@ -846,12 +815,17 @@ Respond in JSON format:
         return res.status(400).json({ error: "Invalid post data", issues: result.error.issues });
       }
       
-      // First, check if the post exists and belongs to the user
-      const [existingPost] = await db.select()
-        .from(posts)
-        .where(eq(posts.id, postId));
+      const token = extractToken(req.headers.authorization);
+      const supabase = createServerSupabase(token);
       
-      if (!existingPost) {
+      // First, check if the post exists and belongs to the user
+      const { data: existingPost, error: fetchError } = await supabase
+        .from('posts')
+        .select('*')
+        .eq('id', postId)
+        .single();
+      
+      if (fetchError || !existingPost) {
         return res.status(404).json({ error: "Post not found" });
       }
       
@@ -865,15 +839,18 @@ Respond in JSON format:
         content: result.data.content,
         tags: result.data.tags || [],
         embed_url: result.data.embed_url || null,
-        updated_at: new Date()
+        updated_at: new Date().toISOString()
       };
       
       // Update the post
-      const [updatedPost] = await db.update(posts)
-        .set(postData)
-        .where(eq(posts.id, postId))
-        .returning();
+      const { data: updatedPost, error } = await supabase
+        .from('posts')
+        .update(postData)
+        .eq('id', postId)
+        .select()
+        .single();
       
+      if (error) throw error;
       res.json({ success: true, data: updatedPost });
     } catch (error) {
       console.error("Error updating post:", error);
@@ -883,22 +860,23 @@ Respond in JSON format:
 
   app.delete("/api/posts/:id", authenticateUser, async (req: AuthenticatedRequest, res) => {
     try {
-      const { db } = await import("../client/src/lib/db");
-      const { posts } = await import("@shared/schema");
-      const { eq, and } = await import("drizzle-orm");
-      
       const postId = parseInt(req.params.id);
       
       if (!req.user) {
         return res.status(401).json({ error: "Authentication required" });
       }
       
-      // First, check if the post exists
-      const [existingPost] = await db.select()
-        .from(posts)
-        .where(eq(posts.id, postId));
+      const token = extractToken(req.headers.authorization);
+      const supabase = createServerSupabase(token);
       
-      if (!existingPost) {
+      // First, check if the post exists
+      const { data: existingPost, error: fetchError } = await supabase
+        .from('posts')
+        .select('*')
+        .eq('id', postId)
+        .single();
+      
+      if (fetchError || !existingPost) {
         return res.status(404).json({ error: "Post not found" });
       }
 
@@ -911,17 +889,20 @@ Respond in JSON format:
       }
       
       // Soft delete by setting hidden = true (preserves data for admin review)
-      const [deletedPost] = await db.update(posts)
-        .set({ 
+      const { data: deletedPost, error } = await supabase
+        .from('posts')
+        .update({ 
           hidden: true,
           title: "[Deleted]",
           content: "[This post has been deleted by the author]",
-          embed_url: null,  // Clear the YouTube link
-          media_urls: []    // Clear any media URLs
+          embed_url: null,
+          media_urls: []
         })
-        .where(eq(posts.id, postId))
-        .returning();
+        .eq('id', postId)
+        .select()
+        .single();
       
+      if (error) throw error;
       res.json({ success: true, data: deletedPost });
     } catch (error) {
       console.error("Error deleting post:", error);
@@ -932,8 +913,7 @@ Respond in JSON format:
   // Comments API Routes
   app.post("/api/comments", authenticateUser, checkNotBanned, async (req: AuthenticatedRequest, res) => {
     try {
-      const { db } = await import("../client/src/lib/db");
-      const { comments, insertCommentSchema } = await import("@shared/schema");
+      const { insertCommentSchema } = await import("@shared/schema");
       const { moderateContent } = await import("../shared/moderation");
       
       if (!req.user) {
@@ -988,41 +968,53 @@ Respond in JSON format:
         console.error('AI validation error for comment, using basic moderation:', aiError);
       }
 
+      const token = extractToken(req.headers.authorization);
+      const supabase = createServerSupabase(token);
+
       const commentData = {
         content: result.data.content,
         post_id: result.data.post_id,
-        author_id: req.user.id  // Use authenticated user ID
+        author_id: req.user.id
       };
       
-      const [newComment] = await db.insert(comments).values(commentData).returning();
+      const { data: newComment, error } = await supabase
+        .from('comments')
+        .insert(commentData)
+        .select()
+        .single();
+      
+      if (error) throw error;
       
       // Create notification for post author (if not commenting on own post)
       try {
-        const { posts, notifications, profiles } = await import("@shared/schema");
-        const { eq } = await import("drizzle-orm");
-        
-        const [post] = await db.select({ author_id: posts.author_id, title: posts.title })
-          .from(posts)
-          .where(eq(posts.id, result.data.post_id));
+        const { data: post } = await supabase
+          .from('posts')
+          .select('author_id, title')
+          .eq('id', result.data.post_id)
+          .single();
         
         if (post && post.author_id !== req.user.id) {
           // Get commenter's display name
-          const [commenterProfile] = await db.select({ display_name: profiles.display_name })
-            .from(profiles)
-            .where(eq(profiles.id, req.user.id));
+          const { data: commenterProfile } = await supabase
+            .from('profiles')
+            .select('display_name')
+            .eq('id', req.user.id)
+            .single();
           
           const commenterName = commenterProfile?.display_name || 'Someone';
           const postTitle = post.title?.slice(0, 30) || 'your post';
           const message = `${commenterName} commented on "${postTitle}${post.title?.length > 30 ? '...' : ''}"`;
           
-          await db.insert(notifications).values({
-            recipient_id: post.author_id,
-            actor_id: req.user.id,
-            event_type: 'comment',
-            post_id: result.data.post_id,
-            comment_id: newComment.id,
-            message
-          });
+          await supabase
+            .from('notifications')
+            .insert({
+              recipient_id: post.author_id,
+              actor_id: req.user.id,
+              event_type: 'comment',
+              post_id: result.data.post_id,
+              comment_id: newComment.id,
+              message
+            });
           
           // Send push notification
           try {
@@ -1038,7 +1030,6 @@ Respond in JSON format:
         }
       } catch (notifError) {
         console.error("Error creating comment notification:", notifError);
-        // Don't fail the comment creation if notification fails
       }
       
       res.status(201).json(newComment);
@@ -1051,10 +1042,6 @@ Respond in JSON format:
   // DELETE comment - only author can delete their own comments
   app.delete("/api/comments/:id", authenticateUser, async (req: AuthenticatedRequest, res) => {
     try {
-      const { db } = await import("../client/src/lib/db");
-      const { comments } = await import("@shared/schema");
-      const { eq, and } = await import("drizzle-orm");
-      
       if (!req.user) {
         return res.status(401).json({ error: "Authentication required" });
       }
@@ -1064,13 +1051,17 @@ Respond in JSON format:
         return res.status(400).json({ error: "Invalid comment ID" });
       }
       
-      // Verify the comment exists and belongs to the user
-      const [existingComment] = await db
-        .select({ author_id: comments.author_id, deleted: comments.deleted })
-        .from(comments)
-        .where(eq(comments.id, commentId));
+      const token = extractToken(req.headers.authorization);
+      const supabase = createServerSupabase(token);
       
-      if (!existingComment) {
+      // Verify the comment exists and belongs to the user
+      const { data: existingComment, error: fetchError } = await supabase
+        .from('comments')
+        .select('author_id, deleted')
+        .eq('id', commentId)
+        .single();
+      
+      if (fetchError || !existingComment) {
         return res.status(404).json({ error: "Comment not found" });
       }
       
@@ -1087,12 +1078,14 @@ Respond in JSON format:
       }
       
       // Soft delete by setting deleted = true
-      const [deletedComment] = await db
-        .update(comments)
-        .set({ deleted: true })
-        .where(eq(comments.id, commentId))
-        .returning();
+      const { data: deletedComment, error } = await supabase
+        .from('comments')
+        .update({ deleted: true })
+        .eq('id', commentId)
+        .select()
+        .single();
       
+      if (error) throw error;
       res.json({ success: true, data: deletedComment });
     } catch (error) {
       console.error("Error deleting comment:", error);
@@ -1100,12 +1093,11 @@ Respond in JSON format:
     }
   });
 
-  // GET comments for a post - queries Neon/Replit database via Drizzle
+  // GET comments for a post
   app.get("/api/comments", async (req, res) => {
     try {
-      const { db } = await import("../client/src/lib/db");
-      const { comments } = await import("@shared/schema");
-      const { desc, eq, and, lt } = await import("drizzle-orm");
+      const token = extractToken(req.headers.authorization);
+      const supabase = createServerSupabase(token);
       
       const postId = parseInt(req.query.post_id as string);
       const limit = Math.min(parseInt(req.query.limit as string) || 20, 100);
@@ -1115,84 +1107,62 @@ Respond in JSON format:
         return res.status(400).json({ error: "post_id is required and must be a number" });
       }
       
-      // Build base conditions
-      const conditions = [
-        eq(comments.post_id, postId),
-        eq(comments.deleted, false),
-        eq(comments.hidden, false)
-      ];
+      let query = supabase
+        .from('comments')
+        .select('id, post_id, content, created_at, author_id')
+        .eq('post_id', postId)
+        .eq('deleted', false)
+        .eq('hidden', false)
+        .order('created_at', { ascending: false })
+        .limit(limit);
       
       // Add keyset pagination if fromId provided
       if (fromId) {
-        // Get the created_at of the from comment for proper keyset pagination
-        // Only consider visible comments for pagination reference
-        const [fromComment] = await db
-          .select({ created_at: comments.created_at })
-          .from(comments)
-          .where(and(
-            eq(comments.id, fromId),
-            eq(comments.deleted, false),
-            eq(comments.hidden, false)
-          ));
+        const { data: fromComment } = await supabase
+          .from('comments')
+          .select('created_at')
+          .eq('id', fromId)
+          .eq('deleted', false)
+          .eq('hidden', false)
+          .single();
         
         if (fromComment) {
-          conditions.push(lt(comments.created_at, fromComment.created_at));
+          query = query.lt('created_at', fromComment.created_at);
         }
       }
       
-      const result = await db
-        .select({
-          id: comments.id,
-          post_id: comments.post_id,
-          content: comments.content,
-          created_at: comments.created_at,
-          author_id: comments.author_id
-        })
-        .from(comments)
-        .where(and(...conditions))
-        .orderBy(desc(comments.created_at))
-        .limit(limit);
+      const { data: result, error } = await query;
       
-      res.json(result);
+      if (error) {
+        console.error("Error fetching comments:", error);
+        return res.status(500).json({ error: "Failed to fetch comments" });
+      }
+      
+      res.json(result || []);
     } catch (error) {
       console.error("Error fetching comments:", error);
       res.status(500).json({ error: "Failed to fetch comments" });
     }
   });
 
-  // Prayer Request Routes
-  app.get("/api/prayer-requests", async (req, res) => {
+  // Prayer Request Creation - uses Supabase
+  app.post("/api/prayer-requests/create", authenticateUser, checkNotBanned, async (req: AuthenticatedRequest, res) => {
     try {
-      const { db } = await import("../client/src/lib/db");
-      const { prayerRequests } = await import("@shared/schema");
-      const { desc } = await import("drizzle-orm");
-      
-      const requests = await db.select().from(prayerRequests).orderBy(desc(prayerRequests.created_at));
-      res.json(requests);
-    } catch (error) {
-      console.error("Error fetching prayer requests:", error);
-      res.status(500).json({ error: "Failed to fetch prayer requests" });
-    }
-  });
-
-  app.post("/api/prayer-requests", authenticateUser, checkNotBanned, async (req: AuthenticatedRequest, res) => {
-    try {
-      const { db } = await import("../client/src/lib/db");
-      const { prayerRequests, insertPrayerRequestSchema } = await import("@shared/schema");
       const { validateFaithContent } = await import("../shared/moderation");
       
       if (!req.user) {
         return res.status(401).json({ error: "Authentication required" });
       }
       
-      const result = insertPrayerRequestSchema.safeParse(req.body);
-      if (!result.success) {
-        return res.status(400).json({ error: "Invalid request data", issues: result.error.issues });
+      const { title, details, tags, is_anonymous } = req.body;
+      
+      if (!title || typeof title !== 'string' || title.trim().length < 3) {
+        return res.status(400).json({ error: "Title must be at least 3 characters" });
       }
 
-      // Server-side faith validation (backup/enforcement)
-      const titleValidation = validateFaithContent(result.data.title?.trim() || '');
-      const detailsValidation = validateFaithContent(result.data.details?.trim() || '');
+      // Server-side faith validation
+      const titleValidation = validateFaithContent(title?.trim() || '');
+      const detailsValidation = validateFaithContent(details?.trim() || '');
       
       if (!titleValidation.isValid && !detailsValidation.isValid) {
         return res.status(400).json({ 
@@ -1201,7 +1171,23 @@ Respond in JSON format:
         });
       }
 
-      const [newRequest] = await db.insert(prayerRequests).values(result.data).returning();
+      const token = extractToken(req.headers.authorization);
+      const supabase = createServerSupabase(token);
+      
+      const { data: newRequest, error } = await supabase
+        .from('prayer_requests')
+        .insert({
+          requester: req.user.id,
+          title: title.trim(),
+          details: details?.trim() || null,
+          tags: tags || [],
+          is_anonymous: is_anonymous || false,
+          status: 'open'
+        })
+        .select()
+        .single();
+      
+      if (error) throw error;
       res.status(201).json(newRequest);
     } catch (error) {
       console.error("Error creating prayer request:", error);
@@ -1209,34 +1195,42 @@ Respond in JSON format:
     }
   });
 
+  // Prayer Activity - record when someone prays
   app.post("/api/prayer-requests/:id/pray", authenticateUser, checkNotBanned, async (req: AuthenticatedRequest, res) => {
     try {
-      const { db } = await import("../client/src/lib/db");
-      const { prayerRequests, prayerActivity } = await import("@shared/schema");
-      const { eq, sql } = await import("drizzle-orm");
-      
       if (!req.user) {
         return res.status(401).json({ error: "Authentication required" });
       }
       
-      const requestId = req.params.id;
-      const userId = req.user.id;
+      const requestId = parseInt(req.params.id);
+      if (isNaN(requestId)) {
+        return res.status(400).json({ error: "Invalid request ID" });
+      }
+      
+      const token = extractToken(req.headers.authorization);
+      const supabase = createServerSupabase(token);
       
       // Insert prayer activity
-      await db.insert(prayerActivity).values({
-        request_id: parseInt(requestId),
-        kind: 'prayed',
-        actor: userId
-      });
+      const { error: activityError } = await supabase
+        .from('prayer_activity')
+        .insert({
+          request_id: requestId,
+          user_id: req.user.id,
+          kind: 'prayed'
+        });
 
-      // Get updated request (no update needed, just fetch)
-      // Prayer requests table doesn't have updated_at field
+      if (activityError) {
+        console.error("Error inserting prayer activity:", activityError);
+      }
 
       // Get updated request
-      const [updatedRequest] = await db.select()
-        .from(prayerRequests)
-        .where(eq(prayerRequests.id, parseInt(requestId)));
+      const { data: updatedRequest, error: fetchError } = await supabase
+        .from('prayer_requests')
+        .select('*')
+        .eq('id', requestId)
+        .single();
 
+      if (fetchError) throw fetchError;
       res.json(updatedRequest);
     } catch (error) {
       console.error("Error recording prayer:", error);
@@ -1754,89 +1748,72 @@ Respond with JSON only:
   // Get user's notifications with pagination
   app.get("/api/notifications", authenticateUser, async (req: AuthenticatedRequest, res) => {
     try {
-      const { db } = await import("../client/src/lib/db");
-      const { notifications, profiles } = await import("@shared/schema");
-      const { desc, eq, and, lt } = await import("drizzle-orm");
-      
       if (!req.user) {
         return res.status(401).json({ error: "Authentication required" });
       }
+      
+      const token = extractToken(req.headers.authorization);
+      const supabase = createServerSupabase(token);
       
       const limit = parseInt(req.query.limit as string) || 20;
       const fromId = req.query.fromId as string;
       const unreadOnly = req.query.unread === 'true';
       
-      // Build conditions
-      const conditions = [eq(notifications.recipient_id, req.user.id)];
+      // Build query
+      let query = supabase
+        .from('notifications')
+        .select('id, recipient_id, actor_id, event_type, post_id, comment_id, prayer_request_id, commitment_id, message, is_read, read_at, created_at')
+        .eq('recipient_id', req.user.id)
+        .order('created_at', { ascending: false })
+        .limit(limit);
       
       if (fromId) {
-        conditions.push(lt(notifications.id, parseInt(fromId)));
+        query = query.lt('id', parseInt(fromId));
       }
       
       if (unreadOnly) {
-        conditions.push(eq(notifications.is_read, false));
+        query = query.eq('is_read', false);
       }
       
-      // Fetch notifications with actor profile info
-      const notificationList = await db.select({
-        id: notifications.id,
-        recipient_id: notifications.recipient_id,
-        actor_id: notifications.actor_id,
-        event_type: notifications.event_type,
-        post_id: notifications.post_id,
-        comment_id: notifications.comment_id,
-        prayer_request_id: notifications.prayer_request_id,
-        commitment_id: notifications.commitment_id,
-        message: notifications.message,
-        is_read: notifications.is_read,
-        read_at: notifications.read_at,
-        created_at: notifications.created_at,
-      })
-        .from(notifications)
-        .where(and(...conditions))
-        .orderBy(desc(notifications.created_at))
-        .limit(limit);
+      const { data: notificationList, error } = await query;
+      
+      if (error) {
+        console.error("Error fetching notifications:", error);
+        return res.status(500).json({ error: "Failed to fetch notifications" });
+      }
       
       // Get unread count
-      const { count: countFn } = await import("drizzle-orm");
-      const [unreadCountResult] = await db.select({ count: countFn() })
-        .from(notifications)
-        .where(and(
-          eq(notifications.recipient_id, req.user.id),
-          eq(notifications.is_read, false)
-        ));
-      
-      const unreadCount = unreadCountResult?.count || 0;
+      const { count: unreadCount } = await supabase
+        .from('notifications')
+        .select('*', { count: 'exact', head: true })
+        .eq('recipient_id', req.user.id)
+        .eq('is_read', false);
       
       // Get actor profiles for notifications with actors
-      const actorIds = Array.from(new Set(notificationList.map(n => n.actor_id).filter(Boolean)));
+      const actorIds = Array.from(new Set((notificationList || []).map(n => n.actor_id).filter(Boolean)));
       let actorProfiles: Record<string, any> = {};
       
       if (actorIds.length > 0) {
-        const { inArray } = await import("drizzle-orm");
-        const profileList = await db.select({
-          id: profiles.id,
-          display_name: profiles.display_name,
-          avatar_url: profiles.avatar_url,
-        })
-          .from(profiles)
-          .where(inArray(profiles.id, actorIds as string[]));
+        const { data: profileList } = await supabase
+          .from('profiles')
+          .select('id, display_name, avatar_url')
+          .in('id', actorIds as string[]);
         
-        profileList.forEach(p => {
+        (profileList || []).forEach(p => {
           actorProfiles[p.id] = p;
         });
       }
       
       // Enrich notifications with actor info
-      const enrichedNotifications = notificationList.map(n => ({
+      const enrichedNotifications = (notificationList || []).map(n => ({
         ...n,
         actor: n.actor_id ? actorProfiles[n.actor_id] : null,
       }));
       
       res.json({
         notifications: enrichedNotifications,
-        unreadCount,
-        nextCursor: notificationList.length === limit ? notificationList[notificationList.length - 1].id : null,
+        unreadCount: unreadCount || 0,
+        nextCursor: (notificationList || []).length === limit ? notificationList[notificationList.length - 1].id : null,
       });
     } catch (error) {
       console.error("Error fetching notifications:", error);
@@ -1847,22 +1824,21 @@ Respond with JSON only:
   // Get unread notification count only
   app.get("/api/notifications/unread-count", authenticateUser, async (req: AuthenticatedRequest, res) => {
     try {
-      const { db } = await import("../client/src/lib/db");
-      const { notifications } = await import("@shared/schema");
-      const { eq, and, count } = await import("drizzle-orm");
-      
       if (!req.user) {
         return res.status(401).json({ error: "Authentication required" });
       }
       
-      const [result] = await db.select({ count: count() })
-        .from(notifications)
-        .where(and(
-          eq(notifications.recipient_id, req.user.id),
-          eq(notifications.is_read, false)
-        ));
+      const token = extractToken(req.headers.authorization);
+      const supabase = createServerSupabase(token);
       
-      res.json({ count: result?.count || 0 });
+      const { count, error } = await supabase
+        .from('notifications')
+        .select('*', { count: 'exact', head: true })
+        .eq('recipient_id', req.user.id)
+        .eq('is_read', false);
+      
+      if (error) throw error;
+      res.json({ count: count || 0 });
     } catch (error) {
       console.error("Error fetching unread count:", error);
       res.status(500).json({ error: "Failed to fetch unread count" });
@@ -1872,25 +1848,23 @@ Respond with JSON only:
   // Mark notification as read
   app.patch("/api/notifications/:id/read", authenticateUser, async (req: AuthenticatedRequest, res) => {
     try {
-      const { db } = await import("../client/src/lib/db");
-      const { notifications } = await import("@shared/schema");
-      const { eq, and } = await import("drizzle-orm");
-      
       if (!req.user) {
         return res.status(401).json({ error: "Authentication required" });
       }
       
       const notificationId = parseInt(req.params.id);
+      const token = extractToken(req.headers.authorization);
+      const supabase = createServerSupabase(token);
       
-      const [updated] = await db.update(notifications)
-        .set({ is_read: true, read_at: new Date() })
-        .where(and(
-          eq(notifications.id, notificationId),
-          eq(notifications.recipient_id, req.user.id)
-        ))
-        .returning();
+      const { data: updated, error } = await supabase
+        .from('notifications')
+        .update({ is_read: true, read_at: new Date().toISOString() })
+        .eq('id', notificationId)
+        .eq('recipient_id', req.user.id)
+        .select()
+        .single();
       
-      if (!updated) {
+      if (error || !updated) {
         return res.status(404).json({ error: "Notification not found" });
       }
       
@@ -1904,20 +1878,18 @@ Respond with JSON only:
   // Mark all notifications as read
   app.post("/api/notifications/mark-all-read", authenticateUser, async (req: AuthenticatedRequest, res) => {
     try {
-      const { db } = await import("../client/src/lib/db");
-      const { notifications } = await import("@shared/schema");
-      const { eq, and } = await import("drizzle-orm");
-      
       if (!req.user) {
         return res.status(401).json({ error: "Authentication required" });
       }
       
-      await db.update(notifications)
-        .set({ is_read: true, read_at: new Date() })
-        .where(and(
-          eq(notifications.recipient_id, req.user.id),
-          eq(notifications.is_read, false)
-        ));
+      const token = extractToken(req.headers.authorization);
+      const supabase = createServerSupabase(token);
+      
+      await supabase
+        .from('notifications')
+        .update({ is_read: true, read_at: new Date().toISOString() })
+        .eq('recipient_id', req.user.id)
+        .eq('is_read', false);
       
       res.json({ success: true });
     } catch (error) {
@@ -1929,9 +1901,6 @@ Respond with JSON only:
   // Create notification (for prayer commitments, etc.)
   app.post("/api/notifications", authenticateUser, async (req: AuthenticatedRequest, res) => {
     try {
-      const { db } = await import("../client/src/lib/db");
-      const { notifications } = await import("@shared/schema");
-      
       if (!req.user) {
         return res.status(401).json({ error: "Authentication required" });
       }
@@ -1947,8 +1916,12 @@ Respond with JSON only:
         return res.json({ success: true, skipped: true });
       }
       
-      const [notification] = await db.insert(notifications)
-        .values({
+      const token = extractToken(req.headers.authorization);
+      const supabase = createServerSupabase(token);
+      
+      const { data: notification, error } = await supabase
+        .from('notifications')
+        .insert({
           recipient_id: recipientId,
           actor_id: req.user.id,
           event_type: eventType,
@@ -1959,7 +1932,10 @@ Respond with JSON only:
           message: message || null,
           is_read: false,
         })
-        .returning();
+        .select()
+        .single();
+      
+      if (error) throw error;
       
       // Send push notification
       if (message) {

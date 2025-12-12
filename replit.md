@@ -6,6 +6,16 @@ Gospel Era is a full-stack web application designed as a social platform for the
 
 # Recent Changes
 
+**December 12, 2025 - Supabase-Only Database Migration**
+- MAJOR ARCHITECTURE CHANGE: Migrated from dual-database (Supabase Auth + Neon/Replit DB) to unified Supabase-only architecture
+- Created all 13 data tables in Supabase: profiles, posts, comments, bookmarks, reactions, reports, prayer_requests, prayer_commitments, prayer_activity, donations, media_requests, notifications, push_tokens
+- Created SQL migration file: docs/db_migration_complete.sql with all tables, indexes, RLS policies, and views
+- Created data migration script: scripts/migrate-to-supabase.ts to copy existing data from Replit/Neon to Supabase
+- Updated server/routes.ts: Core routes (feed, posts, comments, profiles, notifications, prayers) now use Supabase client instead of Drizzle
+- Created server/supabaseClient.ts: Helper module for creating authenticated server-side Supabase clients
+- Benefits: Single source of truth for all data, simplified architecture, consistent RLS policies, better native app support
+- Note: Some secondary routes (donations, push tokens, bookmarks) still use Drizzle and may need future migration
+
 **December 11, 2025 - Notification Navigation & Account Deletion**
 - Fixed comment notification clicks: Now navigates to the correct post and opens its comments section
 - Added `pendingPostNavigation` state to scroll to post after closing notifications view
@@ -108,10 +118,11 @@ Preferred communication style: Simple, everyday language.
 - **Error Handling**: Sanitized API error responses.
 
 ## Database Design
-- **Database**: PostgreSQL via Neon Database.
-- **Schema Management**: Drizzle migrations.
-- **Key Tables**: User, posts, comments, prayer requests, commitments, bookmarks, reactions, reports.
-- **Security**: Row-Level Security (RLS) policies for all critical tables.
+- **Database**: PostgreSQL via Supabase (unified architecture - all data in one database)
+- **Schema Management**: Supabase migrations (SQL files in docs/db_migration_complete.sql)
+- **Key Tables**: profiles, posts, comments, prayer_requests, prayer_commitments, prayer_activity, bookmarks, reactions, reports, donations, media_requests, notifications, push_tokens
+- **Security**: Row-Level Security (RLS) policies for all critical tables, service role key for admin operations
+- **Server-Side Access**: server/supabaseClient.ts provides authenticated Supabase clients for API routes
 
 ## Testing Infrastructure
 - **Framework**: Vitest with jsdom environment.
