@@ -2443,13 +2443,13 @@ export default function MobileApp() {
                                       marginTop: "2px",
                                       display: "flex",
                                       alignItems: "center",
-                                      gap: "8px",
+                                      flexWrap: "nowrap",
                                     }}
                                   >
-                                    <span>
+                                    <span style={{ flexShrink: 0 }}>
                                       {formatTimeAgo(comment.created_at)}
                                     </span>
-                                    <div style={{ display: "flex", alignItems: "center", gap: "4px", marginLeft: "auto" }}>
+                                    <div style={{ display: "flex", alignItems: "center", gap: "4px", marginLeft: "auto", flexShrink: 0 }}>
                                       <button
                                         onClick={() =>
                                           handleReportComment(comment.id)
