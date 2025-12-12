@@ -118,51 +118,63 @@ export async function listBookmarks({ limit = 20, cursor } = {}) {
       throw new Error('User must be authenticated to list bookmarks')
     }
 
-    let query = supabase
+    // Step 1: Fetch bookmarks (just post_ids and created_at)
+    let bookmarkQuery = supabase
       .from('bookmarks')
-      .select(`
-        created_at,
-        post_id,
-        posts!fk_bookmarks_post (
-          id,
-          title,
-          content,
-          created_at,
-          updated_at,
-          tags,
-          author_id
-        )
-      `)
+      .select('created_at, post_id')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
       .limit(limit)
 
     // Apply cursor pagination if provided
     if (cursor?.created_at && cursor?.post_id) {
-      query = query.or(
+      bookmarkQuery = bookmarkQuery.or(
         `created_at.lt.${cursor.created_at},and(created_at.eq.${cursor.created_at},post_id.lt.${cursor.post_id})`
       )
     }
 
-    const { data, error } = await query
+    const { data: bookmarks, error: bookmarkError } = await bookmarkQuery
 
-    if (error) {
-      throw new Error(`Failed to fetch bookmarks: ${error.message}`)
+    if (bookmarkError) {
+      throw new Error(`Failed to fetch bookmarks: ${bookmarkError.message}`)
     }
 
-    // Transform data to extract post information
-    const posts = data?.map(bookmark => ({
-      ...bookmark.posts,
-      bookmarked_at: bookmark.created_at
-    })) || []
+    if (!bookmarks || bookmarks.length === 0) {
+      return { data: [], nextCursor: null, error: null }
+    }
+
+    // Step 2: Fetch the actual posts by their IDs
+    const postIds = bookmarks.map(b => b.post_id)
+    const { data: postsData, error: postsError } = await supabase
+      .from('posts')
+      .select('id, title, content, created_at, updated_at, tags, author_id, media_urls, embed_url, hidden')
+      .in('id', postIds)
+      .eq('hidden', false)
+
+    if (postsError) {
+      throw new Error(`Failed to fetch posts: ${postsError.message}`)
+    }
+
+    // Step 3: Merge bookmark info with posts, preserving bookmark order
+    const postsMap = new Map(postsData?.map(p => [p.id, p]) || [])
+    const posts = bookmarks
+      .map(bookmark => {
+        const post = postsMap.get(bookmark.post_id)
+        if (!post) return null
+        return {
+          ...post,
+          bookmarked_at: bookmark.created_at
+        }
+      })
+      .filter(Boolean)
 
     // Calculate next cursor
     let nextCursor = null
-    if (posts.length === limit && posts.length > 0) {
-      const lastPost = data[data.length - 1]
+    if (bookmarks.length === limit && bookmarks.length > 0) {
+      const lastBookmark = bookmarks[bookmarks.length - 1]
       nextCursor = {
-        created_at: lastPost.created_at,
-        post_id: lastPost.post_id
+        created_at: lastBookmark.created_at,
+        post_id: lastBookmark.post_id
       }
     }
 
