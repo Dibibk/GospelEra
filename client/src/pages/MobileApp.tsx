@@ -2297,7 +2297,6 @@ export default function MobileApp() {
                       <div style={{ marginBottom: "8px" }}>
                         <EmbedCard 
                           videoId={videoId}
-                          title={post.title || undefined}
                         />
                       </div>
                     );
