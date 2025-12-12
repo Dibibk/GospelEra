@@ -88,6 +88,7 @@ import {
 } from "@/lib/donations";
 import { PAYMENTS } from "@/config/payments";
 import { EmbedCard } from "@/components/EmbedCard";
+import { Flag, Trash2, Loader2 } from "lucide-react";
 // at top of MobileApp.tsx
 
 // focus helpers (no hooks here)
@@ -2448,63 +2449,65 @@ export default function MobileApp() {
                                     <span>
                                       {formatTimeAgo(comment.created_at)}
                                     </span>
-                                    <button
-                                      onClick={() =>
-                                        handleReportComment(comment.id)
-                                      }
-                                      style={{
-                                        background: "none",
-                                        border: "none",
-                                        color: "#8e8e8e",
-                                        fontSize: "14px",
-                                        cursor: "pointer",
-                                        padding: "4px",
-                                        minWidth: "24px",
-                                        minHeight: "24px",
-                                        display: "flex",
-                                        alignItems: "center",
-                                        justifyContent: "center",
-                                      }}
-                                      title="Report comment"
-                                    >
-                                      🚩
-                                    </button>
-                                    {(comment.author_id === user?.id ||
-                                      isAdmin) && (
+                                    <div style={{ display: "flex", alignItems: "center", gap: "4px", marginLeft: "auto" }}>
                                       <button
                                         onClick={() =>
-                                          handleDeleteComment(
-                                            comment.id,
-                                            post.id,
-                                          )
-                                        }
-                                        disabled={
-                                          deletingCommentId === comment.id
+                                          handleReportComment(comment.id)
                                         }
                                         style={{
                                           background: "none",
                                           border: "none",
-                                          color: "#ef4444",
-                                          fontSize: "14px",
+                                          color: "#9ca3af",
                                           cursor: "pointer",
-                                          padding: "4px",
-                                          minWidth: "24px",
-                                          minHeight: "24px",
+                                          padding: "6px",
+                                          minWidth: "32px",
+                                          minHeight: "32px",
                                           display: "flex",
                                           alignItems: "center",
                                           justifyContent: "center",
-                                          opacity:
-                                            deletingCommentId === comment.id
-                                              ? 0.5
-                                              : 1,
+                                          borderRadius: "50%",
                                         }}
-                                        title="Delete comment"
+                                        title="Report comment"
                                       >
-                                        {deletingCommentId === comment.id
-                                          ? "⏳"
-                                          : "🗑️"}
+                                        <Flag size={14} />
                                       </button>
-                                    )}
+                                      {(comment.author_id === user?.id ||
+                                        isAdmin) && (
+                                        <button
+                                          onClick={() =>
+                                            handleDeleteComment(
+                                              comment.id,
+                                              post.id,
+                                            )
+                                          }
+                                          disabled={
+                                            deletingCommentId === comment.id
+                                          }
+                                          style={{
+                                            background: "none",
+                                            border: "none",
+                                            color: "#ef4444",
+                                            cursor: "pointer",
+                                            padding: "6px",
+                                            minWidth: "32px",
+                                            minHeight: "32px",
+                                            display: "flex",
+                                            alignItems: "center",
+                                            justifyContent: "center",
+                                            borderRadius: "50%",
+                                            opacity:
+                                              deletingCommentId === comment.id
+                                                ? 0.5
+                                                : 1,
+                                          }}
+                                          title="Delete comment"
+                                        >
+                                          {deletingCommentId === comment.id
+                                            ? <Loader2 size={14} className="animate-spin" />
+                                            : <Trash2 size={14} />}
+                                        </button>
+                                      )}
+                                    </div>
                                   </div>
                                 </div>
                               </div>
