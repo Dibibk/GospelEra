@@ -178,10 +178,10 @@ CREATE POLICY "Users can create donations" ON donations FOR INSERT WITH CHECK (a
 -- =====================================================
 CREATE TABLE IF NOT EXISTS media_requests (
   id BIGSERIAL PRIMARY KEY,
-  user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  user_id VARCHAR NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
   status TEXT NOT NULL DEFAULT 'pending',
   reason TEXT NOT NULL,
-  admin_id UUID REFERENCES profiles(id) ON DELETE SET NULL,
+  admin_id VARCHAR REFERENCES profiles(id) ON DELETE SET NULL,
   created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );
@@ -190,8 +190,8 @@ CREATE TABLE IF NOT EXISTS media_requests (
 ALTER TABLE media_requests ENABLE ROW LEVEL SECURITY;
 
 -- Policies for media_requests
-CREATE POLICY "Users can view own requests" ON media_requests FOR SELECT USING (auth.uid() = user_id);
-CREATE POLICY "Users can create requests" ON media_requests FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can view own requests" ON media_requests FOR SELECT USING (auth.uid()::text = user_id);
+CREATE POLICY "Users can create requests" ON media_requests FOR INSERT WITH CHECK (auth.uid()::text = user_id);
 CREATE POLICY "Admins can view all requests" ON media_requests FOR SELECT USING (
   EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid()::text AND role = 'admin')
 );
