@@ -3709,11 +3709,20 @@ export default function MobileApp() {
                 Cancel
               </button>
               <button
-                onClick={() => {
-                  setShowMediaRequestModal(false);
-                  alert(
-                    "Link sharing request submitted! You will be notified when approved.",
-                  );
+                onClick={async () => {
+                  try {
+                    const { requestMediaAccess } = await import("@/lib/mediaRequests");
+                    const { data, error } = await requestMediaAccess("Requesting permission to share video links and upload media");
+                    setShowMediaRequestModal(false);
+                    if (error) {
+                      alert(`Failed to submit request: ${error.message || 'Unknown error'}`);
+                    } else {
+                      alert("Link sharing request submitted! You will be notified when approved.");
+                    }
+                  } catch (err) {
+                    setShowMediaRequestModal(false);
+                    alert("Failed to submit request. Please try again.");
+                  }
                 }}
                 style={{
                   flex: 1,
