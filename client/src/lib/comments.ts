@@ -77,6 +77,9 @@ export async function listComments({ postId, limit = 20, fromId }: ListCommentsO
   try {
     const baseUrl = getApiBaseUrl();
     
+    // Get auth token for RLS-based Supabase queries
+    const { data: { session } } = await supabase.auth.getSession();
+    
     // Build query params
     const params = new URLSearchParams({
       post_id: postId.toString(),
@@ -87,7 +90,12 @@ export async function listComments({ postId, limit = 20, fromId }: ListCommentsO
       params.set('from_id', fromId.toString());
     }
     
-    const response = await fetch(`${baseUrl}/api/comments?${params}`);
+    const headers: Record<string, string> = {};
+    if (session?.access_token) {
+      headers['Authorization'] = `Bearer ${session.access_token}`;
+    }
+    
+    const response = await fetch(`${baseUrl}/api/comments?${params}`, { headers });
     
     if (!response.ok) {
       const errorData = await response.json();
