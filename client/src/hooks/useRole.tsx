@@ -22,14 +22,10 @@ export function useRole(): UserRole {
 
   const role = (userProfile as any)?.role || null
   
-  // Also check for admin emails as fallback
-  const adminEmails = ['diviabharath@gmail.com']
-  const isEmailAdmin = user?.email && adminEmails.includes(user.email)
-  
   return {
     role,
     isLoading,
     isBanned: role === 'banned',
-    isAdmin: role === 'admin' || isEmailAdmin
+    isAdmin: role === 'admin'
   }
 }
