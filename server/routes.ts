@@ -1484,11 +1484,12 @@ Respond in JSON format:
     try {
       const { db } = await import("../client/src/lib/db");
       const { mediaRequests, profiles } = await import("@shared/schema");
-      const { desc, eq } = await import("drizzle-orm");
+      const { desc, sql } = await import("drizzle-orm");
       
       // Note: Authorization header is used for proper CORS support
       // The actual admin check would be done by verifying the token
       
+      // Use SQL to cast uuid to text for comparison with varchar profiles.id
       const allRequests = await db
         .select({
           id: mediaRequests.id,
@@ -1505,7 +1506,7 @@ Respond in JSON format:
           }
         })
         .from(mediaRequests)
-        .leftJoin(profiles, eq(mediaRequests.user_id, profiles.id))
+        .leftJoin(profiles, sql`${mediaRequests.user_id}::text = ${profiles.id}`)
         .orderBy(desc(mediaRequests.created_at));
       
       res.json(allRequests);
