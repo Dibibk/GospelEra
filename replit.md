@@ -6,6 +6,13 @@ Gospel Era is a full-stack web application designed as a social platform for the
 
 # Recent Changes
 
+**December 12, 2025 - Media Permission & Reset Password UI Fixes**
+- Fixed YouTube link access showing "Request Access" even for users with permission
+- Root cause: Media permission check was only running on initial load (when posts.length === 0), skipped on subsequent renders
+- Fix: Moved `checkUserMediaPermission()` to its own useEffect that runs when user or isAdmin changes (line 530-535 in MobileApp.tsx)
+- **IMPORTANT**: Keep media permission check in SEPARATE useEffect from fetchData - never combine them or add posts.length check to permission useEffect
+- Updated reset password page cross icon to match login page SVG cross icon (LoginMobile.tsx)
+
 **December 11, 2025 - Notification Navigation & Account Deletion**
 - Fixed comment notification clicks: Now navigates to the correct post and opens its comments section
 - Added `pendingPostNavigation` state to scroll to post after closing notifications view
