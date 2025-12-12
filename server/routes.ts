@@ -1241,15 +1241,26 @@ Respond in JSON format:
   // Donations API Routes
   app.post("/api/donations", async (req, res) => {
     try {
-      const { db } = await import("../client/src/lib/db");
-      const { donations, insertDonationSchema } = await import("@shared/schema");
+      const { insertDonationSchema } = await import("@shared/schema");
+      const { createClient } = await import("@supabase/supabase-js");
       
       const result = insertDonationSchema.safeParse(req.body);
       if (!result.success) {
         return res.status(400).json({ error: "Invalid donation data", issues: result.error.issues });
       }
 
-      const [newDonation] = await db.insert(donations).values(result.data).returning();
+      const supabase = createClient(
+        process.env.VITE_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!
+      );
+
+      const { data: newDonation, error } = await supabase
+        .from('donations')
+        .insert(result.data)
+        .select()
+        .single();
+
+      if (error) throw error;
       res.status(201).json(newDonation);
     } catch (error) {
       console.error("Error creating donation:", error);
@@ -1259,21 +1270,28 @@ Respond in JSON format:
 
   app.get("/api/donations", async (req, res) => {
     try {
-      const { db } = await import("../client/src/lib/db");
-      const { donations } = await import("@shared/schema");
-      const { desc, eq } = await import("drizzle-orm");
+      const { createClient } = await import("@supabase/supabase-js");
       
       const userId = req.query.userId as string;
       
-      let query = db.select().from(donations).orderBy(desc(donations.created_at));
+      const supabase = createClient(
+        process.env.VITE_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!
+      );
+
+      let query = supabase
+        .from('donations')
+        .select('*')
+        .order('created_at', { ascending: false });
       
       // Filter by user if userId provided
       if (userId) {
-        query = query.where(eq(donations.user_id, userId)) as any;
+        query = query.eq('user_id', userId);
       }
 
-      const userDonations = await query;
-      res.json(userDonations);
+      const { data: userDonations, error } = await query;
+      if (error) throw error;
+      res.json(userDonations || []);
     } catch (error) {
       console.error("Error fetching donations:", error);
       res.status(500).json({ error: "Failed to fetch donations" });
@@ -1283,12 +1301,20 @@ Respond in JSON format:
   // Admin endpoint to get all donations
   app.get("/api/admin/donations", async (req, res) => {
     try {
-      const { db } = await import("../client/src/lib/db");
-      const { donations } = await import("@shared/schema");
-      const { desc } = await import("drizzle-orm");
+      const { createClient } = await import("@supabase/supabase-js");
       
-      const allDonations = await db.select().from(donations).orderBy(desc(donations.created_at));
-      res.json(allDonations);
+      const supabase = createClient(
+        process.env.VITE_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!
+      );
+
+      const { data: allDonations, error } = await supabase
+        .from('donations')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      res.json(allDonations || []);
     } catch (error) {
       console.error("Error fetching all donations:", error);
       res.status(500).json({ error: "Failed to fetch donations" });
@@ -1978,10 +2004,6 @@ Respond with JSON only:
   // Register push notification token
   app.post("/api/push/register", authenticateUser, async (req: AuthenticatedRequest, res) => {
     try {
-      const { db } = await import("../client/src/lib/db");
-      const { pushTokens } = await import("@shared/schema");
-      const { eq, and } = await import("drizzle-orm");
-      
       if (!req.user) {
         return res.status(401).json({ error: "Unauthorized" });
       }
@@ -1994,33 +2016,39 @@ Respond with JSON only:
       
       const tokenString = JSON.stringify(subscription);
       
+      const token = extractToken(req.headers.authorization);
+      const supabase = createServerSupabase(token);
+      
       // Check if token already exists for this user
-      const existing = await db.select()
-        .from(pushTokens)
-        .where(and(
-          eq(pushTokens.user_id, req.user.id),
-          eq(pushTokens.token, tokenString)
-        ))
+      const { data: existing } = await supabase
+        .from('push_tokens')
+        .select('id')
+        .eq('user_id', req.user.id)
+        .eq('token', tokenString)
         .limit(1);
       
-      if (existing.length > 0) {
+      if (existing && existing.length > 0) {
         // Update existing token
-        await db.update(pushTokens)
-          .set({ updated_at: new Date() })
-          .where(eq(pushTokens.id, existing[0].id));
+        await supabase
+          .from('push_tokens')
+          .update({ updated_at: new Date().toISOString() })
+          .eq('id', existing[0].id);
         return res.json({ success: true, message: "Token already registered" });
       }
       
       // Insert new token
-      const [token] = await db.insert(pushTokens)
-        .values({
+      const { data: newToken, error } = await supabase
+        .from('push_tokens')
+        .insert({
           user_id: req.user.id,
           token: tokenString,
           platform,
         })
-        .returning();
+        .select()
+        .single();
       
-      res.json({ success: true, token });
+      if (error) throw error;
+      res.json({ success: true, token: newToken });
     } catch (error) {
       console.error("Error registering push token:", error);
       res.status(500).json({ error: "Failed to register push token" });
@@ -2030,10 +2058,6 @@ Respond with JSON only:
   // Unregister push notification token
   app.post("/api/push/unregister", authenticateUser, async (req: AuthenticatedRequest, res) => {
     try {
-      const { db } = await import("../client/src/lib/db");
-      const { pushTokens } = await import("@shared/schema");
-      const { eq, and } = await import("drizzle-orm");
-      
       if (!req.user) {
         return res.status(401).json({ error: "Unauthorized" });
       }
@@ -2046,11 +2070,14 @@ Respond with JSON only:
       
       const tokenString = JSON.stringify(subscription);
       
-      await db.delete(pushTokens)
-        .where(and(
-          eq(pushTokens.user_id, req.user.id),
-          eq(pushTokens.token, tokenString)
-        ));
+      const token = extractToken(req.headers.authorization);
+      const supabase = createServerSupabase(token);
+      
+      await supabase
+        .from('push_tokens')
+        .delete()
+        .eq('user_id', req.user.id)
+        .eq('token', tokenString);
       
       res.json({ success: true });
     } catch (error) {
@@ -2085,22 +2112,22 @@ Respond with JSON only:
   // Get user's daily verse preference
   app.get("/api/push/daily-verse", authenticateUser, async (req: AuthenticatedRequest, res) => {
     try {
-      const { db } = await import("../client/src/lib/db");
-      const { pushTokens } = await import("@shared/schema");
-      const { eq } = await import("drizzle-orm");
-      
       if (!req.user) {
         return res.status(401).json({ error: "Unauthorized" });
       }
       
-      const tokens = await db.select({ daily_verse_enabled: pushTokens.daily_verse_enabled })
-        .from(pushTokens)
-        .where(eq(pushTokens.user_id, req.user.id))
+      const token = extractToken(req.headers.authorization);
+      const supabase = createServerSupabase(token);
+      
+      const { data: tokens } = await supabase
+        .from('push_tokens')
+        .select('daily_verse_enabled')
+        .eq('user_id', req.user.id)
         .limit(1);
       
       res.json({ 
-        enabled: tokens.length > 0 ? tokens[0].daily_verse_enabled : false,
-        hasToken: tokens.length > 0
+        enabled: tokens && tokens.length > 0 ? tokens[0].daily_verse_enabled : false,
+        hasToken: tokens && tokens.length > 0
       });
     } catch (error) {
       console.error("Error getting daily verse preference:", error);
