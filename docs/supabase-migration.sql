@@ -6,10 +6,10 @@
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- =====================================================
--- PROFILES TABLE
+-- PROFILES TABLE (uses UUID to match Supabase auth.users)
 -- =====================================================
 CREATE TABLE IF NOT EXISTS profiles (
-  id VARCHAR PRIMARY KEY,
+  id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   email TEXT,
   first_name TEXT,
   last_name TEXT,
@@ -31,9 +31,12 @@ CREATE TABLE IF NOT EXISTS profiles (
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 
 -- Policies for profiles
+DROP POLICY IF EXISTS "Users can view all profiles" ON profiles;
+DROP POLICY IF EXISTS "Users can update own profile" ON profiles;
+DROP POLICY IF EXISTS "Users can insert own profile" ON profiles;
 CREATE POLICY "Users can view all profiles" ON profiles FOR SELECT USING (true);
-CREATE POLICY "Users can update own profile" ON profiles FOR UPDATE USING (auth.uid()::text = id);
-CREATE POLICY "Users can insert own profile" ON profiles FOR INSERT WITH CHECK (auth.uid()::text = id);
+CREATE POLICY "Users can update own profile" ON profiles FOR UPDATE USING (auth.uid() = id);
+CREATE POLICY "Users can insert own profile" ON profiles FOR INSERT WITH CHECK (auth.uid() = id);
 
 -- =====================================================
 -- POSTS TABLE
@@ -42,7 +45,7 @@ CREATE TABLE IF NOT EXISTS posts (
   id SERIAL PRIMARY KEY,
   title TEXT NOT NULL,
   content TEXT NOT NULL,
-  author_id VARCHAR NOT NULL,
+  author_id UUID NOT NULL,
   tags TEXT[] NOT NULL DEFAULT '{}',
   media_urls TEXT[] NOT NULL DEFAULT '{}',
   embed_url TEXT,
@@ -61,10 +64,14 @@ CREATE INDEX IF NOT EXISTS posts_author_idx ON posts (author_id);
 ALTER TABLE posts ENABLE ROW LEVEL SECURITY;
 
 -- Policies for posts
+DROP POLICY IF EXISTS "Anyone can view non-hidden posts" ON posts;
+DROP POLICY IF EXISTS "Authenticated users can create posts" ON posts;
+DROP POLICY IF EXISTS "Users can update own posts" ON posts;
+DROP POLICY IF EXISTS "Users can delete own posts" ON posts;
 CREATE POLICY "Anyone can view non-hidden posts" ON posts FOR SELECT USING (hidden = false);
 CREATE POLICY "Authenticated users can create posts" ON posts FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
-CREATE POLICY "Users can update own posts" ON posts FOR UPDATE USING (auth.uid()::text = author_id);
-CREATE POLICY "Users can delete own posts" ON posts FOR DELETE USING (auth.uid()::text = author_id);
+CREATE POLICY "Users can update own posts" ON posts FOR UPDATE USING (auth.uid() = author_id);
+CREATE POLICY "Users can delete own posts" ON posts FOR DELETE USING (auth.uid() = author_id);
 
 -- =====================================================
 -- COMMENTS TABLE
@@ -72,7 +79,7 @@ CREATE POLICY "Users can delete own posts" ON posts FOR DELETE USING (auth.uid()
 CREATE TABLE IF NOT EXISTS comments (
   id SERIAL PRIMARY KEY,
   content TEXT NOT NULL,
-  author_id VARCHAR NOT NULL,
+  author_id UUID NOT NULL,
   post_id INTEGER NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
   deleted BOOLEAN NOT NULL DEFAULT false,
   hidden BOOLEAN NOT NULL DEFAULT false,
@@ -84,16 +91,19 @@ CREATE TABLE IF NOT EXISTS comments (
 ALTER TABLE comments ENABLE ROW LEVEL SECURITY;
 
 -- Policies for comments
+DROP POLICY IF EXISTS "Anyone can view non-deleted comments" ON comments;
+DROP POLICY IF EXISTS "Authenticated users can create comments" ON comments;
+DROP POLICY IF EXISTS "Users can update own comments" ON comments;
 CREATE POLICY "Anyone can view non-deleted comments" ON comments FOR SELECT USING (deleted = false AND hidden = false);
 CREATE POLICY "Authenticated users can create comments" ON comments FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
-CREATE POLICY "Users can update own comments" ON comments FOR UPDATE USING (auth.uid()::text = author_id);
+CREATE POLICY "Users can update own comments" ON comments FOR UPDATE USING (auth.uid() = author_id);
 
 -- =====================================================
 -- BOOKMARKS TABLE
 -- =====================================================
 CREATE TABLE IF NOT EXISTS bookmarks (
   id SERIAL PRIMARY KEY,
-  user_id VARCHAR NOT NULL,
+  user_id UUID NOT NULL,
   post_id INTEGER NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
   created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
   UNIQUE(user_id, post_id)
@@ -103,16 +113,19 @@ CREATE TABLE IF NOT EXISTS bookmarks (
 ALTER TABLE bookmarks ENABLE ROW LEVEL SECURITY;
 
 -- Policies for bookmarks
-CREATE POLICY "Users can view own bookmarks" ON bookmarks FOR SELECT USING (auth.uid()::text = user_id);
-CREATE POLICY "Users can create own bookmarks" ON bookmarks FOR INSERT WITH CHECK (auth.uid()::text = user_id);
-CREATE POLICY "Users can delete own bookmarks" ON bookmarks FOR DELETE USING (auth.uid()::text = user_id);
+DROP POLICY IF EXISTS "Users can view own bookmarks" ON bookmarks;
+DROP POLICY IF EXISTS "Users can create own bookmarks" ON bookmarks;
+DROP POLICY IF EXISTS "Users can delete own bookmarks" ON bookmarks;
+CREATE POLICY "Users can view own bookmarks" ON bookmarks FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users can create own bookmarks" ON bookmarks FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can delete own bookmarks" ON bookmarks FOR DELETE USING (auth.uid() = user_id);
 
 -- =====================================================
 -- REACTIONS TABLE (Amen reactions)
 -- =====================================================
 CREATE TABLE IF NOT EXISTS reactions (
   id SERIAL PRIMARY KEY,
-  user_id VARCHAR NOT NULL,
+  user_id UUID NOT NULL,
   post_id INTEGER NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
   kind TEXT NOT NULL DEFAULT 'amen',
   created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
@@ -123,19 +136,22 @@ CREATE TABLE IF NOT EXISTS reactions (
 ALTER TABLE reactions ENABLE ROW LEVEL SECURITY;
 
 -- Policies for reactions
+DROP POLICY IF EXISTS "Anyone can view reactions" ON reactions;
+DROP POLICY IF EXISTS "Users can create own reactions" ON reactions;
+DROP POLICY IF EXISTS "Users can delete own reactions" ON reactions;
 CREATE POLICY "Anyone can view reactions" ON reactions FOR SELECT USING (true);
-CREATE POLICY "Users can create own reactions" ON reactions FOR INSERT WITH CHECK (auth.uid()::text = user_id);
-CREATE POLICY "Users can delete own reactions" ON reactions FOR DELETE USING (auth.uid()::text = user_id);
+CREATE POLICY "Users can create own reactions" ON reactions FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can delete own reactions" ON reactions FOR DELETE USING (auth.uid() = user_id);
 
 -- =====================================================
 -- REPORTS TABLE
 -- =====================================================
 CREATE TABLE IF NOT EXISTS reports (
-  id VARCHAR PRIMARY KEY DEFAULT gen_random_uuid()::text,
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   target_type TEXT NOT NULL,
   target_id TEXT NOT NULL,
   reason TEXT NOT NULL,
-  reporter_id VARCHAR NOT NULL,
+  reporter_id UUID NOT NULL,
   status TEXT NOT NULL DEFAULT 'open',
   created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
@@ -145,9 +161,11 @@ CREATE TABLE IF NOT EXISTS reports (
 ALTER TABLE reports ENABLE ROW LEVEL SECURITY;
 
 -- Policies for reports
-CREATE POLICY "Users can create reports" ON reports FOR INSERT WITH CHECK (auth.uid()::text = reporter_id);
+DROP POLICY IF EXISTS "Users can create reports" ON reports;
+DROP POLICY IF EXISTS "Admins can view all reports" ON reports;
+CREATE POLICY "Users can create reports" ON reports FOR INSERT WITH CHECK (auth.uid() = reporter_id);
 CREATE POLICY "Admins can view all reports" ON reports FOR SELECT USING (
-  EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid()::text AND role = 'admin')
+  EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
 );
 
 -- =====================================================
@@ -155,7 +173,7 @@ CREATE POLICY "Admins can view all reports" ON reports FOR SELECT USING (
 -- =====================================================
 CREATE TABLE IF NOT EXISTS donations (
   id BIGSERIAL PRIMARY KEY,
-  user_id VARCHAR REFERENCES profiles(id) ON DELETE SET NULL,
+  user_id UUID REFERENCES profiles(id) ON DELETE SET NULL,
   amount_cents INTEGER NOT NULL,
   currency TEXT NOT NULL DEFAULT 'USD',
   message TEXT,
@@ -170,18 +188,20 @@ CREATE TABLE IF NOT EXISTS donations (
 ALTER TABLE donations ENABLE ROW LEVEL SECURITY;
 
 -- Policies for donations
-CREATE POLICY "Users can view own donations" ON donations FOR SELECT USING (auth.uid()::text = user_id);
-CREATE POLICY "Users can create donations" ON donations FOR INSERT WITH CHECK (auth.uid()::text = user_id);
+DROP POLICY IF EXISTS "Users can view own donations" ON donations;
+DROP POLICY IF EXISTS "Users can create donations" ON donations;
+CREATE POLICY "Users can view own donations" ON donations FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users can create donations" ON donations FOR INSERT WITH CHECK (auth.uid() = user_id);
 
 -- =====================================================
 -- MEDIA REQUESTS TABLE
 -- =====================================================
 CREATE TABLE IF NOT EXISTS media_requests (
   id BIGSERIAL PRIMARY KEY,
-  user_id VARCHAR NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
   status TEXT NOT NULL DEFAULT 'pending',
   reason TEXT NOT NULL,
-  admin_id VARCHAR REFERENCES profiles(id) ON DELETE SET NULL,
+  admin_id UUID REFERENCES profiles(id) ON DELETE SET NULL,
   created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );
@@ -190,13 +210,17 @@ CREATE TABLE IF NOT EXISTS media_requests (
 ALTER TABLE media_requests ENABLE ROW LEVEL SECURITY;
 
 -- Policies for media_requests
-CREATE POLICY "Users can view own requests" ON media_requests FOR SELECT USING (auth.uid()::text = user_id);
-CREATE POLICY "Users can create requests" ON media_requests FOR INSERT WITH CHECK (auth.uid()::text = user_id);
+DROP POLICY IF EXISTS "Users can view own requests" ON media_requests;
+DROP POLICY IF EXISTS "Users can create requests" ON media_requests;
+DROP POLICY IF EXISTS "Admins can view all requests" ON media_requests;
+DROP POLICY IF EXISTS "Admins can update requests" ON media_requests;
+CREATE POLICY "Users can view own requests" ON media_requests FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users can create requests" ON media_requests FOR INSERT WITH CHECK (auth.uid() = user_id);
 CREATE POLICY "Admins can view all requests" ON media_requests FOR SELECT USING (
-  EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid()::text AND role = 'admin')
+  EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
 );
 CREATE POLICY "Admins can update requests" ON media_requests FOR UPDATE USING (
-  EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid()::text AND role = 'admin')
+  EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
 );
 
 -- =====================================================
@@ -204,8 +228,8 @@ CREATE POLICY "Admins can update requests" ON media_requests FOR UPDATE USING (
 -- =====================================================
 CREATE TABLE IF NOT EXISTS notifications (
   id BIGSERIAL PRIMARY KEY,
-  recipient_id VARCHAR NOT NULL,
-  actor_id VARCHAR,
+  recipient_id UUID NOT NULL,
+  actor_id UUID,
   event_type TEXT NOT NULL,
   post_id INTEGER,
   comment_id INTEGER,
@@ -224,8 +248,11 @@ CREATE INDEX IF NOT EXISTS notifications_recipient_unread_idx ON notifications (
 ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
 
 -- Policies for notifications
-CREATE POLICY "Users can view own notifications" ON notifications FOR SELECT USING (auth.uid()::text = recipient_id);
-CREATE POLICY "Users can update own notifications" ON notifications FOR UPDATE USING (auth.uid()::text = recipient_id);
+DROP POLICY IF EXISTS "Users can view own notifications" ON notifications;
+DROP POLICY IF EXISTS "Users can update own notifications" ON notifications;
+DROP POLICY IF EXISTS "System can create notifications" ON notifications;
+CREATE POLICY "Users can view own notifications" ON notifications FOR SELECT USING (auth.uid() = recipient_id);
+CREATE POLICY "Users can update own notifications" ON notifications FOR UPDATE USING (auth.uid() = recipient_id);
 CREATE POLICY "System can create notifications" ON notifications FOR INSERT WITH CHECK (true);
 
 -- =====================================================
@@ -233,7 +260,7 @@ CREATE POLICY "System can create notifications" ON notifications FOR INSERT WITH
 -- =====================================================
 CREATE TABLE IF NOT EXISTS push_tokens (
   id SERIAL PRIMARY KEY,
-  user_id VARCHAR NOT NULL,
+  user_id UUID NOT NULL,
   token TEXT NOT NULL,
   platform TEXT NOT NULL DEFAULT 'web',
   daily_verse_enabled BOOLEAN NOT NULL DEFAULT false,
@@ -249,19 +276,14 @@ CREATE INDEX IF NOT EXISTS push_tokens_token_idx ON push_tokens (token);
 ALTER TABLE push_tokens ENABLE ROW LEVEL SECURITY;
 
 -- Policies for push_tokens
-CREATE POLICY "Users can view own tokens" ON push_tokens FOR SELECT USING (auth.uid()::text = user_id);
-CREATE POLICY "Users can create own tokens" ON push_tokens FOR INSERT WITH CHECK (auth.uid()::text = user_id);
-CREATE POLICY "Users can update own tokens" ON push_tokens FOR UPDATE USING (auth.uid()::text = user_id);
-CREATE POLICY "Users can delete own tokens" ON push_tokens FOR DELETE USING (auth.uid()::text = user_id);
-
--- =====================================================
--- USERS TABLE (for legacy compatibility)
--- =====================================================
-CREATE TABLE IF NOT EXISTS users (
-  id VARCHAR PRIMARY KEY DEFAULT gen_random_uuid()::text,
-  username TEXT NOT NULL UNIQUE,
-  password TEXT NOT NULL
-);
+DROP POLICY IF EXISTS "Users can view own tokens" ON push_tokens;
+DROP POLICY IF EXISTS "Users can create own tokens" ON push_tokens;
+DROP POLICY IF EXISTS "Users can update own tokens" ON push_tokens;
+DROP POLICY IF EXISTS "Users can delete own tokens" ON push_tokens;
+CREATE POLICY "Users can view own tokens" ON push_tokens FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users can create own tokens" ON push_tokens FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can update own tokens" ON push_tokens FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "Users can delete own tokens" ON push_tokens FOR DELETE USING (auth.uid() = user_id);
 
 -- =====================================================
 -- TRIGGER: Auto-create profile on signup
@@ -270,7 +292,7 @@ CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
   INSERT INTO public.profiles (id, email, created_at, updated_at)
-  VALUES (NEW.id::text, NEW.email, NOW(), NOW())
+  VALUES (NEW.id, NEW.email, NOW(), NOW())
   ON CONFLICT (id) DO NOTHING;
   RETURN NEW;
 END;
