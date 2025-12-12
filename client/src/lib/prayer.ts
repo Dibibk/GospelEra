@@ -418,7 +418,7 @@ export async function confirmPrayed(requestId: number, { note = null }: { note?:
 /**
  * Get current user's prayer commitments
  */
-export async function getMyCommitments({ status = null, limit = 20, cursor = null }: PrayerCommitmentParams = {}): Promise<ApiResponse<any[]>> {
+export async function getMyCommitments({ status, limit = 20, cursor }: PrayerCommitmentParams = {}): Promise<ApiResponse<any[]>> {
   try {
     const { data: user } = await supabase.auth.getUser()
     
@@ -481,7 +481,7 @@ export async function getMyCommitments({ status = null, limit = 20, cursor = nul
 /**
  * Get current user's prayer requests
  */
-export async function getMyRequests({ status = null, limit = 20, cursor = null }: PrayerCommitmentParams = {}): Promise<ApiResponse<any[]>> {
+export async function getMyRequests({ status, limit = 20, cursor }: PrayerCommitmentParams = {}): Promise<ApiResponse<any[]>> {
   try {
     const { data: user } = await supabase.auth.getUser()
     

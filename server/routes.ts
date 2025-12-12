@@ -421,7 +421,7 @@ Respond in JSON format:
             avatar_url: updateData.avatar_url || null,
             show_name_on_prayers: updateData.show_name_on_prayers ?? true,
             private_profile: updateData.private_profile ?? false,
-            settings: updateData.settings || null,
+            settings: updateData.settings || {},
           })
           .returning();
       }
