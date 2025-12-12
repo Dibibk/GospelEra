@@ -1752,23 +1752,30 @@ Respond in JSON format:
         return res.json({ hasPermission: false, error: "User ID required" });
       }
       
-      // Query Supabase profiles table (where media_enabled is stored)
-      const token = extractToken(req.headers.authorization);
-      const supabase = createServerSupabase(token);
+      // Use supabaseAdmin to bypass RLS and read profile data
+      if (!supabaseAdmin) {
+        console.error("supabaseAdmin not configured");
+        return res.json({ hasPermission: false, error: "Admin client not configured" });
+      }
       
-      const { data: profile, error } = await supabase
+      const { data: profile, error } = await supabaseAdmin
         .from('profiles')
         .select('media_enabled, role')
         .eq('id', userId)
         .single();
       
-      if (error || !profile) {
-        // Profile not found or error - assume no permission for security
-        return res.json({ hasPermission: false, error: error?.message || "Profile not found" });
+      if (error) {
+        console.error("Error fetching profile for media permission:", error);
+        return res.json({ hasPermission: false, error: error.message });
+      }
+      
+      if (!profile) {
+        return res.json({ hasPermission: false, error: "Profile not found" });
       }
       
       // Admins always have media permission
       const hasPermission = profile.role === 'admin' || profile.media_enabled === true;
+      console.log(`Media permission check for ${userId}: role=${profile.role}, media_enabled=${profile.media_enabled}, hasPermission=${hasPermission}`);
       
       res.json({ hasPermission });
     } catch (error) {
