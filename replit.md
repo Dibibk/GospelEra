@@ -15,6 +15,8 @@ Gospel Era is a full-stack web application designed as a social platform for the
 - Created server/supabaseClient.ts: Helper module for creating authenticated server-side Supabase clients
 - Benefits: Single source of truth for all data, simplified architecture, consistent RLS policies, better native app support
 - Note: Some secondary routes (donations, push tokens, bookmarks) still use Drizzle and may need future migration
+- Fixed Supabase foreign key join issues: Replaced `profiles!prayer_requests_requester_fkey(...)` patterns with separate queries in AdminReports.tsx, AdminReportsMobile.tsx, and PrayerDetail.tsx
+- Query pattern fix: First fetch main data, collect profile IDs, fetch profiles separately, then merge - avoids "Could not find relationship in schema cache" errors
 
 **December 11, 2025 - Notification Navigation & Account Deletion**
 - Fixed comment notification clicks: Now navigates to the correct post and opens its comments section

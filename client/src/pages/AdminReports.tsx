@@ -76,34 +76,60 @@ export default function AdminReports() {
   const loadPrayerRequests = async () => {
     try {
       setError('')
-      const { data, error } = await supabase
+      // Fetch prayer requests with commitments (without foreign key hints)
+      const { data: requestsData, error: requestsError } = await supabase
         .from('prayer_requests')
         .select(`
           *,
-          profiles!prayer_requests_requester_fkey (
-            display_name,
-            avatar_url,
-            role
-          ),
           prayer_commitments (
             request_id,
             warrior,
             status,
             prayed_at,
             committed_at,
-            note,
-            profiles!prayer_commitments_warrior_fkey (
-              display_name,
-              avatar_url,
-              role
-            )
+            note
           )
         `)
         .order('created_at', { ascending: false })
         .limit(100)
 
-      if (error) throw error
-      setPrayerRequests(data || [])
+      if (requestsError) throw requestsError
+      if (!requestsData || requestsData.length === 0) {
+        setPrayerRequests([])
+        return
+      }
+
+      // Collect all requester IDs and warrior IDs
+      const requesterIds = Array.from(new Set(requestsData.map(r => r.requester).filter(Boolean)))
+      const warriorIds = Array.from(new Set(
+        requestsData.flatMap(r => (r.prayer_commitments || []).map((c: any) => c.warrior).filter(Boolean))
+      ))
+      const allProfileIds = Array.from(new Set([...requesterIds, ...warriorIds]))
+
+      // Fetch all profiles in one query
+      const profilesMap = new Map<string, any>()
+      if (allProfileIds.length > 0) {
+        const { data: profilesData } = await supabase
+          .from('profiles')
+          .select('id, display_name, avatar_url, role')
+          .in('id', allProfileIds)
+        
+        if (profilesData) {
+          profilesData.forEach(p => profilesMap.set(p.id, p))
+        }
+      }
+
+      // Merge profile data into requests
+      const enrichedRequests = requestsData.map(request => ({
+        ...request,
+        profiles: profilesMap.get(request.requester) || null,
+        prayer_commitments: (request.prayer_commitments || []).map((commitment: any) => ({
+          ...commitment,
+          profiles: profilesMap.get(commitment.warrior) || null
+        }))
+      }))
+
+      setPrayerRequests(enrichedRequests)
     } catch (err: any) {
       setError(err.message)
     }
