@@ -2042,12 +2042,8 @@ export default function MobileApp() {
                   {/* Three dots menu */}
                   <div style={{ position: "relative" }}>
                     <button
-                      onPointerUp={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        togglePostMenu(post.id);
-                      }}
                       onClick={(e) => {
+                        e.preventDefault();
                         e.stopPropagation();
                         togglePostMenu(post.id);
                       }}
