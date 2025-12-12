@@ -328,9 +328,11 @@ export function MobileSavedPostsPage({
               >
                 {/* Unsave (Bookmark icon) */}
                 <button
-                  onClick={(e) => {
+                  onClick={async (e) => {
                     e.stopPropagation();
                     onToggleBookmark(post.id);
+                    // Remove the post from local state immediately for instant feedback
+                    setSavedPosts(prev => prev.filter(p => p.id !== post.id));
                   }}
                   aria-label="Remove from saved"
                   style={{

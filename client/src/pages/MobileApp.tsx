@@ -3258,8 +3258,7 @@ export default function MobileApp() {
             onSetProfiles={setProfiles}
             onToggleBookmark={handleToggleBookmark}
             onOpenPostMenu={(postId, menuType) => {
-              setPostMenuOpenId(postId);
-              setPostMenuType(menuType);
+              // Not used in saved posts context - handled inline
             }}
             onSelectPost={(postId) => {
               setShowMobileSavedPosts(false);
