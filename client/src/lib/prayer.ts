@@ -222,55 +222,45 @@ export async function getPrayerRequest(id: number): Promise<ApiResponse<any>> {
  */
 export async function commitToPray(requestId: number): Promise<ApiResponse<any>> {
   try {
-    const { data: user } = await supabase.auth.getUser()
+    const { data: sessionData } = await supabase.auth.getSession()
     
-    if (!user?.user?.id) {
+    if (!sessionData?.session?.access_token) {
       return { data: null, error: 'Authentication required' }
     }
 
     // Check for spam before allowing commitment
     const { checkPrayerCommitmentSpam } = await import('./prayerSpamDetection')
-    const spamCheck = await checkPrayerCommitmentSpam(user.user.id)
+    const spamCheck = await checkPrayerCommitmentSpam(sessionData.session.user.id)
     
     if (!spamCheck.allowed) {
       return { data: null, error: spamCheck.reason || 'Unable to commit at this time' }
     }
 
-    const { data, error } = await supabase
-      .from('prayer_commitments')
-      .upsert({
-        request_id: requestId,
-        warrior: user.user.id,
-        status: 'committed'
-      }, {
-        onConflict: 'request_id,warrior'
-      })
-      .select()
-      .single()
+    const baseUrl = getApiBaseUrl()
+    const response = await fetch(`${baseUrl}/api/prayer-requests/${requestId}/commit`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${sessionData.session.access_token}`
+      }
+    })
 
-    if (error) {
-      console.error('Failed to commit to pray:', error)
-      return { data: null, error: 'Failed to commit to prayer' }
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      console.error('Failed to commit to pray:', errorData)
+      return { data: null, error: errorData.error || 'Failed to commit to prayer' }
     }
 
-    // Log activity
-    await supabase
-      .from('prayer_activity')
-      .insert({
-        request_id: requestId,
-        actor: user.user.id,
-        kind: 'commitment',
-        message: 'committed to pray'
-      })
+    const data = await response.json()
 
-    // Notify prayer request owner (if not self)
+    // Notify prayer request owner (if not self) - client-side notification
     const { data: prayerRequest } = await supabase
       .from('prayer_requests')
       .select('requester')
       .eq('id', requestId)
       .single();
     
-    if (prayerRequest?.requester && prayerRequest.requester !== user.user.id) {
+    if (prayerRequest?.requester && prayerRequest.requester !== sessionData.session.user.id) {
       createNotification({
         recipientId: prayerRequest.requester,
         eventType: 'prayer_commitment',
@@ -339,47 +329,38 @@ export async function uncommitToPray(requestId: number): Promise<ApiResponse<any
  */
 export async function confirmPrayed(requestId: number, { note = null }: { note?: string | null } = {}): Promise<ApiResponse<any>> {
   try {
-    const { data: user } = await supabase.auth.getUser()
+    const { data: sessionData } = await supabase.auth.getSession()
     
-    if (!user?.user?.id) {
+    if (!sessionData?.session?.access_token) {
       return { data: null, error: 'Authentication required' }
     }
 
-    const { data, error } = await supabase
-      .from('prayer_commitments')
-      .update({
-        status: 'prayed',
-        prayed_at: new Date().toISOString(),
-        note: note?.trim() || null
-      })
-      .eq('request_id', requestId)
-      .eq('warrior', user.user.id)
-      .select()
-      .single()
+    const baseUrl = getApiBaseUrl()
+    const response = await fetch(`${baseUrl}/api/prayer-requests/${requestId}/confirm-prayed`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${sessionData.session.access_token}`
+      },
+      body: JSON.stringify({ note: note?.trim() || null })
+    })
 
-    if (error) {
-      console.error('Failed to confirm prayed:', error)
-      return { data: null, error: 'Failed to confirm prayer' }
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      console.error('Failed to confirm prayed:', errorData)
+      return { data: null, error: errorData.error || 'Failed to confirm prayer' }
     }
 
-    // Log activity
-    await supabase
-      .from('prayer_activity')
-      .insert({
-        request_id: requestId,
-        actor: user.user.id,
-        kind: 'prayer_completed',
-        message: note ? `prayed with note: ${note}` : 'completed prayer'
-      })
+    const data = await response.json()
 
-    // Notify prayer request owner (if not self)
+    // Notify prayer request owner (if not self) - client-side notification
     const { data: prayerRequest } = await supabase
       .from('prayer_requests')
       .select('requester')
       .eq('id', requestId)
       .single();
     
-    if (prayerRequest?.requester && prayerRequest.requester !== user.user.id) {
+    if (prayerRequest?.requester && prayerRequest.requester !== sessionData.session.user.id) {
       createNotification({
         recipientId: prayerRequest.requester,
         eventType: 'prayer_completed',

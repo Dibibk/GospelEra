@@ -1195,6 +1195,105 @@ Respond in JSON format:
     }
   });
 
+  // Prayer Commitment - commit to pray for a request
+  app.post("/api/prayer-requests/:id/commit", authenticateUser, checkNotBanned, async (req: AuthenticatedRequest, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: "Authentication required" });
+      }
+      
+      const requestId = parseInt(req.params.id);
+      if (isNaN(requestId)) {
+        return res.status(400).json({ error: "Invalid request ID" });
+      }
+      
+      const token = extractToken(req.headers.authorization);
+      const supabase = createServerSupabase(token);
+      
+      // Upsert commitment
+      const { data: commitment, error: commitError } = await supabase
+        .from('prayer_commitments')
+        .upsert({
+          request_id: requestId,
+          warrior: req.user.id,
+          status: 'committed'
+        }, {
+          onConflict: 'request_id,warrior'
+        })
+        .select()
+        .single();
+
+      if (commitError) {
+        console.error("Error creating prayer commitment:", commitError);
+        return res.status(500).json({ error: "Failed to commit to prayer" });
+      }
+
+      // Log activity
+      await supabase
+        .from('prayer_activity')
+        .insert({
+          request_id: requestId,
+          actor: req.user.id,
+          kind: 'commitment',
+          message: 'committed to pray'
+        });
+
+      res.json(commitment);
+    } catch (error) {
+      console.error("Error committing to prayer:", error);
+      res.status(500).json({ error: "Failed to commit to prayer" });
+    }
+  });
+
+  // Confirm Prayed - mark commitment as prayed
+  app.post("/api/prayer-requests/:id/confirm-prayed", authenticateUser, checkNotBanned, async (req: AuthenticatedRequest, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: "Authentication required" });
+      }
+      
+      const requestId = parseInt(req.params.id);
+      if (isNaN(requestId)) {
+        return res.status(400).json({ error: "Invalid request ID" });
+      }
+      
+      const token = extractToken(req.headers.authorization);
+      const supabase = createServerSupabase(token);
+      
+      // Update commitment status to prayed
+      const { data: commitment, error: updateError } = await supabase
+        .from('prayer_commitments')
+        .update({
+          status: 'prayed',
+          prayed_at: new Date().toISOString()
+        })
+        .eq('request_id', requestId)
+        .eq('warrior', req.user.id)
+        .select()
+        .single();
+
+      if (updateError) {
+        console.error("Error confirming prayed:", updateError);
+        return res.status(500).json({ error: "Failed to confirm prayer" });
+      }
+
+      // Log activity
+      await supabase
+        .from('prayer_activity')
+        .insert({
+          request_id: requestId,
+          actor: req.user.id,
+          kind: 'prayed',
+          message: 'prayed for this request'
+        });
+
+      res.json(commitment);
+    } catch (error) {
+      console.error("Error confirming prayed:", error);
+      res.status(500).json({ error: "Failed to confirm prayer" });
+    }
+  });
+
   // Prayer Activity - record when someone prays
   app.post("/api/prayer-requests/:id/pray", authenticateUser, checkNotBanned, async (req: AuthenticatedRequest, res) => {
     try {

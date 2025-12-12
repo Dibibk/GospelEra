@@ -163,15 +163,30 @@ export function PrayerBrowseMobile({
                     width: "32px",
                     height: "32px",
                     borderRadius: "50%",
-                    background: "#dbdbdb",
+                    background: request.is_anonymous ? "#dbdbdb" : (request.profiles?.avatar_url ? "transparent" : "#dbdbdb"),
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
                     marginRight: "12px",
                     color: "#8e8e8e",
+                    overflow: "hidden",
                   }}
                 >
-                  {request.is_anonymous ? "🙏" : "•"}
+                  {request.is_anonymous ? (
+                    "🙏"
+                  ) : request.profiles?.avatar_url ? (
+                    <img
+                      src={request.profiles.avatar_url}
+                      alt=""
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "cover",
+                      }}
+                    />
+                  ) : (
+                    "•"
+                  )}
                 </div>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontWeight: 600, color: "#262626" }}>

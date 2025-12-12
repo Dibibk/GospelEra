@@ -125,15 +125,30 @@ export function PrayerDetailMobile({
               width: "48px",
               height: "48px",
               borderRadius: "50%",
-              background: "#dbdbdb",
+              background: prayer.is_anonymous ? "#dbdbdb" : (prayer.profiles?.avatar_url ? "transparent" : "#dbdbdb"),
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               marginRight: "16px",
               color: "#8e8e8e",
+              overflow: "hidden",
             }}
           >
-            {prayer.is_anonymous ? "🙏" : "•"}
+            {prayer.is_anonymous ? (
+              "🙏"
+            ) : prayer.profiles?.avatar_url ? (
+              <img
+                src={prayer.profiles.avatar_url}
+                alt=""
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "cover",
+                }}
+              />
+            ) : (
+              "•"
+            )}
           </div>
           <div>
             <div
