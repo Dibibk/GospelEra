@@ -4,6 +4,7 @@
 -- This file creates ALL tables in Supabase from scratch
 -- Run this in Supabase SQL Editor to set up the complete database
 -- Tables are created in dependency order (base tables first)
+-- Safe to run multiple times (idempotent)
 -- =============================================================================
 
 -- =============================================================================
@@ -35,28 +36,25 @@ CREATE TABLE IF NOT EXISTS public.profiles (
 -- RLS for profiles
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 
--- Everyone can view profiles
-CREATE POLICY IF NOT EXISTS "profiles_select_all" ON public.profiles
-    FOR SELECT TO authenticated
-    USING (true);
+DROP POLICY IF EXISTS "profiles_select_all" ON public.profiles;
+CREATE POLICY "profiles_select_all" ON public.profiles
+    FOR SELECT TO authenticated USING (true);
 
--- Users can insert their own profile
-CREATE POLICY IF NOT EXISTS "profiles_insert_own" ON public.profiles
-    FOR INSERT TO authenticated
-    WITH CHECK (id = auth.uid());
+DROP POLICY IF EXISTS "profiles_insert_own" ON public.profiles;
+CREATE POLICY "profiles_insert_own" ON public.profiles
+    FOR INSERT TO authenticated WITH CHECK (id = auth.uid());
 
--- Users can update their own profile
-CREATE POLICY IF NOT EXISTS "profiles_update_own" ON public.profiles
-    FOR UPDATE TO authenticated
-    USING (id = auth.uid());
+DROP POLICY IF EXISTS "profiles_update_own" ON public.profiles;
+CREATE POLICY "profiles_update_own" ON public.profiles
+    FOR UPDATE TO authenticated USING (id = auth.uid());
 
--- Admins can update any profile
-CREATE POLICY IF NOT EXISTS "profiles_update_admin" ON public.profiles
+DROP POLICY IF EXISTS "profiles_update_admin" ON public.profiles;
+CREATE POLICY "profiles_update_admin" ON public.profiles
     FOR UPDATE TO authenticated
     USING (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin'));
 
 -- =============================================================================
--- TABLE: posts (BASE - no dependencies except profiles)
+-- TABLE: posts (BASE - depends on profiles)
 -- =============================================================================
 CREATE TABLE IF NOT EXISTS public.posts (
     id BIGSERIAL PRIMARY KEY,
@@ -76,35 +74,32 @@ CREATE TABLE IF NOT EXISTS public.posts (
 -- RLS for posts
 ALTER TABLE public.posts ENABLE ROW LEVEL SECURITY;
 
--- Everyone can view non-hidden posts
-CREATE POLICY IF NOT EXISTS "posts_select_public" ON public.posts
-    FOR SELECT TO authenticated
-    USING (hidden = false);
+DROP POLICY IF EXISTS "posts_select_public" ON public.posts;
+CREATE POLICY "posts_select_public" ON public.posts
+    FOR SELECT TO authenticated USING (hidden = false);
 
--- Admins can view all posts
-CREATE POLICY IF NOT EXISTS "posts_select_admin" ON public.posts
+DROP POLICY IF EXISTS "posts_select_admin" ON public.posts;
+CREATE POLICY "posts_select_admin" ON public.posts
     FOR SELECT TO authenticated
     USING (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin'));
 
--- Users can insert their own posts
-CREATE POLICY IF NOT EXISTS "posts_insert_own" ON public.posts
-    FOR INSERT TO authenticated
-    WITH CHECK (author_id = auth.uid());
+DROP POLICY IF EXISTS "posts_insert_own" ON public.posts;
+CREATE POLICY "posts_insert_own" ON public.posts
+    FOR INSERT TO authenticated WITH CHECK (author_id = auth.uid());
 
--- Users can update their own posts, admins can update any
-CREATE POLICY IF NOT EXISTS "posts_update_own" ON public.posts
+DROP POLICY IF EXISTS "posts_update_own" ON public.posts;
+CREATE POLICY "posts_update_own" ON public.posts
     FOR UPDATE TO authenticated
     USING (
         author_id = auth.uid() OR
         EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
     );
 
--- Indexes for posts
 CREATE INDEX IF NOT EXISTS idx_posts_feed ON public.posts(hidden, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_posts_author ON public.posts(author_id);
 
 -- =============================================================================
--- STEP 2: DEPENDENT TABLES (reference profiles and/or posts)
+-- STEP 2: DEPENDENT TABLES
 -- =============================================================================
 
 -- =============================================================================
@@ -121,41 +116,37 @@ CREATE TABLE IF NOT EXISTS public.comments (
     updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
 );
 
--- RLS for comments
 ALTER TABLE public.comments ENABLE ROW LEVEL SECURITY;
 
--- Everyone can read non-deleted, non-hidden comments
-CREATE POLICY IF NOT EXISTS "comments_select_public" ON public.comments
-    FOR SELECT TO authenticated
-    USING (deleted = false AND hidden = false);
+DROP POLICY IF EXISTS "comments_select_public" ON public.comments;
+CREATE POLICY "comments_select_public" ON public.comments
+    FOR SELECT TO authenticated USING (deleted = false AND hidden = false);
 
--- Admins can read all comments
-CREATE POLICY IF NOT EXISTS "comments_select_admin" ON public.comments
+DROP POLICY IF EXISTS "comments_select_admin" ON public.comments;
+CREATE POLICY "comments_select_admin" ON public.comments
     FOR SELECT TO authenticated
     USING (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin'));
 
--- Users can insert their own comments
-CREATE POLICY IF NOT EXISTS "comments_insert_own" ON public.comments
-    FOR INSERT TO authenticated
-    WITH CHECK (author_id = auth.uid());
+DROP POLICY IF EXISTS "comments_insert_own" ON public.comments;
+CREATE POLICY "comments_insert_own" ON public.comments
+    FOR INSERT TO authenticated WITH CHECK (author_id = auth.uid());
 
--- Users can update their own comments, admins can update any
-CREATE POLICY IF NOT EXISTS "comments_update_own" ON public.comments
+DROP POLICY IF EXISTS "comments_update_own" ON public.comments;
+CREATE POLICY "comments_update_own" ON public.comments
     FOR UPDATE TO authenticated
     USING (
         author_id = auth.uid() OR
         EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
     );
 
--- Users can soft-delete their own comments, admins can delete any
-CREATE POLICY IF NOT EXISTS "comments_delete_own" ON public.comments
+DROP POLICY IF EXISTS "comments_delete_own" ON public.comments;
+CREATE POLICY "comments_delete_own" ON public.comments
     FOR DELETE TO authenticated
     USING (
         author_id = auth.uid() OR
         EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
     );
 
--- Indexes for comments
 CREATE INDEX IF NOT EXISTS idx_comments_post_id ON public.comments(post_id);
 CREATE INDEX IF NOT EXISTS idx_comments_author_id ON public.comments(author_id);
 CREATE INDEX IF NOT EXISTS idx_comments_created_at ON public.comments(created_at DESC);
@@ -170,16 +161,18 @@ CREATE TABLE IF NOT EXISTS public.bookmarks (
     PRIMARY KEY (user_id, post_id)
 );
 
--- RLS for bookmarks
 ALTER TABLE public.bookmarks ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY IF NOT EXISTS "bookmarks_select_own" ON public.bookmarks
+DROP POLICY IF EXISTS "bookmarks_select_own" ON public.bookmarks;
+CREATE POLICY "bookmarks_select_own" ON public.bookmarks
     FOR SELECT TO authenticated USING (user_id = auth.uid());
 
-CREATE POLICY IF NOT EXISTS "bookmarks_insert_own" ON public.bookmarks
+DROP POLICY IF EXISTS "bookmarks_insert_own" ON public.bookmarks;
+CREATE POLICY "bookmarks_insert_own" ON public.bookmarks
     FOR INSERT TO authenticated WITH CHECK (user_id = auth.uid());
 
-CREATE POLICY IF NOT EXISTS "bookmarks_delete_own" ON public.bookmarks
+DROP POLICY IF EXISTS "bookmarks_delete_own" ON public.bookmarks;
+CREATE POLICY "bookmarks_delete_own" ON public.bookmarks
     FOR DELETE TO authenticated USING (user_id = auth.uid());
 
 CREATE INDEX IF NOT EXISTS idx_bookmarks_user_id ON public.bookmarks(user_id);
@@ -197,16 +190,18 @@ CREATE TABLE IF NOT EXISTS public.reactions (
     CONSTRAINT valid_reaction_kind CHECK (kind IN ('amen'))
 );
 
--- RLS for reactions
 ALTER TABLE public.reactions ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY IF NOT EXISTS "reactions_select_all" ON public.reactions
+DROP POLICY IF EXISTS "reactions_select_all" ON public.reactions;
+CREATE POLICY "reactions_select_all" ON public.reactions
     FOR SELECT TO authenticated USING (true);
 
-CREATE POLICY IF NOT EXISTS "reactions_insert_own" ON public.reactions
+DROP POLICY IF EXISTS "reactions_insert_own" ON public.reactions;
+CREATE POLICY "reactions_insert_own" ON public.reactions
     FOR INSERT TO authenticated WITH CHECK (user_id = auth.uid());
 
-CREATE POLICY IF NOT EXISTS "reactions_delete_own" ON public.reactions
+DROP POLICY IF EXISTS "reactions_delete_own" ON public.reactions;
+CREATE POLICY "reactions_delete_own" ON public.reactions
     FOR DELETE TO authenticated USING (user_id = auth.uid());
 
 CREATE INDEX IF NOT EXISTS idx_reactions_post_id ON public.reactions(post_id);
@@ -226,17 +221,19 @@ CREATE TABLE IF NOT EXISTS public.reports (
     updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
 );
 
--- RLS for reports
 ALTER TABLE public.reports ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY IF NOT EXISTS "reports_insert_own" ON public.reports
+DROP POLICY IF EXISTS "reports_insert_own" ON public.reports;
+CREATE POLICY "reports_insert_own" ON public.reports
     FOR INSERT TO authenticated WITH CHECK (reporter_id = auth.uid());
 
-CREATE POLICY IF NOT EXISTS "reports_select_admin" ON public.reports
+DROP POLICY IF EXISTS "reports_select_admin" ON public.reports;
+CREATE POLICY "reports_select_admin" ON public.reports
     FOR SELECT TO authenticated
     USING (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin'));
 
-CREATE POLICY IF NOT EXISTS "reports_update_admin" ON public.reports
+DROP POLICY IF EXISTS "reports_update_admin" ON public.reports;
+CREATE POLICY "reports_update_admin" ON public.reports
     FOR UPDATE TO authenticated
     USING (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin'));
 
@@ -259,20 +256,23 @@ CREATE TABLE IF NOT EXISTS public.donations (
     created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
 );
 
--- RLS for donations
 ALTER TABLE public.donations ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY IF NOT EXISTS "donations_select_own" ON public.donations
+DROP POLICY IF EXISTS "donations_select_own" ON public.donations;
+CREATE POLICY "donations_select_own" ON public.donations
     FOR SELECT TO authenticated USING (user_id = auth.uid());
 
-CREATE POLICY IF NOT EXISTS "donations_select_admin" ON public.donations
+DROP POLICY IF EXISTS "donations_select_admin" ON public.donations;
+CREATE POLICY "donations_select_admin" ON public.donations
     FOR SELECT TO authenticated
     USING (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin'));
 
-CREATE POLICY IF NOT EXISTS "donations_insert_own" ON public.donations
+DROP POLICY IF EXISTS "donations_insert_own" ON public.donations;
+CREATE POLICY "donations_insert_own" ON public.donations
     FOR INSERT TO authenticated WITH CHECK (user_id = auth.uid());
 
-CREATE POLICY IF NOT EXISTS "donations_update_admin" ON public.donations
+DROP POLICY IF EXISTS "donations_update_admin" ON public.donations;
+CREATE POLICY "donations_update_admin" ON public.donations
     FOR UPDATE TO authenticated
     USING (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin'));
 
@@ -293,20 +293,23 @@ CREATE TABLE IF NOT EXISTS public.media_requests (
     CONSTRAINT media_requests_status_check CHECK (status IN ('pending', 'approved', 'denied'))
 );
 
--- RLS for media_requests
 ALTER TABLE public.media_requests ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY IF NOT EXISTS "media_requests_select_own" ON public.media_requests
+DROP POLICY IF EXISTS "media_requests_select_own" ON public.media_requests;
+CREATE POLICY "media_requests_select_own" ON public.media_requests
     FOR SELECT TO authenticated USING (user_id = auth.uid());
 
-CREATE POLICY IF NOT EXISTS "media_requests_select_admin" ON public.media_requests
+DROP POLICY IF EXISTS "media_requests_select_admin" ON public.media_requests;
+CREATE POLICY "media_requests_select_admin" ON public.media_requests
     FOR SELECT TO authenticated
     USING (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin'));
 
-CREATE POLICY IF NOT EXISTS "media_requests_insert_own" ON public.media_requests
+DROP POLICY IF EXISTS "media_requests_insert_own" ON public.media_requests;
+CREATE POLICY "media_requests_insert_own" ON public.media_requests
     FOR INSERT TO authenticated WITH CHECK (user_id = auth.uid());
 
-CREATE POLICY IF NOT EXISTS "media_requests_update_admin" ON public.media_requests
+DROP POLICY IF EXISTS "media_requests_update_admin" ON public.media_requests;
+CREATE POLICY "media_requests_update_admin" ON public.media_requests
     FOR UPDATE TO authenticated
     USING (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin'));
 
@@ -331,19 +334,22 @@ CREATE TABLE IF NOT EXISTS public.notifications (
     created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
 );
 
--- RLS for notifications
 ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY IF NOT EXISTS "notifications_select_own" ON public.notifications
+DROP POLICY IF EXISTS "notifications_select_own" ON public.notifications;
+CREATE POLICY "notifications_select_own" ON public.notifications
     FOR SELECT TO authenticated USING (recipient_id = auth.uid());
 
-CREATE POLICY IF NOT EXISTS "notifications_insert" ON public.notifications
+DROP POLICY IF EXISTS "notifications_insert" ON public.notifications;
+CREATE POLICY "notifications_insert" ON public.notifications
     FOR INSERT TO authenticated WITH CHECK (true);
 
-CREATE POLICY IF NOT EXISTS "notifications_update_own" ON public.notifications
+DROP POLICY IF EXISTS "notifications_update_own" ON public.notifications;
+CREATE POLICY "notifications_update_own" ON public.notifications
     FOR UPDATE TO authenticated USING (recipient_id = auth.uid());
 
-CREATE POLICY IF NOT EXISTS "notifications_delete_own" ON public.notifications
+DROP POLICY IF EXISTS "notifications_delete_own" ON public.notifications;
+CREATE POLICY "notifications_delete_own" ON public.notifications
     FOR DELETE TO authenticated USING (recipient_id = auth.uid());
 
 CREATE INDEX IF NOT EXISTS idx_notifications_recipient_unread 
@@ -362,19 +368,22 @@ CREATE TABLE IF NOT EXISTS public.push_tokens (
     updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
 );
 
--- RLS for push_tokens
 ALTER TABLE public.push_tokens ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY IF NOT EXISTS "push_tokens_select_own" ON public.push_tokens
+DROP POLICY IF EXISTS "push_tokens_select_own" ON public.push_tokens;
+CREATE POLICY "push_tokens_select_own" ON public.push_tokens
     FOR SELECT TO authenticated USING (user_id = auth.uid());
 
-CREATE POLICY IF NOT EXISTS "push_tokens_insert_own" ON public.push_tokens
+DROP POLICY IF EXISTS "push_tokens_insert_own" ON public.push_tokens;
+CREATE POLICY "push_tokens_insert_own" ON public.push_tokens
     FOR INSERT TO authenticated WITH CHECK (user_id = auth.uid());
 
-CREATE POLICY IF NOT EXISTS "push_tokens_update_own" ON public.push_tokens
+DROP POLICY IF EXISTS "push_tokens_update_own" ON public.push_tokens;
+CREATE POLICY "push_tokens_update_own" ON public.push_tokens
     FOR UPDATE TO authenticated USING (user_id = auth.uid());
 
-CREATE POLICY IF NOT EXISTS "push_tokens_delete_own" ON public.push_tokens
+DROP POLICY IF EXISTS "push_tokens_delete_own" ON public.push_tokens;
+CREATE POLICY "push_tokens_delete_own" ON public.push_tokens
     FOR DELETE TO authenticated USING (user_id = auth.uid());
 
 CREATE INDEX IF NOT EXISTS idx_push_tokens_user_id ON public.push_tokens(user_id);
@@ -402,16 +411,18 @@ CREATE TABLE IF NOT EXISTS public.prayer_requests (
     updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
 );
 
--- RLS for prayer_requests
 ALTER TABLE public.prayer_requests ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY IF NOT EXISTS "prayer_requests_select" ON public.prayer_requests
+DROP POLICY IF EXISTS "prayer_requests_select" ON public.prayer_requests;
+CREATE POLICY "prayer_requests_select" ON public.prayer_requests
     FOR SELECT TO authenticated USING (status IN ('open', 'answered', 'closed'));
 
-CREATE POLICY IF NOT EXISTS "prayer_requests_insert" ON public.prayer_requests
+DROP POLICY IF EXISTS "prayer_requests_insert" ON public.prayer_requests;
+CREATE POLICY "prayer_requests_insert" ON public.prayer_requests
     FOR INSERT TO authenticated WITH CHECK (requester = auth.uid());
 
-CREATE POLICY IF NOT EXISTS "prayer_requests_update" ON public.prayer_requests
+DROP POLICY IF EXISTS "prayer_requests_update" ON public.prayer_requests;
+CREATE POLICY "prayer_requests_update" ON public.prayer_requests
     FOR UPDATE TO authenticated
     USING (
         (requester = auth.uid() AND status != 'answered') OR
@@ -434,23 +445,26 @@ CREATE TABLE IF NOT EXISTS public.prayer_commitments (
     PRIMARY KEY (request_id, warrior)
 );
 
--- RLS for prayer_commitments
 ALTER TABLE public.prayer_commitments ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY IF NOT EXISTS "prayer_commitments_select" ON public.prayer_commitments
+DROP POLICY IF EXISTS "prayer_commitments_select" ON public.prayer_commitments;
+CREATE POLICY "prayer_commitments_select" ON public.prayer_commitments
     FOR SELECT TO authenticated USING (true);
 
-CREATE POLICY IF NOT EXISTS "prayer_commitments_insert" ON public.prayer_commitments
+DROP POLICY IF EXISTS "prayer_commitments_insert" ON public.prayer_commitments;
+CREATE POLICY "prayer_commitments_insert" ON public.prayer_commitments
     FOR INSERT TO authenticated WITH CHECK (warrior = auth.uid());
 
-CREATE POLICY IF NOT EXISTS "prayer_commitments_update" ON public.prayer_commitments
+DROP POLICY IF EXISTS "prayer_commitments_update" ON public.prayer_commitments;
+CREATE POLICY "prayer_commitments_update" ON public.prayer_commitments
     FOR UPDATE TO authenticated
     USING (
         warrior = auth.uid() OR
         (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin'))
     );
 
-CREATE POLICY IF NOT EXISTS "prayer_commitments_delete" ON public.prayer_commitments
+DROP POLICY IF EXISTS "prayer_commitments_delete" ON public.prayer_commitments;
+CREATE POLICY "prayer_commitments_delete" ON public.prayer_commitments
     FOR DELETE TO authenticated
     USING (
         warrior = auth.uid() OR
@@ -474,20 +488,20 @@ CREATE TABLE IF NOT EXISTS public.prayer_activity (
     created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
 );
 
--- RLS for prayer_activity
 ALTER TABLE public.prayer_activity ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY IF NOT EXISTS "prayer_activity_select" ON public.prayer_activity
+DROP POLICY IF EXISTS "prayer_activity_select" ON public.prayer_activity;
+CREATE POLICY "prayer_activity_select" ON public.prayer_activity
     FOR SELECT TO authenticated USING (true);
 
-CREATE POLICY IF NOT EXISTS "prayer_activity_insert" ON public.prayer_activity
+DROP POLICY IF EXISTS "prayer_activity_insert" ON public.prayer_activity;
+CREATE POLICY "prayer_activity_insert" ON public.prayer_activity
     FOR INSERT TO authenticated WITH CHECK (true);
 
 -- =============================================================================
 -- STEP 4: VIEWS FOR LEADERBOARDS
 -- =============================================================================
 
--- Base view for confirmed prayers
 CREATE OR REPLACE VIEW public.vw_prayer_confirmed AS
 SELECT 
     warrior,
@@ -498,7 +512,6 @@ SELECT
 FROM public.prayer_commitments 
 WHERE status = 'prayed';
 
--- Weekly leaderboard
 CREATE OR REPLACE VIEW public.vw_prayer_leaderboard_week AS
 SELECT 
     warrior,
@@ -511,7 +524,6 @@ WHERE status = 'prayed'
 GROUP BY warrior
 ORDER BY count_prayed DESC, first_prayed_at ASC;
 
--- Monthly leaderboard
 CREATE OR REPLACE VIEW public.vw_prayer_leaderboard_month AS
 SELECT 
     warrior,
@@ -524,7 +536,6 @@ WHERE status = 'prayed'
 GROUP BY warrior
 ORDER BY count_prayed DESC, first_prayed_at ASC;
 
--- All-time leaderboard
 CREATE OR REPLACE VIEW public.vw_prayer_leaderboard_alltime AS
 SELECT 
     warrior,
@@ -536,7 +547,6 @@ WHERE status = 'prayed'
 GROUP BY warrior
 ORDER BY count_prayed DESC, first_prayed_at ASC;
 
--- Prayer streaks
 CREATE OR REPLACE VIEW public.vw_prayer_streaks AS
 WITH daily_prayers AS (
     SELECT DISTINCT warrior, prayed_at::date as prayer_date
@@ -572,7 +582,6 @@ FROM (SELECT DISTINCT warrior FROM daily_prayers) dp
 LEFT JOIN current_streaks cs ON dp.warrior = cs.warrior
 ORDER BY current_streak DESC, streak_end_date DESC;
 
--- Prayer request stats view
 CREATE OR REPLACE VIEW public.prayer_request_stats AS
 SELECT 
     pr.id as request_id,
