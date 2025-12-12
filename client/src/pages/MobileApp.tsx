@@ -3096,7 +3096,7 @@ export default function MobileApp() {
                   Help
                 </button>
 
-                {(userProfile?.role === "admin" || isAdmin) && (
+                {isAdmin && (
                   <>
                     <div
                       style={{
