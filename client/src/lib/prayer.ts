@@ -464,10 +464,14 @@ export async function getMyCommitments({ status = null, limit = 20, cursor = nul
 
     if (error) {
       console.error('Failed to get my commitments:', error)
+      // Handle missing Supabase tables gracefully
+      if (error.code === 'PGRST200' || error.code === '42P01' || error.message?.includes('does not exist')) {
+        return { data: [], error: null }
+      }
       return { data: null, error: 'Failed to load your commitments' }
     }
 
-    return { data, error: null }
+    return { data: data || [], error: null }
   } catch (err) {
     console.error('Get my commitments error:', err)
     return { data: null, error: 'Unexpected error occurred' }
@@ -524,7 +528,15 @@ export async function getMyRequests({ status = null, limit = 20, cursor = null }
 
     if (error) {
       console.error('Failed to get my requests:', error)
+      // Handle missing Supabase tables gracefully
+      if (error.code === 'PGRST200' || error.code === '42P01' || error.message?.includes('does not exist')) {
+        return { data: [], error: null }
+      }
       return { data: null, error: 'Failed to load your requests' }
+    }
+
+    if (!data) {
+      return { data: [], error: null }
     }
 
     // Enhance with statistics

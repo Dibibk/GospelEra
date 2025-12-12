@@ -673,6 +673,17 @@ Respond in JSON format:
       
       if (error) {
         console.error("Supabase prayer query error:", error);
+        // Handle missing tables gracefully - return empty results instead of error
+        // This happens when Supabase prayer tables don't exist
+        if (error.code === 'PGRST200' || error.code === '42P01' || error.message?.includes('does not exist')) {
+          return res.json({ 
+            requests: [], 
+            profiles: {}, 
+            stats: {},
+            myCommitments: [],
+            nextCursor: null 
+          });
+        }
         return res.status(500).json({ error: "Failed to fetch prayer requests" });
       }
       
