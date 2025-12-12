@@ -132,10 +132,16 @@ export async function getProfilesByIds(ids: string[]) {
     const uniqueIds = Array.from(new Set(ids))
     const baseUrl = getApiBaseUrl()
 
-    // Fetch profiles individually from API (Neon database)
+    // Get session for auth header
+    const { data: { session } } = await supabase.auth.getSession()
+    const headers: HeadersInit = session?.access_token 
+      ? { 'Authorization': `Bearer ${session.access_token}` }
+      : {}
+
+    // Fetch profiles individually from API (Supabase database)
     const profilePromises = uniqueIds.map(async (id) => {
       try {
-        const response = await fetch(`${baseUrl}/api/profiles/${id}`)
+        const response = await fetch(`${baseUrl}/api/profiles/${id}`, { headers })
         if (response.ok) {
           return await response.json()
         }
@@ -173,9 +179,15 @@ export async function getProfileById(userId: string) {
       throw new Error('User ID is required')
     }
 
-    // Fetch profile from API (Neon database)
+    // Get session for auth header
+    const { data: { session } } = await supabase.auth.getSession()
+    const headers: HeadersInit = session?.access_token 
+      ? { 'Authorization': `Bearer ${session.access_token}` }
+      : {}
+
+    // Fetch profile from API (Supabase database)
     const baseUrl = getApiBaseUrl()
-    const response = await fetch(`${baseUrl}/api/profiles/${userId}`)
+    const response = await fetch(`${baseUrl}/api/profiles/${userId}`, { headers })
 
     if (response.status === 404) {
       // Profile doesn't exist - return null
