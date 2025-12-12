@@ -507,11 +507,7 @@ export default function MobileApp() {
     (async () => {
       setLoading(true);
       try {
-        // Run fetchData and media permission check in parallel, but don't let permission errors block loading
-        await Promise.allSettled([
-          fetchData(), // load posts
-          checkUserMediaPermission(), // any permission checks
-        ]);
+        await fetchData();
         console.log("🔍 fetchData completed");
       } catch (err) {
         console.error("🔍 fetchData error:", err);
@@ -526,7 +522,14 @@ export default function MobileApp() {
     return () => {
       cancelled = true;
     };
-  }, [user, posts.length, isAdmin]);
+  }, [user, posts.length]);
+
+  // Check media permission separately so it runs even when posts are already loaded
+  useEffect(() => {
+    if (user) {
+      checkUserMediaPermission();
+    }
+  }, [user, isAdmin]);
 
   // Load daily verse separately to ensure it always loads
   useEffect(() => {
@@ -641,12 +644,15 @@ export default function MobileApp() {
     try {
       // Admins always have media permission
       if (isAdmin) {
+        console.log("🎥 Media permission: Admin user, granting access");
         setHasMediaPermission(true);
         setIsCheckingPermission(false);
         return;
       }
       
+      console.log("🎥 Media permission: Checking for user", user.id);
       const result = await checkMediaPermission(user.id);
+      console.log("🎥 Media permission result:", result);
       setHasMediaPermission(result.hasPermission);
     } catch (error) {
       console.error("Error checking media permission:", error);
