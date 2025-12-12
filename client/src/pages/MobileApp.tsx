@@ -79,6 +79,7 @@ import { MobilePublicProfilePage } from "@/components/MobilePublicProfilePage";
 import { MobileSavedPostsPage } from "@/components/MobileSavedPostsPage";
 import { LoginMobile } from "@/components/LoginMobile";
 import { PasswordUpdateMobile } from "@/components/PasswordUpdateMobile";
+import { GuidelinesAcceptanceModal } from "@/components/GuidelinesAcceptanceModal";
 import { getDailyVerse } from "@/lib/scripture";
 import {
   createDonationPledge,
@@ -482,6 +483,10 @@ export default function MobileApp() {
   const [showBannedModal, setShowBannedModal] = useState(false);
   const bannedModalShownRef = useRef(false);
   
+  // Guidelines acceptance state
+  const [guidelinesAccepted, setGuidelinesAccepted] = useState<boolean | null>(null);
+  const [checkingGuidelines, setCheckingGuidelines] = useState(true);
+  
   // Show banned modal when user is banned
   useEffect(() => {
     if (isBanned && user && !bannedModalShownRef.current) {
@@ -489,6 +494,73 @@ export default function MobileApp() {
       setShowBannedModal(true);
     }
   }, [isBanned, user]);
+  
+  // Check guidelines acceptance status on login
+  useEffect(() => {
+    if (!user) {
+      setGuidelinesAccepted(null);
+      setCheckingGuidelines(false);
+      return;
+    }
+    
+    const checkGuidelines = async () => {
+      setCheckingGuidelines(true);
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.access_token) {
+          setGuidelinesAccepted(false);
+          return;
+        }
+        
+        const baseUrl = Capacitor.isNativePlatform() ? 'https://gospel-era.replit.app' : '';
+        const response = await fetch(`${baseUrl}/api/guidelines/status`, {
+          headers: { 'Authorization': `Bearer ${session.access_token}` }
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          setGuidelinesAccepted(data.accepted);
+        } else {
+          setGuidelinesAccepted(false);
+        }
+      } catch (error) {
+        console.error('Error checking guidelines status:', error);
+        setGuidelinesAccepted(false);
+      } finally {
+        setCheckingGuidelines(false);
+      }
+    };
+    
+    checkGuidelines();
+  }, [user]);
+  
+  // Handle guidelines acceptance
+  const handleAcceptGuidelines = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        throw new Error('No session');
+      }
+      
+      const baseUrl = Capacitor.isNativePlatform() ? 'https://gospel-era.replit.app' : '';
+      const response = await fetch(`${baseUrl}/api/guidelines/accept`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        setGuidelinesAccepted(true);
+      } else {
+        throw new Error('Failed to accept guidelines');
+      }
+    } catch (error) {
+      console.error('Error accepting guidelines:', error);
+      throw error;
+    }
+  };
 
   useEffect(() => {
     console.log("🔍 MobileApp fetchData effect", { hasUser: !!user, postsLength: posts.length });
@@ -2669,8 +2741,8 @@ export default function MobileApp() {
   }
 
 
-  // Loading state
-  if (authLoading) {
+  // Loading state (auth loading or checking guidelines)
+  if (authLoading || (user && checkingGuidelines)) {
     return (
       <div style={STYLES.container}>
         <div
@@ -2685,6 +2757,11 @@ export default function MobileApp() {
         </div>
       </div>
     );
+  }
+
+  // Show guidelines acceptance modal for logged-in users who haven't accepted
+  if (user && guidelinesAccepted === false) {
+    return <GuidelinesAcceptanceModal onAccept={handleAcceptGuidelines} />;
   }
 
   // Handle prayer detail view

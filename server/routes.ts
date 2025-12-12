@@ -440,6 +440,85 @@ Respond in JSON format:
     }
   });
 
+  // Guidelines acceptance endpoint
+  app.post("/api/guidelines/accept", authenticateUser, async (req: AuthenticatedRequest, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: "Authentication required" });
+      }
+
+      const token = extractToken(req.headers.authorization);
+      const supabase = createServerSupabase(token);
+
+      // Update the user's profile to mark guidelines as accepted
+      const { data, error } = await supabase
+        .from('profiles')
+        .update({
+          accepted_guidelines: true,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', req.user.id)
+        .select()
+        .single();
+
+      if (error) {
+        // If profile doesn't exist, create it with guidelines accepted
+        if (error.code === 'PGRST116') {
+          const { data: newProfile, error: insertError } = await supabase
+            .from('profiles')
+            .insert({
+              id: req.user.id,
+              accepted_guidelines: true,
+            })
+            .select()
+            .single();
+
+          if (insertError) throw insertError;
+          return res.json({ success: true, profile: newProfile });
+        }
+        throw error;
+      }
+
+      res.json({ success: true, profile: data });
+    } catch (error) {
+      console.error("Error accepting guidelines:", error);
+      res.status(500).json({ error: "Failed to save guidelines acceptance" });
+    }
+  });
+
+  // Get guidelines acceptance status
+  app.get("/api/guidelines/status", authenticateUser, async (req: AuthenticatedRequest, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: "Authentication required" });
+      }
+
+      const token = extractToken(req.headers.authorization);
+      const supabase = createServerSupabase(token);
+
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('accepted_guidelines')
+        .eq('id', req.user.id)
+        .single();
+
+      if (error) {
+        if (error.code === 'PGRST116') {
+          // No profile yet means guidelines not accepted
+          return res.json({ accepted: false });
+        }
+        throw error;
+      }
+
+      res.json({
+        accepted: profile?.accepted_guidelines || false
+      });
+    } catch (error) {
+      console.error("Error checking guidelines status:", error);
+      res.status(500).json({ error: "Failed to check guidelines status" });
+    }
+  });
+
   // Posts API Routes
   app.get("/api/posts", async (req, res) => {
     try {
