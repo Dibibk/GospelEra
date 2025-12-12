@@ -1745,44 +1745,36 @@ Respond in JSON format:
   // GET /api/media-permission/:userId - Check if user has media permission
   app.get("/api/media-permission/:userId?", async (req, res) => {
     try {
-      // Set shorter timeout for this specific request
-      req.setTimeout(10000); // 10 seconds instead of 30
-      
-      const { db } = await import("../client/src/lib/db");
-      const { profiles } = await import("@shared/schema");
-      const { eq } = await import("drizzle-orm");
-      
       // Use provided userId or get from auth
       const userId = req.params.userId || (req.headers['user-id'] as string) || req.headers['x-user-id'] as string;
       
-      // Add timeout promise to race against database query
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Database query timeout')), 8000)
-      );
+      if (!userId) {
+        return res.json({ hasPermission: false, error: "User ID required" });
+      }
       
-      const queryPromise = db.select({ 
-        media_enabled: profiles.media_enabled,
-        role: profiles.role 
-      })
-        .from(profiles)
-        .where(eq(profiles.id, userId));
+      // Query Supabase profiles table (where media_enabled is stored)
+      const token = extractToken(req.headers.authorization);
+      const supabase = createServerSupabase(token);
       
-      const result = await Promise.race([queryPromise, timeoutPromise]);
-      const [profile] = result as any[];
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('media_enabled, role')
+        .eq('id', userId)
+        .single();
       
-      if (!profile) {
-        // If database is unreachable, assume no permission for security
-        return res.json({ hasPermission: false, error: "Database unavailable - assuming no permission" });
+      if (error || !profile) {
+        // Profile not found or error - assume no permission for security
+        return res.json({ hasPermission: false, error: error?.message || "Profile not found" });
       }
       
       // Admins always have media permission
-      const hasPermission = profile.role === 'admin' || profile.media_enabled;
+      const hasPermission = profile.role === 'admin' || profile.media_enabled === true;
       
       res.json({ hasPermission });
     } catch (error) {
       console.error("Error checking media permission:", error);
       // If database connection fails, default to no permission for security
-      res.json({ hasPermission: false, error: "Database connection failed - check DATABASE_URL format" });
+      res.json({ hasPermission: false, error: "Database connection failed" });
     }
   });
 
