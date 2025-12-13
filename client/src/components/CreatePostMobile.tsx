@@ -446,36 +446,67 @@ export function CreatePostMobile({
         )
       )}
 
-      {/* Share/Update button */}
-      <button
-        onClick={handleSubmit}
-        disabled={!title.trim() || !content.trim() || isBanned || saving || validatingVideo}
-        data-testid="button-submit"
-        style={{
-          width: "100%",
-          background:
-            title.trim() && content.trim() && !isBanned && !saving
-              ? "#4285f4"
-              : "#dbdbdb",
-          color: "#ffffff",
-          border: "none",
-          padding: "12px",
-          borderRadius: "8px",
-          fontSize: "16px",
-          fontWeight: 600,
-          cursor:
-            title.trim() && content.trim() && !isBanned && !saving
-              ? "pointer"
-              : "not-allowed",
-        }}
-        title={isBanned ? "Account limited - cannot create posts" : ""}
-      >
-        {saving
-          ? "Saving..."
-          : editingPost
-          ? "Update Post"
-          : "Share Post"}
-      </button>
+      {/* Button container */}
+      <div style={{ display: "flex", gap: "12px" }}>
+        {/* Cancel button */}
+        <button
+          onClick={() => {
+            setTitle("");
+            setContent("");
+            setTags("");
+            setYouTubeUrl("");
+            setModerationError("");
+            setYoutubeError("");
+            onBack();
+          }}
+          disabled={saving}
+          data-testid="button-cancel"
+          style={{
+            flex: 1,
+            background: "#ffffff",
+            color: "#666666",
+            border: "1px solid #dbdbdb",
+            padding: "12px",
+            borderRadius: "8px",
+            fontSize: "16px",
+            fontWeight: 600,
+            cursor: saving ? "not-allowed" : "pointer",
+          }}
+        >
+          Cancel
+        </button>
+
+        {/* Share/Update button */}
+        <button
+          onClick={handleSubmit}
+          disabled={!title.trim() || !content.trim() || isBanned || saving || validatingVideo}
+          data-testid="button-submit"
+          style={{
+            flex: 2,
+            background:
+              title.trim() && content.trim() && !isBanned && !saving
+                ? "#4285f4"
+                : "#dbdbdb",
+            color: "#ffffff",
+            border: "none",
+            padding: "12px",
+            borderRadius: "8px",
+            fontSize: "16px",
+            fontWeight: 600,
+            cursor:
+              title.trim() && content.trim() && !isBanned && !saving
+                ? "pointer"
+                : "not-allowed",
+          }}
+          title={isBanned ? "Account limited - cannot create posts" : ""}
+        >
+          {saving
+            ? "Saving..."
+            : editingPost
+            ? "Update Post"
+            : "Share Post"}
+        </button>
+      </div>
     </div>
   );
 }
