@@ -73,6 +73,7 @@ import { PrayerDetailMobile } from "@/components/PrayerDetailMobile";
 import { NotificationsMobile } from "@/components/NotificationsMobile";
 import { PrayerMyMobile } from "@/components/PrayerMyMobile";
 import { PrayerLeaderboardMobile } from "@/components/PrayerLeaderboardMobile";
+import { User } from "lucide-react";
 import { PrayerDetailView } from "@/components/PrayerDetailView";
 import { FullLeaderboardView } from "@/components/FullLeaderboardView";
 import { MobilePublicProfilePage } from "@/components/MobilePublicProfilePage";
@@ -2086,7 +2087,7 @@ export default function MobileApp() {
                         }}
                       />
                     ) : (
-                      "👤"
+                      <User size={18} color="#8e8e8e" />
                     )}
                   </div>
                   <div style={{ flex: 1 }}>
@@ -2489,7 +2490,7 @@ export default function MobileApp() {
                                       }}
                                     />
                                   ) : (
-                                    "👤"
+                                    <User size={14} color="#8e8e8e" />
                                   )}
                                 </div>
                                 <div style={{ flex: 1 }}>
@@ -2959,7 +2960,7 @@ export default function MobileApp() {
                     }}
                   />
                 ) : (
-                  <span style={{ fontSize: "14px", color: "#8e8e8e" }}>👤</span>
+                  <User size={16} color="#8e8e8e" />
                 )}
               </div>
               <span
