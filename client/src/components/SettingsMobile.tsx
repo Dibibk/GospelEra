@@ -7,7 +7,11 @@ import {
   getNotificationPermission, 
   requestNotificationPermission, 
   subscribeToPush, 
-  unsubscribeFromPush 
+  unsubscribeFromPush,
+  isNativePlatform,
+  checkNativePushPermission,
+  subscribeToNativePush,
+  unsubscribeFromNativePush
 } from '@/lib/pushNotifications';
 import { supabase } from '@/lib/supabaseClient';
 import { getApiBaseUrl } from '@/lib/posts';
@@ -63,13 +67,29 @@ export function SettingsMobile({ onBack, onEditProfile, onSuccess }: SettingsMob
       }
       
       // Check push notification status
-      // Note: Web Push is NOT supported on native iOS/Android apps via Capacitor
       const isNative = Capacitor.isNativePlatform();
       
       if (isNative) {
-        // Native apps don't support web push - disable these toggles
-        setPushNotifications(false);
-        setDailyVerseReminders(false);
+        // Native apps use Capacitor Push Notifications
+        const nativePermission = await checkNativePushPermission();
+        setPushNotifications(nativePermission === 'granted');
+        
+        // Load daily verse preference from API for native too
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session?.access_token) {
+            const baseUrl = getApiBaseUrl();
+            const response = await fetch(`${baseUrl}/api/push/daily-verse`, {
+              headers: { 'Authorization': `Bearer ${session.access_token}` }
+            });
+            if (response.ok) {
+              const data = await response.json();
+              setDailyVerseReminders(data.enabled);
+            }
+          }
+        } catch (error) {
+          console.error('Error loading daily verse preference:', error);
+        }
       } else if (isPushSupported()) {
         const permission = getNotificationPermission();
         setPushNotifications(permission === 'granted');
@@ -118,29 +138,39 @@ export function SettingsMobile({ onBack, onEditProfile, onSuccess }: SettingsMob
         break;
       case "pushNotifications":
         // Handle push notification toggle
-        // Web Push is NOT supported on native iOS/Android apps
         if (Capacitor.isNativePlatform()) {
-          alert('Push notifications are not available in the native app. Please use the web version for push notification features.');
-          return;
-        }
-        if (value) {
-          // Enable push notifications
-          if (!isPushSupported()) {
-            console.log('Push notifications not supported on this device');
-            return;
-          }
-          const permission = await requestNotificationPermission();
-          if (permission === 'granted') {
-            await subscribeToPush();
-            setPushNotifications(true);
+          // Native push notifications (iOS/Android via Capacitor)
+          if (value) {
+            const success = await subscribeToNativePush();
+            if (success) {
+              setPushNotifications(true);
+            } else {
+              alert('Push notification permission was denied. Please enable it in your device settings.');
+              setPushNotifications(false);
+            }
           } else {
-            console.log('Push notification permission denied');
+            await unsubscribeFromNativePush();
             setPushNotifications(false);
           }
         } else {
-          // Disable push notifications
-          await unsubscribeFromPush();
-          setPushNotifications(false);
+          // Web push notifications
+          if (value) {
+            if (!isPushSupported()) {
+              console.log('Push notifications not supported on this device');
+              return;
+            }
+            const permission = await requestNotificationPermission();
+            if (permission === 'granted') {
+              await subscribeToPush();
+              setPushNotifications(true);
+            } else {
+              console.log('Push notification permission denied');
+              setPushNotifications(false);
+            }
+          } else {
+            await unsubscribeFromPush();
+            setPushNotifications(false);
+          }
         }
         return; // Don't fall through to other logic
       case "commentNotifications":
@@ -157,11 +187,6 @@ export function SettingsMobile({ onBack, onEditProfile, onSuccess }: SettingsMob
         break;
       case "dailyVerseReminders":
         // Handle daily verse toggle - requires push notifications to be enabled
-        // Web Push is NOT supported on native iOS/Android apps
-        if (Capacitor.isNativePlatform()) {
-          alert('Daily verse reminders are not available in the native app. Please use the web version for this feature.');
-          return;
-        }
         if (!pushNotifications) {
           alert('Please enable push notifications first to receive daily verse reminders.');
           return;

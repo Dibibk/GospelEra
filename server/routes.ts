@@ -2245,13 +2245,23 @@ Respond with JSON only:
         return res.status(401).json({ error: "Unauthorized" });
       }
       
-      const { subscription, platform = 'web' } = req.body;
+      const { subscription, token: nativeToken, platform = 'web' } = req.body;
       
-      if (!subscription) {
-        return res.status(400).json({ error: "Subscription data is required" });
+      // Handle both web subscriptions and native tokens
+      let tokenString: string;
+      if (platform === 'ios' || platform === 'android') {
+        // Native platform - token is a plain string (FCM/APNs token)
+        if (!nativeToken) {
+          return res.status(400).json({ error: "Token is required for native platforms" });
+        }
+        tokenString = nativeToken;
+      } else {
+        // Web platform - subscription is an object
+        if (!subscription) {
+          return res.status(400).json({ error: "Subscription data is required" });
+        }
+        tokenString = JSON.stringify(subscription);
       }
-      
-      const tokenString = JSON.stringify(subscription);
       
       const token = extractToken(req.headers.authorization);
       const supabase = createServerSupabase(token);
@@ -2292,7 +2302,7 @@ Respond with JSON only:
     }
   });
   
-  // Unregister push notification token
+  // Unregister push notification token (web)
   app.post("/api/push/unregister", authenticateUser, async (req: AuthenticatedRequest, res) => {
     try {
       if (!req.user) {
@@ -2320,6 +2330,30 @@ Respond with JSON only:
     } catch (error) {
       console.error("Error unregistering push token:", error);
       res.status(500).json({ error: "Failed to unregister push token" });
+    }
+  });
+
+  // Unregister all native push tokens for a user (iOS/Android)
+  app.post("/api/push/unregister-native", authenticateUser, async (req: AuthenticatedRequest, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      const token = extractToken(req.headers.authorization);
+      const supabase = createServerSupabase(token);
+      
+      // Delete all native (iOS/Android) tokens for this user
+      await supabase
+        .from('push_tokens')
+        .delete()
+        .eq('user_id', req.user.id)
+        .in('platform', ['ios', 'android']);
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error unregistering native push tokens:", error);
+      res.status(500).json({ error: "Failed to unregister native push tokens" });
     }
   });
 

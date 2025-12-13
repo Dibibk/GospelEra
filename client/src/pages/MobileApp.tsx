@@ -47,6 +47,10 @@ import {
   unsubscribeFromNotifications,
   cleanupAllSubscriptions 
 } from "@/lib/realtime";
+import { 
+  isNativePlatform, 
+  initNativePushNotifications 
+} from "@/lib/pushNotifications";
 import { getTopPrayerWarriors } from "@/lib/leaderboard";
 import prayIconPath from "@assets/pray_7139204_1765217804830.png";
 import {
@@ -668,6 +672,14 @@ export default function MobileApp() {
     return () => {
       cleanupAllSubscriptions();
     };
+  }, [user]);
+
+  // Initialize native push notifications for iOS/Android
+  useEffect(() => {
+    if (!user) return;
+    if (!isNativePlatform()) return;
+    
+    initNativePushNotifications();
   }, [user]);
 
   // Load daily scripture verse
