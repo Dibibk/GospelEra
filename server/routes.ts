@@ -440,18 +440,19 @@ Respond in JSON format:
     }
   });
 
-  // Guidelines acceptance endpoint
+  // Guidelines acceptance endpoint - uses supabaseAdmin to bypass RLS
   app.post("/api/guidelines/accept", authenticateUser, async (req: AuthenticatedRequest, res) => {
     try {
       if (!req.user) {
         return res.status(401).json({ error: "Authentication required" });
       }
 
-      const token = extractToken(req.headers.authorization);
-      const supabase = createServerSupabase(token);
+      if (!supabaseAdmin) {
+        return res.status(500).json({ error: "Database configuration error" });
+      }
 
       // Update the user's profile to mark guidelines as accepted
-      const { data, error } = await supabase
+      const { data, error } = await supabaseAdmin
         .from('profiles')
         .update({
           accepted_guidelines: true,
@@ -464,7 +465,7 @@ Respond in JSON format:
       if (error) {
         // If profile doesn't exist, create it with guidelines accepted
         if (error.code === 'PGRST116') {
-          const { data: newProfile, error: insertError } = await supabase
+          const { data: newProfile, error: insertError } = await supabaseAdmin
             .from('profiles')
             .insert({
               id: req.user.id,
@@ -486,17 +487,18 @@ Respond in JSON format:
     }
   });
 
-  // Get guidelines acceptance status
+  // Get guidelines acceptance status - uses supabaseAdmin to bypass RLS
   app.get("/api/guidelines/status", authenticateUser, async (req: AuthenticatedRequest, res) => {
     try {
       if (!req.user) {
         return res.status(401).json({ error: "Authentication required" });
       }
 
-      const token = extractToken(req.headers.authorization);
-      const supabase = createServerSupabase(token);
+      if (!supabaseAdmin) {
+        return res.status(500).json({ error: "Database configuration error" });
+      }
 
-      const { data: profile, error } = await supabase
+      const { data: profile, error } = await supabaseAdmin
         .from('profiles')
         .select('accepted_guidelines')
         .eq('id', req.user.id)
