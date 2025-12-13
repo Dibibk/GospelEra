@@ -1175,8 +1175,10 @@ Respond in JSON format:
   // GET comments for a post
   app.get("/api/comments", async (req, res) => {
     try {
-      const token = extractToken(req.headers.authorization);
-      const supabase = createServerSupabase(token);
+      // Use supabaseAdmin to bypass RLS - comments are public data
+      if (!supabaseAdmin) {
+        return res.status(500).json({ error: "Database not configured" });
+      }
       
       const postId = parseInt(req.query.post_id as string);
       const limit = Math.min(parseInt(req.query.limit as string) || 20, 100);
@@ -1186,7 +1188,7 @@ Respond in JSON format:
         return res.status(400).json({ error: "post_id is required and must be a number" });
       }
       
-      let query = supabase
+      let query = supabaseAdmin
         .from('comments')
         .select('id, post_id, content, created_at, author_id')
         .eq('post_id', postId)
@@ -1197,7 +1199,7 @@ Respond in JSON format:
       
       // Add keyset pagination if fromId provided
       if (fromId) {
-        const { data: fromComment } = await supabase
+        const { data: fromComment } = await supabaseAdmin
           .from('comments')
           .select('created_at')
           .eq('id', fromId)
