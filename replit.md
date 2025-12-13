@@ -6,6 +6,16 @@ Gospel Era is a full-stack web application designed as a social platform for the
 
 # Recent Changes
 
+**December 13, 2025 - Reports API Fix (RLS Bypass)**
+- Fixed reports not appearing in admin view: Created backend API endpoints to bypass Supabase RLS policies
+- Added POST `/api/reports` endpoint using supabaseAdmin for creating reports
+- Added GET `/api/admin/reports` endpoint using supabaseAdmin for fetching reports with full details
+- Added PATCH `/api/admin/reports/:id` endpoint using supabaseAdmin for updating report status
+- Updated client/src/lib/reports.ts: `createReport()` now calls backend API instead of direct Supabase
+- Updated client/src/lib/admin.js: `listReports()` and `updateReportStatus()` now use backend API
+- Auto-hide feature for "Not Christ-Centered" reports now works via backend supabaseAdmin
+- Fix pattern: Same as comments, media-permission, and other endpoints that needed RLS bypass
+
 **December 12, 2025 - Media Permission & Guidelines Fixes**
 - Fixed media permission check: `/api/media-permission/:userId` now uses `supabaseAdmin` to bypass RLS and correctly read `media_enabled` and `role` from Supabase profiles table
 - IMPORTANT: Media permissions (media_enabled, role) are stored in Supabase profiles table - always use supabaseAdmin for reading these fields

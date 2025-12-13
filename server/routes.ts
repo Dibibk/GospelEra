@@ -2479,6 +2479,256 @@ Respond with JSON only:
     }
   });
 
+  // Create report endpoint - uses supabaseAdmin to bypass RLS
+  app.post("/api/reports", authenticateUser, async (req: AuthenticatedRequest, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: "Authentication required" });
+      }
+
+      if (!supabaseAdmin) {
+        return res.status(500).json({ error: "Database configuration error" });
+      }
+
+      const { target_type, target_id, reason } = req.body;
+
+      if (!target_type || !target_id) {
+        return res.status(400).json({ error: "target_type and target_id are required" });
+      }
+
+      if (!['post', 'comment'].includes(target_type)) {
+        return res.status(400).json({ error: "target_type must be 'post' or 'comment'" });
+      }
+
+      // Insert report using supabaseAdmin to bypass RLS
+      const { data, error } = await supabaseAdmin
+        .from('reports')
+        .insert({
+          target_type,
+          target_id: parseInt(target_id),
+          reason: reason || null,
+          reporter: req.user.id,
+          status: 'open'
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error("Error creating report:", error);
+        return res.status(500).json({ error: "Failed to create report" });
+      }
+
+      // Auto-hide content for "Not Christ-Centered" reports
+      if (reason?.includes('Not Christ-Centered')) {
+        const tableName = target_type === 'post' ? 'posts' : 'comments';
+        
+        const { error: hideError } = await supabaseAdmin
+          .from(tableName)
+          .update({ hidden: true })
+          .eq('id', parseInt(target_id));
+        
+        if (hideError) {
+          console.warn(`Failed to auto-hide ${target_type} ${target_id}:`, hideError);
+        }
+      }
+
+      res.json({ data, error: null });
+    } catch (error) {
+      console.error("Error creating report:", error);
+      res.status(500).json({ error: "Failed to create report" });
+    }
+  });
+
+  // Admin: Get reports with full details - uses supabaseAdmin to bypass RLS
+  app.get("/api/admin/reports", authenticateUser, requireAdmin, async (req: AuthenticatedRequest, res) => {
+    try {
+      if (!supabaseAdmin) {
+        return res.status(500).json({ error: "Database configuration error" });
+      }
+
+      const status = (req.query.status as string) || 'open';
+      const limit = parseInt(req.query.limit as string) || 50;
+      const cursor = req.query.cursor as string;
+
+      // Validate status
+      if (!['open', 'resolved', 'dismissed'].includes(status)) {
+        return res.status(400).json({ error: "Invalid status" });
+      }
+
+      // Build query with supabaseAdmin
+      let query = supabaseAdmin
+        .from('reports')
+        .select('*')
+        .eq('status', status)
+        .order('created_at', { ascending: false })
+        .limit(limit);
+
+      if (cursor) {
+        query = query.lt('created_at', cursor);
+      }
+
+      const { data: reports, error } = await query;
+
+      if (error) {
+        console.error("Error fetching reports:", error);
+        return res.status(500).json({ error: "Failed to fetch reports" });
+      }
+
+      if (!reports || reports.length === 0) {
+        return res.json({ items: [], nextCursor: null });
+      }
+
+      const nextCursor = reports.length === limit ? reports[reports.length - 1].created_at : null;
+
+      // Get unique reporter IDs
+      const reporterIds = [...new Set(reports.map(r => r.reporter).filter(Boolean))];
+      
+      // Fetch reporter profiles
+      const { data: reporterProfiles } = await supabaseAdmin
+        .from('profiles')
+        .select('id, display_name, email')
+        .in('id', reporterIds);
+
+      const reporterProfileMap = new Map();
+      (reporterProfiles || []).forEach((profile: any) => {
+        reporterProfileMap.set(profile.id, profile);
+      });
+
+      // Get unique target IDs by type
+      const postIds = reports.filter(r => r.target_type === 'post').map(r => r.target_id);
+      const commentIds = reports.filter(r => r.target_type === 'comment').map(r => r.target_id);
+
+      // Fetch posts and comments in parallel
+      const [postsResult, commentsResult] = await Promise.all([
+        postIds.length > 0 
+          ? supabaseAdmin.from('posts').select('id, content, author_id, created_at').in('id', postIds)
+          : Promise.resolve({ data: [] }),
+        commentIds.length > 0
+          ? supabaseAdmin.from('comments').select('id, content, author_id, created_at').in('id', commentIds)
+          : Promise.resolve({ data: [] })
+      ]);
+
+      const postsMap = new Map();
+      const commentsMap = new Map();
+      
+      (postsResult.data || []).forEach((post: any) => postsMap.set(post.id, post));
+      (commentsResult.data || []).forEach((comment: any) => commentsMap.set(comment.id, comment));
+
+      // Get author IDs from posts and comments
+      const authorIds = [
+        ...new Set([
+          ...(postsResult.data || []).map((p: any) => p.author_id),
+          ...(commentsResult.data || []).map((c: any) => c.author_id)
+        ].filter(Boolean))
+      ];
+
+      // Fetch author profiles
+      const { data: authorProfiles } = authorIds.length > 0
+        ? await supabaseAdmin.from('profiles').select('id, display_name').in('id', authorIds)
+        : { data: [] };
+
+      const authorProfileMap = new Map();
+      (authorProfiles || []).forEach((profile: any) => {
+        authorProfileMap.set(profile.id, profile);
+      });
+
+      // Build response items
+      const items = reports.map(report => {
+        const baseReport: any = {
+          id: report.id,
+          status: report.status,
+          reason: report.reason,
+          target_type: report.target_type,
+          target_id: report.target_id,
+          created_at: report.created_at,
+          reporter: reporterProfileMap.get(report.reporter) || {
+            id: report.reporter,
+            display_name: 'Unknown User',
+            email: 'unknown@example.com'
+          }
+        };
+
+        if (report.target_type === 'post') {
+          const post = postsMap.get(report.target_id);
+          if (post) {
+            const authorProfile = authorProfileMap.get(post.author_id);
+            baseReport.target = {
+              type: 'post',
+              id: post.id,
+              content: post.content,
+              created_at: post.created_at,
+              author: {
+                id: post.author_id,
+                display_name: authorProfile?.display_name || 'Unknown User'
+              }
+            };
+          } else {
+            baseReport.target = { type: 'post', id: report.target_id, deleted: true };
+          }
+        } else if (report.target_type === 'comment') {
+          const comment = commentsMap.get(report.target_id);
+          if (comment) {
+            const authorProfile = authorProfileMap.get(comment.author_id);
+            baseReport.target = {
+              type: 'comment',
+              id: comment.id,
+              content: comment.content,
+              created_at: comment.created_at,
+              author: {
+                id: comment.author_id,
+                display_name: authorProfile?.display_name || 'Unknown User'
+              }
+            };
+          } else {
+            baseReport.target = { type: 'comment', id: report.target_id, deleted: true };
+          }
+        } else {
+          baseReport.target = { type: report.target_type, id: report.target_id, deleted: true };
+        }
+
+        return baseReport;
+      });
+
+      res.json({ items, nextCursor });
+    } catch (error) {
+      console.error("Error fetching admin reports:", error);
+      res.status(500).json({ error: "Failed to fetch reports" });
+    }
+  });
+
+  // Admin: Update report status - uses supabaseAdmin to bypass RLS
+  app.patch("/api/admin/reports/:id", authenticateUser, requireAdmin, async (req: AuthenticatedRequest, res) => {
+    try {
+      if (!supabaseAdmin) {
+        return res.status(500).json({ error: "Database configuration error" });
+      }
+
+      const { id } = req.params;
+      const { status } = req.body;
+
+      if (!['open', 'resolved', 'dismissed'].includes(status)) {
+        return res.status(400).json({ error: "Invalid status. Must be 'open', 'resolved', or 'dismissed'" });
+      }
+
+      const { data, error } = await supabaseAdmin
+        .from('reports')
+        .update({ status })
+        .eq('id', parseInt(id))
+        .select()
+        .single();
+
+      if (error) {
+        console.error("Error updating report status:", error);
+        return res.status(500).json({ error: "Failed to update report status" });
+      }
+
+      res.json(data);
+    } catch (error) {
+      console.error("Error updating report status:", error);
+      res.status(500).json({ error: "Failed to update report status" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;
