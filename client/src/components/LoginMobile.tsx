@@ -367,7 +367,7 @@ export function LoginMobile({ onSuccess }: LoginMobileProps) {
         {/* Name fields - only for signup */}
         {isSignUp && (
           <>
-            <div style={{ display: "flex", gap: "12px", marginBottom: "12px" }}>
+            <div style={{ display: "flex", gap: "8px", marginBottom: "12px", width: "100%" }}>
               <input
                 ref={firstNameRef}
                 type="text"
@@ -379,11 +379,13 @@ export function LoginMobile({ onSuccess }: LoginMobileProps) {
                 }}
                 style={{
                   flex: 1,
-                  padding: "12px 16px",
+                  minWidth: 0,
+                  padding: "12px 12px",
                   border: "1px solid #dbdbdb",
                   borderRadius: "8px",
                   fontSize: "16px",
                   outline: "none",
+                  boxSizing: "border-box",
                 }}
                 autoCapitalize="words"
                 autoCorrect="off"
@@ -401,11 +403,13 @@ export function LoginMobile({ onSuccess }: LoginMobileProps) {
                 }}
                 style={{
                   flex: 1,
-                  padding: "12px 16px",
+                  minWidth: 0,
+                  padding: "12px 12px",
                   border: "1px solid #dbdbdb",
                   borderRadius: "8px",
                   fontSize: "16px",
                   outline: "none",
+                  boxSizing: "border-box",
                 }}
                 autoCapitalize="words"
                 autoCorrect="off"
