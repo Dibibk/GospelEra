@@ -1,4 +1,5 @@
 import { useState, useCallback } from "react";
+import { User } from "lucide-react";
 
 interface PrayerDetailMobileProps {
   prayer: any;
@@ -147,7 +148,7 @@ export function PrayerDetailMobile({
                 }}
               />
             ) : (
-              "•"
+              <User size={24} color="#8e8e8e" />
             )}
           </div>
           <div>

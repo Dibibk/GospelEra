@@ -1,4 +1,5 @@
 import { useState, useCallback } from "react";
+import { User } from "lucide-react";
 
 interface PrayerMyMobileProps {
   myCommitments: any[];
@@ -145,7 +146,7 @@ export function PrayerMyMobile({
                         color: "#8e8e8e",
                       }}
                     >
-                      {commitment.prayer_requests?.is_anonymous ? "🙏" : "•"}
+                      {commitment.prayer_requests?.is_anonymous ? "🙏" : <User size={16} color="#8e8e8e" />}
                     </div>
                     <div style={{ flex: 1 }}>
                       <div style={{ fontWeight: 600, color: "#262626" }}>

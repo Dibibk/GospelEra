@@ -1,4 +1,5 @@
 import { useCallback } from "react";
+import { User } from "lucide-react";
 
 interface PrayerBrowseMobileProps {
   prayerRequests: any[];
@@ -185,7 +186,7 @@ export function PrayerBrowseMobile({
                       }}
                     />
                   ) : (
-                    "•"
+                    <User size={18} color="#8e8e8e" />
                   )}
                 </div>
                 <div style={{ flex: 1 }}>
