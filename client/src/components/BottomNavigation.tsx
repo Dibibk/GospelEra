@@ -47,7 +47,9 @@ export function BottomNavigation() {
             }`}
             data-testid={`bottom-nav-${item.label.toLowerCase()}`}
           >
-            <item.icon className="h-6 w-6" />
+            <div className="flex items-center justify-center w-6 h-6">
+              <item.icon className="h-6 w-6" />
+            </div>
             <span className="text-xs mt-1">{item.label}</span>
           </Link>
         ))}
