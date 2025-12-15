@@ -19,6 +19,7 @@ export function MobileSavedPostsPage({
   const [savedPostsLoading, setSavedPostsLoading] = useState(true);
   const [savedPostsError, setSavedPostsError] = useState("");
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
+  const [avatarErrors, setAvatarErrors] = useState<Record<number, boolean>>({});
 
   const didInitRef = useRef(false);
   const savedLoadInFlightRef = useRef(false);
@@ -210,7 +211,7 @@ export function MobileSavedPostsPage({
                     overflow: "hidden",
                   }}
                 >
-                  {profiles.get(post.author_id || post.author)?.avatar_url ? (
+                  {profiles.get(post.author_id || post.author)?.avatar_url && !avatarErrors[post.id] ? (
                     <img
                       src={profiles.get(post.author_id || post.author)?.avatar_url}
                       alt=""
@@ -220,10 +221,7 @@ export function MobileSavedPostsPage({
                         borderRadius: "50%",
                         objectFit: "cover",
                       }}
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).style.display = "none";
-                        (e.target as HTMLImageElement).parentElement!.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style="color: #ffffff"><path d="M12 12c2.761 0 5-2.239 5-5s-2.239-5-5-5-5 2.239-5 5 2.239 5 5 5zm0 2c-4.411 0-8 3.589-8 8h2c0-3.309 2.691-6 6-6s6 2.691 6 6h2c0-4.411-3.589-8-8-8z"/></svg>`;
-                      }}
+                      onError={() => setAvatarErrors(prev => ({ ...prev, [post.id]: true }))}
                     />
                   ) : (
                     <svg

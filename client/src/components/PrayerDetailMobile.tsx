@@ -21,6 +21,7 @@ export function PrayerDetailMobile({
   onConfirmPrayed,
 }: PrayerDetailMobileProps) {
   const [isCommitting, setIsCommitting] = useState(false);
+  const [avatarError, setAvatarError] = useState(false);
 
   const formatTimeAgo = useCallback((dateString: string) => {
     const date = new Date(dateString);
@@ -137,7 +138,7 @@ export function PrayerDetailMobile({
           >
             {prayer.is_anonymous ? (
               "🙏"
-            ) : prayer.profiles?.avatar_url ? (
+            ) : prayer.profiles?.avatar_url && !avatarError ? (
               <img
                 src={prayer.profiles.avatar_url}
                 alt=""
@@ -146,10 +147,7 @@ export function PrayerDetailMobile({
                   height: "100%",
                   objectFit: "cover",
                 }}
-                onError={(e) => {
-                  (e.target as HTMLImageElement).style.display = "none";
-                  (e.target as HTMLImageElement).parentElement!.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#8e8e8e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>`;
-                }}
+                onError={() => setAvatarError(true)}
               />
             ) : (
               <User size={24} color="#8e8e8e" />
