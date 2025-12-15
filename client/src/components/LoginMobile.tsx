@@ -179,7 +179,10 @@ export function LoginMobile({ onSuccess }: LoginMobileProps) {
               fill="none"
               xmlns="http://www.w3.org/2000/svg"
             >
-              <path d="M26 4h-4v12H10v4h12v40h4V20h12v-4H26V4z" fill="#0095f6" />
+              <path
+                d="M26 4h-4v12H10v4h12v40h4V20h12v-4H26V4z"
+                fill="#0095f6"
+              />
             </svg>
           </div>
           <h2
@@ -354,7 +357,7 @@ export function LoginMobile({ onSuccess }: LoginMobileProps) {
         <div style={{ fontSize: "14px", color: "#8e8e8e" }}>
           {isSignUp
             ? "Create your account to share faith and fellowship"
-            : "Connect with Believers Worldwide"}
+            : "Connect With Believers Worldwide"}
         </div>
       </div>
 
@@ -396,7 +399,14 @@ export function LoginMobile({ onSuccess }: LoginMobileProps) {
         {/* Name fields - only for signup */}
         {isSignUp && (
           <>
-            <div style={{ display: "flex", gap: "8px", marginBottom: "12px", width: "100%" }}>
+            <div
+              style={{
+                display: "flex",
+                gap: "8px",
+                marginBottom: "12px",
+                width: "100%",
+              }}
+            >
               <input
                 ref={firstNameRef}
                 type="text"

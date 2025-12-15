@@ -1,6 +1,29 @@
 import { useState, useCallback } from "react";
 import { User } from "lucide-react";
 
+// Helper to convert relative image URLs to full URLs for native apps
+function getImageUrl(url: string | undefined | null): string | null {
+  if (!url) return null;
+  
+  // Already a full URL
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    return url;
+  }
+  
+  // Check if running on native platform
+  const isNative = typeof window !== 'undefined' && 
+    window.location.protocol === 'capacitor:';
+  
+  if (isNative) {
+    // Prepend production backend URL for native apps
+    const baseUrl = import.meta.env.VITE_API_URL || 'https://gospel-era.replit.app';
+    return `${baseUrl}${url.startsWith('/') ? '' : '/'}${url}`;
+  }
+  
+  // For web, return as-is (relative URLs work)
+  return url;
+}
+
 interface PrayerDetailMobileProps {
   prayer: any;
   commitment: any | undefined;
@@ -127,7 +150,7 @@ export function PrayerDetailMobile({
               width: "48px",
               height: "48px",
               borderRadius: "50%",
-              background: prayer.is_anonymous ? "#dbdbdb" : (prayer.profiles?.avatar_url ? "transparent" : "#dbdbdb"),
+              background: prayer.is_anonymous ? "#dbdbdb" : (getImageUrl(prayer.profiles?.avatar_url) && !avatarError ? "transparent" : "#dbdbdb"),
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -138,9 +161,9 @@ export function PrayerDetailMobile({
           >
             {prayer.is_anonymous ? (
               "🙏"
-            ) : prayer.profiles?.avatar_url && !avatarError ? (
+            ) : getImageUrl(prayer.profiles?.avatar_url) && !avatarError ? (
               <img
-                src={prayer.profiles.avatar_url}
+                src={getImageUrl(prayer.profiles.avatar_url)!}
                 alt=""
                 style={{
                   width: "100%",

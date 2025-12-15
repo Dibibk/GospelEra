@@ -1,4 +1,28 @@
 import { useState, useEffect, useRef } from "react";
+import { User } from "lucide-react";
+
+// Helper to convert relative image URLs to full URLs for native apps
+function getImageUrl(url: string | undefined | null): string | null {
+  if (!url) return null;
+  
+  // Already a full URL
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    return url;
+  }
+  
+  // Check if running on native platform
+  const isNative = typeof window !== 'undefined' && 
+    window.location.protocol === 'capacitor:';
+  
+  if (isNative) {
+    // Prepend production backend URL for native apps
+    const baseUrl = import.meta.env.VITE_API_URL || 'https://gospel-era.replit.app';
+    return `${baseUrl}${url.startsWith('/') ? '' : '/'}${url}`;
+  }
+  
+  // For web, return as-is (relative URLs work)
+  return url;
+}
 
 interface MobileSavedPostsPageProps {
   profiles: Map<string, any>;
@@ -203,7 +227,7 @@ export function MobileSavedPostsPage({
                     width: "32px",
                     height: "32px",
                     borderRadius: "50%",
-                    background: "#dbdbdb",
+                    background: getImageUrl(profiles.get(post.author_id || post.author)?.avatar_url) && !avatarErrors[post.id] ? "transparent" : "#dbdbdb",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
@@ -211,28 +235,20 @@ export function MobileSavedPostsPage({
                     overflow: "hidden",
                   }}
                 >
-                  {profiles.get(post.author_id || post.author)?.avatar_url && !avatarErrors[post.id] ? (
+                  {getImageUrl(profiles.get(post.author_id || post.author)?.avatar_url) && !avatarErrors[post.id] ? (
                     <img
-                      src={profiles.get(post.author_id || post.author)?.avatar_url}
+                      src={getImageUrl(profiles.get(post.author_id || post.author)?.avatar_url)!}
                       alt=""
                       style={{
-                        width: "32px",
-                        height: "32px",
+                        width: "100%",
+                        height: "100%",
                         borderRadius: "50%",
                         objectFit: "cover",
                       }}
                       onError={() => setAvatarErrors(prev => ({ ...prev, [post.id]: true }))}
                     />
                   ) : (
-                    <svg
-                      width="18"
-                      height="18"
-                      viewBox="0 0 24 24"
-                      fill="currentColor"
-                      style={{ color: "#ffffff" }}
-                    >
-                      <path d="M12 12c2.761 0 5-2.239 5-5s-2.239-5-5-5-5 2.239-5 5 2.239 5 5 5zm0 2c-4.411 0-8 3.589-8 8h2c0-3.309 2.691-6 6-6s6 2.691 6 6h2c0-4.411-3.589-8-8-8z" />
-                    </svg>
+                    <User size={18} color="#8e8e8e" />
                   )}
                 </div>
                 <div style={{ flex: 1 }}>

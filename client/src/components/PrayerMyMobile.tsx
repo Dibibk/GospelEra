@@ -1,6 +1,29 @@
 import { useState, useCallback } from "react";
 import { User } from "lucide-react";
 
+// Helper to convert relative image URLs to full URLs for native apps
+function getImageUrl(url: string | undefined | null): string | null {
+  if (!url) return null;
+  
+  // Already a full URL
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    return url;
+  }
+  
+  // Check if running on native platform
+  const isNative = typeof window !== 'undefined' && 
+    window.location.protocol === 'capacitor:';
+  
+  if (isNative) {
+    // Prepend production backend URL for native apps
+    const baseUrl = import.meta.env.VITE_API_URL || 'https://gospel-era.replit.app';
+    return `${baseUrl}${url.startsWith('/') ? '' : '/'}${url}`;
+  }
+  
+  // For web, return as-is (relative URLs work)
+  return url;
+}
+
 interface PrayerMyMobileProps {
   myCommitments: any[];
   myRequests: any[];
@@ -137,7 +160,7 @@ export function PrayerMyMobile({
                         width: "32px",
                         height: "32px",
                         borderRadius: "50%",
-                        background: commitment.prayer_requests?.is_anonymous ? "#dbdbdb" : (commitment.prayer_requests?.profiles?.avatar_url ? "transparent" : "#dbdbdb"),
+                        background: commitment.prayer_requests?.is_anonymous ? "#dbdbdb" : (getImageUrl(commitment.prayer_requests?.profiles?.avatar_url) ? "transparent" : "#dbdbdb"),
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
@@ -149,9 +172,9 @@ export function PrayerMyMobile({
                     >
                       {commitment.prayer_requests?.is_anonymous ? (
                         "🙏"
-                      ) : commitment.prayer_requests?.profiles?.avatar_url ? (
+                      ) : getImageUrl(commitment.prayer_requests?.profiles?.avatar_url) ? (
                         <img
-                          src={commitment.prayer_requests.profiles.avatar_url}
+                          src={getImageUrl(commitment.prayer_requests.profiles.avatar_url)!}
                           alt=""
                           style={{
                             width: "100%",

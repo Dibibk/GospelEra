@@ -1,6 +1,29 @@
 import { useCallback, useState } from "react";
 import { User } from "lucide-react";
 
+// Helper to convert relative image URLs to full URLs for native apps
+function getImageUrl(url: string | undefined | null): string | null {
+  if (!url) return null;
+  
+  // Already a full URL
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    return url;
+  }
+  
+  // Check if running on native platform
+  const isNative = typeof window !== 'undefined' && 
+    window.location.protocol === 'capacitor:';
+  
+  if (isNative) {
+    // Prepend production backend URL for native apps
+    const baseUrl = import.meta.env.VITE_API_URL || 'https://gospel-era.replit.app';
+    return `${baseUrl}${url.startsWith('/') ? '' : '/'}${url}`;
+  }
+  
+  // For web, return as-is (relative URLs work)
+  return url;
+}
+
 interface PrayerBrowseMobileProps {
   prayerRequests: any[];
   onNavigateToNew: () => void;
@@ -16,7 +39,9 @@ export function PrayerBrowseMobile({
   onNavigateToLeaderboard,
   onSelectPrayer,
 }: PrayerBrowseMobileProps) {
-  const [avatarErrors, setAvatarErrors] = useState<Record<number, boolean>>({});
+  const [avatarErrors, setAvatarErrors] = useState<
+    Record<number | string, boolean>
+  >({});
 
   const formatTimeAgo = useCallback((dateString: string) => {
     const date = new Date(dateString);
@@ -32,7 +57,7 @@ export function PrayerBrowseMobile({
 
   return (
     <div style={{ minHeight: "100vh", background: "#ffffff" }}>
-      {/* Header with Navigation */}
+      {/* Header */}
       <div
         style={{
           display: "flex",
@@ -120,7 +145,7 @@ export function PrayerBrowseMobile({
           <div style={{ fontSize: "18px", fontWeight: 700, color: "#262626" }}>
             {prayerRequests.reduce(
               (sum, req) => sum + (req.prayer_stats?.committed_count || 0),
-              0
+              0,
             )}
           </div>
           <div style={{ fontSize: "12px", color: "#8e8e8e" }}>Committed</div>
@@ -129,154 +154,168 @@ export function PrayerBrowseMobile({
           <div style={{ fontSize: "18px", fontWeight: 700, color: "#262626" }}>
             {prayerRequests.reduce(
               (sum, req) => sum + (req.prayer_stats?.prayed_count || 0),
-              0
+              0,
             )}
           </div>
           <div style={{ fontSize: "12px", color: "#8e8e8e" }}>Prayed</div>
         </div>
       </div>
 
-      {/* Prayer Requests Feed */}
+      {/* Prayer List */}
       <div style={{ padding: "16px" }}>
         {prayerRequests.length > 0 ? (
-          prayerRequests.map((request) => (
-            <div
-              key={request.id}
-              data-testid={`card-prayer-${request.id}`}
-              onClick={() => onSelectPrayer(request)}
-              style={{
-                background: "#ffffff",
-                border: "1px solid #dbdbdb",
-                borderRadius: "12px",
-                padding: "16px",
-                marginBottom: "12px",
-                cursor: "pointer",
-              }}
-            >
-              {/* Author */}
+          prayerRequests.map((request) => {
+            const avatarUrl = getImageUrl(
+              request.profiles?.avatar_url || null,
+            );
+
+            const hasError = avatarErrors[request.id];
+
+            return (
               <div
+                key={request.id}
+                data-testid={`card-prayer-${request.id}`}
+                onClick={() => onSelectPrayer(request)}
                 style={{
-                  display: "flex",
-                  alignItems: "center",
+                  background: "#ffffff",
+                  border: "1px solid #dbdbdb",
+                  borderRadius: "12px",
+                  padding: "16px",
                   marginBottom: "12px",
+                  cursor: "pointer",
                 }}
               >
+                {/* Author */}
                 <div
                   style={{
-                    width: "32px",
-                    height: "32px",
-                    borderRadius: "50%",
-                    background: request.is_anonymous ? "#dbdbdb" : (request.profiles?.avatar_url ? "transparent" : "#dbdbdb"),
                     display: "flex",
                     alignItems: "center",
-                    justifyContent: "center",
-                    marginRight: "12px",
-                    color: "#8e8e8e",
-                    overflow: "hidden",
+                    marginBottom: "12px",
                   }}
                 >
-                  {request.is_anonymous ? (
-                    "🙏"
-                  ) : request.profiles?.avatar_url && !avatarErrors[request.id] ? (
-                    <img
-                      src={request.profiles.avatar_url}
-                      alt=""
-                      style={{
-                        width: "100%",
-                        height: "100%",
-                        objectFit: "cover",
-                      }}
-                      onError={() => setAvatarErrors(prev => ({ ...prev, [request.id]: true }))}
-                    />
-                  ) : (
-                    <User size={18} color="#8e8e8e" />
-                  )}
-                </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 600, color: "#262626" }}>
-                    {request.is_anonymous
-                      ? "Anonymous"
-                      : request.profiles?.display_name || "Prayer Warrior"}
+                  <div
+                    style={{
+                      width: "32px",
+                      height: "32px",
+                      borderRadius: "50%",
+                      background: request.is_anonymous
+                        ? "#dbdbdb"
+                        : avatarUrl && !hasError
+                          ? "transparent"
+                          : "#dbdbdb",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      marginRight: "12px",
+                      color: "#8e8e8e",
+                      overflow: "hidden",
+                    }}
+                  >
+                    {request.is_anonymous ? (
+                      "🙏"
+                    ) : avatarUrl && !hasError ? (
+                      <img
+                        src={avatarUrl}
+                        alt=""
+                        style={{
+                          width: "100%",
+                          height: "100%",
+                          objectFit: "cover",
+                        }}
+                        onError={() =>
+                          setAvatarErrors((prev) => ({
+                            ...prev,
+                            [request.id]: true,
+                          }))
+                        }
+                      />
+                    ) : (
+                      <User size={18} color="#8e8e8e" />
+                    )}
                   </div>
-                  <div style={{ fontSize: "12px", color: "#8e8e8e" }}>
-                    {formatTimeAgo(request.created_at)}
+
+                  {/* Author Name + Time */}
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 600, color: "#262626" }}>
+                      {request.is_anonymous
+                        ? "Anonymous"
+                        : request.profiles?.display_name || "Prayer Warrior"}
+                    </div>
+                    <div style={{ fontSize: "12px", color: "#8e8e8e" }}>
+                      {formatTimeAgo(request.created_at)}
+                    </div>
                   </div>
+
+                  <div style={{ fontSize: "16px", color: "#8e8e8e" }}>→</div>
                 </div>
-                <div style={{ fontSize: "16px", color: "#8e8e8e" }}>→</div>
-              </div>
 
-              {/* Title */}
-              <div
-                style={{
-                  fontWeight: 600,
-                  marginBottom: "8px",
-                  color: "#262626",
-                }}
-              >
-                {request.title}
-              </div>
-
-              {/* Details */}
-              <div
-                style={{
-                  fontSize: "14px",
-                  lineHeight: 1.4,
-                  marginBottom: "12px",
-                  color: "#8e8e8e",
-                }}
-              >
-                {request.details.slice(0, 100)}
-                {request.details.length > 100 ? "..." : ""}
-              </div>
-
-              {/* Tags */}
-              {request.tags && request.tags.length > 0 && (
-                <div style={{ marginBottom: "12px" }}>
-                  {request.tags.slice(0, 3).map((tag: string, index: number) => (
-                    <span
-                      key={`${request.id}-tag-${index}`}
-                      style={{
-                        background: "#f0f0f0",
-                        padding: "2px 8px",
-                        borderRadius: "12px",
-                        fontSize: "12px",
-                        color: "#666",
-                        marginRight: "6px",
-                      }}
-                    >
-                      #{tag}
-                    </span>
-                  ))}
+                {/* Title */}
+                <div
+                  style={{
+                    fontWeight: 600,
+                    marginBottom: "8px",
+                    color: "#262626",
+                  }}
+                >
+                  {request.title}
                 </div>
-              )}
 
-              {/* Stats */}
-              <div
-                style={{
-                  fontSize: "12px",
-                  color: "#8e8e8e",
-                  display: "flex",
-                  justifyContent: "space-between",
-                }}
-              >
-                <span>
-                  {request.prayer_stats?.committed_count || 0} committed ·{" "}
-                  {request.prayer_stats?.prayed_count || 0} prayed
-                </span>
-                <span>Tap to view</span>
+                {/* Details */}
+                <div
+                  style={{
+                    fontSize: "14px",
+                    lineHeight: 1.4,
+                    marginBottom: "12px",
+                    color: "#8e8e8e",
+                  }}
+                >
+                  {request.details.slice(0, 100)}
+                  {request.details.length > 100 ? "..." : ""}
+                </div>
+
+                {/* Tags */}
+                {request.tags && request.tags.length > 0 && (
+                  <div style={{ marginBottom: "12px" }}>
+                    {request.tags.slice(0, 3).map((tag, index) => (
+                      <span
+                        key={`${request.id}-tag-${index}`}
+                        style={{
+                          background: "#f0f0f0",
+                          padding: "2px 8px",
+                          borderRadius: "12px",
+                          fontSize: "12px",
+                          color: "#666",
+                          marginRight: "6px",
+                        }}
+                      >
+                        #{tag}
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                {/* Stats */}
+                <div
+                  style={{
+                    fontSize: "12px",
+                    color: "#8e8e8e",
+                    display: "flex",
+                    justifyContent: "space-between",
+                  }}
+                >
+                  <span>
+                    {request.prayer_stats?.committed_count || 0} committed ·{" "}
+                    {request.prayer_stats?.prayed_count || 0} prayed
+                  </span>
+                  <span>Tap to view</span>
+                </div>
               </div>
-            </div>
-          ))
+            );
+          })
         ) : (
           <div style={{ textAlign: "center", padding: "40px 20px" }}>
             <div style={{ fontSize: "48px", marginBottom: "16px" }}>🙏</div>
-            <div
-              style={{
-                fontWeight: 600,
-                marginBottom: "8px",
-                color: "#262626",
-              }}
-            >
+            <div style={{ fontWeight: 600, marginBottom: "8px" }}>
               Prayer Community
             </div>
             <div style={{ color: "#8e8e8e", fontSize: "14px" }}>
