@@ -25,6 +25,32 @@ async function getAuthToken() {
 }
 
 /**
+ * Verify current user is an admin
+ * @throws {Error} If user is not authenticated or not an admin
+ */
+async function requireAdmin() {
+  const { data: { session }, error } = await supabase.auth.getSession()
+  
+  if (error || !session) {
+    throw new Error('User must be authenticated to perform admin actions')
+  }
+
+  const { data: profile, error: profileError } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', session.user.id)
+    .single()
+
+  if (profileError || !profile) {
+    throw new Error('Could not verify admin status')
+  }
+
+  if (profile.role !== 'admin') {
+    throw new Error('Admin privileges required')
+  }
+}
+
+/**
  * List reports with optional filtering and pagination
  * Uses backend API to bypass RLS
  * @param {Object} options - Query options
