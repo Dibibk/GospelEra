@@ -137,16 +137,31 @@ export function PrayerMyMobile({
                         width: "32px",
                         height: "32px",
                         borderRadius: "50%",
-                        background: "#dbdbdb",
+                        background: commitment.prayer_requests?.is_anonymous ? "#dbdbdb" : (commitment.prayer_requests?.profiles?.avatar_url ? "transparent" : "#dbdbdb"),
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
                         fontSize: "14px",
                         marginRight: "12px",
                         color: "#8e8e8e",
+                        overflow: "hidden",
                       }}
                     >
-                      {commitment.prayer_requests?.is_anonymous ? "🙏" : <User size={16} color="#8e8e8e" />}
+                      {commitment.prayer_requests?.is_anonymous ? (
+                        "🙏"
+                      ) : commitment.prayer_requests?.profiles?.avatar_url ? (
+                        <img
+                          src={commitment.prayer_requests.profiles.avatar_url}
+                          alt=""
+                          style={{
+                            width: "100%",
+                            height: "100%",
+                            objectFit: "cover",
+                          }}
+                        />
+                      ) : (
+                        <User size={16} color="#8e8e8e" />
+                      )}
                     </div>
                     <div style={{ flex: 1 }}>
                       <div style={{ fontWeight: 600, color: "#262626" }}>
