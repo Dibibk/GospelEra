@@ -73,3 +73,8 @@ integrations = ["javascript_openai_ai_integrations:1.0.0"]
 
 [objectStorage]
 defaultBucketID = "replit-objstore-9897ff2b-bdd0-4272-8b10-7a12a19d20a3"
+
+[userenv]
+
+[userenv.shared]
+VITE_API_URL = "https://gospel-era.replit.app"
