@@ -182,13 +182,20 @@ export async function sendDailyVerseReminders(): Promise<{ sent: number; failed:
  */
 export async function updateDailyVersePreference(userId: string, enabled: boolean): Promise<void> {
   try {
-    const { db } = await import("../client/src/lib/db");
-    const { pushTokens } = await import("@shared/schema");
-    const { eq } = await import("drizzle-orm");
+    const { supabaseAdmin } = await import('./supabaseAdmin');
     
-    await db.update(pushTokens)
-      .set({ daily_verse_enabled: enabled, updated_at: new Date() })
-      .where(eq(pushTokens.user_id, userId));
+    if (!supabaseAdmin) {
+      throw new Error('Supabase admin client not configured');
+    }
+    
+    const { error } = await supabaseAdmin
+      .from('push_tokens')
+      .update({ daily_verse_enabled: enabled, updated_at: new Date().toISOString() })
+      .eq('user_id', userId);
+    
+    if (error) {
+      throw error;
+    }
     
     console.log(`[Push] Updated daily verse preference for user ${userId}: ${enabled}`);
   } catch (error) {
