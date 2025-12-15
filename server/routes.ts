@@ -947,11 +947,12 @@ Respond in JSON format:
         return res.status(401).json({ error: "Authentication required" });
       }
       
-      const token = extractToken(req.headers.authorization);
-      const supabase = createServerSupabase(token);
+      if (!supabaseAdmin) {
+        return res.status(500).json({ error: "Database configuration error" });
+      }
       
-      // First, check if the post exists
-      const { data: existingPost, error: fetchError } = await supabase
+      // First, check if the post exists using admin client
+      const { data: existingPost, error: fetchError } = await supabaseAdmin
         .from('posts')
         .select('*')
         .eq('id', postId)
@@ -970,7 +971,8 @@ Respond in JSON format:
       }
       
       // Soft delete by setting hidden = true (preserves data for admin review)
-      const { data: deletedPost, error } = await supabase
+      // Use supabaseAdmin to bypass RLS policies
+      const { data: deletedPost, error } = await supabaseAdmin
         .from('posts')
         .update({ 
           hidden: true,
