@@ -25,6 +25,7 @@ export function EditProfileMobile({ profile, onBack, onSuccess }: EditProfileMob
   const [displayName, setDisplayName] = useState('');
   const [bio, setBio] = useState('');
   const [avatarUrl, setAvatarUrl] = useState('');
+  const [avatarCacheBust, setAvatarCacheBust] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -74,10 +75,34 @@ export function EditProfileMobile({ profile, onBack, onSuccess }: EditProfileMob
   const handleAvatarUpload = async () => {
     const input = document.createElement('input');
     input.type = 'file';
-    input.accept = 'image/*';
+    input.accept = 'image/jpeg,image/png,image/heic,image/heif';
     input.onchange = async (e) => {
       const files = (e.target as HTMLInputElement).files;
       if (files && files[0]) {
+        const file = files[0];
+        
+        // Clear any previous error
+        setError('');
+        
+        // Validate file type - check MIME type or fall back to file extension (iOS HEIC has empty MIME)
+        const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/heic', 'image/heif'];
+        const allowedExtensions = ['.jpg', '.jpeg', '.png', '.heic', '.heif'];
+        const fileExtension = file.name.toLowerCase().substring(file.name.lastIndexOf('.'));
+        const mimeType = file.type.toLowerCase();
+        
+        const isValidType = mimeType ? allowedTypes.includes(mimeType) : allowedExtensions.includes(fileExtension);
+        if (!isValidType) {
+          setError('This photo can\'t be used. Please upload a JPG, PNG, or HEIC image.');
+          return;
+        }
+        
+        // Validate file size (max 5MB)
+        const maxSizeBytes = 5 * 1024 * 1024; // 5MB
+        if (file.size > maxSizeBytes) {
+          setError('This photo is too large. Please upload an image under 5 MB.');
+          return;
+        }
+        
         try {
           const { supabase } = await import('../lib/supabaseClient');
           const { data: { session } } = await supabase.auth.getSession();
@@ -103,9 +128,9 @@ export function EditProfileMobile({ profile, onBack, onSuccess }: EditProfileMob
 
           const uploadResponse = await fetch(uploadURL, {
             method: 'PUT',
-            body: files[0],
+            body: file,
             headers: {
-              'Content-Type': files[0].type,
+              'Content-Type': file.type || 'application/octet-stream',
             },
           });
 
@@ -126,20 +151,35 @@ export function EditProfileMobile({ profile, onBack, onSuccess }: EditProfileMob
 
             if (avatarResponse.ok) {
               const { objectPath } = await avatarResponse.json();
+              // Store clean path for persistence, use cache bust for display only
               setAvatarUrl(objectPath);
+              setAvatarCacheBust(Date.now());
               setSuccess('Avatar updated successfully!');
               setTimeout(() => setSuccess(''), 3000);
             } else {
               setError('Failed to process uploaded image');
             }
+          } else {
+            setError('Failed to upload photo. Please try again.');
           }
         } catch (error) {
           console.error('Upload error:', error);
-          setError('Failed to upload avatar');
+          setError('Failed to upload avatar. Please try again.');
         }
       }
     };
     input.click();
+  };
+
+  // Get display URL with cache busting for immediate refresh
+  const getAvatarDisplayUrl = (url: string): string => {
+    if (!url) return '';
+    const baseUrl = getAvatarSrc(url);
+    if (avatarCacheBust) {
+      const separator = baseUrl.includes('?') ? '&' : '?';
+      return `${baseUrl}${separator}t=${avatarCacheBust}`;
+    }
+    return baseUrl;
   };
 
   return (
@@ -201,7 +241,7 @@ export function EditProfileMobile({ profile, onBack, onSuccess }: EditProfileMob
               >
                 {avatarUrl ? (
                   <img
-                    src={getAvatarSrc(avatarUrl)}
+                    src={getAvatarDisplayUrl(avatarUrl)}
                     alt="Profile"
                     style={{
                       width: '32px',
@@ -264,7 +304,7 @@ export function EditProfileMobile({ profile, onBack, onSuccess }: EditProfileMob
           <div style={{ marginBottom: '16px' }}>
             {avatarUrl ? (
               <img
-                src={getAvatarSrc(avatarUrl)}
+                src={getAvatarDisplayUrl(avatarUrl)}
                 alt="Avatar"
                 style={{
                   width: '80px',
