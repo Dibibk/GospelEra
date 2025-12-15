@@ -28,20 +28,27 @@ export interface MediaRequestWithUser extends MediaRequest {
  */
 export async function requestMediaAccess(reason: string) {
   try {
-    // Get current user for authentication
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    // Get current user and session for authentication
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
     
-    if (authError || !user) {
+    if (sessionError || !session?.user) {
       return { data: null, error: { message: 'You must be logged in to request media access' } }
     }
 
     const baseUrl = getApiBaseUrl();
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'x-user-id': session.user.id,
+    };
+    
+    // Add Authorization header for native app support
+    if (session.access_token) {
+      headers['Authorization'] = `Bearer ${session.access_token}`;
+    }
+    
     const response = await fetch(`${baseUrl}/api/media-requests`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-user-id': user.id,
-      },
+      headers,
       body: JSON.stringify({ reason })
     })
 
@@ -53,7 +60,7 @@ export async function requestMediaAccess(reason: string) {
     const data = await response.json()
     return { data, error: null }
   } catch (error) {
-    return { data: null, error }
+    return { data: null, error: { message: 'Network error. Please check your connection and try again.' } }
   }
 }
 

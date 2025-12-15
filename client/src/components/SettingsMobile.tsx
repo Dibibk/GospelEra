@@ -912,6 +912,98 @@ export function SettingsMobile({ onBack, onEditProfile, onSuccess }: SettingsMob
           </button>
         </div>
       )}
+
+      {/* Media Request Modal */}
+      {showMediaRequestModal && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(0,0,0,0.5)",
+            zIndex: 1000,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <div
+            style={{
+              background: "#ffffff",
+              padding: "24px",
+              borderRadius: "12px",
+              maxWidth: "300px",
+              margin: "16px",
+              textAlign: "center",
+            }}
+          >
+            <h3
+              style={{
+                margin: "0 0 16px 0",
+                fontSize: "18px",
+                fontWeight: 600,
+              }}
+            >
+              Request Link Sharing
+            </h3>
+            <p
+              style={{
+                margin: "0 0 20px 0",
+                fontSize: "14px",
+                color: "#6c757d",
+              }}
+            >
+              Link sharing permissions allow you to embed YouTube videos and
+              upload media files to enhance your posts.
+            </p>
+            <div style={{ display: "flex", gap: "8px" }}>
+              <button
+                onClick={() => setShowMediaRequestModal(false)}
+                style={{
+                  flex: 1,
+                  padding: "10px",
+                  border: "1px solid #ddd",
+                  borderRadius: "6px",
+                  background: "#ffffff",
+                  cursor: "pointer",
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={async () => {
+                  try {
+                    const { requestMediaAccess } = await import("@/lib/mediaRequests");
+                    const { data, error } = await requestMediaAccess("Requesting permission to share video links and upload media");
+                    setShowMediaRequestModal(false);
+                    if (error) {
+                      alert(`Failed to submit request: ${(error as any).message || 'Unknown error'}`);
+                    } else {
+                      alert("Link sharing request submitted! You will be notified when approved.");
+                    }
+                  } catch (err) {
+                    setShowMediaRequestModal(false);
+                    alert("Failed to submit request. Please try again.");
+                  }
+                }}
+                style={{
+                  flex: 1,
+                  padding: "10px",
+                  border: "none",
+                  borderRadius: "6px",
+                  background: "#007bff",
+                  color: "#ffffff",
+                  cursor: "pointer",
+                }}
+              >
+                Request
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
