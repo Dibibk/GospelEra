@@ -941,6 +941,14 @@ export default function MobileApp() {
         }
         // Refresh prayer requests to show updated counts
         await fetchData();
+        
+        // Also refresh the selected prayer detail if viewing this request
+        if (selectedPrayerDetail && selectedPrayerDetail.id === requestId) {
+          const { data: refreshedPrayer } = await getPrayerRequest(requestId);
+          if (refreshedPrayer) {
+            setSelectedPrayerDetail(refreshedPrayer);
+          }
+        }
       }
     } catch (error) {
       console.error("Error committing to prayer:", error);

@@ -1,0 +1,62 @@
+There is a bug on the Prayer Details page related to the “I will pray” button.
+Fix ONLY this issue and do NOT change anything else in the project.
+
+🧩 Problem
+
+On the Prayer Details page, when I click the “I will pray” button:
+
+The UI does not update immediately.
+
+The button state / count / UI still looks unchanged.
+
+If I log out and log back in, then I see the updated state (so the backend is working, but the UI is not refreshing).
+
+🎯 Desired Behavior
+
+When the user taps “I will pray” on the Prayer Details page:
+
+The request should be sent to the existing backend/API as it is now.
+
+After a successful response, the Prayer Details UI should:
+
+Immediately reflect the new state (e.g., show that the user has committed to pray, update any count/badge/text).
+
+The button text/state should update without needing a full app restart or re-login.
+
+If the request fails, show a simple error message instead of leaving the user confused.
+
+✅ What you MUST do (ONLY this):
+
+Find the “I will pray” button logic on the Prayer Details page:
+
+Locate the Prayer Details component.
+
+Find the handler/function that runs when “I will pray” is clicked.
+
+Update the UI immediately after success:
+
+After a successful API call / Supabase update:
+
+Update the local React state / query cache / data model used by the Prayer Details page.
+
+Make sure the component re-renders so:
+
+The button changes to the correct “already praying” state (or whatever the design expects).
+
+Any related counts (like “people who will pray”) are updated.
+
+You may:
+
+Either mutate the local state directly, OR
+
+Trigger a refetch of the prayer data for this page, depending on how the rest of the app is structured.
+
+Do NOT change anything else:
+
+Do NOT change the backend route, database schema, or business logic for “I will pray”.
+
+Do NOT change the behavior of prayer lists, My Prayers page, or other screens.
+
+Do NOT refactor or reformat unrelated code.
+
+Only touch the minimal code needed to make the Prayer Details page update right after clicking “I will pray”.
