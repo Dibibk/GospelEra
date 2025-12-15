@@ -5,7 +5,6 @@ interface MobileSavedPostsPageProps {
   onBack: () => void;
   onSetProfiles: (updater: (prev: Map<string, any>) => Map<string, any>) => void;
   onToggleBookmark: (postId: number) => void;
-  onOpenPostMenu: (postId: number, menuType: string) => void;
   onSelectPost: (postId: number) => void;
 }
 
@@ -14,7 +13,6 @@ export function MobileSavedPostsPage({
   onBack,
   onSetProfiles,
   onToggleBookmark,
-  onOpenPostMenu,
   onSelectPost,
 }: MobileSavedPostsPageProps) {
   const [savedPosts, setSavedPosts] = useState<any[]>([]);
@@ -241,35 +239,6 @@ export function MobileSavedPostsPage({
                   </div>
                 </div>
 
-                {/* ⋯ menu (saved context) */}
-                <div>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onOpenPostMenu(post.id, "saved");
-                    }}
-                    aria-label="More options"
-                    style={{
-                      background: "none",
-                      border: "none",
-                      cursor: "pointer",
-                      padding: "4px",
-                      color: "#262626",
-                    }}
-                  >
-                    <svg
-                      width="20"
-                      height="20"
-                      viewBox="0 0 24 24"
-                      fill="currentColor"
-                      style={{ color: "#262626" }}
-                    >
-                      <circle cx="5" cy="12" r="2" />
-                      <circle cx="12" cy="12" r="2" />
-                      <circle cx="19" cy="12" r="2" />
-                    </svg>
-                  </button>
-                </div>
               </div>
 
               {/* Post body */}

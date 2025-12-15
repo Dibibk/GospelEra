@@ -3349,12 +3349,10 @@ export default function MobileApp() {
             onBack={() => setShowMobileSavedPosts(false)}
             onSetProfiles={setProfiles}
             onToggleBookmark={handleToggleBookmark}
-            onOpenPostMenu={(postId, menuType) => {
-              // Not used in saved posts context - handled inline
-            }}
             onSelectPost={(postId) => {
               setShowMobileSavedPosts(false);
               setActiveTab(0);
+              setPendingPostNavigation(postId);
             }}
           />
         ) : showMobileCommunityGuidelines ? (
