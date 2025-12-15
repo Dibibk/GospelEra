@@ -1,0 +1,82 @@
+There is a bug with cached user data when logging out and logging back in on the same phone.
+Fix ONLY this issue and do NOT change anything else in the project.
+
+Problem:
+
+When one user logs out and another user logs in on the same device, some data from the first user is still visible (cached).
+
+This may include things like profile info, profile picture, “My Prayers”, notifications, settings, etc.
+
+Cache / in-memory state is not fully cleared on logout.
+
+Desired behavior:
+
+When a user logs out:
+
+All user-specific state and cached data must be cleared from:
+
+in-memory stores (React state, contexts, Zustand, Redux, etc.)
+
+local storage / AsyncStorage / Capacitor Preferences
+
+any other client-side cache used by the app.
+
+When a new user logs in on the same device:
+
+They should see only their own data, freshly loaded from Supabase/API.
+
+No data from the previous user should appear.
+
+✅ What you must do (ONLY this):
+
+Find the logout logic
+
+Locate the function(s) or handler(s) that run when the user taps “Log out” / “Sign out”.
+
+This will already call Supabase (or auth provider) to sign out.
+
+Do not change the sign-out call itself, only extend it.
+
+Clear all user-specific client cache on logout:
+
+After sign-out succeeds:
+
+Clear any stored user/session data from:
+
+Local storage / AsyncStorage / Capacitor Preferences (keys that store profile, userId, role, tokens, etc.).
+
+Any client-side caches (query caches such as React Query/TanStack, SWR, or custom caches).
+
+Any global state stores (contexts, stores) that keep user-specific data (e.g., current profile, My Prayers list).
+
+This should be centralized so that all user-specific data is wiped in one place when logout is called.
+
+Ensure fresh load on next login:
+
+On app start or after login, make sure user-specific screens (Profile, My Prayers, Notifications, etc.) always fetch fresh data for the current user and do not reuse stale cached data from the previous user.
+
+If necessary, invalidate/refresh query caches right after a successful login for the current user.
+
+Platforms:
+
+The fix must work on:
+
+iOS
+
+Android
+
+Web (if the same code path is used)
+
+Reuse existing platform detection/storage logic; do not introduce new storage systems.
+
+❌ Hard constraints — DO NOT:
+
+Do NOT modify any backend routes, database schema, or Supabase policies.
+
+Do NOT change authentication provider configuration.
+
+Do NOT refactor or rename unrelated components or files.
+
+Do NOT alter any business logic unrelated to logout/login and cache clearing.
+
+Do NOT change UI/UX designs, only the underlying state/cache behavior.

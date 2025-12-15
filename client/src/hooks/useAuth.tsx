@@ -1,6 +1,8 @@
 import { useState, useEffect, createContext, useContext } from 'react'
 import { User, Session, AuthError } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabaseClient'
+import { queryClient } from '../lib/queryClient'
+import { cleanupAllSubscriptions } from '../lib/realtime'
 
 // Utility to ensure user has a profile
 async function ensureUserProfile(user: User) {
@@ -144,8 +146,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setAuthTransition('signing-out')
     const { error } = await supabase.auth.signOut()
     
-    // Add a slight delay for smooth animation
+    // Clear all user-specific caches on successful logout
     if (!error) {
+      // Clear React Query cache (all user-specific data)
+      queryClient.clear()
+      
+      // Unsubscribe from all realtime channels
+      cleanupAllSubscriptions()
+      
+      // Add a slight delay for smooth animation
       await new Promise(resolve => setTimeout(resolve, 300))
     }
     
