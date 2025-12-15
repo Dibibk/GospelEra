@@ -1,6 +1,9 @@
-import { useState, useRef, type RefObject } from "react";
+import { useState, useRef, useEffect, type RefObject } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/lib/supabaseClient";
+
+const REMEMBER_ME_KEY = "gospel_era_remember_me";
+const REMEMBERED_EMAIL_KEY = "gospel_era_remembered_email";
 
 interface LoginMobileProps {
   onSuccess: () => void;
@@ -24,6 +27,19 @@ export function LoginMobile({ onSuccess }: LoginMobileProps) {
   const [showPasswordReset, setShowPasswordReset] = useState(false);
   const [resetEmail, setResetEmail] = useState("");
   const [resetSent, setResetSent] = useState(false);
+
+  useEffect(() => {
+    try {
+      const savedRememberMe = localStorage.getItem(REMEMBER_ME_KEY);
+      const savedEmail = localStorage.getItem(REMEMBERED_EMAIL_KEY);
+      if (savedRememberMe === "true" && savedEmail) {
+        setEmail(savedEmail);
+        setRememberMe(true);
+      }
+    } catch (e) {
+      console.log("Could not read remembered credentials");
+    }
+  }, []);
 
   const emailRef = useRef<HTMLInputElement>(null);
   const passwordRef = useRef<HTMLInputElement>(null);
@@ -86,6 +102,19 @@ export function LoginMobile({ onSuccess }: LoginMobileProps) {
         setSuccess(
           "If this email doesn't already have an account, you'll receive a confirmation email.",
         );
+      }
+      if (!isSignUp) {
+        try {
+          if (rememberMe) {
+            localStorage.setItem(REMEMBER_ME_KEY, "true");
+            localStorage.setItem(REMEMBERED_EMAIL_KEY, email);
+          } else {
+            localStorage.removeItem(REMEMBER_ME_KEY);
+            localStorage.removeItem(REMEMBERED_EMAIL_KEY);
+          }
+        } catch (e) {
+          console.log("Could not save remembered credentials");
+        }
       }
       setEmail("");
       setPassword("");
