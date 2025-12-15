@@ -61,6 +61,7 @@ export function NotificationsMobile({ onBack, onNotificationClick, onCountChange
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [markingAllRead, setMarkingAllRead] = useState(false);
+  const [failedAvatars, setFailedAvatars] = useState<Set<number>>(new Set());
 
   const getApiBaseUrl = useCallback(() => {
     return Capacitor.isNativePlatform() ? 'https://gospel-era.replit.app' : '';
@@ -247,7 +248,7 @@ export function NotificationsMobile({ onBack, onNotificationClick, onCountChange
                     width: '40px',
                     height: '40px',
                     borderRadius: '50%',
-                    background: notification.actor?.avatar_url ? 'none' : '#e8e8e8',
+                    background: (notification.actor?.avatar_url && !failedAvatars.has(notification.id)) ? 'none' : '#e8e8e8',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -255,11 +256,14 @@ export function NotificationsMobile({ onBack, onNotificationClick, onCountChange
                     overflow: 'hidden',
                   }}
                 >
-                  {notification.actor?.avatar_url ? (
+                  {notification.actor?.avatar_url && !failedAvatars.has(notification.id) ? (
                     <img
                       src={notification.actor.avatar_url}
                       alt=""
                       style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover' }}
+                      onError={() => {
+                        setFailedAvatars(prev => new Set(prev).add(notification.id));
+                      }}
                     />
                   ) : (
                     <span style={{ fontSize: '20px' }}>{getEventIcon(notification.event_type)}</span>

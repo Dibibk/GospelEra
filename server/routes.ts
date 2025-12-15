@@ -1323,6 +1323,58 @@ Respond in JSON format:
           message: 'committed to pray'
         });
 
+      // Create notification for the prayer request owner (if not self)
+      try {
+        const { data: prayerRequest } = await supabase
+          .from('prayer_requests')
+          .select('requester, title')
+          .eq('id', requestId)
+          .single();
+
+        if (prayerRequest && prayerRequest.requester !== req.user.id) {
+          // Get the warrior's display name
+          const { data: warriorProfile } = await supabase
+            .from('profiles')
+            .select('display_name')
+            .eq('id', req.user.id)
+            .single();
+
+          const warriorName = warriorProfile?.display_name || 'Someone';
+          const requestTitle = prayerRequest.title?.slice(0, 30) || 'your prayer request';
+          const message = `${warriorName} committed to pray for "${requestTitle}${prayerRequest.title?.length > 30 ? '...' : ''}"`;
+
+          // Use supabaseAdmin to bypass RLS for notification creation
+          if (supabaseAdmin) {
+            await supabaseAdmin
+              .from('notifications')
+              .insert({
+                recipient_id: prayerRequest.requester,
+                actor_id: req.user.id,
+                event_type: 'prayer_commitment',
+                prayer_request_id: requestId,
+                commitment_id: commitment?.id || null,
+                message,
+                is_read: false
+              });
+
+            // Send push notification
+            try {
+              const { sendPushNotification } = await import('./pushNotifications');
+              await sendPushNotification(prayerRequest.requester, {
+                title: 'Prayer Commitment',
+                body: message,
+                url: '/'
+              });
+            } catch (pushError) {
+              console.error("Error sending push notification:", pushError);
+            }
+          }
+        }
+      } catch (notifError) {
+        console.error("Error creating commitment notification:", notifError);
+        // Don't fail the request if notification fails
+      }
+
       res.json(commitment);
     } catch (error) {
       console.error("Error committing to prayer:", error);
@@ -1371,6 +1423,58 @@ Respond in JSON format:
           kind: 'prayed',
           message: 'prayed for this request'
         });
+
+      // Create notification for the prayer request owner (if not self)
+      try {
+        const { data: prayerRequest } = await supabase
+          .from('prayer_requests')
+          .select('requester, title')
+          .eq('id', requestId)
+          .single();
+
+        if (prayerRequest && prayerRequest.requester !== req.user.id) {
+          // Get the prayer warrior's display name
+          const { data: warriorProfile } = await supabase
+            .from('profiles')
+            .select('display_name')
+            .eq('id', req.user.id)
+            .single();
+
+          const warriorName = warriorProfile?.display_name || 'Someone';
+          const requestTitle = prayerRequest.title?.slice(0, 30) || 'your prayer request';
+          const message = `${warriorName} prayed for "${requestTitle}${prayerRequest.title?.length > 30 ? '...' : ''}"`;
+
+          // Use supabaseAdmin to bypass RLS for notification creation
+          if (supabaseAdmin) {
+            await supabaseAdmin
+              .from('notifications')
+              .insert({
+                recipient_id: prayerRequest.requester,
+                actor_id: req.user.id,
+                event_type: 'prayer_prayed',
+                prayer_request_id: requestId,
+                commitment_id: commitment?.id || null,
+                message,
+                is_read: false
+              });
+
+            // Send push notification
+            try {
+              const { sendPushNotification } = await import('./pushNotifications');
+              await sendPushNotification(prayerRequest.requester, {
+                title: 'Prayer Answered',
+                body: message,
+                url: '/'
+              });
+            } catch (pushError) {
+              console.error("Error sending push notification:", pushError);
+            }
+          }
+        }
+      } catch (notifError) {
+        console.error("Error creating prayer notification:", notifError);
+        // Don't fail the request if notification fails
+      }
 
       res.json(commitment);
     } catch (error) {
