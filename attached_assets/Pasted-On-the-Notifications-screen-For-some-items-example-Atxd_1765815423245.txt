@@ -1,0 +1,83 @@
+On the Notifications screen:
+
+For some items (example: “Atxdukes commented on ‘Praise God, I got healed’”), the left icon shows as a blue box with a “?”.
+
+For other notifications (example: “Ridibi commented on ‘Jesus’”), the icon is a proper comment bubble (this is the correct one, as shown in my screenshot).
+
+Desired behavior:
+
+For all comment notifications, use the same comment bubble icon that is already used for “Ridibi commented on ‘Jesus’”.
+
+Do NOT show the blue “?” placeholder anywhere on the Notifications list.
+
+If a user has a real profile picture and the design is to show avatars instead of the comment bubble, follow the existing design rules consistently:
+
+Either show the user’s avatar, or
+
+Show the standard comment icon — but never the broken “?” graphic.
+
+What to do:
+
+Find where notification list items are rendered (Notifications screen component).
+
+Fix the icon logic so that:
+
+Comment notifications always show the intended icon (comment bubble) or avatar according to existing design.
+
+No notification ever falls back to the blue “?” box.
+
+Make the smallest possible change; do not alter layout, text, or other parts of the UI.
+
+🧩 Problem 2 – Notification when a prayer is marked as “Prayed”
+
+I need to confirm and, if missing, implement notifications for when someone changes a prayer’s status to “Prayed”.
+
+Requirements:
+
+Check whether a notification is already implemented for this event:
+
+When a user taps the “Prayed” / “I prayed” button (or equivalent) on a prayer,
+
+Does the owner/creator of that prayer receive a notification?
+
+If this notification is NOT implemented:
+
+Add a new notification using the existing notification system (do NOT create new tables or a separate system).
+
+Use the same pattern as other notifications (e.g., “X commented on Y”) to:
+
+Create a notification record in the notifications table.
+
+Trigger any existing push notification logic, if applicable.
+
+The notification text can be something like:
+
+“{username} prayed for your request ‘{prayer title}’”
+
+Show this new notification on the Notifications screen like any other item, with a consistent icon (e.g., the same prayer/hand or comment-style icon used elsewhere).
+
+If this notification already exists but is broken:
+
+Fix the wiring so that:
+
+It is created whenever a user marks a prayer as “Prayed”.
+
+It appears correctly in the Notifications list.
+
+Any existing push notification logic also works.
+
+Do NOT change:
+
+The underlying “Prayed” business logic (counts, prayer impact, etc.).
+
+Any other notification types or screens.
+
+❌ Hard constraints — DO NOT:
+
+Do NOT change database schema or add new tables. Use the existing notifications structure.
+
+Do NOT modify unrelated routes, features, or screens (posts, profile, prayers list, saved posts, donations, settings, etc.).
+
+Do NOT refactor or reformat large sections of code; keep changes minimal and focused.
+
+Do NOT change the wording or behavior of other notification types.

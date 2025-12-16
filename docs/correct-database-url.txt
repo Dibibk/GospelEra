@@ -1,0 +1,11 @@
+CORRECT DATABASE_URL FORMAT (from your Supabase):
+
+Update your App Secrets DATABASE_URL to one of these formats:
+
+RECOMMENDED (Session Pooler):
+postgresql://postgres.zvmvyixghcqxpnalmrbj:StartupDb1@aws-0-us-east-2.pooler.supabase.com:5432/postgres
+
+Alternative (Transaction Pooler):
+postgresql://postgres.zvmvyixghcqxpnalmrbj:StartupDb1@aws-0-us-east-2.pooler.supabase.com:6543/postgres
+
+Use the SESSION POOLER (port 5432) as it's more compatible with most applications.

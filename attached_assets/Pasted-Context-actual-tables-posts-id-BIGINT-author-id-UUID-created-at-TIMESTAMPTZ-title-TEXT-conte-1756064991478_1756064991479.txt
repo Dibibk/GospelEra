@@ -1,0 +1,131 @@
+Context (actual tables):
+
+posts(id BIGINT, author_id UUID, created_at TIMESTAMPTZ, title TEXT, content TEXT, tags ARRAY, is_deleted BOOLEAN, updated_at TIMESTAMPTZ, media_urls ARRAY, embed_url TEXT, moderation_status TEXT, moderation_reason TEXT, hidden BOOLEAN)
+
+comments(id BIGINT, post_id BIGINT, author_id UUID, content TEXT, created_at TIMESTAMPTZ, is_deleted BOOLEAN)
+
+prayer_requests(id BIGINT, requester UUID, title TEXT, details TEXT, tags ARRAY, is_anonymous BOOLEAN, status TEXT, created_at TIMESTAMPTZ)
+
+prayer_commitments(request_id BIGINT, warrior UUID, committed_at TIMESTAMPTZ, status TEXT, prayed_at TIMESTAMPTZ, note TEXT)
+
+Important: These three are RANGE-partitioned by created_at (per Prompt-1): posts, comments, prayer_requests. There is an archive schema with monthly copied partitions.
+
+Goal: Create four idempotent migrations matching this setup and print all SQL inline for review. Use CONCURRENTLY where supported; do not drop/replace any partitioning or archive objects created in Prompt-1.
+
+005_prune_stale.sql — Prune “zero-engagement” posts after 24 months
+
+Requirements
+
+Create helper view (if missing) to compute per-post engagement across all child partitions:
+
+post_engagement_v(post_id BIGINT, comments_count BIGINT) → count rows in parent comments (Postgres will scan partitions) where is_deleted IS NOT TRUE.
+
+Create table audit_content_prunes(id BIGSERIAL, table_name TEXT, row_id BIGINT, deleted_at TIMESTAMPTZ DEFAULT now()) if not exists.
+
+Create a safe pruning function (no CASCADE, no locks on parent) that, when run nightly, deletes posts that meet all:
+
+posts.created_at < now() - interval '24 months'
+
+NOT posts.hidden and NOT coalesce(posts.is_deleted,false)
+
+Zero engagement → either use posts.comments_count = 0 if that column exists (see next migration), else left-join post_engagement_v and require comments_count IS NULL OR comments_count = 0.
+
+For each deleted id, insert a row into audit_content_prunes('posts', id).
+
+Do not touch prayer_requests here (we’ll retain prayers).
+
+Provide a call example suitable for pg_cron (commented).
+
+006_counters_leaderboard.sql — Counters + 30-day prayer leaderboard
+
+Counters
+
+Add columns if missing (parent tables; they must propagate to partitions):
+
+ALTER TABLE posts ADD COLUMN IF NOT EXISTS comments_count BIGINT DEFAULT 0;
+
+ALTER TABLE prayer_requests ADD COLUMN IF NOT EXISTS prayed_count BIGINT DEFAULT 0;
+
+One-time backfill (scan all partitions via the parent tables):
+
+posts.comments_count = count of rows in comments where comments.post_id = posts.id AND comments.is_deleted IS NOT TRUE.
+
+prayer_requests.prayed_count = count of rows in prayer_commitments where request_id = prayer_requests.id AND prayed_at IS NOT NULL.
+Triggers (lightweight, on parents so they fire for partitions)
+
+Create triggers & functions to keep counters accurate:
+
+On comments INSERT with is_deleted IS NOT TRUE → posts.comments_count += 1 for that post_id.
+
+On comments UPDATE when is_deleted flips false→true (decrement) or true→false (increment).
+
+On comments DELETE where old is_deleted IS NOT TRUE → decrement.
+
+On prayer_commitments INSERT where prayed_at IS NOT NULL → prayer_requests.prayed_count += 1.
+
+On prayer_commitments UPDATE when prayed_at changes NULL→NOT NULL (increment) or NOT NULL→NULL (decrement).
+Leaderboard
+
+Create materialized view prayer_leaderboard_30d(warrior UUID, prayers_confirmed BIGINT, last_prayed_at TIMESTAMPTZ) aggregating prayer_commitments where prayed_at >= now() - interval '30 days'.
+
+Add index on (prayers_confirmed DESC, last_prayed_at DESC) (CONCURRENTLY if supported).
+
+Add a small function to REFRESH MATERIALIZED VIEW CONCURRENTLY prayer_leaderboard_30d; and a pg_cron example to run nightly (commented).
+
+007_autovacuum.sql — Hot-table hygiene across partitions
+
+Goal: apply storage/auto-vacuum settings on all current partitions and ensure future ones inherit them.
+
+For hot-write parents comments and prayer_commitments, set:
+
+autovacuum_vacuum_scale_factor = 0.05
+
+autovacuum_analyze_scale_factor = 0.05
+
+fillfactor = 90
+
+For posts and prayer_requests (less write-heavy):
+
+scale factors = 0.1, fillfactor = 95.
+
+Write a helper function apply_storage_params_to_partitions(parent regclass) that loops through pg_inherits and runs the same ALTER TABLE ... SET (...) on each existing child. Call it for posts, comments, prayer_requests.
+
+Update your existing create_next_month_partitions() from Prompt-1 to also call this helper so new partitions get the same settings automatically (but do not recreate that function—issue an idempotent CREATE OR REPLACE that only appends the call).
+
+008_fulltext.sql — Full-text search on posts (partition-aware)
+
+Add tsv tsvector to parent posts IF NOT EXISTS.
+
+Prefer a generated stored column:
+
+(to_tsvector('english', coalesce(title,'') || ' ' || coalesce(content,'')))
+
+If stored generated columns aren’t supported in your PG version, create an ON INSERT/UPDATE trigger on parent posts to maintain tsv.
+
+Create a partitioned GIN index on posts(tsv) (i.e., CREATE INDEX ... ON posts USING GIN (tsv);—Postgres will create child indexes for each partition). Use CONCURRENTLY if supported.
+
+Provide a safe search query example using plainto_tsquery('english', :q) with keyset pagination by created_at (no OFFSET), and filtering to hidden = false AND coalesce(is_deleted,false) = false.
+
+Cross-cutting constraints
+
+All objects IF NOT EXISTS where possible; functions CREATE OR REPLACE.
+
+Do not drop/rename any partitioned tables or archive schema created by Prompt-1.
+
+Assume RLS exists; do not relax policies.
+
+Print each migration’s SQL inline and write files with the exact names above.
+
+Where you need to touch multiple child partitions, ensure the SQL loops over pg_inherits so it works for future months too.
+
+Deliverables
+
+The four migration files above.
+
+A short README snippet reminding:
+
+how to schedule prune & MV refresh via pg_cron,
+
+that triggers are attached to the parents so they fire on partitions,
+
+how to re-run the storage-params helper if new partitions are added manually.

@@ -1,0 +1,80 @@
+There are two bugs with the profile photo upload on the Profile page.
+Fix ONLY these issues and do NOT change anything else in the project.
+
+Problems:
+
+When I upload some photos that don’t meet the required constraints (file type / size / resolution), the upload silently fails.
+
+The photo is not uploaded.
+
+The user gets no error message.
+
+When I upload a valid photo that does qualify, it saves correctly in the backend, but the Profile page does not refresh the image immediately.
+
+It looks like nothing happened.
+
+If I close and reopen the app, I see the new picture.
+
+I want to fix both of these on the Profile page only.
+
+✅ What you MUST do (and ONLY this):
+
+Add clear validation + error messaging before/when uploading:
+
+In the Profile page component where profile photos are uploaded:
+
+Validate the selected file for:
+
+Allowed formats (e.g. JPG, PNG, HEIC – use whatever the app already expects).
+
+Maximum file size (use the existing limit if one already exists; otherwise, pick a reasonable size like 5 MB).
+
+Any existing resolution or ratio constraints used by the backend (if already enforced server-side).
+
+If the photo does not qualify:
+
+Do NOT attempt the upload.
+
+Show a clear, friendly error message to the user, such as:
+
+“This photo can’t be used. Please upload a JPG or PNG under 5 MB.”
+
+Or match any existing error style in the app.
+
+Make sure the error is visible near the upload control and cleared when the user selects a new file.
+
+Refresh the profile picture immediately after a successful upload:
+
+After the upload API call succeeds:
+
+Update the local state so the new profile image is shown right away without closing/reopening the app.
+
+This can be either:
+
+Using the URL returned from the upload response, OR
+
+Refetching the current user/profile info and updating the avatar field.
+
+Ensure there is no stale caching of the old avatar (e.g., append a cache-busting query param if needed like ?t=${Date.now()} when setting the image src).
+
+Keep behavior consistent between platforms:
+
+The fix should work on:
+
+iOS app
+
+Android app
+
+Web, if the same Profile page is used
+
+But do not introduce any platform-specific behavior unless it’s required by the existing code pattern.
+
+❌ Hard constraints — DO NOT:
+
+Do NOT change any backend routes, database schema, or storage buckets.
+
+Do NOT modify any unrelated UI components or screens.
+
+Do NOT refactor, rename, or reformat files beyond the minimal changes needed.
+
+Do NOT alter auth logic, navigation, or any other feature (posts, prayers, notifications, donations, etc.).

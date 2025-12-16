@@ -1,0 +1,81 @@
+Create a precise, current “Test Map” of this codebase so we can author Vitest/RTL tests that match reality.
+
+Deliverables (write these files):
+1) /docs/test-map.md — human-readable overview for testers
+2) /docs/test-map.json — machine-readable manifest for tooling
+3) /docs/routes-map.md — all routes, loaders, guards, and page components
+4) scripts/genTestMap.ts — a Node/TS script that regenerates #1 and #2 using the TS compiler API
+
+Scope:
+- Scan only app sources: /src and /server. Exclude node_modules, .git, dist, build.
+- Index TypeScript and JavaScript: .ts, .tsx, .js, .jsx.
+
+What to extract per module:
+- Module path (e.g., src/lib/posts.ts)
+- Exported symbols with full signatures (function, type, interface, React component props) and inferred/declared return types
+- Async/side-effect notes: network calls (Supabase tables, endpoints), localStorage/sessionStorage, navigation, toasts
+- Error behavior (throws, rejected Promise, error codes)
+- External deps used (supabase client, fetch, Stripe, S3 signer, etc.)
+- Example usage: up to 2 short call sites (grep snippets) showing typical invocation
+
+Special focus modules (if present):
+- src/lib/posts.*, comments.*, prayer.*, admin.*, leaderboard.*, moderationProvider.*, storageAdapter.*, profiles.*, avatars.*, scriptureProvider.*, donations.*, auth/useAuth.*, routes/ProtectedRoute.*
+- /server endpoints: Stripe checkout/webhook, S3 presign/move, any API handlers (paths + payload schemas)
+- Config/flags: src/config/*.*
+- Feature guards/entitlements (even if placeholder)
+
+Routes inventory (/docs/routes-map.md):
+- Router type (React Router etc.)
+- Every path → component, guards (ProtectedRoute), loader/actions if any
+- Links between pages (CTA from Home to /prayer, etc.)
+
+test-map.md format:
+- Top: project summary (framework, router, major libs)
+- Sections by domain: Auth, Posts, Comments, Prayer, Admin, Moderation, Storage, Donate, Scripture, Theme
+- For each symbol: 
+  - `### Module: <path>`
+  - **Exports** (table): name | kind | signature | returns | side-effects | errors
+  - **Used by**: list of modules
+  - **Notes for testing**: how to mock, key happy path, key error path, and a 1–2 line RTL snippet
+
+test-map.json schema:
+{
+  "modules": [
+    {
+      "path": "src/lib/posts.ts",
+      "exports": [
+        {
+          "name": "listPosts",
+          "kind": "function",
+          "signature": "(opts?: { limit?: number; cursor?: string }) => Promise<{ items: Post[]; nextCursor?: string }>",
+          "returns": "Promise<{ items: Post[]; nextCursor?: string }>",
+          "sideEffects": ["supabase.from('posts').select", "toast on error"],
+          "errors": ["rejects with message on RLS failure"],
+          "usedBy": ["src/pages/Home.tsx"]
+        }
+      ]
+    }
+  ],
+  "routes": [
+    { "path": "/", "component": "Home", "guard": "ProtectedRoute" },
+    { "path": "/prayer", "component": "PrayerPage", "guard": "ProtectedRoute" },
+    { "path": "/prayer/:id", "component": "PrayerDetail", "guard": "ProtectedRoute" },
+    { "path": "/donate", "component": "DonatePage", "guard": "ProtectedRoute" }
+  ]
+}
+
+Implementation details:
+- Use the TypeScript compiler API to extract symbol names/signatures & return types where possible; fall back to AST/regex for JS files.
+- Generate the JSON first, then render test-map.md and routes-map.md from it.
+- Limit “example usage” snippets to ≤10 lines each.
+- Be strict about what actually exists; if something is missing, mark it clearly as “NOT FOUND”.
+
+Validation:
+- Run the script and commit the generated files.
+- Print a short summary to the console: modules indexed, exports found, routes found.
+
+Finally:
+- Add npm scripts:
+  - "gen:testmap": "tsx scripts/genTestMap.ts"
+  - "gen:testmap:watch": "tsx scripts/genTestMap.ts --watch"
+- Run "npm run gen:testmap" now and confirm the docs were generated.

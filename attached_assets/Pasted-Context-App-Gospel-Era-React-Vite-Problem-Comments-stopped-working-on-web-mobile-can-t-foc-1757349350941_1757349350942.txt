@@ -1,0 +1,83 @@
+Context
+
+App: Gospel Era (React/Vite).
+
+Problem: Comments stopped working on web + mobile (can’t focus/type/submit, or submits don’t render).
+
+Constraints
+
+❌ No visual, layout, copy, or animation changes.
+
+✅ Only fix event handling/state/API so comments work again.
+
+Do This
+
+Reproduce & instrument
+
+On web + /mobile, try typing and submitting a comment.
+
+Temporarily log in comment input onChange, form onSubmit, and inside the create-comment API (payload, response, error).
+
+Unblock events (guards)
+
+Add this helper in a shared util and import where comment UIs are wrapped:
+
+export const stopIfTextField = (e: React.SyntheticEvent) => {
+  const t = e.target as HTMLElement | null;
+  const isTextField = !!t?.closest(
+    'input:not([type=button]):not([type=submit]):not([type=checkbox]):not([type=radio]), textarea, select, [contenteditable="true"], [role="textbox"]'
+  );
+  if (isTextField) e.stopPropagation();
+};
+
+
+Wrap the outer container of any page that includes the comment box:
+
+<div
+  onPointerDownCapture={stopIfTextField}
+  onMouseDownCapture={stopIfTextField}
+  onTouchStartCapture={stopIfTextField}
+  onPointerUpCapture={stopIfTextField}
+  onMouseUpCapture={stopIfTextField}
+  onTouchEndCapture={stopIfTextField}
+  onClickCapture={stopIfTextField}
+>
+  {/* comments UI */}
+</div>
+
+
+Ensure document-level “outside click” listeners are capture and ignore events that start on form controls:
+
+document.addEventListener('click', (e) => {
+  const t = e.target as HTMLElement | null;
+  if (t?.closest('input, textarea, select, [contenteditable], [role="textbox"], button, a,[role="button"],[role="link"]')) return;
+  // close menus…
+}, true);
+
+
+Keep hidden/closed layers from swallowing taps:
+
+[aria-hidden="true"], [hidden], [data-state="closed"] { pointer-events: none !important; }
+
+
+Form semantics
+
+Comment input inside <form onSubmit={handleSubmit}> with <button type="submit">.
+
+handleSubmit(e){ e.preventDefault(); … }
+
+Controlled input (value, onChange), no changing key on wrappers.
+
+API & state
+
+Verify create-comment API is called and succeeds.
+
+On success, append to local list or refetch; ensure list uses stable keys and doesn’t get overwritten by another effect.
+
+Acceptance
+
+Web + mobile: can focus/type/submit comments; new comment appears immediately.
+
+Buttons/links on the page still clickable.
+
+No UI/animation differences elsewhere.

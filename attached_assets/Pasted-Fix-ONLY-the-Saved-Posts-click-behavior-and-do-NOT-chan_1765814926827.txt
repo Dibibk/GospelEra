@@ -1,0 +1,100 @@
+Fix ONLY the Saved Posts click behavior and do NOT change anything else in the project.
+
+🧩 Problem
+
+On the Saved Posts page:
+
+When I click a saved post, the app takes me to Home, but it does not scroll to or stay on the original post.
+
+It just goes to the top of Home instead of showing the correct post the user clicked.
+
+🎯 Required Behavior
+
+When a user clicks a saved post:
+
+Navigate to the Home page
+
+Automatically scroll to or focus/highlight the original post corresponding to that saved post’s ID
+
+Do NOT open a separate Post Detail screen
+
+Do NOT reload or break the feed
+
+Only show the correct post in its natural position inside the home feed
+
+✅ What you MUST do (ONLY this):
+1. Pass correct post ID when clicking a saved post
+
+From the Saved Posts list → send the postId to the Home page.
+
+2. Modify the Home feed to accept an optional “focusPostId” (or similar)
+
+After navigation, Home should:
+
+Wait for the feed to load
+
+Find the DOM element/component for that post
+
+Scroll into view
+
+Optionally highlight it briefly (if the app already supports highlighting)
+
+3. Keep EVERYTHING else unchanged
+
+Do NOT modify:
+
+Post details page
+
+Save/unsave logic
+
+Home feed structure
+
+Database tables
+
+API routes
+
+Styling beyond what is needed to highlight the post (if highlighting exists)
+
+4. Remove or fix 3-dots menu
+
+If the 3-dots icon on Saved Posts has no functions, remove it.
+
+If there are existing functions intended for it, wire them correctly.
+
+Do NOT add new features.
+
+❌ Hard Rules — Do NOT:
+
+Do NOT create new pages or redesign routing
+
+Do NOT change the home feed logic except adding scroll-to-post
+
+Do NOT refactor unrelated components
+
+Do NOT change backend code
+
+Do NOT alter any other feature (prayers, profile, notifications, settings, etc.)
+
+✅ What I want returned:
+
+List of files changed
+
+Minimal code diff for:
+
+Saved Posts click handler
+
+Home page scroll-to-post logic
+
+3-dots menu (fixed or removed)
+
+A manual test checklist:
+
+Save a post
+
+Go to Saved Posts
+
+Click the saved post
+
+Home page appears and scrolls to the correct post
+
+Confirm 3-dots behavior as implemented

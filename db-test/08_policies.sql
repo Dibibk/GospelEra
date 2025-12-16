@@ -1,0 +1,355 @@
+-- Row Level Security Policies for Gospel Era Test Database
+-- Fixed column names to match schema: deleted (not is_deleted), hidden (not is_deleted for posts)
+
+-- =========================
+-- bookmarks
+-- =========================
+CREATE POLICY "Users can delete their own bookmarks"
+  ON public.bookmarks
+  FOR DELETE TO public
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert their own bookmarks"
+  ON public.bookmarks
+  FOR INSERT TO public
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can view their own bookmarks"
+  ON public.bookmarks
+  FOR SELECT TO public
+  USING (auth.uid() = user_id);
+
+-- =========================
+-- comments
+-- =========================
+CREATE POLICY comments_delete_policy
+  ON public.comments
+  FOR DELETE TO authenticated
+  USING (auth.uid() = author_id);
+
+CREATE POLICY comments_insert_policy
+  ON public.comments
+  FOR INSERT TO authenticated
+  WITH CHECK (auth.uid() = author_id);
+
+CREATE POLICY comments_select_policy
+  ON public.comments
+  FOR SELECT TO authenticated
+  USING (deleted = false);
+
+CREATE POLICY comments_update_policy
+  ON public.comments
+  FOR UPDATE TO authenticated
+  USING (auth.uid() = author_id);
+
+CREATE POLICY non_banned_users_can_insert_comments
+  ON public.comments
+  FOR INSERT TO authenticated
+  WITH CHECK (
+    NOT EXISTS (
+      SELECT 1
+      FROM profiles
+      WHERE profiles.id = auth.uid()
+        AND profiles.role = 'banned'::text
+    )
+  );
+
+CREATE POLICY users_can_select_comments
+  ON public.comments
+  FOR SELECT TO authenticated
+  USING (true);
+
+CREATE POLICY users_can_update_own_comments
+  ON public.comments
+  FOR UPDATE TO authenticated
+  USING (
+    author_id = auth.uid()
+    AND NOT EXISTS (
+      SELECT 1
+      FROM profiles
+      WHERE profiles.id = auth.uid()
+        AND profiles.role = 'banned'::text
+    )
+  );
+
+-- =========================
+-- donations
+-- =========================
+CREATE POLICY "Admins can view all donations"
+  ON public.donations
+  FOR SELECT TO public
+  USING (
+    EXISTS (
+      SELECT 1
+      FROM profiles
+      WHERE profiles.id = auth.uid()
+        AND profiles.role = 'admin'::text
+    )
+  );
+
+CREATE POLICY "Users can manage own donations"
+  ON public.donations
+  -- (no WITH CHECK given; applies to SELECT/UPDATE/DELETE via USING)
+  TO public
+  USING (auth.uid() = user_id);
+
+-- =========================
+-- media_requests
+-- =========================
+CREATE POLICY "Admins can view all media requests"
+  ON public.media_requests
+  FOR SELECT TO public
+  USING (
+    EXISTS (
+      SELECT 1
+      FROM profiles
+      WHERE profiles.id = auth.uid()
+        AND profiles.role = 'admin'::text
+    )
+  );
+
+CREATE POLICY "Users can create media requests"
+  ON public.media_requests
+  FOR INSERT TO public
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can view own media requests"
+  ON public.media_requests
+  FOR SELECT TO public
+  USING (auth.uid() = user_id);
+
+-- =========================
+-- posts
+-- =========================
+CREATE POLICY "Anyone authenticated can view visible posts"
+  ON public.posts
+  FOR SELECT TO authenticated
+  USING (hidden = false);
+
+CREATE POLICY "Authors can delete own posts"
+  ON public.posts
+  FOR DELETE TO authenticated
+  USING (auth.uid() = author_id);
+
+CREATE POLICY "Authors can update own posts"
+  ON public.posts
+  FOR UPDATE TO authenticated
+  USING (auth.uid() = author_id);
+
+CREATE POLICY "Users can create posts"
+  ON public.posts
+  FOR INSERT TO authenticated
+  WITH CHECK (auth.uid() = author_id);
+
+CREATE POLICY non_banned_users_can_insert_posts
+  ON public.posts
+  FOR INSERT TO authenticated
+  WITH CHECK (
+    NOT EXISTS (
+      SELECT 1
+      FROM profiles
+      WHERE profiles.id = auth.uid()
+        AND profiles.role = 'banned'::text
+    )
+  );
+
+CREATE POLICY posts_update_policy
+  ON public.posts
+  FOR UPDATE TO authenticated
+  USING (auth.uid() = author_id);
+
+CREATE POLICY users_can_select_posts
+  ON public.posts
+  FOR SELECT TO authenticated
+  USING (true);
+
+CREATE POLICY users_can_update_own_posts
+  ON public.posts
+  FOR UPDATE TO authenticated
+  USING (
+    author_id = auth.uid()
+    AND NOT EXISTS (
+      SELECT 1
+      FROM profiles
+      WHERE profiles.id = auth.uid()
+        AND profiles.role = 'banned'::text
+    )
+  );
+
+-- =========================
+-- prayer_activity
+-- =========================
+CREATE POLICY prayer_activity_insert
+  ON public.prayer_activity
+  FOR INSERT TO authenticated
+  WITH CHECK (true);
+
+CREATE POLICY prayer_activity_select
+  ON public.prayer_activity
+  FOR SELECT TO authenticated
+  USING (true);
+
+-- =========================
+-- prayer_commitments
+-- =========================
+CREATE POLICY prayer_commitments_delete
+  ON public.prayer_commitments
+  FOR DELETE TO authenticated
+  USING (
+    warrior = auth.uid()
+    OR EXISTS (
+      SELECT 1
+      FROM profiles
+      WHERE profiles.id = auth.uid()
+        AND profiles.role = 'admin'::text
+    )
+  );
+
+CREATE POLICY prayer_commitments_insert
+  ON public.prayer_commitments
+  FOR INSERT TO authenticated
+  WITH CHECK (warrior = auth.uid());
+
+CREATE POLICY prayer_commitments_select
+  ON public.prayer_commitments
+  FOR SELECT TO authenticated
+  USING (true);
+
+CREATE POLICY prayer_commitments_update
+  ON public.prayer_commitments
+  FOR UPDATE TO authenticated
+  USING (
+    warrior = auth.uid()
+    OR EXISTS (
+      SELECT 1
+      FROM profiles
+      WHERE profiles.id = auth.uid()
+        AND profiles.role = 'admin'::text
+    )
+  );
+
+-- =========================
+-- prayer_requests
+-- =========================
+CREATE POLICY prayer_requests_insert
+  ON public.prayer_requests
+  FOR INSERT TO authenticated
+  WITH CHECK (requester = auth.uid());
+
+CREATE POLICY prayer_requests_select
+  ON public.prayer_requests
+  FOR SELECT TO authenticated
+  USING (
+    status = ANY (ARRAY['open'::text, 'answered'::text, 'closed'::text])
+  );
+
+CREATE POLICY prayer_requests_update
+  ON public.prayer_requests
+  FOR UPDATE TO authenticated
+  USING (
+    (requester = auth.uid() AND status <> 'answered'::text)
+    OR EXISTS (
+      SELECT 1
+      FROM profiles
+      WHERE profiles.id = auth.uid()
+        AND profiles.role = 'admin'::text
+    )
+  );
+
+-- =========================
+-- profiles
+-- =========================
+CREATE POLICY "Profiles are viewable by everyone"
+  ON public.profiles
+  FOR SELECT TO public
+  USING (true);
+
+CREATE POLICY "Users can insert own profile"
+  ON public.profiles
+  FOR INSERT TO authenticated
+  WITH CHECK (auth.uid() = id);
+
+CREATE POLICY "Users can insert their own profile"
+  ON public.profiles
+  FOR INSERT TO public
+  WITH CHECK (auth.uid() = id);
+
+CREATE POLICY "Users can update own profile"
+  ON public.profiles
+  FOR UPDATE TO authenticated
+  USING (auth.uid() = id);
+
+CREATE POLICY "Users can update their own profile"
+  ON public.profiles
+  FOR UPDATE TO public
+  USING (auth.uid() = id);
+
+CREATE POLICY "Users can view own profile"
+  ON public.profiles
+  FOR SELECT TO authenticated
+  USING (auth.uid() = id);
+
+-- =========================
+-- reactions
+-- =========================
+CREATE POLICY "Everyone can view reactions for counts"
+  ON public.reactions
+  FOR SELECT TO public
+  USING (true);
+
+CREATE POLICY "Users can delete their own reactions"
+  ON public.reactions
+  FOR DELETE TO public
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert their own reactions"
+  ON public.reactions
+  FOR INSERT TO public
+  WITH CHECK (auth.uid() = user_id);
+
+-- =========================
+-- reports
+-- =========================
+CREATE POLICY "Reporters can view own reports"
+  ON public.reports
+  FOR SELECT TO authenticated
+  USING (auth.uid() = reporter_id);
+
+CREATE POLICY "Users can create reports"
+  ON public.reports
+  FOR INSERT TO authenticated
+  WITH CHECK (auth.uid() = reporter_id);
+
+CREATE POLICY admins_can_select_all_reports
+  ON public.reports
+  FOR SELECT TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1
+      FROM profiles
+      WHERE profiles.id = auth.uid()
+        AND profiles.role = 'admin'::text
+    )
+  );
+
+CREATE POLICY admins_can_update_all_reports
+  ON public.reports
+  FOR UPDATE TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1
+      FROM profiles
+      WHERE profiles.id = auth.uid()
+        AND profiles.role = 'admin'::text
+    )
+  );
+
+CREATE POLICY authenticated_can_insert_reports
+  ON public.reports
+  FOR INSERT TO authenticated
+  WITH CHECK (true);
+
+CREATE POLICY reporters_can_select_own_reports
+  ON public.reports
+  FOR SELECT TO authenticated
+  USING (reporter_id = auth.uid());

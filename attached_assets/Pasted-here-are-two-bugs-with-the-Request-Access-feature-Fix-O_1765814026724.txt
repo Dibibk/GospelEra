@@ -1,0 +1,79 @@
+here are two bugs with the “Request Access” feature.
+Fix ONLY these issues and do NOT change anything else in the project.
+
+🧩 Problem 1 – Settings page (Link Share)
+
+On the Settings page, the “Request Access” button for link sharing is not working.
+
+When I tap/click it, nothing useful happens (no request is sent, no confirmation, no proper navigation).
+
+Expected behavior:
+
+When the user taps the “Request Access” button in Settings:
+
+It should trigger the existing Request Access flow that the app is already designed for (e.g., call an API, open a form/modal, or send a request to the backend).
+
+The user should get a clear confirmation (for example: a toast, alert, or inline message) that the request was sent or handled successfully.
+
+If there is an error, show a simple error message instead of failing silently.
+
+🧩 Problem 2 – Create Post page
+
+On the Create Post page, the “Request Access” link gives an error (screenshot attached in my notes).
+
+When I click it, instead of following the correct Request Access flow, it shows an error state/page.
+
+Expected behavior:
+
+The “Request Access” link on the Create Post page should:
+
+Use the same underlying Request Access logic as the Settings page (shared code if appropriate).
+
+Either:
+
+Open the correct Request Access flow (API call / modal / link-sharing access), and
+
+Show a success confirmation,
+
+Or show a friendly error if something fails — not a broken or raw error screen.
+
+✅ What you MUST do (ONLY this):
+
+Find where the “Request Access” button and link are implemented:
+
+On Settings page (link share section)
+
+On Create Post page
+
+Wire them to the correct existing Request Access logic:
+
+Use whatever Request Access handler / function / API the app already has (do NOT invent a new backend or new route if one exists).
+
+Ensure both:
+
+Settings page button
+
+Create Post page link
+call the proper handler and handle the result.
+
+Add basic success + error handling (if missing):
+
+On success: show a confirmation (toast, alert, or inline message) using the project’s existing pattern.
+
+On failure: show a simple human-friendly message (e.g., “Could not send access request. Please try again.”) instead of a blank or broken screen.
+
+Keep all other behavior exactly the same:
+
+Do NOT change any other buttons, toggles, or flows in Settings or Create Post.
+
+Do NOT change navigation, auth, or permissions logic beyond what is strictly needed for Request Access.
+
+❌ Hard constraints — DO NOT:
+
+Do NOT change any database schema, Supabase tables, or backend routes other than wiring to existing ones.
+
+Do NOT refactor, rename, or reformat unrelated code or components.
+
+Do NOT modify other features (posts, prayers, notifications, daily verse, profile, donations, etc.).
+
+Do NOT change any UI layout or styling except if absolutely required to show the success/error message for this button/link.

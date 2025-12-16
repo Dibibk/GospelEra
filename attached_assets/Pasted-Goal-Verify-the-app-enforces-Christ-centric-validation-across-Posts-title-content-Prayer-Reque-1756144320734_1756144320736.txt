@@ -1,0 +1,145 @@
+Goal: Verify the app enforces Christ-centric validation across:
+
+Posts (title/content)
+
+Prayer Requests (title/details)
+
+YouTube links (embed_url + caption)
+
+If any piece is missing or weak, implement it. Produce a concise REPORT.md of findings/changes and add tests.
+
+A) What to VERIFY (and fix if missing)
+
+Faith caption/content validation
+
+A reusable faithFilter that passes when content mentions at least one of: Jesus, Christ, Jesus Christ, Holy Spirit, Gospel, Scripture, Bible, Lord, Savior (case-insensitive) OR contains a Bible reference (e.g., “John 3:16”, “Ps 23”, “Romans 8:28”).
+
+A blocklist that fails when primary intent appears non-Christian (e.g., explicit proselytizing for other deities/systems). Keep it light: do not over-block; allow neutral words.
+
+Minimum length: ≥ 6 chars after trimming.
+
+Apply on:
+
+Posts: title, content (at least one must pass)
+
+Prayers: title or details must pass
+
+YouTube submissions: caption must pass (required when link present); OCR text from thumbnail can also satisfy “faith pass” (see C).
+
+Moderation flow
+
+New or edited items with links: moderation_status='pending' until approved.
+
+rejected stores a short moderation_reason.
+
+Report action exists; auto-hide after threshold.
+
+RLS / server enforcement
+
+Server-side validation MUST re-run (never trust client).
+
+RLS/policies should not allow bypass (e.g., no direct inserts that skip validation pipeline).
+
+Copy & UX
+
+Clear error messages:
+
+“Please keep your post centered on Jesus or Scripture.”
+
+“Add a short Christ-centered caption for your YouTube link.”
+
+“This video can’t be embedded. Try a standard YouTube link.”
+
+B) Posts & Prayers – exact checks
+
+On submit/update (both client & server):
+
+Trim, normalize whitespace
+
+Min length 6
+
+faithFilter(text) → pass required as above
+
+If fail → block submit with friendly message
+
+Server returns specific reason; UI shows inline error.
+
+C) YouTube link validation (no video download)
+
+Allowlist hosts: youtube.com, www.youtube.com, youtu.be.
+
+Canonicalize to https://www.youtube.com/watch?v=VIDEOID (preserve t/start).
+
+oEmbed existence check (200 = ok; 404/401/403 = reject).
+
+Fetch thumbnail (maxresdefault.jpg or hqdefault.jpg):
+
+Run imageSafety (NSFW/violence/hate) — reject if fails.
+
+Run OCR → add text to faithFilter (caption OR OCR text must pass).
+
+Require caption (≥ 6) and faith pass when a link is present.
+
+Store embed_url, embed_meta{title,author}, embed_checks{safety,faith}; set moderation_status='pending'.
+
+D) Output artifacts
+
+Create docs/REPORT_christ_validation.md summarizing:
+
+What existed, what changed, files touched.
+
+Exact rules used (pass terms, blocklist, bible-reference regex).
+
+Any routes protected; any gaps left (with TODOs).
+
+Add feature flag: FAITH_VALIDATION_STRICT=true (default true).
+
+E) Tests (Vitest + RTL/MSW)
+
+Posts/Prayers
+
+Fails when text < 6.
+
+Fails when no Christ terms/Bible refs.
+
+Passes with “Jesus”, “Christ”, or “John 3:16”, etc.
+
+Server re-rejects even if client is bypassed (MSW).
+
+YouTube
+
+Invalid host → blocked.
+
+oEmbed 404 → blocked.
+
+Safe thumbnail + caption “Jesus is Lord” → ok (pending mod).
+
+Safe thumb but caption fails and OCR fails → blocked.
+
+Moderation
+
+pending items don’t render publicly; approved do; rejected show author-only reason.
+
+Put tests under client/src/tests/validation/*.test.ts.
+
+F) Non-goals (for now)
+
+No full video/audio analysis.
+
+Keep blocklist minimal; don’t over-censor neutral terms.
+
+Performance: caches allowed for oEmbed/thumbnail checks (10–30 min).
+
+G) Deliverables checklist
+
+ Faith filter + bible-reference regex utility, reused in posts/prayers/YT caption.
+
+ Server-side guards in create/edit endpoints.
+
+ YouTube verifier (allowlist + oEmbed + thumbnail safety + OCR + caption required).
+
+ Clear error messages and i18n keys added if used.
+
+ docs/REPORT_christ_validation.md committed.
+
+ Tests green locally (npx vitest run).

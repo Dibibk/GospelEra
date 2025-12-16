@@ -1,0 +1,104 @@
+Failed to resolve host network app id to config: bundleID: com.apple.WebKit.Networking instance ID: Optional([_EXExtensionInstanceIdentifier: 65B2AE54-9F27-4DE7-8FDF-E468B40948C8])
+⚡️  Loading app at capacitor://localhost...
+GPU process (0x1140031e0) took 1.626329 seconds to launch
+Result accumulator timeout: 0.250000, exceeded.
+-[RTIInputSystemClient remoteTextInputSessionWithID:textSuggestionsChanged:]  Can only set suggestions for an active session. sessionID = F288F0E7-2FBF-4315-89C5-6FEC6470A47E
+⚡️  WebView loaded
+⚡️  [log] - [SW] Service worker registration skipped - development mode or not supported
+⚡️  [log] - 🔍 useIsNativeApp returning: {"isNative":false,"isLoading":true}
+⚡️  [log] - 🔍 AnimatedRoutes Debug: {"isNative":false,"isLoading":true,"windowWidth":402,"mediaQueryMatches":true,"isMobile":true,"willShowMobile":"YES - MobileApp"}
+⚡️  [log] - 🔍 Still loading platform detection...
+⚡️  [log] - 🔍 Capacitor.getPlatform(): ios
+⚡️  [log] - 🔍 isNativePlatform: true
+⚡️  To Native ->  CapacitorHttp request 124948357
+⚡️  [log] - 🔍 useIsNativeApp returning: {"isNative":true,"isLoading":false}
+⚡️  [log] - 🔍 AnimatedRoutes Debug: {"isNative":true,"isLoading":false,"windowWidth":402,"mediaQueryMatches":true,"isMobile":true,"willShowMobile":"YES - MobileApp"}
+⚡️  TO JS {"status":200,"data":{"expires_at":1765159462,"access_token":"eyJhbGciOiJIUzI1NiIsImtpZCI6ImVXRHJjVHhVQVVXVU9XRWoiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL3p2bXZ5aXhnaGNxeHBuYWxtcmJqLnN1cGFiYXNlLmNvL2F1dGgvdjEiLCJzdWIiOiJjYmYxNWM3Yy1kMDhhLTRlMmMtOTc0OC1lYmJ
+⚡️  [log] - 🔍 Posts feed render check: {"loading":true,"postsLength":0,"postsArray":[]}
+⚡️  [log] - 🔍 MobileApp fetchData effect {"hasUser":true,"postsLength":0}
+⚡️  [log] - 🔍 Calling fetchData now...
+⚡️  [log] - 🔍 fetchData: calling fetchFeed (optimized)...
+⚡️  [log] - 📡 [fetchFeed] Starting feed fetch...
+⚡️  [log] - 📡 [fetchFeed] Getting Supabase session...
+⚡️  [log] - 🔍 fetchData: calling fetchFeed (optimized)...
+⚡️  [log] - 📡 [fetchFeed] Starting feed fetch...
+⚡️  [log] - 📡 [fetchFeed] Getting Supabase session...
+⚡️  [log] - 🔍 Posts feed render check: {"loading":true,"postsLength":0,"postsArray":[]}
+⚡️  [log] - 🔍 MobileApp fetchData effect {"hasUser":true,"postsLength":0}
+⚡️  [log] - 🔍 Calling fetchData now...
+⚡️  [log] - 🔍 fetchData: calling fetchFeed (optimized)...
+⚡️  [log] - 📡 [fetchFeed] Starting feed fetch...
+⚡️  [log] - 📡 [fetchFeed] Getting Supabase session...
+⚡️  [log] - 🔍 Posts feed render check: {"loading":true,"postsLength":0,"postsArray":[]}
+⚡️  [log] - 📡 [fetchFeed] Session result: {"hasSession":true,"hasToken":true}
+⚡️  [log] - 🌐 [posts.ts] Platform detection: {"platform":"ios","isNative":true}
+⚡️  [log] - 🌐 [posts.ts] Native app - using API URL: https://gospel-era.replit.app
+⚡️  [log] - 🔗 [posts.ts] Building URL: https://gospel-era.replit.app/api/feed?limit=20
+⚡️  [log] - 📡 [fetchFeed] Fetching from: https://gospel-era.replit.app/api/feed?limit=20
+⚡️  [log] - 🔍 Posts feed render check: {"loading":true,"postsLength":0,"postsArray":[]}
+⚡️  [log] - 🔍 MobileApp fetchData effect {"hasUser":true,"postsLength":0}
+⚡️  [log] - 🔍 Calling fetchData now...
+⚡️  [log] - 🔍 fetchData: calling fetchFeed (optimized)...
+⚡️  [log] - 📡 [fetchFeed] Starting feed fetch...
+⚡️  [log] - 📡 [fetchFeed] Getting Supabase session...
+⚡️  [log] - 🔍 Posts feed render check: {"loading":true,"postsLength":0,"postsArray":[]}
+⚡️  [log] - 📡 [fetchFeed] Session result: {"hasSession":true,"hasToken":true}
+⚡️  [log] - 🌐 [posts.ts] Platform detection: {"platform":"ios","isNative":true}
+⚡️  [log] - 🌐 [posts.ts] Native app - using API URL: https://gospel-era.replit.app
+⚡️  [log] - 🔗 [posts.ts] Building URL: https://gospel-era.replit.app/api/feed?limit=20
+⚡️  [log] - 📡 [fetchFeed] Fetching from: https://gospel-era.replit.app/api/feed?limit=20
+⚡️  To Native ->  CapacitorHttp request 124948358
+⚡️  [log] - 🌐 Native app detected - using API URL: https://gospel-era.replit.app
+⚡️  [log] - 📡 [fetchFeed] Session result: {"hasSession":true,"hasToken":true}
+⚡️  [log] - 🌐 [posts.ts] Platform detection: {"platform":"ios","isNative":true}
+⚡️  [log] - 🌐 [posts.ts] Native app - using API URL: https://gospel-era.replit.app
+⚡️  [log] - 🔗 [posts.ts] Building URL: https://gospel-era.replit.app/api/feed?limit=20
+⚡️  [log] - 📡 [fetchFeed] Fetching from: https://gospel-era.replit.app/api/feed?limit=20
+⚡️  [log] - 📡 [fetchFeed] Session result: {"hasSession":true,"hasToken":true}
+⚡️  [log] - 🌐 [posts.ts] Platform detection: {"platform":"ios","isNative":true}
+⚡️  [log] - 🌐 [posts.ts] Native app - using API URL: https://gospel-era.replit.app
+⚡️  [log] - 🔗 [posts.ts] Building URL: https://gospel-era.replit.app/api/feed?limit=20
+⚡️  [log] - 📡 [fetchFeed] Fetching from: https://gospel-era.replit.app/api/feed?limit=20
+⚡️  [log] - 🔍 Posts feed render check: {"loading":true,"postsLength":0,"postsArray":[]}
+⚡️  [log] - 🔍 Posts feed render check: {"loading":true,"postsLength":0,"postsArray":[]}
+⚡️  TO JS {"url":"https:\/\/zvmvyixghcqxpnalmrbj.supabase.co\/rest\/v1\/rpc\/get_top_tags","data":[{"count":2,"tag":"test"},{"count":1,"tag":"Jesus"}],"status":200,"headers":{"x-envoy-upstream-service-time":"163","vary":"Accept-Encoding","x-envoy-attempt-count":"1",
+⚡️  [log] - 🔍 Posts feed render check: {"loading":true,"postsLength":0,"postsArray":[]}
+⚡️  [log] - 🔍 Posts feed render check: {"loading":true,"postsLength":0,"postsArray":[]}
+⚡️  [log] - 🔍 Posts feed render check: {"loading":true,"postsLength":0,"postsArray":[]}
+⚡️  [log] - 🔍 Posts feed render check: {"loading":true,"postsLength":0,"postsArray":[]}
+⚡️  [log] - 🔍 Posts feed render check: {"loading":true,"postsLength":0,"postsArray":[]}
+⚡️  [log] - 📡 [fetchFeed] Response: {"status":200,"ok":true,"statusText":""}
+⚡️  [error] - 📡 [fetchFeed] Exception caught: {"line":363,"column":2293,"sourceURL":"capacitor://localhost/assets/index-DgD7s9-O.js"}
+⚡️  [error] - 📡 [fetchFeed] Error name: SyntaxError
+⚡️  [error] - 📡 [fetchFeed] Error message: The string did not match the expected pattern.
+⚡️  [log] - 🔍 fetchData: fetchFeed result {"hasData":false}
+⚡️  [log] - 📡 [fetchFeed] Response: {"status":200,"ok":true,"statusText":""}
+⚡️  [error] - 📡 [fetchFeed] Exception caught: {"line":363,"column":2293,"sourceURL":"capacitor://localhost/assets/index-DgD7s9-O.js"}
+⚡️  [error] - 📡 [fetchFeed] Error name: SyntaxError
+⚡️  [error] - 📡 [fetchFeed] Error message: The string did not match the expected pattern.
+⚡️  [log] - 🔍 fetchData: fetchFeed result {"hasData":false}
+⚡️  [error] - Error fetching notification count: {}
+⚡️  [error] - Error fetching notification count: {"line":628,"column":101551,"sourceURL":"capacitor://localhost/assets/index-DgD7s9-O.js"}
+⚡️  [log] - 📡 [fetchFeed] Response: {"status":200,"ok":true,"statusText":""}
+⚡️  [error] - 📡 [fetchFeed] Exception caught: {}
+⚡️  [error] - 📡 [fetchFeed] Error name: SyntaxError
+⚡️  [error] - 📡 [fetchFeed] Error message: The string did not match the expected pattern.
+⚡️  [log] - 🔍 fetchData: fetchFeed result {"hasData":false}
+⚡️  [log] - 📡 [fetchFeed] Response: {"status":200,"ok":true,"statusText":""}
+⚡️  [error] - 📡 [fetchFeed] Exception caught: {"line":363,"column":2293,"sourceURL":"capacitor://localhost/assets/index-DgD7s9-O.js"}
+⚡️  [error] - 📡 [fetchFeed] Error name: SyntaxError
+⚡️  [error] - 📡 [fetchFeed] Error message: The string did not match the expected pattern.
+⚡️  [log] - 🔍 fetchData: fetchFeed result {"hasData":false}
+⚡️  [log] - 🔍 Posts feed render check: {"loading":true,"postsLength":0,"postsArray":[]}
+⚡️  [log] - 🔍 Posts feed render check: {"loading":true,"postsLength":0,"postsArray":[]}
+⚡️  [log] - 🔍 Posts feed render check: {"loading":true,"postsLength":0,"postsArray":[]}
+⚡️  [log] - 🔍 Posts feed render check: {"loading":true,"postsLength":0,"postsArray":[]}
+⚡️  [log] - 🔍 Posts feed render check: {"loading":true,"postsLength":0,"postsArray":[]}
+⚡️  [error] - Error fetching notification count: {"line":628,"column":101551,"sourceURL":"capacitor://localhost/assets/index-DgD7s9-O.js"}
+⚡️  [log] - 🔍 fetchData completed
+⚡️  [log] - 🔍 Posts feed render check: {"loading":false,"postsLength":0,"postsArray":[]}
+⚡️  [log] - 🔍 fetchData completed
+⚡️  [log] - 🔍 Posts feed render check: {"loading":false,"postsLength":0,"postsArray":[]}
+⚡️  [log] - 🔍 fetchData completed
+⚡️  [log] - 🔍 Setting loading to FALSE
+⚡️  [log] - 🔍 Posts feed render check: {"loading":false,"postsLength":0,"postsArray":[]}

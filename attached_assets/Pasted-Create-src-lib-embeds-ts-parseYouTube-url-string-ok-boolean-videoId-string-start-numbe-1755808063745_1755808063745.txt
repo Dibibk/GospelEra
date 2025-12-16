@@ -1,0 +1,151 @@
+Create src/lib/embeds.ts:
+
+parseYouTube(url: string): { ok: boolean; videoId?: string; start?: number; canonical?: string; reason?: string }
+
+Accept only hosts in EMBEDS.allowedHosts
+
+Support watch?v=VIDEOID and youtu.be/VIDEOID
+
+Parse t/start to seconds; return canonical=https://www.youtube.com/watch?v=VIDEOID (keep t if present)
+
+2) Server endpoint — /embeds/verify
+
+Add POST endpoint that takes { url: string, caption?: string }.
+
+Steps:
+
+Parse & allowlist: parseYouTube(url) on server. If !ok → 400 { code:'INVALID_URL' }.
+
+oEmbed existence: GET ${EMBEDS.oembed}?url=${encodeURIComponent(canonical)}&format=json
+
+If 200 → capture { title, author_name }
+
+If 404/401/403 → return 422 { code:'NOT_EMBEDDABLE' }
+
+Thumbnail safety + OCR faith check:
+
+Try https://img.youtube.com/vi/${videoId}/maxresdefault.jpg; if 404, fallback hqdefault.jpg
+
+Run existing image safety (NSFW/violence/hate) on the thumbnail
+
+Run OCR (Tesseract.js or your existing OCR) → feed text to faithFilter.validateText
+
+Caption faith check (required if EMBEDS.requireCaption):
+
+Validate caption length ≥ 6
+
+Run faithFilter.validateCaption(caption)
+
+Decision:
+
+If image safety passes AND (caption faith OR OCR faith) passes → { ok:true, canonical, videoId, start, meta:{ title, author }, checks:{ safety:'pass', faith:'pass' } }
+
+Else → { ok:false, code:'FAITH_OR_SAFETY_FAIL', reason:'Brief human-readable reason' }
+
+Cache positive verifications in memory for 30–60 minutes to avoid repeat calls.
+
+(Optional) If process.env.YOUTUBE_API_KEY exists:
+
+Call videos.list?part=snippet,contentDetails,status&id=VIDEOID
+
+Enforce: status.embeddable===true, contentDetails.duration ≤ your max (e.g., 30m), optional category allowlist
+
+Include { durationSec, channelTitle, categoryId } in response; fail if outside rules.
+
+3) Composer integration (Posts & Prayer)
+
+Add “YouTube link (optional)” input.
+
+On blur or submit:
+
+Call /embeds/verify with { url, caption }
+
+If not ok → inline error (“Only embeddable YouTube videos with Christ-centered caption are allowed”)
+
+If ok → proceed to save with:
+
+embed_url = canonical
+
+embed_meta (JSON): { title, author, videoId, start, durationSec? }
+
+embed_checks (JSON): result of safety/faith checks
+
+moderation_status='pending' (use your existing approval column)
+
+4) Moderator experience (reuse existing approval UI)
+
+In the Admin moderation table/detail:
+
+If embed_url present, show a mini Auto-check panel:
+
+Title/Channel (from oEmbed/API)
+
+Safety: pass/fail
+
+Faith: caption/ocr pass/fail
+
+Duration (if API used)
+
+Approve → moderation_status='approved'
+
+Reject → moderation_status='rejected', set moderation_reason
+
+5) Rendering (privacy-friendly)
+
+Create src/components/EmbedCard.tsx:
+
+If EMBEDS.useNoCookie: iframe src="https://www.youtube-nocookie.com/embed/VIDEOID?start=SECONDS"
+
+loading="lazy", referrerPolicy="strict-origin-when-cross-origin", sandbox="allow-scripts allow-same-origin allow-presentation"
+
+16:9 responsive wrapper; skeleton placeholder
+
+In feed/detail:
+
+Render only when moderation_status='approved'
+
+pending → author-only pill “Under review”
+
+rejected → author-only banner with reason + “Edit link”
+
+6) Copy (final strings)
+
+Field label: YouTube link (optional)
+
+Invalid URL: “Only standard YouTube links are allowed.”
+
+Not embeddable: “This video can’t be embedded.”
+
+Caption required: “Please add a short Christ-centered caption.”
+
+Fail reason (faith/safety): “Please ensure your caption or thumbnail text honors Jesus and our guidelines.”
+
+7) Tests (Vitest + MSW)
+
+parseYouTube valid/invalid hosts & t parsing
+
+/embeds/verify:
+
+oEmbed 200 + safe thumb + caption faith → ok
+
+oEmbed 404 → NOT_EMBEDDABLE
+
+Safe thumb but caption+OCR fail faith → FAITH_OR_SAFETY_FAIL
+
+Composer:
+
+Blocks submit on invalid host
+
+Requires caption ≥ 6 when link present
+
+Saves with moderation_status='pending' and shows “Under review”
+
+Rendering: approved shows <EmbedCard>; pending/rejected show badges/banners
+
+8) Security & rate limits
+
+Server: sanitize URL with the URL API (no regex only), enforce host allowlist
+
+Throttle /embeds/verify (e.g., 10/min per user) to avoid abuse
+
+Cache oEmbed/thumbnail results to cut network calls

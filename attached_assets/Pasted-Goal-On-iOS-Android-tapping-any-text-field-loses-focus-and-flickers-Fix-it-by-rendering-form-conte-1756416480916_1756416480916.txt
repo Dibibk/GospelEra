@@ -1,0 +1,172 @@
+Goal
+On iOS/Android, tapping any text field loses focus and flickers. Fix it by rendering form content in a neutral portal layer only on mobile, removing transform effects around inputs, and guarding tiny resize jitters. Keep desktop behavior unchanged.
+
+1) Add a Mobile Form Portal
+
+Create: client/src/components/MobileFormPortal.tsx
+
+import React, { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
+
+const isMobile =
+  typeof window !== "undefined" &&
+  window.matchMedia("(max-width: 768px)").matches;
+
+export default function MobileFormPortal({
+  children,
+  enable = true,
+}: {
+  children: React.ReactNode;
+  enable?: boolean;
+}) {
+  const [host, setHost] = useState<HTMLElement | null>(null);
+
+  useEffect(() => {
+    if (!isMobile || !enable) return;
+    const el = document.createElement("div");
+    el.setAttribute("id", "mobile-form-portal");
+    el.style.position = "relative";
+    el.style.zIndex = "0";
+    el.style.transform = "none";
+    el.style.willChange = "auto";
+    document.body.appendChild(el);
+    setHost(el);
+    return () => {
+      el.remove();
+      setHost(null);
+    };
+  }, [enable]);
+
+  if (!isMobile || !enable) return <>{children}</>;
+  if (!host) return null;
+  return createPortal(children, host);
+}
+
+2) Wrap form pages in the portal (mobile only)
+
+For each form page (Post, Prayer, Edit Profile, Contact). If these forms are inline in MobileApp.tsx, wrap the form JSX there; otherwise in their page files (e.g., client/src/pages/PostForm.tsx, etc.).
+
+Example edit (apply equivalently to all four forms):
+
++ import MobileFormPortal from "@/components/MobileFormPortal";
+
+ export default function PostFormPage() {
+   // existing hooks/state...
+   return (
+-    <div className="form-page">
+-      {/* existing form JSX */}
+-    </div>
++    <MobileFormPortal>
++      <div className="form-page">
++        {/* existing form JSX (inputs/textareas/buttons) */}
++      </div>
++    </MobileFormPortal>
+   );
+ }
+
+
+Do the same for Prayer, Edit Profile, and Contact forms.
+
+Important: Ensure inputs/areas do not have inline touchAction or WebkitAppearance. If present, remove just those two properties; keep the rest. Add:
+
+inputMode="text" autoCapitalize="sentences" autoCorrect="on" spellCheck
+
+3) Add a tiny resize jitter guard
+
+Create: client/src/utils/useStableTyping.ts
+
+import { useEffect } from "react";
+
+const isTextField = (el: Element | null) =>
+  !!el &&
+  (el.tagName === "INPUT" ||
+    el.tagName === "TEXTAREA" ||
+    (el as HTMLElement).isContentEditable);
+
+export function useStableTyping() {
+  useEffect(() => {
+    let last = window.innerHeight;
+    const onResize = () => {
+      if (isTextField(document.activeElement)) {
+        const now = window.innerHeight;
+        if (Math.abs(now - last) < 120) return; // ignore tiny keyboard jitters
+        last = now;
+      }
+    };
+    window.addEventListener("resize", onResize, { passive: true });
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+}
+
+
+Use it in each form page (same four places where you added the portal):
+
++ import { useStableTyping } from "@/utils/useStableTyping";
+
+ export default function PostFormPage() {
++  useStableTyping();
+   // ...
+
+4) Add CSS guards for mobile (no transforms; dvh height)
+
+Edit: client/src/index.css (or your global stylesheet). Append:
+
+/* Ensure mobile form portal and children have no transforms */
+@media (max-width: 768px) {
+  #mobile-form-portal,
+  #mobile-form-portal * {
+    transform: none !important;
+    filter: none !important;
+    perspective: none !important;
+    backface-visibility: visible !important;
+    will-change: auto !important;
+  }
+
+  /* Avoid 100vh jump on keyboard open */
+  .form-page {
+    min-height: 100dvh;
+    min-height: -webkit-fill-available;
+  }
+}
+
+/* iOS can require this for reliable caret & selection */
+input, textarea {
+  -webkit-user-select: text;
+}
+
+
+If any global CSS still has height: 100vh; on page wrappers, replace with:
+
+min-height: 100dvh;
+min-height: -webkit-fill-available;
+
+5) Viewport sanity (skip if already set)
+
+Edit: client/index.html — ensure:
+
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content" />
+
+6) Do not animate or transform form ancestors on mobile
+
+If a form page is wrapped by motion.div or animated page transitions, keep desktop behavior but render a plain <div> on mobile:
+
+- <motion.div initial={{opacity:0, y:8}} animate={{opacity:1, y:0}} exit={{opacity:0, y:-8}}>
++ {window.matchMedia('(max-width: 768px)').matches
++   ? <div>
++   : <motion.div initial={false} animate={{opacity:1}} exit={{opacity:1}}>
+      {children}
+- </motion.div>
++ {window.matchMedia('(max-width: 768px)').matches ? </div> : </motion.div>}
+
+
+(Apply this only to wrappers around the form subtree.)
+
+Acceptance checks (run on devices)
+
+iPhone Safari & Android Chrome: focus any text box in Post/Prayer/Edit Profile/Contact → cursor stays, text appears immediately, no flicker.
+
+Rotate device while focused → still stable.
+
+Navigate away/back → value persists unless intentionally reset.
+
+Return: Diffs of changed files (paths above) and a brief summary of edits applied.

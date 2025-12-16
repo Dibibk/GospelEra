@@ -1,0 +1,97 @@
+{
+  "modules": [],
+  "routes": [
+    {
+      "path": "/login",
+      "component": "/PageTransition"
+    },
+    {
+      "path": "/forgot-password",
+      "component": "/PageTransition"
+    },
+    {
+      "path": "/reset-password",
+      "component": "/PageTransition"
+    },
+    {
+      "path": "/",
+      "component": "/ProtectedRoute",
+      "guard": "ProtectedRoute"
+    },
+    {
+      "path": "/dashboard",
+      "component": "/ProtectedRoute",
+      "guard": "ProtectedRoute"
+    },
+    {
+      "path": "/profile",
+      "component": "/ProtectedRoute",
+      "guard": "ProtectedRoute"
+    },
+    {
+      "path": "/profile/:id",
+      "component": "/ProtectedRoute",
+      "guard": "ProtectedRoute"
+    },
+    {
+      "path": "/settings",
+      "component": "/ProtectedRoute",
+      "guard": "ProtectedRoute"
+    },
+    {
+      "path": "/saved",
+      "component": "/ProtectedRoute",
+      "guard": "ProtectedRoute"
+    },
+    {
+      "path": "/admin/reports",
+      "component": "/ProtectedRoute",
+      "guard": "ProtectedRoute"
+    },
+    {
+      "path": "/guidelines",
+      "component": "/ProtectedRoute",
+      "guard": "ProtectedRoute"
+    },
+    {
+      "path": "/donate",
+      "component": "/ProtectedRoute",
+      "guard": "ProtectedRoute"
+    },
+    {
+      "path": "/donate/thanks",
+      "component": "/ProtectedRoute",
+      "guard": "ProtectedRoute"
+    },
+    {
+      "path": "/admin/donations",
+      "component": "/ProtectedRoute",
+      "guard": "ProtectedRoute"
+    },
+    {
+      "path": "/prayer/new",
+      "component": "/ProtectedRoute",
+      "guard": "ProtectedRoute"
+    },
+    {
+      "path": "/prayer/browse",
+      "component": "/ProtectedRoute",
+      "guard": "ProtectedRoute"
+    },
+    {
+      "path": "/prayer/:id",
+      "component": "/ProtectedRoute",
+      "guard": "ProtectedRoute"
+    },
+    {
+      "path": "/prayer/my",
+      "component": "/ProtectedRoute",
+      "guard": "ProtectedRoute"
+    },
+    {
+      "path": "/prayer/leaderboard",
+      "component": "/ProtectedRoute",
+      "guard": "ProtectedRoute"
+    }
+  ]
+}

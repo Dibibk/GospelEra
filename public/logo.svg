@@ -1,0 +1,57 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background circle with gradient -->
+  <defs>
+    <radialGradient id="bgGradient" cx="50%" cy="40%" r="60%">
+      <stop offset="0%" style="stop-color:#9333ea;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#5a31f4;stop-opacity:1" />
+    </radialGradient>
+    
+    <linearGradient id="crossGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#ffd97d;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#f59e0b;stop-opacity:1" />
+    </linearGradient>
+    
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge> 
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <!-- Background -->
+  <circle cx="256" cy="256" r="240" fill="url(#bgGradient)" stroke="#4c1d95" stroke-width="8"/>
+  
+  <!-- Light rays background -->
+  <g opacity="0.3">
+    <path d="M256 100 L270 180 L242 180 Z" fill="#ffd97d"/>
+    <path d="M356 156 L320 210 L340 230 Z" fill="#ffd97d"/>
+    <path d="M412 256 L332 270 L332 242 Z" fill="#ffd97d"/>
+    <path d="M356 356 L320 302 L340 282 Z" fill="#ffd97d"/>
+    <path d="M256 412 L270 332 L242 332 Z" fill="#ffd97d"/>
+    <path d="M156 356 L192 302 L172 282 Z" fill="#ffd97d"/>
+    <path d="M100 256 L180 242 L180 270 Z" fill="#ffd97d"/>
+    <path d="M156 156 L192 210 L172 230 Z" fill="#ffd97d"/>
+  </g>
+  
+  <!-- Main Cross -->
+  <g filter="url(#glow)">
+    <!-- Vertical beam -->
+    <rect x="236" y="140" width="40" height="220" rx="20" fill="url(#crossGradient)" stroke="#dc2626" stroke-width="2"/>
+    <!-- Horizontal beam -->
+    <rect x="180" y="236" width="152" height="40" rx="20" fill="url(#crossGradient)" stroke="#dc2626" stroke-width="2"/>
+  </g>
+  
+  <!-- Gospel Era Text -->
+  <text x="256" y="420" text-anchor="middle" font-family="serif" font-size="36" font-weight="bold" fill="white" stroke="#4c1d95" stroke-width="1">
+    GOSPEL ERA
+  </text>
+  
+  <!-- Subtle book/scripture symbol at base of cross -->
+  <g opacity="0.8">
+    <rect x="230" y="370" width="52" height="8" rx="2" fill="#ffd97d"/>
+    <rect x="234" y="378" width="44" height="6" rx="1" fill="#f59e0b"/>
+    <rect x="238" y="384" width="36" height="4" rx="1" fill="#d97706"/>
+  </g>
+</svg>

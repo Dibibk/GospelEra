@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gospel Era Mobile Preview</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%);
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            text-align: center;
+            padding: 20px;
+        }
+        .container {
+            max-width: 375px;
+            width: 100%;
+            padding: 40px 20px;
+        }
+        .logo { font-size: 60px; margin-bottom: 20px; }
+        .title { 
+            font-size: 32px; 
+            font-weight: bold; 
+            margin-bottom: 10px; 
+        }
+        .subtitle { 
+            font-size: 18px; 
+            opacity: 0.8; 
+            margin-bottom: 30px; 
+        }
+        .status {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            padding: 10px;
+            border-radius: 8px;
+            background: rgba(255,255,255,0.1);
+        }
+        .url {
+            font-size: 10px;
+            opacity: 0.6;
+        }
+        .success { color: #10b981; }
+        .error { color: #ef4444; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">✝️</div>
+        <h1 class="title">Gospel Era Mobile</h1>
+        <p class="subtitle">Native App Foundation</p>
+        <div id="status" class="status">Testing connection...</div>
+        <div class="url">Backend: https://0c5a25f0-9744-423a-9b7b-f354b588ed87-00-364hxv4w1n962.picard.replit.dev</div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'https://0c5a25f0-9744-423a-9b7b-f354b588ed87-00-364hxv4w1n962.picard.replit.dev';
+        const statusEl = document.getElementById('status');
+
+        // Test connection to your Gospel Era backend
+        fetch(`${API_BASE_URL}/api/posts`)
+            .then(response => response.json())
+            .then(data => {
+                statusEl.textContent = '✅ Connected to Gospel Era backend!';
+                statusEl.className = 'status success';
+            })
+            .catch(error => {
+                statusEl.textContent = `❌ Connection failed: ${error.message}`;
+                statusEl.className = 'status error';
+            });
+    </script>
+</body>
+</html>

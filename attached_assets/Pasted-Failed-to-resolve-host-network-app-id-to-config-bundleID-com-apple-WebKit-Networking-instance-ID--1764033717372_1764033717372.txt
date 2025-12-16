@@ -1,0 +1,56 @@
+Failed to resolve host network app id to config: bundleID: com.apple.WebKit.Networking instance ID: Optional([_EXExtensionInstanceIdentifier: B8FE3EBF-1118-4630-BD4E-7FCE8DAC1DF1])
+⚡️  Loading app at capacitor://localhost...
+-[RTIInputSystemClient remoteTextInputSessionWithID:performInputOperation:]  Can only perform input operation for an active session. sessionID = ED11B989-FD08-450E-93CC-8FFCAA8EDAD4
+-[RTIInputSystemClient remoteTextInputSessionWithID:textSuggestionsChanged:]  Can only set suggestions for an active session. sessionID = ED11B989-FD08-450E-93CC-8FFCAA8EDAD4
+-[RTIInputSystemClient remoteTextInputSessionWithID:textSuggestionsChanged:]  Can only set suggestions for an active session. sessionID = ED11B989-FD08-450E-93CC-8FFCAA8EDAD4
+Result accumulator timeout: 0.250000, exceeded.
+-[RTIInputSystemClient remoteTextInputSessionWithID:textSuggestionsChanged:]  Can only set suggestions for an active session. sessionID = ED11B989-FD08-450E-93CC-8FFCAA8EDAD4
+⚡️  WebView loaded
+⚡️  [log] - [SW] Service worker registration skipped - development mode or not supported
+⚡️  [log] - 🔍 useIsNativeApp returning: {"isNative":false,"isLoading":true}
+⚡️  [log] - 🔍 AnimatedRoutes Debug: {"isNative":false,"isLoading":true,"windowWidth":402,"mediaQueryMatches":true,"isMobile":true,"willShowMobile":"YES - MobileApp"}
+⚡️  [log] - 🔍 Still loading platform detection...
+⚡️  [log] - 🔍 Capacitor.getPlatform(): ios
+⚡️  [log] - 🔍 isNativePlatform: true
+⚡️  [log] - 🔍 useIsNativeApp returning: {"isNative":true,"isLoading":false}
+⚡️  [log] - 🔍 AnimatedRoutes Debug: {"isNative":true,"isLoading":false,"windowWidth":402,"mediaQueryMatches":true,"isMobile":true,"willShowMobile":"YES - MobileApp"}
+⚡️  [log] - 🔍 Posts feed render check: {"loading":true,"postsLength":0,"postsArray":[]}
+⚡️  [log] - 🔍 MobileApp fetchData effect {"hasUser":true,"postsLength":0}
+⚡️  [log] - 🔍 Calling fetchData now...
+⚡️  [log] - 🔍 fetchData: calling listPosts...
+⚡️  [log] - 🔍 fetchData: calling listPosts...
+⚡️  [log] - 🔍 Posts feed render check: {"loading":true,"postsLength":0,"postsArray":[]}
+⚡️  [log] - 🔍 fetchData: listPosts result {"hasData":false}
+⚡️  [error] - Error checking media permission: {"line":379,"column":3967,"sourceURL":"capacitor://localhost/assets/index-D73Nvinj.js"}
+⚡️  [log] - 🔍 fetchData: listPosts result {"hasData":false}
+⚡️  [log] - 🔍 MobileApp fetchData effect {"hasUser":true,"postsLength":0}
+⚡️  [log] - 🔍 Calling fetchData now...
+⚡️  [log] - 🔍 fetchData: calling listPosts...
+⚡️  [log] - 🔍 Posts feed render check: {"loading":true,"postsLength":0,"postsArray":[]}
+⚡️  [log] - 🔍 MobileApp fetchData effect {"hasUser":true,"postsLength":0}
+⚡️  [log] - 🔍 Calling fetchData now...
+⚡️  [log] - 🔍 fetchData: calling listPosts...
+⚡️  [log] - 🔍 Posts feed render check: {"loading":true,"postsLength":0,"postsArray":[]}
+⚡️  [log] - 🔍 fetchData: listPosts result {"hasData":false}
+⚡️  [error] - Error checking media permission: {"line":379,"column":3967,"sourceURL":"capacitor://localhost/assets/index-D73Nvinj.js"}
+⚡️  [log] - 🔍 fetchData: listPosts result {"hasData":false}
+⚡️  [error] - Error checking media permission: {"line":379,"column":3967,"sourceURL":"capacitor://localhost/assets/index-D73Nvinj.js"}
+⚡️  [log] - 🔍 Posts feed render check: {"loading":true,"postsLength":0,"postsArray":[]}
+⚡️  [log] - 🌐 Native app detected - using API URL: https://gospel-era.replit.app
+⚡️  [log] - 🔍 Posts feed render check: {"loading":true,"postsLength":0,"postsArray":[]}
+⚡️  [log] - 🔍 Posts feed render check: {"loading":true,"postsLength":0,"postsArray":[]}
+⚡️  [log] - 🔍 Posts feed render check: {"loading":true,"postsLength":0,"postsArray":[]}
+⚡️  [log] - 🔍 Posts feed render check: {"loading":true,"postsLength":0,"postsArray":[]}
+⚡️  [log] - 🔍 Posts feed render check: {"loading":true,"postsLength":0,"postsArray":[]}
+⚡️  [log] - 🔍 Posts feed render check: {"loading":true,"postsLength":0,"postsArray":[]}
+⚡️  [log] - 🔍 Posts feed render check: {"loading":true,"postsLength":0,"postsArray":[]}
+⚡️  [log] - 🔍 Posts feed render check: {"loading":true,"postsLength":0,"postsArray":[]}
+⚡️  [log] - 🔍 Posts feed render check: {"loading":true,"postsLength":0,"postsArray":[]}
+⚡️  [log] - 🔍 fetchData completed
+⚡️  [log] - 🔍 Setting loading to FALSE
+⚡️  [log] - 🔍 Posts feed render check: {"loading":false,"postsLength":0,"postsArray":[]}
+⚡️  [log] - 🔍 fetchData completed
+⚡️  [log] - 🔍 Posts feed render check: {"loading":false,"postsLength":0,"postsArray":[]}
+⚡️  [log] - 🔍 Posts feed render check: {"loading":false,"postsLength":0,"postsArray":[]}
+⚡️  [log] - 🔍 fetchData completed
+⚡️  [log] - 🔍 Posts feed render check: {"loading":false,"postsLength":0,"postsArray":[]}

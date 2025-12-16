@@ -1,0 +1,59 @@
+Goal
+On phones, focusing inputs should never trigger route/page re-animations or remounts. Remove/guard any AnimatePresence, route keys, or tab keys that cause unmount/mount on focus or keyboard resize. Keep animations on desktop.
+
+Do this (apply to all form screens: Post, Prayer, Edit Profile, Contact):
+
+Page transitions
+
+Locate any page wrappers using AnimatePresence, motion.*, or custom transition components around form pages.
+
+For mobile viewports (≤768px):
+
+Bypass exit/enter animations for form routes.
+
+Render the form route directly (no key prop on the route container).
+
+Keep lightweight opacity only on inner, non-conditional containers if needed.
+
+Remove remount keys
+
+Remove key={route}, key={pathname}, key={tab}, or key={windowHeight} props from any parent of the form subtree. These force remounts when keyboard opens/resizes.
+
+Ensure tabs/nav do not conditionally render the entire form subtree on focus.
+
+Guard conditionals
+
+If there’s code like if (keyboardOpen) return <CompactView/>; → do not swap component trees while an input is focused. Render the same tree; only adjust styles.
+
+Sticky layout
+
+Prefer position: sticky for headers/footers; avoid position: fixed that can jitter with the keyboard.
+
+Keep the scrollable region as the page content, not the whole app container.
+
+Concrete examples (apply equivalently where found):
+
+- <AnimatePresence mode="wait">
+-   {isFormRoute && <FormPage key={pathname} />}
+- </AnimatePresence>
++ {/* Mobile: no page-level animation for form routes */}
++ {isFormRoute && <FormPage />}
+
+- <motion.main key={tab} initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}}>
++ <motion.main /* no key on mobile */ initial={{opacity:1}} animate={{opacity:1}}>
+    {children}
+  </motion.main>
+
+- <FormWrapper key={window.innerHeight}> ... </FormWrapper>
++ <FormWrapper> ... </FormWrapper>
+
+
+Acceptance
+
+Focus any input on phone: no flicker, no route animation, values persist while typing and on rotate.
+
+Navigating away/back does not lose in-progress form state.
+
+Output wanted
+
+Diffs for each changed file and a short summary of what was removed/guarded.

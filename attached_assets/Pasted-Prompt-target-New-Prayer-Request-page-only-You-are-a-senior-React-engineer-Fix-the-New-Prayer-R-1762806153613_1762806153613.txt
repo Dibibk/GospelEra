@@ -1,0 +1,135 @@
+Prompt (target: New Prayer Request page only)
+
+You are a senior React engineer. Fix the New Prayer Request page where inputs take zero characters (value immediately reverts to empty and/or focus disappears).
+
+Diagnose & fix (apply all that match)
+
+State reset / effect loop
+
+Find any useEffect (or watch in RHF) that sets form defaults and runs on each keystroke (deps include form values, route query, session, etc.).
+
+Change to run once: useEffect(..., []), or gate with a ref.
+
+If defaults come from props/loader, memoize them:
+
+const initial = useMemo(() => props.initial ?? { title:"", message:"" }, [props.initial]);
+
+
+and only adopt once on mount (or when props.initial meaningfully changes—not on every render).
+
+Unstable keys / remounting
+
+Remove any key that depends on input value/length/date/random:
+❌ key={form.title}, key={Date.now()}
+✅ no key, or stable id like "new-prayer-form".
+
+Stop conditionally swapping components that contain the inputs on every keystroke.
+
+Controlled input correctness
+
+Ensure each field is controlled and never undefined:
+value={form.title ?? ""} / value={form.message ?? ""}.
+
+Ensure onChange updates the same state that drives value:
+
+onChange={(e)=>setForm(s=>({...s, title: e.target.value}))}
+
+
+Do not call setForm(defaults) inside onChange.
+
+Focus theft / navigation
+
+Remove autoFocus loops or effects that refocus on render; if needed, gate with a didFocus ref.
+
+Do not navigate, refresh, or refetch on onChange. Move such logic to submit or debounced effect.
+
+React Hook Form (if used)
+
+Use useForm with defaultValues only once. Avoid rebuilding useForm({ defaultValues }) when props change.
+
+Prefer Controller for controlled textareas; do not also bind value from external state.
+
+Implement this drop-in pattern on the page
+// NewPrayerRequest.tsx (or similar)
+import React, { useEffect, useMemo, useRef, useState } from "react";
+
+type PrayerForm = { title: string; message: string };
+
+export default function NewPrayerRequest() {
+  // Stable defaults (from props/loader if applicable)
+  const stableDefaults = useMemo<PrayerForm>(() => ({ title: "", message: "" }), []);
+  const [form, setForm] = useState<PrayerForm>(stableDefaults);
+
+  // Adopt external defaults ONLY once (remove if not needed)
+  const adopted = useRef(false);
+  useEffect(() => {
+    if (!adopted.current) {
+      setForm(stableDefaults); // or props.initial
+      adopted.current = true;
+    }
+  }, [stableDefaults]);
+
+  // IME-safe change handlers
+  const onTitleChange = (e: React.ChangeEvent<HTMLInputElement>) =>
+    setForm((s) => ({ ...s, title: e.target.value }));
+  const onMessageChange = (e: React.ChangeEvent<HTMLTextAreaElement>) =>
+    setForm((s) => ({ ...s, message: e.target.value }));
+
+  const onSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    // TODO: submit form safely (no remounts)
+  };
+
+  return (
+    <form onSubmit={onSubmit} /* DO NOT add dynamic key here */ className="p-4 space-y-4">
+      <div className="space-y-2">
+        <label className="block text-sm font-medium">Title</label>
+        <input
+          type="text"
+          value={form.title ?? ""}           // always controlled
+          onChange={onTitleChange}           // updates same state
+          // DO NOT set key based on value
+          className="w-full rounded-xl border px-3 py-2"
+          inputMode="text"
+          autoComplete="off"
+        />
+      </div>
+
+      <div className="space-y-2">
+        <label className="block text-sm font-medium">Message</label>
+        <textarea
+          value={form.message ?? ""}         // always controlled
+          onChange={onMessageChange}
+          rows={5}
+          className="w-full rounded-xl border px-3 py-2"
+        />
+      </div>
+
+      <button type="submit" className="rounded-xl px-4 py-2 border">Submit</button>
+    </form>
+  );
+}
+
+Safeguards to add during fix
+
+Remove any of these if present on this page:
+
+key={form.title} / key={Date.now()} (any dynamic key)
+
+autoFocus inside re-running effects
+
+router.refresh() / router.push() / data refetch in onChange
+
+useEffect(...,[form]) that calls setForm(defaults)
+
+Rendering {form.title ? <A/> : <B/>} where A/B are different components containing the input
+
+Acceptance tests
+
+Type 20–30 characters quickly in both fields: no blur, no clearing, caret stays.
+
+No React warnings about controlled/uncontrolled inputs.
+
+Submitting does not clear until success path explicitly does so.
+
+Return a short note describing exact cause(s) found on this page and the diff applied.

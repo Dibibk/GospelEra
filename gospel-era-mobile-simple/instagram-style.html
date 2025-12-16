@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Gospel Era</title>
+    <style>
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: #ffffff;
+            color: #262626;
+            overflow-x: hidden;
+            height: 100vh;
+            font-size: 14px;
+        }
+
+        .mobile-container {
+            max-width: 414px;
+            margin: 0 auto;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background: #ffffff;
+        }
+
+        /* Instagram-style header */
+        .header {
+            background: #ffffff;
+            border-bottom: 1px solid #dbdbdb;
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: 700;
+            color: #262626;
+            letter-spacing: -0.5px;
+        }
+
+        .header-icons {
+            display: flex;
+            gap: 16px;
+        }
+
+        .header-icon {
+            font-size: 24px;
+            color: #262626;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 50%;
+            transition: background 0.1s;
+        }
+
+        .header-icon:active {
+            background: #f0f0f0;
+        }
+
+        /* Search bar */
+        .search-container {
+            padding: 12px 16px;
+            background: #ffffff;
+            border-bottom: 1px solid #dbdbdb;
+        }
+
+        .search-bar {
+            width: 100%;
+            height: 36px;
+            background: #efefef;
+            border: none;
+            border-radius: 8px;
+            padding: 0 12px;
+            font-size: 14px;
+            color: #262626;
+            outline: none;
+        }
+
+        .search-bar::placeholder {
+            color: #8e8e8e;
+        }
+
+        /* Daily scripture - minimal */
+        .scripture-mini {
+            background: #ffffff;
+            padding: 8px 16px;
+            border-bottom: 1px solid #dbdbdb;
+            font-size: 12px;
+            color: #8e8e8e;
+            text-align: center;
+        }
+
+        /* Content area */
+        .content {
+            flex: 1;
+            overflow-y: auto;
+            background: #ffffff;
+            padding-bottom: 60px;
+        }
+
+        /* Instagram-style post card */
+        .post-card {
+            background: #ffffff;
+            border-bottom: 1px solid #dbdbdb;
+            margin-bottom: 0;
+        }
+
+        .post-header {
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+        }
+
+        .avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #dbdbdb;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            margin-right: 12px;
+            border: 1px solid #dbdbdb;
+        }
+
+        .post-user-info {
+            flex: 1;
+        }
+
+        .username {
+            font-weight: 600;
+            font-size: 14px;
+            color: #262626;
+            margin-bottom: 0;
+        }
+
+        .post-time {
+            font-size: 12px;
+            color: #8e8e8e;
+        }
+
+        .post-options {
+            font-size: 16px;
+            color: #262626;
+            cursor: pointer;
+            padding: 8px;
+        }
+
+        /* Post content */
+        .post-image {
+            width: 100%;
+            height: 300px;
+            background: linear-gradient(135deg, #f0f0f0, #e0e0e0);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            color: #8e8e8e;
+        }
+
+        .post-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 16px;
+        }
+
+        .action-left {
+            display: flex;
+            gap: 16px;
+        }
+
+        .action-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: #262626;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 50%;
+            transition: all 0.1s;
+        }
+
+        .action-btn:active {
+            transform: scale(0.9);
+            background: #f0f0f0;
+        }
+
+        .action-btn.liked {
+            color: #ed4956;
+        }
+
+        .likes-count {
+            padding: 0 16px 4px;
+            font-weight: 600;
+            font-size: 14px;
+            color: #262626;
+        }
+
+        .post-caption {
+            padding: 0 16px 8px;
+            font-size: 14px;
+            line-height: 1.4;
+            color: #262626;
+        }
+
+        .post-caption .username {
+            font-weight: 600;
+            margin-right: 8px;
+        }
+
+        .view-comments {
+            padding: 0 16px 8px;
+            font-size: 14px;
+            color: #8e8e8e;
+            cursor: pointer;
+        }
+
+        .post-timestamp {
+            padding: 0 16px 12px;
+            font-size: 10px;
+            color: #8e8e8e;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Instagram-style bottom navigation */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            max-width: 414px;
+            height: 50px;
+            background: #ffffff;
+            border-top: 1px solid #dbdbdb;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 0 16px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #262626;
+            text-decoration: none;
+            font-size: 24px;
+            padding: 12px;
+            border-radius: 50%;
+            transition: all 0.1s;
+        }
+
+        .nav-item:active {
+            transform: scale(0.9);
+            background: #f0f0f0;
+        }
+
+        .nav-item.active {
+            color: #262626;
+            font-weight: 700;
+        }
+
+        /* Loading states */
+        .loading-post {
+            padding: 16px;
+        }
+
+        .loading-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #f0f0f0;
+            margin-right: 12px;
+        }
+
+        .loading-text {
+            height: 12px;
+            background: #f0f0f0;
+            border-radius: 6px;
+            margin-bottom: 8px;
+        }
+
+        .loading-image {
+            width: 100%;
+            height: 300px;
+            background: #f0f0f0;
+            margin: 12px 0;
+        }
+
+        /* Shimmer animation */
+        .shimmer {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+
+        /* Hide scrollbar */
+        .content::-webkit-scrollbar {
+            display: none;
+        }
+
+        .content {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="mobile-container">
+        <!-- Instagram-style header -->
+        <div class="header">
+            <div class="logo">Gospel Era</div>
+            <div class="header-icons">
+                <div class="header-icon" onclick="openNotifications()">♡</div>
+                <div class="header-icon" onclick="openMessages()">✉</div>
+            </div>
+        </div>
+
+        <!-- Search bar -->
+        <div class="search-container">
+            <input type="text" class="search-bar" placeholder="Search">
+        </div>
+
+        <!-- Minimal daily scripture -->
+        <div class="scripture-mini">
+            "For I know the plans I have for you" - Jeremiah 29:11
+        </div>
+
+        <!-- Content feed -->
+        <div class="content" id="content">
+            <!-- Posts will be loaded here -->
+        </div>
+
+        <!-- Bottom navigation -->
+        <nav class="bottom-nav">
+            <a href="#" class="nav-item active" onclick="showFeed()">🏠</a>
+            <a href="#" class="nav-item" onclick="showSearch()">🔍</a>
+            <a href="#" class="nav-item" onclick="showCreate()">➕</a>
+            <a href="#" class="nav-item" onclick="showPrayer()">🙏</a>
+            <a href="#" class="nav-item" onclick="showProfile()">👤</a>
+        </nav>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'https://0c5a25f0-9744-423a-9b7b-f354b588ed87-00-364hxv4w1n962.picard.replit.dev';
+        
+        // Load posts with Instagram styling
+        async function loadPosts() {
+            const content = document.getElementById('content');
+            
+            // Show loading state
+            content.innerHTML = Array(3).fill(0).map(() => `
+                <div class="post-card">
+                    <div class="post-header">
+                        <div class="loading-avatar shimmer"></div>
+                        <div style="flex: 1;">
+                            <div class="loading-text shimmer" style="width: 80px;"></div>
+                            <div class="loading-text shimmer" style="width: 60px; margin-top: 4px;"></div>
+                        </div>
+                    </div>
+                    <div class="loading-image shimmer"></div>
+                    <div style="padding: 16px;">
+                        <div class="loading-text shimmer" style="width: 100%;"></div>
+                        <div class="loading-text shimmer" style="width: 70%; margin-top: 8px;"></div>
+                    </div>
+                </div>
+            `).join('');
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/posts`);
+                const posts = await response.json();
+                
+                content.innerHTML = posts.map((post, index) => `
+                    <div class="post-card">
+                        <div class="post-header">
+                            <div class="avatar">✝️</div>
+                            <div class="post-user-info">
+                                <div class="username">${post.author || 'gospeluser'}</div>
+                                <div class="post-time">${getRandomTime()}</div>
+                            </div>
+                            <div class="post-options" onclick="showOptions()">⋯</div>
+                        </div>
+                        
+                        <div class="post-image">
+                            ${getPostIcon(index)}
+                        </div>
+                        
+                        <div class="post-actions">
+                            <div class="action-left">
+                                <button class="action-btn" onclick="toggleLike(this, ${index})">♡</button>
+                                <button class="action-btn" onclick="showComments()">💬</button>
+                                <button class="action-btn" onclick="sharePost()">✈</button>
+                            </div>
+                            <button class="action-btn" onclick="toggleBookmark(this)">🔖</button>
+                        </div>
+                        
+                        <div class="likes-count">${getRandomLikes()} likes</div>
+                        
+                        <div class="post-caption">
+                            <span class="username">${post.author || 'gospeluser'}</span>
+                            ${post.content || post.title}
+                        </div>
+                        
+                        <div class="view-comments" onclick="showComments()">View all ${getRandomComments()} comments</div>
+                        
+                        <div class="post-timestamp">${getRandomTime().toUpperCase()}</div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                content.innerHTML = `
+                    <div class="post-card">
+                        <div style="padding: 40px; text-align: center;">
+                            <div style="font-size: 48px; margin-bottom: 16px;">📱</div>
+                            <div style="font-weight: 600; margin-bottom: 8px;">Instagram-Style Mobile App</div>
+                            <div style="color: #8e8e8e; font-size: 14px;">Clean white design ready!</div>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        // Helper functions for realistic content
+        function getRandomTime() {
+            const times = ['2h', '5h', '1d', '3d', '1w'];
+            return times[Math.floor(Math.random() * times.length)];
+        }
+
+        function getRandomLikes() {
+            return Math.floor(Math.random() * 500) + 10;
+        }
+
+        function getRandomComments() {
+            return Math.floor(Math.random() * 50) + 1;
+        }
+
+        function getPostIcon(index) {
+            const icons = ['🙏', '✝️', '📖', '💒', '🎵'];
+            return icons[index % icons.length];
+        }
+
+        // Instagram-style interactions
+        function toggleLike(btn, index) {
+            const isLiked = btn.textContent === '❤';
+            btn.textContent = isLiked ? '♡' : '❤';
+            btn.classList.toggle('liked', !isLiked);
+            
+            // Update likes count
+            const likesEl = btn.closest('.post-card').querySelector('.likes-count');
+            const current = parseInt(likesEl.textContent);
+            likesEl.textContent = `${isLiked ? current - 1 : current + 1} likes`;
+            
+            // Animation
+            btn.style.transform = 'scale(1.2)';
+            setTimeout(() => btn.style.transform = '', 150);
+        }
+
+        function toggleBookmark(btn) {
+            const isBookmarked = btn.textContent === '🏷';
+            btn.textContent = isBookmarked ? '🔖' : '🏷';
+            btn.style.transform = 'scale(1.2)';
+            setTimeout(() => btn.style.transform = '', 150);
+        }
+
+        function showComments() {
+            alert('💬 Comments\nInstagram-style comments sheet would slide up');
+        }
+
+        function sharePost() {
+            if (navigator.share) {
+                navigator.share({
+                    title: 'Gospel Era Post',
+                    text: 'Check out this Gospel Era post!',
+                    url: window.location.href
+                });
+            } else {
+                alert('✈ Share\nNative share options would appear');
+            }
+        }
+
+        function showOptions() {
+            alert('⋯ Options\nReport, Hide, Copy Link options');
+        }
+
+        function openNotifications() {
+            alert('♡ Activity\nNotifications and likes');
+        }
+
+        function openMessages() {
+            alert('✉ Direct\nPrivate messages');
+        }
+
+        // Navigation functions
+        function showFeed() {
+            setActiveTab(0);
+            loadPosts();
+        }
+
+        function showSearch() {
+            setActiveTab(1);
+            document.getElementById('content').innerHTML = `
+                <div style="padding: 40px 16px; text-align: center;">
+                    <div style="font-size: 48px; margin-bottom: 16px;">🔍</div>
+                    <div style="font-weight: 600; margin-bottom: 8px;">Search</div>
+                    <div style="color: #8e8e8e;">Find posts and users</div>
+                </div>
+            `;
+        }
+
+        function showCreate() {
+            setActiveTab(2);
+            alert('➕ Create\nCamera and gallery options would open');
+        }
+
+        function showPrayer() {
+            setActiveTab(3);
+            document.getElementById('content').innerHTML = `
+                <div style="padding: 40px 16px; text-align: center;">
+                    <div style="font-size: 48px; margin-bottom: 16px;">🙏</div>
+                    <div style="font-weight: 600; margin-bottom: 8px;">Prayer</div>
+                    <div style="color: #8e8e8e;">Prayer requests and community</div>
+                </div>
+            `;
+        }
+
+        function showProfile() {
+            setActiveTab(4);
+            document.getElementById('content').innerHTML = `
+                <div style="padding: 40px 16px; text-align: center;">
+                    <div style="width: 80px; height: 80px; border-radius: 50%; background: #dbdbdb; margin: 0 auto 16px; display: flex; align-items: center; justify-content: center; font-size: 32px;">✝️</div>
+                    <div style="font-weight: 600; margin-bottom: 8px;">gospeluser</div>
+                    <div style="color: #8e8e8e;">Your profile and settings</div>
+                </div>
+            `;
+        }
+
+        function setActiveTab(index) {
+            document.querySelectorAll('.nav-item').forEach((item, i) => {
+                item.classList.toggle('active', i === index);
+            });
+        }
+
+        // Initialize
+        loadPosts();
+    </script>
+</body>
+</html>

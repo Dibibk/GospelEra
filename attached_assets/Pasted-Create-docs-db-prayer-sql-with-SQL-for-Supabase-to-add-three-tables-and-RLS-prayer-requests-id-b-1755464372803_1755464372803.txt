@@ -1,0 +1,90 @@
+Create /docs/db_prayer.sql with SQL for Supabase to add three tables and RLS:
+
+prayer_requests
+
+id bigserial primary key
+
+requester uuid references profiles(id) on delete set null
+
+title text not null
+
+details text not null
+
+tags text[] default '{}'
+
+is_anonymous boolean default false
+
+status text default 'open' check (status in ('open','closed','answered'))
+
+created_at timestamptz default now()
+
+prayer_commitments
+
+request_id bigint references prayer_requests(id) on delete cascade
+
+warrior uuid references profiles(id) on delete cascade
+
+committed_at timestamptz default now()
+
+status text default 'committed' check (status in ('committed','prayed'))
+
+prayed_at timestamptz
+
+note text
+
+primary key (request_id, warrior) -- one commitment per warrior per request
+
+prayer_activity (optional log for transparency)
+
+id bigserial primary key
+
+request_id bigint references prayer_requests(id) on delete cascade
+
+actor uuid references profiles(id) on delete set null
+
+kind text check (kind in ('create','commit','uncommit','confirm','close','answer'))
+
+message text
+
+created_at timestamptz default now()
+
+Indexes
+
+GIN on prayer_requests(tags)
+
+Btree on prayer_requests(status, created_at desc)
+
+RLS Policies
+
+Enable RLS on all three tables.
+
+prayer_requests:
+
+select: authenticated users can read rows where status in ('open','answered','closed')
+
+insert: requester = auth.uid()
+
+update: only requester = auth.uid() can update while status != 'answered'; admins can update any
+
+prayer_commitments:
+
+select: authenticated can select
+
+insert: warrior = auth.uid()
+
+update: only the row owner (warrior = auth.uid()) can set status='prayed' and prayed_at, OR admin
+
+delete: only warrior = auth.uid() or admin
+
+prayer_activity:
+
+select: authenticated can select
+
+insert: authenticated can insert (used by app on actions)
+
+Include comments showing how “prayed count” is computed as count of commitments where status='prayed' per request.
+
+Also add a small SQL view prayer_request_stats that returns:
+
+request_id, commit_count, prayed_count, open_commit_count
+using aggregates over prayer_commitments.

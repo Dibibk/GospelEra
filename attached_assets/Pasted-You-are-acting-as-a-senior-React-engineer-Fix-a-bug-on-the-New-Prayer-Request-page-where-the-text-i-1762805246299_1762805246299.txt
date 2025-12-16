@@ -1,0 +1,61 @@
+You are acting as a senior React engineer.
+Fix a bug on the New Prayer Request page where the text input boxes accept only the first character and then lose focus on mobile or web.
+
+Context
+
+Project: Gospel Era app (React + Vite/Next + Tailwind + Supabase).
+
+Issue: On the New Prayer Request page, whenever a user types into any text field (title, description, etc.), the field takes the first character but then loses focus or clears.
+
+The same issue existed earlier on the Home page and was already fixed there — apply that same fix pattern here.
+
+Instructions
+
+Locate all input fields on the New Prayer Request page (e.g., <input>, <textarea>, <TextField>, etc.).
+
+Identify and fix the root cause using this checklist:
+
+❌ Input has unstable key that changes as user types (e.g., key={value} or dynamic key).
+✅ Replace with a stable key (like key="prayerTitle" or a fixed ID).
+
+❌ Component re-initializes form state on every render via useEffect(() => setState(defaults), [state]).
+✅ Limit the initialization to useEffect(..., []).
+
+❌ Input switches components or unmounts/remounts on every keystroke.
+✅ Keep one component mounted; just update its value prop.
+
+❌ Controlled/uncontrolled mismatch (value sometimes undefined).
+✅ Ensure value={state.field || ""}.
+
+❌ autoFocus or conditional rendering steals focus on change.
+✅ Remove or guard focus logic.
+
+Ensure all inputs use controlled components:
+
+const [form, setForm] = useState({ title: "", message: "" });
+
+<input
+  value={form.title}
+  onChange={(e) => setForm({ ...form, title: e.target.value })}
+/>
+<textarea
+  value={form.message}
+  onChange={(e) => setForm({ ...form, message: e.target.value })}
+/>
+
+
+Test manually:
+
+Type multiple characters without losing focus.
+
+Verify the input value persists while typing.
+
+No console warnings about controlled/uncontrolled inputs.
+
+Mobile keyboard stays active during continuous typing.
+
+Deliverables
+
+Fixed NewPrayerRequest component (or equivalent file).
+
+Short summary of what caused the issue and the fix applied.

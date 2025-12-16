@@ -1,0 +1,18 @@
+URGENT DATABASE FIX NEEDED:
+
+Your DATABASE_URL format is incorrect. Based on your screenshot:
+
+CURRENT (WRONG):
+postgresql://postgres.zvmvyixghcqxpnalmrbj:StartupDb1@013aws-0-us-...
+
+CORRECT FORMAT:
+postgresql://postgres:StartupDb1@db.zvmvyixghcqxpnalmrbj.supabase.co:5432/postgres
+
+Key changes needed:
+1. Remove ".zvmvyixghcqxpnalmrbj" from username 
+2. Use "db.zvmvyixghcqxpnalmrbj.supabase.co" as hostname
+3. Keep your password "StartupDb1"
+
+Update this in your Replit Secrets → DATABASE_URL
+
+This will fix the "Tenant or user not found" error immediately.

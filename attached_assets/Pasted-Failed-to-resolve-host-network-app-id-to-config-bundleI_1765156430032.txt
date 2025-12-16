@@ -1,0 +1,106 @@
+Failed to resolve host network app id to config: bundleID: com.apple.WebKit.Networking instance ID: Optional([_EXExtensionInstanceIdentifier: 1405D25A-6A04-4BD4-BE00-0612EB3069E1])
+⚡️  Loading app at capacitor://localhost...
+Failed to send CA Event for app launch measurements for ca_event_type: 0 event_name: com.apple.app_launch_measurement.FirstFramePresentationMetric
+-[RTIInputSystemClient remoteTextInputSessionWithID:performInputOperation:]  Can only perform input operation for an active session. sessionID = 2C2B498D-387D-4594-B8CB-E80D4183A90B
+-[RTIInputSystemClient remoteTextInputSessionWithID:textSuggestionsChanged:]  Can only set suggestions for an active session. sessionID = 2C2B498D-387D-4594-B8CB-E80D4183A90B
+-[RTIInputSystemClient remoteTextInputSessionWithID:performInputOperation:]  Can only perform input operation for an active session. sessionID = 2C2B498D-387D-4594-B8CB-E80D4183A90B
+-[RTIInputSystemClient remoteTextInputSessionWithID:textSuggestionsChanged:]  Can only set suggestions for an active session. sessionID = 2C2B498D-387D-4594-B8CB-E80D4183A90B
+-[RTIInputSystemClient remoteTextInputSessionWithID:textSuggestionsChanged:]  Can only set suggestions for an active session. sessionID = 2C2B498D-387D-4594-B8CB-E80D4183A90B
+Failed to send CA Event for app launch measurements for ca_event_type: 1 event_name: com.apple.app_launch_measurement.ExtendedLaunchMetrics
+Result accumulator timeout: 0.250000, exceeded.
+Result accumulator timeout: 0.250000, exceeded.
+-[RTIInputSystemClient remoteTextInputSessionWithID:textSuggestionsChanged:]  Can only set suggestions for an active session. sessionID = 2C2B498D-387D-4594-B8CB-E80D4183A90B
+⚡️  WebView loaded
+⚡️  [log] - [SW] Service worker registration skipped - development mode or not supported
+⚡️  [log] - 🔍 useIsNativeApp returning: {"isNative":false,"isLoading":true}
+⚡️  [log] - 🔍 AnimatedRoutes Debug: {"isNative":false,"isLoading":true,"windowWidth":402,"mediaQueryMatches":true,"isMobile":true,"willShowMobile":"YES - MobileApp"}
+⚡️  [log] - 🔍 Still loading platform detection...
+⚡️  [log] - 🔍 Capacitor.getPlatform(): ios
+⚡️  [log] - 🔍 isNativePlatform: true
+⚡️  [log] - 🔍 useIsNativeApp returning: {"isNative":true,"isLoading":false}
+⚡️  [log] - 🔍 AnimatedRoutes Debug: {"isNative":true,"isLoading":false,"windowWidth":402,"mediaQueryMatches":true,"isMobile":true,"willShowMobile":"YES - MobileApp"}
+⚡️  [log] - 🔍 Posts feed render check: {"loading":true,"postsLength":0,"postsArray":[]}
+⚡️  [log] - 🔍 MobileApp fetchData effect {"hasUser":true,"postsLength":0}
+⚡️  [log] - 🔍 Calling fetchData now...
+⚡️  [log] - 🔍 fetchData: calling fetchFeed (optimized)...
+⚡️  [log] - 📡 [fetchFeed] Starting feed fetch...
+⚡️  [log] - 📡 [fetchFeed] Getting Supabase session...
+⚡️  [log] - 🔍 fetchData: calling fetchFeed (optimized)...
+⚡️  [log] - 📡 [fetchFeed] Starting feed fetch...
+⚡️  [log] - 📡 [fetchFeed] Getting Supabase session...
+⚡️  [log] - 🔍 Posts feed render check: {"loading":true,"postsLength":0,"postsArray":[]}
+⚡️  [log] - 🔍 MobileApp fetchData effect {"hasUser":true,"postsLength":0}
+⚡️  [log] - 🔍 Calling fetchData now...
+⚡️  [log] - 🔍 fetchData: calling fetchFeed (optimized)...
+⚡️  [log] - 📡 [fetchFeed] Starting feed fetch...
+⚡️  [log] - 📡 [fetchFeed] Getting Supabase session...
+⚡️  [log] - 🔍 Posts feed render check: {"loading":true,"postsLength":0,"postsArray":[]}
+⚡️  [log] - 📡 [fetchFeed] Session result: {"hasSession":true,"hasToken":true}
+⚡️  [log] - 🌐 [posts.ts] Platform detection: {"platform":"ios","isNative":true}
+⚡️  [log] - 🌐 [posts.ts] Native app - using API URL: https://gospel-era.replit.app
+⚡️  [log] - 🔗 [posts.ts] Building URL: https://gospel-era.replit.app/api/feed?limit=20
+⚡️  [log] - 📡 [fetchFeed] Fetching from: https://gospel-era.replit.app/api/feed?limit=20
+⚡️  [log] - 📡 [fetchFeed] Session result: {"hasSession":true,"hasToken":true}
+⚡️  [log] - 🌐 [posts.ts] Platform detection: {"platform":"ios","isNative":true}
+⚡️  [log] - 🌐 [posts.ts] Native app - using API URL: https://gospel-era.replit.app
+⚡️  [log] - 🔗 [posts.ts] Building URL: https://gospel-era.replit.app/api/feed?limit=20
+⚡️  [log] - 📡 [fetchFeed] Fetching from: https://gospel-era.replit.app/api/feed?limit=20
+⚡️  To Native ->  CapacitorHttp request 49561729
+⚡️  [log] - 🌐 Native app detected - using API URL: https://gospel-era.replit.app
+⚡️  [log] - 📡 [fetchFeed] Session result: {"hasSession":true,"hasToken":true}
+⚡️  [log] - 🌐 [posts.ts] Platform detection: {"platform":"ios","isNative":true}
+⚡️  [log] - 🌐 [posts.ts] Native app - using API URL: https://gospel-era.replit.app
+⚡️  [log] - 🔗 [posts.ts] Building URL: https://gospel-era.replit.app/api/feed?limit=20
+⚡️  [log] - 📡 [fetchFeed] Fetching from: https://gospel-era.replit.app/api/feed?limit=20
+nw_connection_copy_connected_local_endpoint_block_invoke [C2] Connection has no local endpoint
+nw_connection_copy_connected_local_endpoint_block_invoke [C2] Connection has no local endpoint
+nw_connection_copy_connected_local_endpoint_block_invoke [C1] Connection has no local endpoint
+nw_connection_copy_connected_local_endpoint_block_invoke [C1] Connection has no local endpoint
+⚡️  [error] - Error fetching notification count: {"line":628,"column":101551,"sourceURL":"capacitor://localhost/assets/index-B5fvC-wV.js"}
+⚡️  [log] - 📡 [fetchFeed] Response: {"status":200,"ok":true,"statusText":""}
+⚡️  [log] - 📡 [fetchFeed] Response text length: 4325 first 200 chars: <!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content" /
+⚡️  [error] - 📡 [fetchFeed] Exception caught: {}
+⚡️  [error] - 📡 [fetchFeed] Error name: SyntaxError
+⚡️  [error] - 📡 [fetchFeed] Error message: JSON Parse error: Unrecognized token '<'
+⚡️  [log] - 🔍 fetchData: fetchFeed result {"hasData":false}
+⚡️  [log] - 🔍 Posts feed render check: {"loading":true,"postsLength":0,"postsArray":[]}
+⚡️  [log] - 🔍 Posts feed render check: {"loading":true,"postsLength":0,"postsArray":[]}
+⚡️  [log] - 📡 [fetchFeed] Response: {"status":200,"ok":true,"statusText":""}
+⚡️  [log] - 📡 [fetchFeed] Response text length: 4325 first 200 chars: <!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content" /
+⚡️  [error] - 📡 [fetchFeed] Exception caught: {}
+⚡️  [error] - 📡 [fetchFeed] Error name: SyntaxError
+⚡️  [error] - 📡 [fetchFeed] Error message: JSON Parse error: Unrecognized token '<'
+⚡️  [log] - 🔍 fetchData: fetchFeed result {"hasData":false}
+⚡️  [log] - 📡 [fetchFeed] Response: {"status":200,"ok":true,"statusText":""}
+⚡️  [log] - 📡 [fetchFeed] Response text length: 4325 first 200 chars: <!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content" /
+⚡️  [error] - 📡 [fetchFeed] Exception caught: {}
+⚡️  [error] - 📡 [fetchFeed] Error name: SyntaxError
+⚡️  [error] - 📡 [fetchFeed] Error message: JSON Parse error: Unrecognized token '<'
+⚡️  [log] - 🔍 fetchData: fetchFeed result {"hasData":false}
+⚡️  [error] - Error fetching notification count: {"line":628,"column":101551,"sourceURL":"capacitor://localhost/assets/index-B5fvC-wV.js"}
+⚡️  [log] - 🔍 Posts feed render check: {"loading":true,"postsLength":0,"postsArray":[]}
+⚡️  [log] - 🔍 Posts feed render check: {"loading":true,"postsLength":0,"postsArray":[]}
+⚡️  [log] - 🔍 Posts feed render check: {"loading":true,"postsLength":0,"postsArray":[]}
+⚡️  TO JS {"status":200,"headers":{"sb-project-ref":"zvmvyixghcqxpnalmrbj","cf-cache-status":"DYNAMIC","vary":"Accept-Encoding","content-type":"application\/json; charset=utf-8","alt-svc":"h3=\":443\"; ma=86400","set-cookie":"__cf_bm=zcDZWDgg3ZZJia7WdT95ibC_roNuprDm
+⚡️  [log] - 🔍 Posts feed render check: {"loading":true,"postsLength":0,"postsArray":[]}
+⚡️  [log] - 🔍 Posts feed render check: {"loading":true,"postsLength":0,"postsArray":[]}
+⚡️  [log] - 🔍 Posts feed render check: {"loading":true,"postsLength":0,"postsArray":[]}
+⚡️  [log] - 🔍 fetchData completed
+⚡️  [log] - 🔍 Posts feed render check: {"loading":false,"postsLength":0,"postsArray":[]}
+⚡️  [log] - 🔍 fetchData completed
+⚡️  [log] - 🔍 Setting loading to FALSE
+⚡️  [log] - 🔍 Posts feed render check: {"loading":false,"postsLength":0,"postsArray":[]}
+⚡️  [log] - 🔍 Posts feed render check: {"loading":false,"postsLength":0,"postsArray":[]}
+⚡️  [log] - 🔍 Posts feed render check: {"loading":false,"postsLength":0,"postsArray":[]}
