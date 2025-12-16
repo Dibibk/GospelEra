@@ -45,6 +45,14 @@ export function PrayerDetailMobile({
 
   // Check if this is user's own prayer request
   const isOwnPrayer = user?.id && prayer?.requester === user.id;
+  
+  // Debug logging
+  console.log('🔍 PrayerDetail ownership check:', {
+    userId: user?.id,
+    prayerRequester: prayer?.requester,
+    isOwnPrayer,
+    match: user?.id === prayer?.requester
+  });
 
   const formatTimeAgo = useCallback((dateString: string) => {
     const date = new Date(dateString);
