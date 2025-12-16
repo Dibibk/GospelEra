@@ -1,7 +1,8 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback } from "react";
 import { User } from "lucide-react";
+import { Capacitor } from "@capacitor/core";
 
-// Helper to convert relative image URLs to full URLs for native apps
+// Helper to convert relative image URLs to full URLs for native apps (same as Home page)
 function getImageUrl(url: string | undefined | null): string | null {
   if (!url) return null;
   
@@ -11,10 +12,7 @@ function getImageUrl(url: string | undefined | null): string | null {
   }
   
   // Check if running on native platform
-  const isNative = typeof window !== 'undefined' && 
-    window.location.protocol === 'capacitor:';
-  
-  if (isNative) {
+  if (Capacitor.isNativePlatform()) {
     // Prepend production backend URL for native apps
     const baseUrl = import.meta.env.VITE_API_URL || 'https://gospel-era.replit.app';
     return `${baseUrl}${url.startsWith('/') ? '' : '/'}${url}`;
@@ -44,12 +42,9 @@ export function PrayerDetailMobile({
   onConfirmPrayed,
 }: PrayerDetailMobileProps) {
   const [isCommitting, setIsCommitting] = useState(false);
-  const [avatarError, setAvatarError] = useState(false);
 
-  // Reset avatar error when prayer changes
-  useEffect(() => {
-    setAvatarError(false);
-  }, [prayer?.id]);
+  // Check if this is user's own prayer request
+  const isOwnPrayer = user?.id && prayer?.requester === user.id;
 
   const formatTimeAgo = useCallback((dateString: string) => {
     const date = new Date(dateString);
@@ -155,7 +150,7 @@ export function PrayerDetailMobile({
               width: "48px",
               height: "48px",
               borderRadius: "50%",
-              background: prayer.is_anonymous ? "#dbdbdb" : (getImageUrl(prayer.profiles?.avatar_url) && !avatarError ? "transparent" : "#dbdbdb"),
+              background: "#dbdbdb",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -166,7 +161,7 @@ export function PrayerDetailMobile({
           >
             {prayer.is_anonymous ? (
               "🙏"
-            ) : getImageUrl(prayer.profiles?.avatar_url) && !avatarError ? (
+            ) : getImageUrl(prayer.profiles?.avatar_url) ? (
               <img
                 src={getImageUrl(prayer.profiles.avatar_url)!}
                 alt=""
@@ -174,8 +169,8 @@ export function PrayerDetailMobile({
                   width: "100%",
                   height: "100%",
                   objectFit: "cover",
+                  borderRadius: "50%",
                 }}
-                onError={() => setAvatarError(true)}
               />
             ) : (
               <User size={24} color="#8e8e8e" />
@@ -272,8 +267,8 @@ export function PrayerDetailMobile({
           </div>
         </div>
 
-        {/* Action Button */}
-        {user && !isBanned && (
+        {/* Action Button - hide for own prayer requests */}
+        {user && !isBanned && !isOwnPrayer && (
           <button
             onClick={handleAction}
             disabled={isCommitting}

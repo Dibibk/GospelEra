@@ -2703,7 +2703,7 @@ export default function MobileApp() {
           <PrayerDetailMobile
             prayer={selectedPrayerDetail}
             commitment={myCommitments.find(
-              (c) => c.prayer_request_id === selectedPrayerDetail?.id
+              (c) => c.request_id === selectedPrayerDetail?.id
             )}
             user={user}
             isBanned={isBanned}
