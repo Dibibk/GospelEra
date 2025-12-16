@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { User } from "lucide-react";
 
 // Helper to convert relative image URLs to full URLs for native apps
@@ -45,6 +45,11 @@ export function PrayerDetailMobile({
 }: PrayerDetailMobileProps) {
   const [isCommitting, setIsCommitting] = useState(false);
   const [avatarError, setAvatarError] = useState(false);
+
+  // Reset avatar error when prayer changes
+  useEffect(() => {
+    setAvatarError(false);
+  }, [prayer?.id]);
 
   const formatTimeAgo = useCallback((dateString: string) => {
     const date = new Date(dateString);
