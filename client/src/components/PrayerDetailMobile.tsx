@@ -51,8 +51,13 @@ export function PrayerDetailMobile({
     userId: user?.id,
     prayerRequester: prayer?.requester,
     isOwnPrayer,
-    match: user?.id === prayer?.requester
+    match: user?.id === prayer?.requester,
+    userType: typeof user?.id,
+    requesterType: typeof prayer?.requester
   });
+  
+  // TEMP DEBUG: Show on screen
+  const debugInfo = `User: ${user?.id?.substring(0,8)}... | Requester: ${prayer?.requester?.substring(0,8)}... | Match: ${isOwnPrayer}`;
 
   const formatTimeAgo = useCallback((dateString: string) => {
     const date = new Date(dateString);
@@ -141,6 +146,17 @@ export function PrayerDetailMobile({
         <div style={{ fontSize: "18px", fontWeight: 600, color: "#262626" }}>
           Prayer Details
         </div>
+      </div>
+
+      {/* TEMP DEBUG BANNER - REMOVE AFTER TESTING */}
+      <div style={{ 
+        padding: "8px 16px", 
+        background: "#fef3c7", 
+        fontSize: "10px", 
+        fontFamily: "monospace",
+        borderBottom: "1px solid #f59e0b"
+      }}>
+        {debugInfo}
       </div>
 
       {/* Content */}
