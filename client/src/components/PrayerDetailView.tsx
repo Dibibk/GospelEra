@@ -1,4 +1,30 @@
 import { useState } from "react";
+import { User } from "lucide-react";
+
+// Helper to convert relative image URLs to full URLs for native apps
+// (same logic as PrayerBrowseMobile)
+function getImageUrl(url: string | undefined | null): string | null {
+  if (!url) return null;
+
+  // Already a full URL
+  if (url.startsWith("http://") || url.startsWith("https://")) {
+    return url;
+  }
+
+  // Check if running on native platform (Capacitor WebView)
+  const isNative =
+    typeof window !== "undefined" && window.location.protocol === "capacitor:";
+
+  if (isNative) {
+    // Prepend production backend URL for native apps
+    const baseUrl =
+      import.meta.env.VITE_API_URL || "https://gospel-era.replit.app";
+    return `${baseUrl}${url.startsWith("/") ? "" : "/"}${url}`;
+  }
+
+  // For web, return as-is (relative URLs work)
+  return url;
+}
 
 interface PrayerDetailViewProps {
   prayer: any;
@@ -34,46 +60,29 @@ export function PrayerDetailView({
   onConfirmPrayed,
 }: PrayerDetailViewProps) {
   const [isProcessing, setIsProcessing] = useState(false);
+  const [avatarError, setAvatarError] = useState(false);
 
-  // Check if this is user's own prayer request - hide "I will pray" button if so
-  const isOwnPrayer = user?.id && prayer?.requester === user.id;
-  
-  // Debug logging
-  console.log('🔍 PrayerDetailView ownership check:', {
-    userId: user?.id,
-    prayerRequester: prayer?.requester,
-    isOwnPrayer,
-    match: user?.id === prayer?.requester
-  });
-  
-  // TEMP DEBUG: Show on screen
-  const debugInfo = `User: ${user?.id?.substring(0,8) || 'none'}... | Requester: ${prayer?.requester?.substring(0,8) || 'none'}... | Match: ${isOwnPrayer}`;
+  // This prayer belongs to the logged-in user
+  const isOwnPrayer = !!user?.id && prayer?.requester === user.id;
+
+  const avatarUrl = getImageUrl(prayer.profiles?.avatar_url || null);
 
   const handleAction = async () => {
-    if (!user || isBanned) {
-      console.log('[PrayerDetailView] Cannot commit: user=', !!user, 'isBanned=', isBanned);
+    if (!user || isBanned || isOwnPrayer) {
       return;
     }
-    
+
     setIsProcessing(true);
-    console.log('[PrayerDetailView] Processing prayer action for request:', prayer.id);
     try {
-      const commitment = myCommitments.find(
-        (c) => c.request_id === prayer.id
-      );
-      
-      console.log('[PrayerDetailView] Existing commitment:', commitment);
-      
-      if (commitment && commitment.status !== 'prayed') {
-        console.log('[PrayerDetailView] Calling onConfirmPrayed');
+      const commitment = myCommitments.find((c) => c.request_id === prayer.id);
+
+      if (commitment && commitment.status !== "prayed") {
         await onConfirmPrayed(prayer.id);
       } else if (!commitment) {
-        console.log('[PrayerDetailView] Calling onCommitToPray');
         await onCommitToPray(prayer.id);
       }
-      console.log('[PrayerDetailView] Action completed successfully');
     } catch (error) {
-      console.error('[PrayerDetailView] Error during action:', error);
+      console.error("[PrayerDetailView] Error during action:", error);
     } finally {
       setIsProcessing(false);
     }
@@ -82,15 +91,16 @@ export function PrayerDetailView({
   const getButtonText = () => {
     if (!user) return "Login to Pray";
     if (isBanned) return "Account Limited";
+    if (isOwnPrayer) return "This is your request";
     if (prayedJustNow.has(prayer.id)) return "✓ Prayed just now";
-    
+
     const hasCommitment = myCommitments.some(
-      (c) => c.request_id === prayer.id && c.status !== 'prayed'
+      (c) => c.request_id === prayer.id && c.status !== "prayed",
     );
     const hasPrayed = myCommitments.some(
-      (c) => c.request_id === prayer.id && c.status === 'prayed'
+      (c) => c.request_id === prayer.id && c.status === "prayed",
     );
-    
+
     if (isProcessing) return "...";
     if (hasCommitment) return "Confirm Prayed";
     if (hasPrayed) return "✓ Prayed";
@@ -98,12 +108,12 @@ export function PrayerDetailView({
   };
 
   const getButtonBackground = () => {
-    if (!user || isBanned) return "#dbdbdb";
-    
+    if (!user || isBanned || isOwnPrayer) return "#dbdbdb";
+
     const hasCommitment = myCommitments.some(
-      (c) => c.request_id === prayer.id && c.status !== 'prayed'
+      (c) => c.request_id === prayer.id && c.status !== "prayed",
     );
-    
+
     return hasCommitment ? "#28a745" : "#4285f4";
   };
 
@@ -144,18 +154,7 @@ export function PrayerDetailView({
         </div>
       </div>
 
-      {/* TEMP DEBUG BANNER - REMOVE AFTER TESTING */}
-      <div style={{ 
-        padding: "8px 16px", 
-        background: "#fef3c7", 
-        fontSize: "10px", 
-        fontFamily: "monospace",
-        borderBottom: "1px solid #f59e0b"
-      }}>
-        {debugInfo}
-      </div>
-
-      {/* Prayer Content */}
+      {/* Content */}
       <div style={{ padding: "16px" }}>
         {/* Author */}
         <div
@@ -170,7 +169,11 @@ export function PrayerDetailView({
               width: "40px",
               height: "40px",
               borderRadius: "50%",
-              background: prayer.is_anonymous ? "#dbdbdb" : (prayer.profiles?.avatar_url ? "transparent" : "#dbdbdb"),
+              background: prayer.is_anonymous
+                ? "#dbdbdb"
+                : avatarUrl && !avatarError
+                  ? "transparent"
+                  : "#dbdbdb",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -181,18 +184,19 @@ export function PrayerDetailView({
           >
             {prayer.is_anonymous ? (
               "🙏"
-            ) : prayer.profiles?.avatar_url ? (
+            ) : avatarUrl && !avatarError ? (
               <img
-                src={prayer.profiles.avatar_url}
+                src={avatarUrl}
                 alt=""
                 style={{
                   width: "100%",
                   height: "100%",
                   objectFit: "cover",
                 }}
+                onError={() => setAvatarError(true)}
               />
             ) : (
-              "•"
+              <User size={20} color="#8e8e8e" />
             )}
           </div>
           <div>
@@ -219,7 +223,7 @@ export function PrayerDetailView({
           {prayer.title}
         </div>
 
-        {/* Content */}
+        {/* Details */}
         <div
           style={{
             fontSize: "16px",
@@ -254,7 +258,7 @@ export function PrayerDetailView({
           </div>
         )}
 
-        {/* Prayer Stats */}
+        {/* Prayer Impact */}
         <div
           style={{
             background: "#f8f9fa",
@@ -290,7 +294,7 @@ export function PrayerDetailView({
           </div>
         </div>
 
-        {/* Action Button - hide for user's own prayer requests */}
+        {/* Action Button – hidden for own prayers */}
         {!isOwnPrayer && (
           <button
             onClick={handleAction}
@@ -309,6 +313,19 @@ export function PrayerDetailView({
           >
             {getButtonText()}
           </button>
+        )}
+
+        {isOwnPrayer && (
+          <div
+            style={{
+              marginTop: "8px",
+              fontSize: "13px",
+              textAlign: "center",
+              color: "#8e8e8e",
+            }}
+          >
+            This is your own prayer request, so you can’t commit to pray for it.
+          </div>
         )}
       </div>
     </div>
