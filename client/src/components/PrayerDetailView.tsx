@@ -35,6 +35,20 @@ export function PrayerDetailView({
 }: PrayerDetailViewProps) {
   const [isProcessing, setIsProcessing] = useState(false);
 
+  // Check if this is user's own prayer request - hide "I will pray" button if so
+  const isOwnPrayer = user?.id && prayer?.requester === user.id;
+  
+  // Debug logging
+  console.log('🔍 PrayerDetailView ownership check:', {
+    userId: user?.id,
+    prayerRequester: prayer?.requester,
+    isOwnPrayer,
+    match: user?.id === prayer?.requester
+  });
+  
+  // TEMP DEBUG: Show on screen
+  const debugInfo = `User: ${user?.id?.substring(0,8) || 'none'}... | Requester: ${prayer?.requester?.substring(0,8) || 'none'}... | Match: ${isOwnPrayer}`;
+
   const handleAction = async () => {
     if (!user || isBanned) {
       console.log('[PrayerDetailView] Cannot commit: user=', !!user, 'isBanned=', isBanned);
@@ -128,6 +142,17 @@ export function PrayerDetailView({
         <div style={{ fontWeight: 600, fontSize: "16px", color: "#262626" }}>
           Prayer Details
         </div>
+      </div>
+
+      {/* TEMP DEBUG BANNER - REMOVE AFTER TESTING */}
+      <div style={{ 
+        padding: "8px 16px", 
+        background: "#fef3c7", 
+        fontSize: "10px", 
+        fontFamily: "monospace",
+        borderBottom: "1px solid #f59e0b"
+      }}>
+        {debugInfo}
       </div>
 
       {/* Prayer Content */}
@@ -265,24 +290,26 @@ export function PrayerDetailView({
           </div>
         </div>
 
-        {/* Action Button */}
-        <button
-          onClick={handleAction}
-          disabled={!user || isBanned || isProcessing}
-          style={{
-            width: "100%",
-            background: getButtonBackground(),
-            color: "#ffffff",
-            border: "none",
-            padding: "16px",
-            borderRadius: "12px",
-            fontSize: "16px",
-            fontWeight: 600,
-            cursor: !user || isBanned ? "not-allowed" : "pointer",
-          }}
-        >
-          {getButtonText()}
-        </button>
+        {/* Action Button - hide for user's own prayer requests */}
+        {!isOwnPrayer && (
+          <button
+            onClick={handleAction}
+            disabled={!user || isBanned || isProcessing}
+            style={{
+              width: "100%",
+              background: getButtonBackground(),
+              color: "#ffffff",
+              border: "none",
+              padding: "16px",
+              borderRadius: "12px",
+              fontSize: "16px",
+              fontWeight: 600,
+              cursor: !user || isBanned ? "not-allowed" : "pointer",
+            }}
+          >
+            {getButtonText()}
+          </button>
+        )}
       </div>
     </div>
   );
