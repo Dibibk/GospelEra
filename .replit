@@ -78,3 +78,5 @@ defaultBucketID = "replit-objstore-9897ff2b-bdd0-4272-8b10-7a12a19d20a3"
 
 [userenv.shared]
 VITE_API_URL = "https://gospel-era.replit.app"
+VITE_STRIPE_PUBLIC_KEY_LIVE = "pk_live_51SeRHM8ROWy0LkP4Si2ON9VqIBUc7DP4JAN7nja4R6ioOvbGZketKs5Vo8rEFt1aMegs6qjufNozojacYVg6sma700h6IBqYlz"
+STRIPE_SECRET_KEY_LIVE = "mk_1SeRHT8ROWy0LkP44Ws9oXTe"
