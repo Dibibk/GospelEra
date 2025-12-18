@@ -77,4 +77,5 @@ defaultBucketID = "replit-objstore-9897ff2b-bdd0-4272-8b10-7a12a19d20a3"
 [userenv]
 
 [userenv.shared]
-VITE_API_URL = "https://gospel-era.replit.app"
+VITE_API_URL = "https://gospel-era.com"
+VITE_API_URL_TEST = "https://gospel-era.replit.app"
