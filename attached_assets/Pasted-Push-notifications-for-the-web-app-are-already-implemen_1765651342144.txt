@@ -1,0 +1,169 @@
+Push notifications for the web app are already implemented and working. Now I want to implement native push notifications for the iOS and Android apps only.
+
+⚠️ Very important:
+Do NOT change anything else in the project except what is strictly required to add push for iOS/Android.
+Do not break or modify existing web push behavior.
+
+✅ Context you already know
+
+We already have:
+
+Web push support:
+
+Service worker with push handlers in public/sw.js
+
+client/src/lib/pushNotifications.ts for web push
+
+Backend push system:
+
+server/pushNotifications.ts with:
+
+sendPushNotification
+
+sendPushNotificationToUsers
+
+sendDailyVerseReminders
+
+updateDailyVersePreference
+
+getTodaysVerse
+
+API routes in server/routes.ts:
+
+GET /api/push/vapid-key
+
+POST /api/push/register
+
+POST /api/push/unregister
+
+GET /api/push/daily-verse
+
+PATCH /api/push/daily-verse
+
+POST /api/push/send-daily-verse
+
+push_tokens table already in Supabase
+
+Settings UI in client/src/components/SettingsMobile.tsx:
+
+Toggle for Push Notifications
+
+Toggle for Daily Verse Reminders
+
+The web app already uses this infrastructure. Now I want native push for iOS and Android builds (Capacitor / mobile app), wired into the same backend and toggles.
+
+🎯 Goal
+
+Add native mobile push notifications and daily verse reminders for:
+
+iOS app
+
+Android app
+
+while:
+
+reusing the existing backend routes and push_tokens table, and
+
+keeping the web implementation unchanged.
+
+✔️ What you should do (ONLY this):
+
+Detect and use the mobile (Capacitor) runtime:
+
+Identify how the project builds/runs the iOS and Android apps (Capacitor, React Native, etc.).
+
+In the mobile context, use the appropriate push plugin:
+
+For Capacitor, use the official PushNotifications plugin.
+
+Make sure the app only runs native push code on iOS/Android, not on the web.
+
+Implement native push registration on iOS and Android:
+
+Request notification permission using the platform’s push API (via Capacitor or the existing mobile stack).
+
+On successful registration, get the device push token:
+
+iOS → APNs token
+
+Android → FCM token
+
+Call the existing backend route to register the token:
+
+POST /api/push/register
+
+Reuse the same auth pattern we already use elsewhere (Supabase auth / JWT).
+
+Include enough info for the backend to distinguish native tokens vs web subscriptions (for example: platform field or type), but do not change the DB schema in a breaking way.
+
+If push_tokens already supports generic data (JSON) or type, use that.
+
+If a non-breaking addition is needed (like a platform column), only add that if it clearly doesn’t break existing web functionality.
+
+Implement native unsubscribe on iOS and Android:
+
+When the user disables push notifications in the mobile app (Settings toggle):
+
+Unregister the device token locally if required by the framework.
+
+Call POST /api/push/unregister with the same identifying info (user + token or subscription id).
+
+Wire into existing Settings UI (SettingsMobile.tsx or equivalent):
+
+Reuse the existing Push Notifications and Daily Verse Reminders toggles for mobile.
+
+On mobile:
+
+Push Notifications toggle:
+
+ON → ask permission, register native token, call /api/push/register.
+
+OFF → unregister native token, call /api/push/unregister.
+
+Daily Verse toggle:
+
+Uses existing GET /api/push/daily-verse and PATCH /api/push/daily-verse routes.
+
+Daily Verse can only be enabled if push is enabled, same logic as web.
+
+Do not change labels, layout, or styling beyond what’s strictly needed to handle mobile behavior.
+
+Notification handling on device:
+
+Add minimal code in the mobile runtime to:
+
+Handle incoming notifications (on tap open the app / navigate to the right screen if possible).
+
+Reuse the same payload structure as current web push (title, body, url or deep-link, etc.).
+
+Do not redesign navigation; just open the app and route sensibly if straightforward.
+
+Daily verse sending:
+
+Keep using the existing sendDailyVerseReminders() in server/pushNotifications.ts.
+
+Make sure it can send to both:
+
+web push subscriptions
+
+native iOS/Android device tokens
+
+Do not change how cron triggers /api/push/send-daily-verse; just ensure that function supports mobile tokens too.
+
+❌ Hard constraints — DO NOT:
+
+Do NOT change or remove any existing web push behavior.
+
+Do NOT modify or drop any existing tables/columns in Supabase.
+
+Only add non-breaking fields if absolutely required (and explain in the diff).
+
+Do NOT add new API routes; reuse the existing push endpoints.
+
+Do NOT refactor, rename, or reformat unrelated files or components.
+
+Do NOT change other app features (posts, comments, prayers, auth, etc.).
+
+✅ What I want back:
+
+A list of all files you changed (including any iOS/Android/Capacitor setup files).

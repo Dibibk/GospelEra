@@ -1,0 +1,109 @@
+Context
+
+App: “Gospel Era” mobile/web (React + Vite/Next + Tailwind + Supabase).
+
+Symptom: On certain pages, when a user types into an input, the first keystroke appears, then the field blurs/loses focus or the value resets on the next render.
+
+We already fixed this on the Home page; apply the same class of fix to all other pages with the issue.
+
+What usually causes this
+
+Unstable keys on inputs/components (e.g., key={value}, key={JSON.stringify(state)}, or a key that changes on each keystroke) causing unmount/remount.
+
+State re-initialization on every render or in a useEffect that depends on input state and resets it.
+
+Conditional rendering that toggles the input subtree on each keystroke (e.g., switching between two components based on length).
+
+onBlur validators or navigation that fires during composition/typing and steals focus.
+
+Controlled ↔ uncontrolled mismatch (value undefined/null toggling or missing value/onChange).
+
+Auto-focus loops (autoFocus + useEffect(ref.focus())) that re-run on every render.
+
+Using key on a parent list item that changes when the input value changes (maps, forms).
+
+Your tasks
+
+Scan the codebase for inputs (<input>, <textarea>, <select>, custom <TextField/>, etc.) and locate all instances where typing one character triggers blur/reset.
+
+Identify root cause(s) using the checklist above. Print a short reason per file/component.
+
+Patch the code with minimal changes to ensure inputs remain mounted and controlled while typing.
+
+Required fixes & patterns
+
+Replace unstable keys with stable ones:
+
+❌ key={value}, key={Date.now()}, key={${name}-${value.length}}
+
+✅ key={fieldName} or a stable ID (useId, database id, or index if truly static)
+
+Prevent state resets:
+
+If you see useEffect(() => setForm(defaultForm), [formField]), remove the dependency or rework so defaults are set only once (on mount) or when external props change, not on keystroke.
+
+Lift state correctly; do not recreate default objects inline inside render. Use useMemo for derived defaults if needed.
+
+Keep inputs controlled:
+
+Ensure each input has value={state[field] ?? ''} and onChange={(e) => setState(s => ({...s, [field]: e.target.value}))}
+
+Stop focus theft:
+
+Remove autoFocus from components that re-render often, or guard focus effects:
+
+const didFocus = useRef(false);
+useEffect(() => {
+  if (!didFocus.current) { ref.current?.focus(); didFocus.current = true; }
+}, []);
+
+
+Do not navigate, conditionally unmount, or show/hide the input on every keystroke.
+
+Validation:
+
+Move expensive validation to onBlur or debounced onChange, but never unmount/replace the input as feedback.
+
+Composition safety (IME/mobile):
+
+Prefer onChange; if using onInput, ensure it doesn’t trigger state that flips render branches.
+
+Make the following concrete changes where applicable
+
+In any .map() that renders form rows, ensure the key is stable (e.g., key={field.id || field.name}) and not derived from the current value.
+
+If you find autoFocus combined with changing state, remove autoFocus or gate it (see focus guard above).
+
+If a parent condition like {value ? <A/> : <B/>} wraps the input and flips on each keystroke, keep a single component and toggle styles, not the component.
+
+If a useEffect resets form state when a dependency changes during typing, limit it to run once:
+
+useEffect(() => { setForm(defaults); /* … */ }, []); // not [form]
+
+Acceptance criteria
+
+On all affected pages, users can type continuously without the input losing focus, clearing, or jumping.
+
+Caret position remains correct.
+
+No console warnings about controlled/uncontrolled inputs.
+
+No unstable key warnings.
+
+Deliverables
+
+A brief summary listing each file fixed and the exact cause found.
+
+Code diffs (unified format) for each file.
+
+A short test plan: which pages/inputs to manually test and steps to verify.
+
+Run app locally and confirm behavior before finalizing.
+
+Start by
+
+Grep/search for suspicious patterns:
+
+key={, autoFocus, useEffect( with setState of form defaults, onBlur validations that mutate navigation/state, maps rendering inputs.
+
+Then produce the patches.

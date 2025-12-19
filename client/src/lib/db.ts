@@ -2,13 +2,19 @@ import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
 import * as schema from '@shared/schema'
 
-if (!process.env.DATABASE_URL) {
-  throw new Error('DATABASE_URL is not set')
+// Use Replit's PostgreSQL database (PGHOST, PGDATABASE, etc.) or fallback to DATABASE_URL
+const connectionString = process.env.PGHOST 
+  ? `postgresql://${process.env.PGUSER}:${process.env.PGPASSWORD}@${process.env.PGHOST}:${process.env.PGPORT || 5432}/${process.env.PGDATABASE}`
+  : process.env.DATABASE_URL
+
+if (!connectionString) {
+  throw new Error('DATABASE_URL or PGHOST is not set')
 }
 
-// Configure postgres-js for Supabase with proper connection settings
-const connection = postgres(process.env.DATABASE_URL, {
-  ssl: 'require',
+// Configure postgres-js with SSL only for external databases
+const isReplitDb = process.env.PGHOST === 'helium'
+const connection = postgres(connectionString, {
+  ssl: isReplitDb ? false : 'require',
   connection: {
     application_name: 'gospel-era-web'
   },

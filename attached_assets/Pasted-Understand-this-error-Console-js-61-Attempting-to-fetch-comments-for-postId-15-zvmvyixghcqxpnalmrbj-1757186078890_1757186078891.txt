@@ -1,0 +1,109 @@
+Understand this error
+Console.js:61 Attempting to fetch comments for postId: 15
+zvmvyixghcqxpnalmrbj.supabase.co/rest/v1/comments?select=id%2Cpost_id%2Ccontent%2Ccreated_at%2Cauthor_id&post_id=eq.15&deleted=eq.false&hidden=eq.false&order=created_at.desc&limit=3:1  Failed to load resource: the server responded with a status of 400 ()Understand this error
+zvmvyixghcqxpnalmrbj.supabase.co/rest/v1/comments?select=id%2Cpost_id%2Ccontent%2Ccreated_at%2Cauthor_id&post_id=eq.15&deleted=eq.false&hidden=eq.false&order=created_at.desc&limit=3:1  Failed to load resource: the server responded with a status of 400 ()Understand this error
+Console.js:61 Supabase comments error: Object
+Mt.forEach.n.<computed> @ Console.js:61Understand this error
+Console.js:61 Comments function error: Error: Failed to fetch comments: column comments.deleted does not exist
+    at listComments (comments.ts:113:13)
+    at async loadComments (MobileApp.tsx:931:31)
+Mt.forEach.n.<computed> @ Console.js:61Understand this error
+Console.js:61 Failed to load comments: Error: Failed to fetch comments: column comments.deleted does not exist
+    at listComments (comments.ts:113:13)
+    at async loadComments (MobileApp.tsx:931:31)
+Mt.forEach.n.<computed> @ Console.js:61Understand this error
+Console.js:61 Attempting to fetch comments for postId: 13
+zvmvyixghcqxpnalmrbj.supabase.co/rest/v1/comments?select=id%2Cpost_id%2Ccontent%2Ccreated_at%2Cauthor_id&post_id=eq.13&deleted=eq.false&hidden=eq.false&order=created_at.desc&limit=3:1  Failed to load resource: the server responded with a status of 400 ()Understand this error
+zvmvyixghcqxpnalmrbj.supabase.co/rest/v1/comments?select=id%2Cpost_id%2Ccontent%2Ccreated_at%2Cauthor_id&post_id=eq.13&deleted=eq.false&hidden=eq.false&order=created_at.desc&limit=3:1  Failed to load resource: the server responded with a status of 400 ()Understand this error
+Console.js:61 Supabase comments error: Object
+Mt.forEach.n.<computed> @ Console.js:61Understand this error
+Console.js:61 Comments function error: Error: Failed to fetch comments: column comments.deleted does not exist
+    at listComments (comments.ts:113:13)
+    at async loadComments (MobileApp.tsx:931:31)
+Mt.forEach.n.<computed> @ Console.js:61Understand this error
+Console.js:61 Failed to load comments: Error: Failed to fetch comments: column comments.deleted does not exist
+    at listComments (comments.ts:113:13)
+    at async loadComments (MobileApp.tsx:931:31)
+Mt.forEach.n.<computed> @ Console.js:61Understand this error
+Console.js:61 Attempting to fetch comments for postId: 3
+injected.js:253  GET https://zvmvyixghcqxpnalmrbj.supabase.co/rest/v1/comments?select=id%2Cpost_id%2Ccontent%2Ccreated_at%2Cauthor_id&post_id=eq.3&deleted=eq.false&hidden=eq.false&order=created_at.desc&limit=3 400 (Bad Request)
+window.fetch @ Network.js:219
+apply @ injected.js:253
+(anonymous) @ @supabase_supabase-js.js?v=b63415bd:4235
+(anonymous) @ @supabase_supabase-js.js?v=b63415bd:4256
+fulfilled @ @supabase_supabase-js.js?v=b63415bd:4208
+Promise.then
+step @ @supabase_supabase-js.js?v=b63415bd:4221
+(anonymous) @ @supabase_supabase-js.js?v=b63415bd:4223
+__awaiter6 @ @supabase_supabase-js.js?v=b63415bd:4205
+(anonymous) @ @supabase_supabase-js.js?v=b63415bd:4246
+then @ @supabase_supabase-js.js?v=b63415bd:89Understand this error
+Console.js:61 Supabase comments error: {code: '42703', details: null, hint: 'Perhaps you meant to reference the column "comments.is_deleted".', message: 'column comments.deleted does not exist'}
+Mt.forEach.n.<computed> @ Console.js:61
+listComments @ comments.ts:112
+await in listComments
+loadComments @ MobileApp.tsx:931
+toggleCommentForm @ MobileApp.tsx:925
+onClick @ MobileApp.tsx:1862
+callCallback2 @ chunk-276SZO74.js?v=b63415bd:3674
+invokeGuardedCallbackDev @ chunk-276SZO74.js?v=b63415bd:3699
+invokeGuardedCallback @ chunk-276SZO74.js?v=b63415bd:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-276SZO74.js?v=b63415bd:3736
+executeDispatch @ chunk-276SZO74.js?v=b63415bd:7014
+processDispatchQueueItemsInOrder @ chunk-276SZO74.js?v=b63415bd:7034
+processDispatchQueue @ chunk-276SZO74.js?v=b63415bd:7043
+dispatchEventsForPlugins @ chunk-276SZO74.js?v=b63415bd:7051
+(anonymous) @ chunk-276SZO74.js?v=b63415bd:7174
+batchedUpdates$1 @ chunk-276SZO74.js?v=b63415bd:18913
+batchedUpdates @ chunk-276SZO74.js?v=b63415bd:3579
+dispatchEventForPluginEventSystem @ chunk-276SZO74.js?v=b63415bd:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-276SZO74.js?v=b63415bd:5478
+dispatchEvent @ chunk-276SZO74.js?v=b63415bd:5472
+dispatchDiscreteEvent @ chunk-276SZO74.js?v=b63415bd:5449Understand this error
+Console.js:61 Comments function error: Error: Failed to fetch comments: column comments.deleted does not exist
+    at listComments (comments.ts:113:13)
+    at async loadComments (MobileApp.tsx:931:31)
+Mt.forEach.n.<computed> @ Console.js:61
+listComments @ comments.ts:118
+await in listComments
+loadComments @ MobileApp.tsx:931
+toggleCommentForm @ MobileApp.tsx:925
+onClick @ MobileApp.tsx:1862
+callCallback2 @ chunk-276SZO74.js?v=b63415bd:3674
+invokeGuardedCallbackDev @ chunk-276SZO74.js?v=b63415bd:3699
+invokeGuardedCallback @ chunk-276SZO74.js?v=b63415bd:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-276SZO74.js?v=b63415bd:3736
+executeDispatch @ chunk-276SZO74.js?v=b63415bd:7014
+processDispatchQueueItemsInOrder @ chunk-276SZO74.js?v=b63415bd:7034
+processDispatchQueue @ chunk-276SZO74.js?v=b63415bd:7043
+dispatchEventsForPlugins @ chunk-276SZO74.js?v=b63415bd:7051
+(anonymous) @ chunk-276SZO74.js?v=b63415bd:7174
+batchedUpdates$1 @ chunk-276SZO74.js?v=b63415bd:18913
+batchedUpdates @ chunk-276SZO74.js?v=b63415bd:3579
+dispatchEventForPluginEventSystem @ chunk-276SZO74.js?v=b63415bd:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-276SZO74.js?v=b63415bd:5478
+dispatchEvent @ chunk-276SZO74.js?v=b63415bd:5472
+dispatchDiscreteEvent @ chunk-276SZO74.js?v=b63415bd:5449Understand this error
+Console.js:61 Failed to load comments: Error: Failed to fetch comments: column comments.deleted does not exist
+    at listComments (comments.ts:113:13)
+    at async loadComments (MobileApp.tsx:931:31)
+Mt.forEach.n.<computed> @ Console.js:61
+loadComments @ MobileApp.tsx:933
+await in loadComments
+toggleCommentForm @ MobileApp.tsx:925
+onClick @ MobileApp.tsx:1862
+callCallback2 @ chunk-276SZO74.js?v=b63415bd:3674
+invokeGuardedCallbackDev @ chunk-276SZO74.js?v=b63415bd:3699
+invokeGuardedCallback @ chunk-276SZO74.js?v=b63415bd:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-276SZO74.js?v=b63415bd:3736
+executeDispatch @ chunk-276SZO74.js?v=b63415bd:7014
+processDispatchQueueItemsInOrder @ chunk-276SZO74.js?v=b63415bd:7034
+processDispatchQueue @ chunk-276SZO74.js?v=b63415bd:7043
+dispatchEventsForPlugins @ chunk-276SZO74.js?v=b63415bd:7051
+(anonymous) @ chunk-276SZO74.js?v=b63415bd:7174
+batchedUpdates$1 @ chunk-276SZO74.js?v=b63415bd:18913
+batchedUpdates @ chunk-276SZO74.js?v=b63415bd:3579
+dispatchEventForPluginEventSystem @ chunk-276SZO74.js?v=b63415bd:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-276SZO74.js?v=b63415bd:5478
+dispatchEvent @ chunk-276SZO74.js?v=b63415bd:5472
+dispatchDiscreteEvent @ chunk-276SZO74.js?v=b63415bd:5449Understand this error

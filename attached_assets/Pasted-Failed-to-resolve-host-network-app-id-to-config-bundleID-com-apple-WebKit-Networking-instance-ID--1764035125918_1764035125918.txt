@@ -1,0 +1,68 @@
+Failed to resolve host network app id to config: bundleID: com.apple.WebKit.Networking instance ID: Optional([_EXExtensionInstanceIdentifier: 7CE4B210-2B96-4D4F-9449-5453B401E001])
+⚡️  Loading app at capacitor://localhost...
+WebContent process (0x116001900) took 1.606425 seconds to launch
+Networking process (0x116000800) took 1.709971 seconds to launch
+GPU process (0x1160033c0) took 1.495353 seconds to launch
+-[RTIInputSystemClient remoteTextInputSessionWithID:performInputOperation:]  Can only perform input operation for an active session. sessionID = 7DCC345E-0FDA-4D60-BA4A-677DEB1E92A4
+-[RTIInputSystemClient remoteTextInputSessionWithID:textSuggestionsChanged:]  Can only set suggestions for an active session. sessionID = 7DCC345E-0FDA-4D60-BA4A-677DEB1E92A4
+-[RTIInputSystemClient remoteTextInputSessionWithID:textSuggestionsChanged:]  Can only set suggestions for an active session. sessionID = 7DCC345E-0FDA-4D60-BA4A-677DEB1E92A4
+Result accumulator timeout: 0.250000, exceeded.
+-[RTIInputSystemClient remoteTextInputSessionWithID:textSuggestionsChanged:]  Can only set suggestions for an active session. sessionID = 7DCC345E-0FDA-4D60-BA4A-677DEB1E92A4
+⚡️  WebView loaded
+⚡️  [log] - [SW] Service worker registration skipped - development mode or not supported
+⚡️  [log] - 🔍 useIsNativeApp returning: {"isNative":false,"isLoading":true}
+⚡️  [log] - 🔍 AnimatedRoutes Debug: {"isNative":false,"isLoading":true,"windowWidth":402,"mediaQueryMatches":true,"isMobile":true,"willShowMobile":"YES - MobileApp"}
+⚡️  [log] - 🔍 Still loading platform detection...
+⚡️  [log] - 🔍 Capacitor.getPlatform(): ios
+⚡️  [log] - 🔍 isNativePlatform: true
+⚡️  [log] - 🔍 useIsNativeApp returning: {"isNative":true,"isLoading":false}
+⚡️  [log] - 🔍 AnimatedRoutes Debug: {"isNative":true,"isLoading":false,"windowWidth":402,"mediaQueryMatches":true,"isMobile":true,"willShowMobile":"YES - MobileApp"}
+⚡️  [log] - 🔍 Posts feed render check: {"loading":true,"postsLength":0,"postsArray":[]}
+⚡️  [log] - 🔍 MobileApp fetchData effect {"hasUser":true,"postsLength":0}
+⚡️  [log] - 🔍 Calling fetchData now...
+⚡️  [log] - 🔍 fetchData: calling listPosts...
+⚡️  [log] - 🌐 [posts.ts] Native app - using API URL: https://gospel-era.replit.app
+⚡️  [log] - 🔗 [posts.ts] Building URL: https://gospel-era.replit.app/api/posts?limit=20
+⚡️  [log] - 📡 [listPosts] Fetching from: https://gospel-era.replit.app/api/posts?limit=20
+⚡️  [log] - 🔍 fetchData: calling listPosts...
+⚡️  [log] - 🌐 [posts.ts] Native app - using API URL: https://gospel-era.replit.app
+⚡️  [log] - 🔗 [posts.ts] Building URL: https://gospel-era.replit.app/api/posts?limit=20
+⚡️  [log] - 📡 [listPosts] Fetching from: https://gospel-era.replit.app/api/posts?limit=20
+⚡️  [error] - Error checking media permission: {"line":379,"column":3967,"sourceURL":"capacitor://localhost/assets/index-CUHwayCl.js"}
+⚡️  [log] - 🔍 Posts feed render check: {"loading":true,"postsLength":0,"postsArray":[]}
+⚡️  [log] - 🔍 MobileApp fetchData effect {"hasUser":true,"postsLength":0}
+⚡️  [log] - 🔍 Calling fetchData now...
+⚡️  [log] - 🔍 fetchData: calling listPosts...
+⚡️  [log] - 🌐 [posts.ts] Native app - using API URL: https://gospel-era.replit.app
+⚡️  [log] - 🔗 [posts.ts] Building URL: https://gospel-era.replit.app/api/posts?limit=20
+⚡️  [log] - 📡 [listPosts] Fetching from: https://gospel-era.replit.app/api/posts?limit=20
+⚡️  [log] - 🔍 Posts feed render check: {"loading":true,"postsLength":0,"postsArray":[]}
+⚡️  [error] - Error checking media permission: {"line":379,"column":3967,"sourceURL":"capacitor://localhost/assets/index-CUHwayCl.js"}
+⚡️  [log] - 🔍 Posts feed render check: {"loading":true,"postsLength":0,"postsArray":[]}
+⚡️  [log] - 🌐 Native app detected - using API URL: https://gospel-era.replit.app
+⚡️  [log] - 🔍 Posts feed render check: {"loading":true,"postsLength":0,"postsArray":[]}
+⚡️  [log] - 🔍 Posts feed render check: {"loading":true,"postsLength":0,"postsArray":[]}
+⚡️  [error] - 📡 [listPosts] Exception: {}
+⚡️  [error] - 📡 [listPosts] Error message: Load failed
+⚡️  [error] - 📡 [listPosts] Error stack: undefined
+⚡️  [log] - 🔍 fetchData: listPosts result {"hasData":false}
+⚡️  [log] - 🔍 Posts feed render check: {"loading":true,"postsLength":0,"postsArray":[]}
+⚡️  [error] - 📡 [listPosts] Exception: {}
+⚡️  [error] - 📡 [listPosts] Error message: Load failed
+⚡️  [error] - 📡 [listPosts] Error stack: undefined
+⚡️  [log] - 🔍 fetchData: listPosts result {"hasData":false}
+⚡️  [log] - 🔍 Posts feed render check: {"loading":true,"postsLength":0,"postsArray":[]}
+⚡️  [log] - 🔍 Posts feed render check: {"loading":true,"postsLength":0,"postsArray":[]}
+⚡️  [error] - 📡 [listPosts] Exception: {}
+⚡️  [error] - 📡 [listPosts] Error message: Load failed
+⚡️  [error] - 📡 [listPosts] Error stack: undefined
+⚡️  [log] - 🔍 fetchData: listPosts result {"hasData":false}
+⚡️  [log] - 🔍 Posts feed render check: {"loading":true,"postsLength":0,"postsArray":[]}
+⚡️  [log] - 🔍 Posts feed render check: {"loading":true,"postsLength":0,"postsArray":[]}
+⚡️  [log] - 🔍 Posts feed render check: {"loading":true,"postsLength":0,"postsArray":[]}
+⚡️  [log] - 🔍 Posts feed render check: {"loading":true,"postsLength":0,"postsArray":[]}
+⚡️  [log] - 🔍 fetchData completed
+⚡️  [log] - 🔍 Setting loading to FALSE
+⚡️  [log] - 🔍 Posts feed render check: {"loading":false,"postsLength":0,"postsArray":[]}
+⚡️  [log] - 🔍 fetchData completed
+⚡️  [log] - 🔍 Posts feed render check: {"loading":false,"postsLength":0,"postsArray":[]}

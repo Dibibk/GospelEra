@@ -29,11 +29,11 @@ export async function getTopPrayerWarriors({ timeframe = 'week', limit = 10 } = 
       return { data: [], error: null }
     }
 
-    // Get warrior profile information
+    // Get warrior profile information including private_profile setting
     const warriorIds = leaderboardData.map(row => row.warrior)
     const { data: profiles, error: profilesError } = await supabase
       .from('profiles')
-      .select('id, display_name, avatar_url')
+      .select('id, display_name, avatar_url, private_profile')
       .in('id', warriorIds)
 
     if (profilesError) {
@@ -51,8 +51,8 @@ export async function getTopPrayerWarriors({ timeframe = 'week', limit = 10 } = 
     const enrichedData = leaderboardData.map((row, index) => {
       const profile = profileMap[row.warrior]
       
-      // Show "Anonymous" for missing display names or when user prefers anonymity
-      const isPrivate = !profile?.display_name
+      // Show "Anonymous" for missing display names OR when user has private_profile enabled
+      const isPrivate = !profile?.display_name || profile?.private_profile === true
       
       return {
         ...row,

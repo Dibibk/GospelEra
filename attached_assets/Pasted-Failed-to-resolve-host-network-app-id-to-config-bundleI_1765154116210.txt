@@ -1,0 +1,70 @@
+Failed to resolve host network app id to config: bundleID: com.apple.WebKit.Networking instance ID: Optional([_EXExtensionInstanceIdentifier: 9A31FDF4-EC31-4EE2-AD6F-C7FCD76D5344])
+⚡️  Loading app at capacitor://localhost...
+-[RTIInputSystemClient remoteTextInputSessionWithID:performInputOperation:]  Can only perform input operation for an active session. sessionID = 4B7146EA-7963-47D7-9605-D9D39DB981EB
+-[RTIInputSystemClient remoteTextInputSessionWithID:textSuggestionsChanged:]  Can only set suggestions for an active session. sessionID = 4B7146EA-7963-47D7-9605-D9D39DB981EB
+-[RTIInputSystemClient remoteTextInputSessionWithID:performInputOperation:]  Can only perform input operation for an active session. sessionID = 4B7146EA-7963-47D7-9605-D9D39DB981EB
+-[RTIInputSystemClient remoteTextInputSessionWithID:textSuggestionsChanged:]  Can only set suggestions for an active session. sessionID = 4B7146EA-7963-47D7-9605-D9D39DB981EB
+-[RTIInputSystemClient remoteTextInputSessionWithID:textSuggestionsChanged:]  Can only set suggestions for an active session. sessionID = 4B7146EA-7963-47D7-9605-D9D39DB981EB
+Result accumulator timeout: 0.250000, exceeded.
+Result accumulator timeout: 0.250000, exceeded.
+-[RTIInputSystemClient remoteTextInputSessionWithID:textSuggestionsChanged:]  Can only set suggestions for an active session. sessionID = 4B7146EA-7963-47D7-9605-D9D39DB981EB
+⚡️  WebView loaded
+⚡️  [log] - [SW] Service worker registration skipped - development mode or not supported
+⚡️  [log] - 🔍 useIsNativeApp returning: {"isNative":false,"isLoading":true}
+⚡️  [log] - 🔍 AnimatedRoutes Debug: {"isNative":false,"isLoading":true,"windowWidth":402,"mediaQueryMatches":true,"isMobile":true,"willShowMobile":"YES - MobileApp"}
+⚡️  [log] - 🔍 Still loading platform detection...
+⚡️  [log] - 🔍 Capacitor.getPlatform(): ios
+⚡️  [log] - 🔍 isNativePlatform: true
+⚡️  [log] - 🔍 useIsNativeApp returning: {"isNative":true,"isLoading":false}
+⚡️  [log] - 🔍 AnimatedRoutes Debug: {"isNative":true,"isLoading":false,"windowWidth":402,"mediaQueryMatches":true,"isMobile":true,"willShowMobile":"YES - MobileApp"}
+⚡️  [log] - 🔍 Posts feed render check: {"loading":true,"postsLength":0,"postsArray":[]}
+⚡️  [log] - 🔍 MobileApp fetchData effect {"hasUser":true,"postsLength":0}
+⚡️  [log] - 🔍 Calling fetchData now...
+⚡️  [log] - 🔍 fetchData: calling fetchFeed (optimized)...
+⚡️  [log] - 🔍 fetchData: calling fetchFeed (optimized)...
+⚡️  [log] - 🔍 Posts feed render check: {"loading":true,"postsLength":0,"postsArray":[]}
+⚡️  [log] - 🔍 MobileApp fetchData effect {"hasUser":true,"postsLength":0}
+⚡️  [log] - 🔍 Calling fetchData now...
+⚡️  [log] - 🔍 fetchData: calling fetchFeed (optimized)...
+⚡️  [log] - 🔍 Posts feed render check: {"loading":true,"postsLength":0,"postsArray":[]}
+⚡️  [log] - 🌐 [posts.ts] Native app - using API URL: https://gospel-era.replit.app
+⚡️  [log] - 🔗 [posts.ts] Building URL: https://gospel-era.replit.app/api/feed?limit=20
+⚡️  [log] - 📡 [fetchFeed] Fetching from: https://gospel-era.replit.app/api/feed?limit=20
+⚡️  [log] - 🌐 [posts.ts] Native app - using API URL: https://gospel-era.replit.app
+⚡️  [log] - 🔗 [posts.ts] Building URL: https://gospel-era.replit.app/api/feed?limit=20
+⚡️  [log] - 📡 [fetchFeed] Fetching from: https://gospel-era.replit.app/api/feed?limit=20
+⚡️  [log] - 🌐 Native app detected - using API URL: https://gospel-era.replit.app
+⚡️  [log] - 🌐 [posts.ts] Native app - using API URL: https://gospel-era.replit.app
+⚡️  [log] - 🔗 [posts.ts] Building URL: https://gospel-era.replit.app/api/feed?limit=20
+⚡️  [log] - 📡 [fetchFeed] Fetching from: https://gospel-era.replit.app/api/feed?limit=20
+⚡️  [error] - 📡 [fetchFeed] Exception: {"line":363,"column":1930,"sourceURL":"capacitor://localhost/assets/index-DYfLZ6t8.js"}
+⚡️  [log] - 🔍 fetchData: fetchFeed result {"hasData":false}
+⚡️  [error] - 📡 [fetchFeed] Exception: {"line":363,"column":1930,"sourceURL":"capacitor://localhost/assets/index-DYfLZ6t8.js"}
+⚡️  [log] - 🔍 fetchData: fetchFeed result {"hasData":false}
+⚡️  [error] - Error fetching notification count: {}
+⚡️  [error] - Error fetching notification count: {}
+⚡️  [error] - 📡 [fetchFeed] Exception: {"line":363,"column":1930,"sourceURL":"capacitor://localhost/assets/index-DYfLZ6t8.js"}
+⚡️  [log] - 🔍 fetchData: fetchFeed result {"hasData":false}
+⚡️  [log] - 🔍 Posts feed render check: {"loading":true,"postsLength":0,"postsArray":[]}
+⚡️  [log] - 🔍 Posts feed render check: {"loading":true,"postsLength":0,"postsArray":[]}
+⚡️  [log] - 🔍 Posts feed render check: {"loading":true,"postsLength":0,"postsArray":[]}
+⚡️  [log] - 🔍 Posts feed render check: {"loading":true,"postsLength":0,"postsArray":[]}
+⚡️  [log] - 🔍 Posts feed render check: {"loading":true,"postsLength":0,"postsArray":[]}
+⚡️  [log] - 🔍 Posts feed render check: {"loading":true,"postsLength":0,"postsArray":[]}
+⚡️  [log] - 🔍 Posts feed render check: {"loading":true,"postsLength":0,"postsArray":[]}
+⚡️  [log] - 🔍 Posts feed render check: {"loading":true,"postsLength":0,"postsArray":[]}
+⚡️  [log] - 🔍 Posts feed render check: {"loading":true,"postsLength":0,"postsArray":[]}
+⚡️  [log] - 🔍 fetchData completed
+⚡️  [log] - 🔍 Posts feed render check: {"loading":false,"postsLength":0,"postsArray":[]}
+⚡️  [log] - 🔍 fetchData completed
+⚡️  [log] - 🔍 Setting loading to FALSE
+⚡️  [log] - 🔍 Posts feed render check: {"loading":false,"postsLength":0,"postsArray":[]}
+-[RTIInputSystemClient remoteTextInputSessionWithID:textSuggestionsChanged:]  Can only set suggestions for an active session. sessionID = 4B7146EA-7963-47D7-9605-D9D39DB981EB
+⚡️  [error] - Error fetching notification count: {"line":628,"column":99923,"sourceURL":"capacitor://localhost/assets/index-DYfLZ6t8.js"}
+⚡️  [error] - Error fetching notification count: {"line":628,"column":99923,"sourceURL":"capacitor://localhost/assets/index-DYfLZ6t8.js"}
+⚡️  [error] - Error fetching notification count: {}
+⚡️  [error] - Error fetching notification count: {"line":628,"column":99923,"sourceURL":"capacitor://localhost/assets/index-DYfLZ6t8.js"}
+⚡️  [error] - Error fetching notification count: {}
+⚡️  [error] - Error fetching notification count: {"line":628,"column":99923,"sourceURL":"capacitor://localhost/assets/index-DYfLZ6t8.js"}
+0x116000800 - NetworkProcessProxy::didClose (Network Process 0 crash)
+CoreSimulator 1010.15 - Device: iPhone 16 Pro (684532DA-F7C7-465C-98A4-4E75CFC9547F) - Runtime: iOS 18.6 (22G86) - DeviceType: iPhone 16 Pro

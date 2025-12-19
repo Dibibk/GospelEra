@@ -2,114 +2,117 @@
 
 **Project Name: Gospel Era**
 
-This is a full-stack web application built with React (frontend) and Express.js (backend), utilizing modern TypeScript development practices. The application is a social platform for Gospel Community engagement, featuring Instagram-like media upload functionality, user authentication, and community interaction features. It includes a clean, responsive UI built with shadcn/ui components and Tailwind CSS. The backend uses PostgreSQL with Drizzle ORM for database operations and Replit Object Storage for media files.
+Gospel Era is a full-stack web application designed as a social platform for the Gospel Community. It features Instagram-like media uploads, user authentication, and community interaction. Built with React (frontend) and Express.js (backend), it leverages TypeScript, shadcn/ui, Tailwind CSS, PostgreSQL with Drizzle ORM, and Replit Object Storage (with AWS S3 for production). The platform emphasizes a faith-centered UI, comprehensive prayer request system with AI-powered spam detection, real-time leaderboards, and robust content moderation to ensure a Christ-centered environment. It is designed to be production-ready with PWA capabilities, extensive testing, and strong security measures.
 
-## Completed Features
+# Recent Changes
 
-**Core Platform Features:**
-✅ User authentication with Supabase
-✅ Post creation with Instagram-style media upload (images & videos)
-✅ Comment system with soft-delete functionality
-✅ Report system for posts and comments
-✅ User engagement (Amen reactions, bookmarks)
-✅ Search with debouncing, pagination, and tag filtering
-✅ Profile management with avatar upload
-✅ Settings page (dedicated profile management)
+**December 13, 2025 - Reports API Fix (RLS Bypass)**
+- Fixed reports not appearing in admin view: Created backend API endpoints to bypass Supabase RLS policies
+- Added POST `/api/reports` endpoint using supabaseAdmin for creating reports
+- Added GET `/api/admin/reports` endpoint using supabaseAdmin for fetching reports with full details
+- Added PATCH `/api/admin/reports/:id` endpoint using supabaseAdmin for updating report status
+- Updated client/src/lib/reports.ts: `createReport()` now calls backend API instead of direct Supabase
+- Updated client/src/lib/admin.js: `listReports()` and `updateReportStatus()` now use backend API
+- Auto-hide feature for "Not Christ-Centered" reports now works via backend supabaseAdmin
+- Fix pattern: Same as comments, media-permission, and other endpoints that needed RLS bypass
 
-**Polish Features (Completed August 2025):**
-✅ Comments + Reports polish: Soft-delete system with RPC security, modal interfaces, admin stub implemented
-✅ Search polish: 400ms debouncing, cursor-based pagination (20 items/page), popular topics filtering with toggle functionality
-✅ Profiles polish: Separate Settings page for profile management, view-only Profile page, avatar upload with ObjectUploader component
-✅ Admin flagged indicators: Red "Flagged" badges on posts/comments with open reports (admin-only view)
-✅ Role-based restrictions: useRole() hook with banned user restrictions - non-blocking banner, disabled forms with tooltips
+**December 12, 2025 - Media Permission & Guidelines Fixes**
+- Fixed media permission check: `/api/media-permission/:userId` now uses `supabaseAdmin` to bypass RLS and correctly read `media_enabled` and `role` from Supabase profiles table
+- IMPORTANT: Media permissions (media_enabled, role) are stored in Supabase profiles table - always use supabaseAdmin for reading these fields
+- Admin users always have media permission (role === 'admin' || media_enabled === true)
+- Client-side admin check in MobileApp.tsx `checkUserMediaPermission()` also short-circuits for admins
+- Added community guidelines acceptance modal: Users must scroll through and accept guidelines before using the app
+- Added `accepted_guidelines` column to profiles table
+- Created `/api/guidelines/accept` and `/api/guidelines/status` endpoints
+- GuidelinesAcceptanceModal component blocks app access until accepted
 
-**Banned User Features:**
-✅ Non-blocking orange banner: "Account limited. You can read but cannot post or comment."
-✅ Disabled post creation form (title, content, tags, media upload) with tooltips
-✅ Disabled comment forms with tooltips showing restriction message
-✅ All read actions remain fully functional (viewing posts, comments, profiles)
+**December 12, 2025 - Supabase-Only Database Migration**
+- MAJOR ARCHITECTURE CHANGE: Migrated from dual-database (Supabase Auth + Neon/Replit DB) to unified Supabase-only architecture
+- Created all 13 data tables in Supabase: profiles, posts, comments, bookmarks, reactions, reports, prayer_requests, prayer_commitments, prayer_activity, donations, media_requests, notifications, push_tokens
+- Created SQL migration file: docs/db_migration_complete.sql with all tables, indexes, RLS policies, and views
+- Created data migration script: scripts/migrate-to-supabase.ts to copy existing data from Replit/Neon to Supabase
+- Updated server/routes.ts: Core routes (feed, posts, comments, profiles, notifications, prayers) now use Supabase client instead of Drizzle
+- Created server/supabaseClient.ts: Helper module for creating authenticated server-side Supabase clients
+- Benefits: Single source of truth for all data, simplified architecture, consistent RLS policies, better native app support
+- Note: Some secondary routes (donations, push tokens, bookmarks) still use Drizzle and may need future migration
+- Fixed Supabase foreign key join issues: Replaced `profiles!prayer_requests_requester_fkey(...)` patterns with separate queries in AdminReports.tsx, AdminReportsMobile.tsx, and PrayerDetail.tsx
+- Query pattern fix: First fetch main data, collect profile IDs, fetch profiles separately, then merge - avoids "Could not find relationship in schema cache" errors
 
-**PWA Features (Added August 2025):**
-✅ Web app manifest with proper theme colors and icons
-✅ Generated app icon (192px, 512px) with Gospel Era branding
-✅ iOS meta tags for native app-like behavior
-✅ Apple touch icon and mobile web app configuration
-✅ SEO meta tags including Open Graph and Twitter cards
-✅ Proper PWA installability with standalone display mode
-✅ Service Worker with smart caching strategies:
-  - Static files (JS/CSS/images): Stale-While-Revalidate
-  - HTML navigation: Network-First with offline.html fallback
-  - Cache versioning (app-v1) with automatic cleanup of old caches
-  - Production-only registration for optimal development experience
+**December 11, 2025 - Notification Navigation & Account Deletion**
+- Fixed comment notification clicks: Now navigates to the correct post and opens its comments section
+- Added `pendingPostNavigation` state to scroll to post after closing notifications view
+- Each post now has an id attribute (`post-{id}`) for smooth scrolling navigation
+- Account deletion now fully removes user from both Neon database AND Supabase Auth (using service role key)
+- Created server/supabaseAdmin.ts with admin client for privileged Supabase operations
 
-**Prayer Request System (Completed August 2025):**
-✅ Comprehensive prayer API library with 8 functions (TypeScript)
-✅ Three-table database schema with RLS policies
-✅ Complete routing system with 4 protected routes:
-  - /prayer/new - Prayer request creation form
-  - /prayer/browse - Browse and search open requests
-  - /prayer/:id - Detailed view with commitment tracking
-  - /prayer/my - Personal dashboard for requests and commitments
-✅ Prayer commitment workflow (commit → confirm prayed)
-✅ Anonymous requests and tagging system
-✅ Role-based restrictions for banned users
-✅ Removed old /prayer-requests page, updated navigation
-✅ Prayer leaderboard system with weekly/monthly/all-time rankings
-✅ Streak tracking with animated counters and real-time updates
-✅ Supabase realtime subscriptions for live leaderboard updates
+**December 11, 2025 - Settings Page Fixes (Native App Compatibility)**
+- Fixed push notification and daily verse toggles to use proper API URLs (getApiBaseUrl) for native apps
+- Added native app detection: Push notifications and daily verse reminders are not supported in iOS/Android native apps (Web Push limitation)
+- Settings toggles now show informative alerts when users try to enable push features on native apps
+- Fixed account deletion to use proper API URL with getApiBaseUrl() for native app compatibility
+- Note: Web Push (Service Workers) is not available in Capacitor/native apps - users should use the web version for push notification features
 
-**Theme System (Added August 2025):**
-✅ Simple theme switching with 2 clean themes:
-  - Light: Clean and bright default theme
-  - Dark: Easy on the eyes night mode
-✅ ThemeProvider with React Context API
-✅ Theme switcher in user dropdown menu with toggle functionality
-✅ CSS variables system for seamless theme switching
-✅ LocalStorage persistence for user preferences
-✅ Smooth transitions and responsive design
+**December 11, 2025 - Comments & Profile API (Dual-Database Architecture Fix)**
+- Unified comments API: Created GET `/api/comments` and DELETE `/api/comments/:id` endpoints (server/routes.ts)
+- Comments now read/write to Neon database via Drizzle instead of direct Supabase queries (fixes iOS native app issues)
+- Updated client/src/lib/comments.ts: listComments and softDeleteComment now use API endpoints
+- Profile upsert fix: PATCH `/api/profile` now creates profile if not exists (fixes profile save failing for new users)
+- Root cause: Comments/profiles stored in Neon, but client was querying non-existent Supabase tables
 
-**Faith-Centered UI Design (Added August 2025):**
-✅ Professional faith-centered color palette: Royal purple (#5A31F4), soft gold (#FFD97D), warm beige to ivory gradient background
-✅ Enhanced typography: Playfair Display serif for headings, Inter sans-serif for body text
-✅ Spiritual elements: Daily Scripture card with Bible watermark, glowing cross icon in navigation
-✅ Modern animations: Fade-in cards, glow effects, subtle light rays in header
-✅ Field icons: 📝 for Post Title, ❤️ equivalent for message fields
-✅ Faith-inspired gradient backgrounds and rounded card styling with soft shadows
-✅ Inspiring footer with scripture quote and blessing message
-✅ Professional, modern design clearly gospel-inspired while maintaining clean aesthetics
+**December 11, 2025 - Prayer Requests Backend API (Dual-Database Architecture Fix)**
+- Identified dual-database architecture: Supabase holds prayer_* tables, Neon/Replit holds posts tables
+- Created `/api/prayer-requests` backend endpoint (server/routes.ts) to proxy prayer requests from Supabase
+- Fixed iOS native app RLS issue: Backend API uses user's JWT token to query Supabase, inheriting their permissions
+- Backend creates server-side Supabase client with user's Authorization header for authenticated queries
+- Prayer requests now load correctly on both web and native apps via unified API endpoint
+- Updated prayer.ts to use API endpoint exclusively instead of direct Supabase queries (works across all platforms)
 
-**Faith Alignment Moderation System (Completed August 2025):**
-✅ Comprehensive content moderation system to enforce Christ-centered community standards
-✅ Configurable blocked terms list preventing non-Christian religious content (other deities, occult practices)
-✅ Christian terms detection that boosts content confidence for Jesus/Christ/God references
-✅ Contextual allowances for educational/testimonial content about faith transitions
-✅ Client-side draft preservation - rejected content maintains user input for revision
-✅ Inline error messages with Christ-centered guidance and community purpose explanation
-✅ Integration across all content creation: posts, comments, and prayer requests
-✅ Real-time moderation with immediate feedback before submission
-✅ Professional messaging that welcomes all while maintaining Christian focus
+**December 8, 2025 - Real-Time Updates, Push Notifications & Daily Verse Reminders**
+- Implemented Supabase Realtime for live updates across the app (client/src/lib/realtime.ts)
+- Real-time feed updates: new posts appear automatically without refresh
+- Real-time notifications: new notifications update badge count instantly
+- Real-time comments: comment counts and lists update live
+- Added push notification system using web-push with VAPID authentication
+- Created push_tokens table for storing device tokens (shared/schema.ts)
+- Backend push notification sending integrated with comments and notifications (server/pushNotifications.ts)
+- Service worker updated with push event handlers (public/sw.js)
+- Settings toggle connected to subscribe/unsubscribe from push notifications
+- Daily verse reminder system: users can opt-in to receive daily Bible verse push notifications
+- Added daily_verse_enabled column to push_tokens table
+- Created API endpoints: GET/PATCH /api/push/daily-verse (user preference), POST /api/push/send-daily-verse (cron trigger)
+- Settings toggle for daily verse reminders connected to API
 
-**Production-Ready Cloud Storage (Completed August 2025):**
-✅ AWS S3 integration with hybrid storage system for production scalability
-✅ Automatic fallback to Replit Object Storage for development environments
-✅ Seamless storage service switching based on environment configuration
-✅ Production-grade media handling for images, videos, and user avatars
-✅ Cost-effective cloud storage solution with industry-standard security
-✅ Comprehensive S3 setup documentation with cost estimates and migration guide
-✅ Storage status API endpoint for monitoring and debugging
-✅ Ready for production deployment with enterprise-grade file storage
+**December 7, 2025 - Enhanced Signup Form**
+- Added first_name and last_name columns to profiles table (shared/schema.ts)
+- Updated signup form in LoginMobile.tsx to require: First Name, Last Name, Display Name, and Email
+- Modified useAuth.tsx signUp function to accept and store profile data during registration
+- Added getDisplayName helper function in MobileApp.tsx for consistent name display with email username fallback
+- All name fields are mandatory during signup with validation
 
-**Testing Infrastructure (Completed August 2025):**
-✅ Complete vitest testing framework setup with jsdom environment
-✅ Mock Service Worker (MSW) integration for API testing
-✅ Comprehensive Supabase authentication mocking system
-✅ Component testing infrastructure with React Testing Library
-✅ Login component test suite (5 tests passing) - form rendering, validation, authentication flow, error handling
-✅ ProtectedRoute component test suite (2 tests passing) - loading states, session management
-✅ Mock AuthProvider for isolated component testing
-✅ Test setup with proper environment configuration and cleanup
+**December 7, 2025 - In-App Notification System**
+- Added notifications table to database schema (shared/schema.ts) with event_type, actor_id, recipient_id, post_id, etc.
+- Created backend API routes: GET /api/notifications, GET /api/notifications/unread-count, PATCH /api/notifications/:id/read, POST /api/notifications/mark-all-read, POST /api/notifications
+- Integrated notification creation when users comment on posts (server/routes.ts)
+- Added notification creation for prayer commitments and prayer confirmations (client/src/lib/prayer.ts)
+- Added notification bell icon with unread count badge in mobile header (MobileApp.tsx)
+- Built NotificationsMobile component for viewing and managing notifications
+- Fixed unread count calculation to use proper SQL COUNT aggregate instead of row length
+- Fixed markAsRead to calculate unread count from updated state (not stale state)
+- Exported getApiBaseUrl from posts.ts for reuse in prayer.ts
 
-The web application is now feature-complete with PWA capabilities, customizable themes, professional faith-centered UI design, comprehensive prayer system with real-time leaderboards and streak tracking, faith alignment content moderation, production-ready cloud storage, robust testing infrastructure, and fully prepared for live deployment.
+**November 25, 2025 - Performance Optimization & Scalability**
+- Created optimized `/api/feed` endpoint (server/routes.ts) that combines posts + author profiles + engagement counts in ONE query instead of 3 sequential API calls
+- Added database indexes on posts table (hidden, created_at DESC) for fast pagination with thousands of posts
+- Implemented proper keyset pagination using (created_at, id) to avoid duplicates/skips
+- Created `fetchFeed()` function in client/src/lib/posts.ts for calling optimized endpoint
+- Performance improvement: Reduced initial feed load from 3 sequential API calls to 1 batched query
+- Scalability: Instagram-style keyset pagination supports millions of posts without performance degradation
+
+**November 25, 2025 - iOS Capacitor App Fixes**
+- Added CORS middleware to backend (server/index.ts) to allow requests from Capacitor apps (capacitor://localhost, ionic://localhost)
+- Fixed YouTube embeds in iOS app: Replaced iframe-based embeds with EmbedCard component that shows clickable thumbnails for native apps (opens in YouTube app/Safari) and iframe embeds for web
+- Fixed status bar overlap issue: Moved safe-area-inset padding from container to sticky header (paddingTop and minHeight) to prevent content from scrolling under iOS status bar
+- Root cause: iOS WebView blocks YouTube iframe embeds (Error 153), and sticky positioning requires safe-area padding on the sticky element itself, not its parent container
 
 # User Preferences
 
@@ -118,54 +121,59 @@ Preferred communication style: Simple, everyday language.
 # System Architecture
 
 ## Frontend Architecture
-- **Framework**: React 18 with TypeScript, using Vite as the build tool and development server
-- **UI Library**: shadcn/ui components built on top of Radix UI primitives for accessible, customizable components
-- **Styling**: Tailwind CSS with a comprehensive design system including CSS variables for theming
-- **State Management**: TanStack React Query for server state management and caching
-- **Routing**: React Router for client-side navigation with protected routes
-- **Authentication**: Supabase Auth integration for user authentication flows
-- **Form Handling**: React Hook Form with Zod validation through @hookform/resolvers
+- **Framework**: React 18 with TypeScript, using Vite.
+- **UI/UX**: shadcn/ui components (Radix UI) and Tailwind CSS with a faith-centered color palette, enhanced typography (Playfair Display, Inter), spiritual elements (Bible watermark, glowing cross icon), and modern animations.
+- **State Management**: TanStack React Query for server state.
+- **Routing**: React Router with protected routes.
+- **Authentication**: Supabase Auth integration.
+- **Form Handling**: React Hook Form with Zod validation.
+- **PWA**: Web app manifest, SEO meta tags, and Service Worker with smart caching strategies.
+- **Theming**: Simple theme switching (Light/Dark) with CSS variables and localStorage persistence.
+- **Moderation**: Client-side content moderation with configurable blocked terms, Christian terms detection, and contextual allowances.
 
 ## Backend Architecture
-- **Framework**: Express.js with TypeScript for the REST API
-- **Database ORM**: Drizzle ORM configured for PostgreSQL with migration support
-- **Storage Pattern**: Interface-based storage abstraction with both memory and database implementations
-- **Development Setup**: Hot reload development server with Vite integration for seamless full-stack development
-- **Build Process**: ESBuild for production bundling with proper ES modules support
-
-## Authentication System
-- **Primary**: Supabase Auth for managed authentication with email/password support
-- **Fallback**: Basic user schema in PostgreSQL for custom authentication if needed
-- **Security**: Password hashing with bcryptjs, session management, and protected route patterns
-- **Frontend Integration**: Context-based auth state management with loading states and error handling
+- **Framework**: Express.js with TypeScript.
+- **Database ORM**: Drizzle ORM for PostgreSQL.
+- **Storage Pattern**: Interface-based abstraction for media storage (Replit Object Storage for dev, AWS S3 for prod).
+- **Security**: JWT-based authentication via Supabase, secure authentication middleware, protected API endpoints, file upload validation (type, size), and banned user restrictions.
+- **Content Moderation**: Server-side AI moderation (hard-blocked terms + GPT-4o-mini) for posts and comments, server-side faith validation for prayer requests. See docs/SECURITY_AUDIT.md for complete security documentation.
+- **Error Handling**: Sanitized API error responses.
 
 ## Database Design
-- **Database**: PostgreSQL with connection via Neon Database serverless driver
-- **Schema Management**: Drizzle migrations with schema definition in shared directory
-- **User Model**: Simple user table with id, username, and password fields using UUID primary keys
-- **Development**: Memory storage implementation for rapid prototyping and testing
+- **Database**: PostgreSQL via Supabase (unified architecture - all data in one database)
+- **Schema Management**: Supabase migrations (SQL files in docs/db_migration_complete.sql)
+- **Key Tables**: profiles, posts, comments, prayer_requests, prayer_commitments, prayer_activity, bookmarks, reactions, reports, donations, media_requests, notifications, push_tokens
+- **Security**: Row-Level Security (RLS) policies for all critical tables, service role key for admin operations
+- **Server-Side Access**: server/supabaseClient.ts provides authenticated Supabase clients for API routes
+
+## Testing Infrastructure
+- **Framework**: Vitest with jsdom environment.
+- **API Testing**: Mock Service Worker (MSW).
+- **Authentication Mocking**: Comprehensive Supabase authentication mocking.
+- **Component Testing**: React Testing Library for web and mobile components.
+- **Mobile Specifics**: Dedicated mobile configuration, component testing for mobile-optimized elements, and mobile-specific library testing.
 
 # External Dependencies
 
 ## Core Infrastructure
-- **Database**: PostgreSQL via Neon Database (@neondatabase/serverless)
-- **Authentication Service**: Supabase Auth (@supabase/auth-js)
-- **ORM**: Drizzle ORM with drizzle-kit for migrations and schema management
+- **Database**: PostgreSQL via Neon Database (@neondatabase/serverless).
+- **Authentication Service**: Supabase Auth (@supabase/auth-js).
+- **ORM**: Drizzle ORM with drizzle-kit.
+- **Cloud Storage**: AWS S3 (production), Replit Object Storage (development).
 
 ## UI and Styling
-- **Component Library**: Radix UI primitives for accessible component foundations
-- **Styling Framework**: Tailwind CSS with PostCSS for processing
-- **Icons**: Lucide React for consistent iconography
-- **Fonts**: Google Fonts integration (Architects Daughter, DM Sans, Fira Code, Geist Mono)
+- **Component Library**: Radix UI.
+- **Styling Framework**: Tailwind CSS with PostCSS.
+- **Icons**: Lucide React.
+- **Fonts**: Google Fonts (Playfair Display, Inter).
 
 ## Development Tools
-- **Build System**: Vite with React plugin and runtime error overlay
-- **Replit Integration**: Cartographer plugin and dev banner for Replit environment
-- **Type Safety**: Full TypeScript setup with path aliases and strict configuration
-- **Code Quality**: Class Variance Authority for component variant management
+- **Build System**: Vite.
+- **Replit Integration**: Cartographer plugin.
+- **Type Safety**: TypeScript.
 
 ## Utility Libraries
-- **Date Handling**: date-fns for date manipulation and formatting
-- **Validation**: Zod for schema validation and type inference
-- **State Management**: TanStack React Query for server state
-- **Utility Functions**: clsx and tailwind-merge for className management
+- **Date Handling**: date-fns.
+- **Validation**: Zod.
+- **State Management**: TanStack React Query.
+- **CSS Utilities**: clsx, tailwind-merge.

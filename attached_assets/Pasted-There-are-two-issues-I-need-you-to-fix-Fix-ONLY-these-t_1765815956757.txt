@@ -1,0 +1,84 @@
+There are two issues I need you to fix.
+Fix ONLY these two issues and do NOT change anything else in the project.
+
+1) Login credentials not remembered on phone after logout
+
+Problem:
+
+On my phone (iOS/Android), when I log out and then go back to the login screen, my login credentials are not pre-filled, even if I previously chose to remember them (or the app is expected to remember them).
+
+I stay logged in fine during a session, but after logging out, the email/username is not saved on the login form.
+
+Desired behavior:
+
+When the user logs in with the “remember” behavior enabled (or whatever the intended design is):
+
+The app should store the user’s login identifier (email/username) in persistent client storage that works on mobile (Capacitor Preferences / AsyncStorage / local storage, using whatever pattern the project already uses).
+
+After logout, when the login screen is shown again:
+
+The email/username field should be auto-filled from that stored value.
+
+The “Remember me” checkbox (if present) should reflect that it is enabled.
+
+For security, do NOT store the raw password in plain text. If there is no secure password-remember pattern already implemented, only remember the email/username.
+
+If the user logs in without “remember” turned on, do not store or pre-fill anything.
+
+What to do:
+
+Find the login form and any existing “Remember me” or credential persistence logic.
+
+Implement or fix the code that:
+
+Saves the email/username to persistent storage on successful login when remember is enabled.
+
+Reads it back and auto-fills the field when the login screen loads after logout.
+
+Make sure this works on iOS and Android without breaking existing web behavior.
+
+Do NOT change any backend APIs, auth provider configuration, or unrelated screens.
+Only touch the minimal code related to remembering and pre-filling login credentials.
+
+2) Saved Posts do not show profile pictures for users who have pictures
+
+Problem:
+
+In the Saved Posts list, posts from users who do have a profile picture are not showing their avatar.
+
+Instead, a generic placeholder or no image is shown.
+
+On other screens (for example main feed or comments), those same users’ profile pictures may display correctly.
+
+Desired behavior:
+
+In the Saved Posts list:
+
+If the post’s author has a profile picture set, show that profile picture.
+
+If the author does not have a profile picture, show the standard default avatar used elsewhere in the app.
+
+The behavior should be consistent with whatever logic is used for profile pictures on the main feed or other lists.
+
+What to do:
+
+Locate the component that renders the Saved Posts list.
+
+Fix the avatar logic so that:
+
+It uses the same user/profile image field and fallback behavior that is already used on the main posts feed.
+
+It properly loads the image URL from the user profile and shows the default avatar when missing.
+
+Do not change layout, text, or other functionality in Saved Posts—only the avatar display.
+
+Do NOT change database schema, APIs, or any other screens.
+Only fix the avatar display logic for Saved Posts.
+
+Hard constraints — for both issues:
+
+Do NOT refactor or reformat unrelated files.
+
+Do NOT modify any other features (posts, prayers, notifications, daily verse, donations, settings, etc.).
+
+Keep changes as small and focused as possible.

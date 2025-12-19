@@ -1,0 +1,9 @@
+/* Minimal mobile fixes - inputs should work normally */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Only font size fix to prevent iOS zoom - nothing else */
+input, textarea {
+  font-size: 16px !important;
+}

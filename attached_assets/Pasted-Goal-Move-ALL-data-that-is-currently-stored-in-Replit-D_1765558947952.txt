@@ -1,0 +1,73 @@
+Goal: Move ALL data that is currently stored in Replit Database into Supabase tables, with NO data loss, while leaving all existing Supabase tables and data exactly as they are.
+
+Follow these rules VERY STRICTLY:
+
+Do NOT modify or delete any existing Supabase tables, columns, constraints, or data.
+
+No DROP TABLE, DROP COLUMN, TRUNCATE, or ALTER that changes or removes existing columns.
+
+You may only CREATE new tables and, if absolutely necessary, ADD new columns that do not break anything.
+
+Replit Database → Supabase migration plan:
+
+Scan this project’s code and identify all the keys/collections stored in Replit Database and their typical JSON structure.
+
+For each logical “table” in Replit DB, design a matching Postgres table in Supabase with:
+
+Proper column types (text, integer, boolean, timestamp, JSONB, etc.).
+
+Primary keys that preserve the original IDs if they exist.
+
+Foreign keys where relationships are obvious from the data.
+
+Generate:
+
+SQL statements to create the new tables in Supabase (ONLY new tables, no destructive changes).
+
+A Node/TypeScript migration script that:
+
+Connects to Replit Database and Supabase.
+
+Reads ALL existing data from Replit DB.
+
+Inserts it into the corresponding new Supabase tables.
+
+Preserves IDs, timestamps, and relationships.
+
+Skips duplicates safely if the script is run more than once (idempotent).
+
+Logs progress and any errors, without stopping the whole migration on a single bad record.
+
+Application code update:
+
+After defining the migration, update the app’s data access layer so that:
+
+All future reads/writes use Supabase only.
+
+Replit Database is no longer used anywhere in the app.
+
+Make minimal, surgical changes:
+
+Replace only the Replit DB calls with equivalent Supabase queries.
+
+Do NOT refactor or reorganize unrelated code.
+
+Keep function signatures and behavior the same wherever possible.
+
+Safety and verification:
+
+First, output a clear migration plan (list of new Supabase tables, their columns, and which Replit DB keys map to them).
+
+Then output:
+
+The SQL for creating the new tables.
+
+The migration script.
+
+The updated code for one file at a time.
+
+Assume Supabase environment variables are already configured in this project; just show how to use them.
+
+Do NOT run anything destructively; just generate code and instructions.
+
+Start by analyzing the current codebase to identify all Replit Database usage and propose the exact Supabase schema that matches it, without touching existing Supabase tables.

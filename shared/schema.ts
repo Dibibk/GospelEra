@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, timestamp, integer, boolean, bigserial, bigint, primaryKey, uuid } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, timestamp, integer, boolean, bigserial, bigint, primaryKey, uuid, json, index } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -20,6 +20,8 @@ export type User = typeof users.$inferSelect;
 export const profiles = pgTable("profiles", {
   id: varchar("id").primaryKey(),
   email: text("email"),
+  first_name: text("first_name"),
+  last_name: text("last_name"),
   display_name: text("display_name"),
   bio: text("bio"),
   avatar_url: text("avatar_url"),
@@ -29,11 +31,14 @@ export const profiles = pgTable("profiles", {
   show_name_on_prayers: boolean("show_name_on_prayers").default(true).notNull(),
   private_profile: boolean("private_profile").default(false).notNull(),
   media_enabled: boolean("media_enabled").default(false).notNull(),
+  settings: json("settings").default({}).notNull(), // JSON object for user preferences
   created_at: timestamp("created_at").defaultNow().notNull(),
   updated_at: timestamp("updated_at").defaultNow().notNull(),
 });
 
 export const insertProfileSchema = createInsertSchema(profiles).pick({
+  first_name: true,
+  last_name: true,
   display_name: true,
   bio: true,
   avatar_url: true,
@@ -60,7 +65,12 @@ export const posts = pgTable("posts", {
   hidden: boolean("hidden").default(false).notNull(),
   created_at: timestamp("created_at").defaultNow().notNull(),
   updated_at: timestamp("updated_at").defaultNow().notNull(),
-});
+}, (table) => ({
+  // Index for feed queries: WHERE hidden=false ORDER BY created_at DESC
+  feedIdx: index("posts_feed_idx").on(table.hidden, table.created_at.desc()),
+  // Index for author profile queries
+  authorIdx: index("posts_author_idx").on(table.author_id),
+}));
 
 export const insertPostSchema = createInsertSchema(posts).pick({
   title: true,
@@ -162,11 +172,13 @@ export const prayerRequests = pgTable("prayer_requests", {
   is_anonymous: boolean("is_anonymous").default(false).notNull(),
   status: text("status").default('open').notNull(),
   created_at: timestamp("created_at").defaultNow().notNull(),
+  updated_at: timestamp("updated_at").defaultNow().notNull(),
 });
 
 export const insertPrayerRequestSchema = createInsertSchema(prayerRequests).omit({
   id: true,
   created_at: true,
+  updated_at: true,
   moderation_status: true,
   moderation_reason: true,
 }).extend({
@@ -254,3 +266,54 @@ export const insertMediaRequestSchema = createInsertSchema(mediaRequests).omit({
 
 export type InsertMediaRequest = z.infer<typeof insertMediaRequestSchema>;
 export type MediaRequest = typeof mediaRequests.$inferSelect;
+
+// Notifications table for in-app notifications
+export const notifications = pgTable("notifications", {
+  id: bigserial("id", { mode: "number" }).primaryKey(),
+  recipient_id: varchar("recipient_id").notNull(), // user receiving the notification
+  actor_id: varchar("actor_id"), // user who triggered the notification (nullable for system notifications)
+  event_type: text("event_type").notNull(), // 'comment', 'amen', 'prayer_commitment', 'prayer_update', 'prayer_prayed'
+  post_id: integer("post_id"), // related post (nullable)
+  comment_id: integer("comment_id"), // related comment (nullable)
+  prayer_request_id: integer("prayer_request_id"), // related prayer request (nullable)
+  commitment_id: integer("commitment_id"), // related commitment (nullable)
+  message: text("message").notNull(), // notification message text
+  is_read: boolean("is_read").default(false).notNull(),
+  read_at: timestamp("read_at"),
+  created_at: timestamp("created_at").defaultNow().notNull(),
+}, (table) => ({
+  recipientUnreadIdx: index("notifications_recipient_unread_idx").on(table.recipient_id, table.is_read, table.created_at.desc()),
+}));
+
+export const insertNotificationSchema = createInsertSchema(notifications).omit({
+  id: true,
+  is_read: true,
+  read_at: true,
+  created_at: true,
+});
+
+export type InsertNotification = z.infer<typeof insertNotificationSchema>;
+export type Notification = typeof notifications.$inferSelect;
+
+// Push notification tokens for FCM
+export const pushTokens = pgTable("push_tokens", {
+  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+  user_id: varchar("user_id").notNull(),
+  token: text("token").notNull(),
+  platform: text("platform").notNull().default('web'), // 'web', 'ios', 'android'
+  daily_verse_enabled: boolean("daily_verse_enabled").default(false).notNull(),
+  created_at: timestamp("created_at").defaultNow().notNull(),
+  updated_at: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => ({
+  userIdx: index("push_tokens_user_idx").on(table.user_id),
+  tokenIdx: index("push_tokens_token_idx").on(table.token),
+}));
+
+export const insertPushTokenSchema = createInsertSchema(pushTokens).omit({
+  id: true,
+  created_at: true,
+  updated_at: true,
+});
+
+export type InsertPushToken = z.infer<typeof insertPushTokenSchema>;
+export type PushToken = typeof pushTokens.$inferSelect;

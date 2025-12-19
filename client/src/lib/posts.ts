@@ -1,5 +1,29 @@
 import { supabase } from './supabaseClient'
-import { validateFaithContent } from '../../../shared/moderation'
+import { validateContentWithAI } from './moderation'
+import { Capacitor } from '@capacitor/core'
+
+// Get API base URL - use full URL for native apps, relative for web
+export function getApiBaseUrl(): string {
+  const platform = Capacitor.getPlatform();
+  const isNative = Capacitor.isNativePlatform();
+  console.log('🌐 [posts.ts] Platform detection:', { platform, isNative });
+  
+  if (isNative) {
+    const apiUrl = import.meta.env.VITE_API_URL || 'https://gospel-era.replit.app';
+    console.log('🌐 [posts.ts] Native app - using API URL:', apiUrl);
+    return apiUrl;
+  }
+  console.log('🌐 [posts.ts] Web app - using relative URLs');
+  return '';
+}
+
+// Helper to build full URL for API calls
+function buildApiUrl(path: string): string {
+  const baseUrl = getApiBaseUrl();
+  const fullUrl = path.startsWith('http') ? path : `${baseUrl}${path}`;
+  console.log('🔗 [posts.ts] Building URL:', fullUrl);
+  return fullUrl;
+}
 
 export interface CreatePostData {
   title: string
@@ -13,6 +37,18 @@ interface ListPostsOptions {
   limit?: number
   fromId?: number
   authorId?: string
+}
+
+interface FeedOptions {
+  limit?: number
+  fromId?: number
+}
+
+interface FeedResponse {
+  posts: any[]
+  profiles: Record<string, any>
+  engagement: Record<number, { amenCount: number; userAmened: boolean; commentCount: number }>
+  nextCursor: number | null
 }
 
 interface SearchPostsOptions {
@@ -48,12 +84,12 @@ export async function createPost({ title, content, tags = [], media_urls = [], e
       throw new Error('User must be authenticated to create posts')
     }
 
-    // Validate title and content faith alignment (at least one must pass)
-    const titleValidation = validateFaithContent(title.trim())
-    const contentValidation = validateFaithContent(content.trim())
+    // Validate title and content with AI (more intelligent and flexible)
+    const combinedText = `${title.trim()}\n\n${content.trim()}`
+    const validation = await validateContentWithAI(combinedText)
     
-    if (!titleValidation.isValid && !contentValidation.isValid) {
-      throw new Error(titleValidation.reason || 'Please keep your post centered on Jesus or Scripture.')
+    if (!validation.allowed) {
+      throw new Error(validation.reason || 'Please keep your content Christ-centered and appropriate for our faith community.')
     }
 
     // Insert the post
@@ -103,15 +139,86 @@ export async function listPosts({ limit = 20, fromId, authorId }: ListPostsOptio
     }
 
     // Make request to backend API (which properly filters out hidden posts)
-    const response = await fetch(`/api/posts?${params.toString()}`)
+    const url = buildApiUrl(`/api/posts?${params.toString()}`);
+    console.log('📡 [listPosts] Fetching from:', url);
+    
+    const response = await fetch(url, {
+      headers: {
+        'Accept': 'application/json',
+      },
+      mode: 'cors',
+    })
+    console.log('📡 [listPosts] Response status:', response.status, response.ok);
     
     if (!response.ok) {
+      const errorText = await response.text();
+      console.error('📡 [listPosts] Error response:', errorText);
       throw new Error(`Failed to fetch posts: ${response.statusText}`)
     }
     
     const data = await response.json()
+    console.log('📡 [listPosts] Data received:', data?.length, 'posts');
     return { data, error: null }
   } catch (err) {
+    console.error('📡 [listPosts] Exception:', err);
+    console.error('📡 [listPosts] Error message:', err instanceof Error ? err.message : 'Unknown error');
+    console.error('📡 [listPosts] Error stack:', err instanceof Error ? err.stack : 'No stack');
+    return { data: null, error: err }
+  }
+}
+
+/**
+ * OPTIMIZED: Fetches feed with posts + author profiles + engagement in ONE request
+ * @param {Object} options - Query options
+ * @param {number} options.limit - Number of posts to return (default: 20)
+ * @param {number} options.fromId - ID to start pagination from (optional)
+ * @returns {Promise<{data: FeedResponse|null, error: Error|null}>}
+ */
+export async function fetchFeed({ limit = 20, fromId }: FeedOptions = {}): Promise<{ data: FeedResponse | null; error: any }> {
+  try {
+    console.log('📡 [fetchFeed] Starting feed fetch...');
+    const params = new URLSearchParams()
+    params.append('limit', limit.toString())
+    
+    if (fromId) {
+      params.append('fromId', fromId.toString())
+    }
+
+    console.log('📡 [fetchFeed] Getting Supabase session...');
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+    console.log('📡 [fetchFeed] Session result:', { hasSession: !!session, hasToken: !!session?.access_token, error: sessionError?.message });
+    
+    const headers: HeadersInit = {
+      'Accept': 'application/json',
+    }
+    
+    if (session?.access_token) {
+      headers['Authorization'] = `Bearer ${session.access_token}`
+    }
+
+    const url = buildApiUrl(`/api/feed?${params.toString()}`)
+    console.log('📡 [fetchFeed] Fetching from:', url)
+    
+    const response = await fetch(url, {
+      headers,
+      mode: 'cors',
+    })
+    
+    console.log('📡 [fetchFeed] Response:', { status: response.status, ok: response.ok, statusText: response.statusText });
+    
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error('📡 [fetchFeed] Error response body:', errorText)
+      throw new Error(`Failed to fetch feed: ${response.status} ${response.statusText}`)
+    }
+    
+    const data: FeedResponse = await response.json()
+    console.log('📡 [fetchFeed] Data received:', data.posts?.length, 'posts')
+    return { data, error: null }
+  } catch (err) {
+    console.error('📡 [fetchFeed] Exception caught:', err)
+    console.error('📡 [fetchFeed] Error name:', err instanceof Error ? err.name : 'Unknown')
+    console.error('📡 [fetchFeed] Error message:', err instanceof Error ? err.message : String(err))
     return { data: null, error: err }
   }
 }
@@ -124,24 +231,27 @@ export async function listPosts({ limit = 20, fromId, authorId }: ListPostsOptio
  */
 export async function softDeletePost(id: number) {
   try {
-    // Get current user
-    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    // Get Supabase session for JWT authentication
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
     
-    if (userError) {
-      throw new Error(`Authentication error: ${userError.message}`)
+    if (sessionError) {
+      throw new Error(`Authentication error: ${sessionError.message}`)
     }
     
-    if (!user) {
+    if (!session?.access_token) {
       throw new Error('User must be authenticated to delete posts')
     }
 
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${session.access_token}`
+    };
+
     // Make DELETE request to server API
-    const response = await fetch(`/api/posts/${id}`, {
+    const url = buildApiUrl(`/api/posts/${id}`);
+    const response = await fetch(url, {
       method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-user-id': user.id
-      }
+      headers
     });
 
     if (!response.ok) {
@@ -165,24 +275,27 @@ export async function softDeletePost(id: number) {
  */
 export async function updatePost(id: number, postData: CreatePostData) {
   try {
-    // Get current user
-    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    // Get Supabase session for JWT authentication
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
     
-    if (userError) {
-      throw new Error(`Authentication error: ${userError.message}`)
+    if (sessionError) {
+      throw new Error(`Authentication error: ${sessionError.message}`)
     }
     
-    if (!user) {
+    if (!session?.access_token) {
       throw new Error('User must be authenticated to update posts')
     }
 
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${session.access_token}`
+    };
+
     // Make PUT request to server API
-    const response = await fetch(`/api/posts/${id}`, {
+    const url = buildApiUrl(`/api/posts/${id}`);
+    const response = await fetch(url, {
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-user-id': user.id
-      },
+      headers,
       body: JSON.stringify(postData)
     });
 

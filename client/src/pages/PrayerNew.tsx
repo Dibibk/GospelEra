@@ -1,88 +1,91 @@
-import { useState } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
-import { useAuth } from '../hooks/useAuth'
-import { useRole } from '../hooks/useRole'
-import { ArrowLeft, Send, Plus, X } from 'lucide-react'
-import { createPrayerRequest } from '../lib/prayer'
-import { validateFaithContent } from '../../../shared/moderation'
+import { useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { useAuth } from "../hooks/useAuth";
+import { useRole } from "../hooks/useRole";
+import { ArrowLeft, Send, Plus, X } from "lucide-react";
+import { createPrayerRequest } from "../lib/prayer";
+import { validateFaithContent } from "../../../shared/moderation";
 
 export default function PrayerNew() {
-  const { user } = useAuth()
-  const { isBanned } = useRole()
-  const navigate = useNavigate()
-  
-  const [title, setTitle] = useState('')
-  const [details, setDetails] = useState('')
-  const [tags, setTags] = useState<string[]>([])
-  const [newTag, setNewTag] = useState('')
-  const [youtubeUrl, setYoutubeUrl] = useState('')
-  const [youtubeError, setYoutubeError] = useState('')
-  const [isAnonymous, setIsAnonymous] = useState(false)
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [error, setError] = useState('')
-  const [moderationError, setModerationError] = useState('')
+  const { user } = useAuth();
+  const { isBanned } = useRole();
+  const navigate = useNavigate();
+
+  const [title, setTitle] = useState("");
+  const [details, setDetails] = useState("");
+  const [tags, setTags] = useState<string[]>([]);
+  const [newTag, setNewTag] = useState("");
+  const [youtubeUrl, setYoutubeUrl] = useState("");
+  const [youtubeError, setYoutubeError] = useState("");
+  const [isAnonymous, setIsAnonymous] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState("");
+  const [moderationError, setModerationError] = useState("");
 
   const handleAddTag = () => {
     if (newTag.trim() && !tags.includes(newTag.trim()) && tags.length < 5) {
-      setTags([...tags, newTag.trim()])
-      setNewTag('')
+      setTags([...tags, newTag.trim()]);
+      setNewTag("");
     }
-  }
+  };
 
   const removeTag = (tagToRemove: string) => {
-    setTags(tags.filter(tag => tag !== tagToRemove))
-  }
+    setTags(tags.filter((tag) => tag !== tagToRemove));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    
+    e.preventDefault();
+
     if (!title.trim() || !details.trim()) {
-      setError('Please fill in all required fields')
-      return
+      setError("Please fill in all required fields");
+      return;
     }
 
-    const titleText = title.trim()
-    const detailsText = details.trim()
+    const titleText = title.trim();
+    const detailsText = details.trim();
 
     // Enhanced Christ-centric validation for title and details (at least one must pass)
-    const titleValidation = validateFaithContent(titleText)
-    const detailsValidation = validateFaithContent(detailsText)
+    const titleValidation = validateFaithContent(titleText);
+    const detailsValidation = validateFaithContent(detailsText);
 
-    setModerationError('')
+    setModerationError("");
 
     if (!titleValidation.isValid && !detailsValidation.isValid) {
-      setModerationError(titleValidation.reason || 'Please keep your prayer request centered on Jesus or Scripture.')
-      return
+      setModerationError(
+        titleValidation.reason ||
+          "Please keep your prayer request centered on Jesus or Scripture.",
+      );
+      return;
     }
 
-    setIsSubmitting(true)
-    setError('')
+    setIsSubmitting(true);
+    setError("");
 
     try {
       const { data, error } = await createPrayerRequest({
         title: titleText,
         details: detailsText,
         tags,
-        is_anonymous: isAnonymous
-      })
+        is_anonymous: isAnonymous,
+      });
 
       if (error) {
-        setError(error)
-        return
+        setError(error);
+        return;
       }
 
       if (data?.id) {
-        navigate(`/prayer/${data.id}`)
+        navigate(`/prayer/${data.id}`);
       } else {
-        navigate('/prayer/browse')
+        navigate("/prayer/browse");
       }
     } catch (err) {
-      console.error('Failed to create prayer request:', err)
-      setError('Failed to create prayer request')
+      console.error("Failed to create prayer request:", err);
+      setError("Failed to create prayer request");
     } finally {
-      setIsSubmitting(false)
+      setIsSubmitting(false);
     }
-  }
+  };
 
   if (isBanned) {
     return (
@@ -93,14 +96,17 @@ export default function PrayerNew() {
               <p className="text-orange-800 font-medium">
                 Account limited. You can read but cannot create prayer requests.
               </p>
-              <Link to="/prayer/browse" className="text-purple-600 hover:text-purple-700 mt-4 inline-block">
+              <Link
+                to="/prayer/browse"
+                className="text-purple-600 hover:text-purple-700 mt-4 inline-block"
+              >
                 Browse Prayer Requests
               </Link>
             </div>
           </div>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -110,10 +116,15 @@ export default function PrayerNew() {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <Link to="/prayer/browse" className="text-purple-600 hover:text-purple-700">
+              <Link
+                to="/prayer/browse"
+                className="text-purple-600 hover:text-purple-700"
+              >
                 <ArrowLeft className="w-5 h-5" />
               </Link>
-              <h1 className="text-xl font-bold text-purple-800">New Prayer Request</h1>
+              <h1 className="text-xl font-bold text-purple-800">
+                New Prayer Request
+              </h1>
             </div>
           </div>
         </div>
@@ -126,7 +137,10 @@ export default function PrayerNew() {
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Title */}
               <div>
-                <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
+                <label
+                  htmlFor="title"
+                  className="block text-sm font-medium text-gray-700 mb-2"
+                >
                   Prayer Request Title *
                 </label>
                 <input
@@ -143,7 +157,10 @@ export default function PrayerNew() {
 
               {/* Details */}
               <div>
-                <label htmlFor="details" className="block text-sm font-medium text-gray-700 mb-2">
+                <label
+                  htmlFor="details"
+                  className="block text-sm font-medium text-gray-700 mb-2"
+                >
                   Details *
                 </label>
                 <textarea
@@ -188,7 +205,10 @@ export default function PrayerNew() {
                       type="text"
                       value={newTag}
                       onChange={(e) => setNewTag(e.target.value)}
-                      onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddTag())}
+                      onKeyPress={(e) =>
+                        e.key === "Enter" &&
+                        (e.preventDefault(), handleAddTag())
+                      }
                       className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                       placeholder="Add a tag (e.g., family, health, work)"
                       maxLength={20}
@@ -216,7 +236,10 @@ export default function PrayerNew() {
                   className="w-4 h-4 text-purple-600 bg-gray-100 border-gray-300 rounded focus:ring-purple-500"
                   disabled={isSubmitting}
                 />
-                <label htmlFor="anonymous" className="ml-2 text-sm text-gray-700">
+                <label
+                  htmlFor="anonymous"
+                  className="ml-2 text-sm text-gray-700"
+                >
                   Submit anonymously
                 </label>
               </div>
@@ -228,13 +251,24 @@ export default function PrayerNew() {
                   {moderationError && (
                     <div className="text-red-800 text-sm">
                       <p className="flex items-center">
-                        <svg className="h-4 w-4 mr-1 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14L21 3M7 7l-3 3 3 3" />
+                        <svg
+                          className="h-4 w-4 mr-1 text-blue-500"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M10 14L21 3M7 7l-3 3 3 3"
+                          />
                         </svg>
                         {moderationError}
                       </p>
                       <p className="text-xs text-blue-600 mt-1">
-                        We welcome all, but this space is specifically for Christian prayer to Jesus.
+                        We welcome all, but this space is specifically for
+                        Christian prayer to Jesus.
                       </p>
                     </div>
                   )}
@@ -269,5 +303,5 @@ export default function PrayerNew() {
         </div>
       </main>
     </div>
-  )
+  );
 }

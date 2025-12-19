@@ -1,43 +1,58 @@
 import { supabase } from './supabaseClient'
+import { getApiBaseUrl } from './posts'
 
 /**
  * Admin utilities for Gospel Era Web platform
- * All functions require admin role and will throw if user is not admin
+ * Uses backend API endpoints to bypass RLS issues
  */
 
 /**
- * Check if current user is admin, throw error if not
- * @throws {Error} If user is not authenticated or not admin
+ * Get auth token for API requests
+ * @returns {Promise<string>} Access token
  */
-async function requireAdmin() {
-  const { data: { user }, error: userError } = await supabase.auth.getUser()
+async function getAuthToken() {
+  const { data: { session }, error } = await supabase.auth.getSession()
   
-  if (userError) {
-    throw new Error(`Authentication error: ${userError.message}`)
+  if (error) {
+    throw new Error(`Authentication error: ${error.message}`)
   }
   
-  if (!user) {
+  if (!session) {
     throw new Error('User must be authenticated to perform admin actions')
   }
 
-  // Check if user has admin role
+  return session.access_token
+}
+
+/**
+ * Verify current user is an admin
+ * @throws {Error} If user is not authenticated or not an admin
+ */
+async function requireAdmin() {
+  const { data: { session }, error } = await supabase.auth.getSession()
+  
+  if (error || !session) {
+    throw new Error('User must be authenticated to perform admin actions')
+  }
+
   const { data: profile, error: profileError } = await supabase
     .from('profiles')
     .select('role')
-    .eq('id', user.id)
+    .eq('id', session.user.id)
     .single()
 
-  if (profileError) {
-    throw new Error(`Failed to check user role: ${profileError.message}`)
+  if (profileError || !profile) {
+    throw new Error('Could not verify admin status')
   }
 
-  if (profile?.role !== 'admin') {
-    throw new Error('Admin privileges required for this action')
+  if (profile.role !== 'admin') {
+    throw new Error('Admin privileges required')
   }
 }
 
 /**
  * List reports with optional filtering and pagination
+ * Uses backend API to bypass RLS
  * @param {Object} options - Query options
  * @param {string} options.status - Filter by status: 'open', 'resolved', 'dismissed' (default: 'open')
  * @param {number} options.limit - Maximum number of reports to return (default: 50)
@@ -45,167 +60,28 @@ async function requireAdmin() {
  * @returns {Promise<{items: Array, nextCursor: string|null}>}
  */
 export async function listReports({ status = 'open', limit = 50, cursor } = {}) {
-  await requireAdmin()
-
   try {
-    // First, get the reports without joins
-    let query = supabase
-      .from('reports')
-      .select('*')
-      .eq('status', status)
-      .order('created_at', { ascending: false })
-      .limit(limit)
-
-    // Apply cursor-based pagination if provided
+    const token = await getAuthToken()
+    const baseUrl = getApiBaseUrl()
+    
+    const params = new URLSearchParams({ status, limit: String(limit) })
     if (cursor) {
-      query = query.lt('created_at', cursor)
+      params.append('cursor', cursor)
     }
 
-    const { data: reports, error } = await query
-
-    if (error) {
-      throw new Error(`Failed to fetch reports: ${error.message}`)
-    }
-
-    // Determine next cursor (created_at of last item)
-    const nextCursor = reports.length === limit ? reports[reports.length - 1].created_at : null
-
-    // Get unique reporter IDs to fetch profiles
-    const reporterIds = [...new Set(reports.map(r => r.reporter).filter(Boolean))]
-    
-    // Fetch reporter profiles
-    const { data: reporterProfiles } = await supabase
-      .from('profiles')
-      .select('id, display_name, email')
-      .in('id', reporterIds)
-
-    const reporterProfileMap = new Map()
-    if (reporterProfiles) {
-      reporterProfiles.forEach(profile => {
-        reporterProfileMap.set(profile.id, profile)
-      })
-    }
-
-    // Get unique target IDs by type
-    const postIds = reports.filter(r => r.target_type === 'post').map(r => r.target_id)
-    const commentIds = reports.filter(r => r.target_type === 'comment').map(r => r.target_id)
-
-    // Fetch posts and comments separately
-    const postsPromise = postIds.length > 0 
-      ? supabase.from('posts').select('id, content, author, created_at').in('id', postIds)
-      : Promise.resolve({ data: [] })
-      
-    const commentsPromise = commentIds.length > 0
-      ? supabase.from('comments').select('id, content, author, created_at').in('id', commentIds)
-      : Promise.resolve({ data: [] })
-
-    const [postsResult, commentsResult] = await Promise.all([postsPromise, commentsPromise])
-
-    // Create maps for quick lookup
-    const postsMap = new Map()
-    const commentsMap = new Map()
-    
-    if (postsResult.data) {
-      postsResult.data.forEach(post => postsMap.set(post.id, post))
-    }
-    
-    if (commentsResult.data) {
-      commentsResult.data.forEach(comment => commentsMap.set(comment.id, comment))
-    }
-
-    // Get author IDs from posts and comments to fetch author profiles
-    const authorIds = [
-      ...new Set([
-        ...(postsResult.data || []).map(p => p.author),
-        ...(commentsResult.data || []).map(c => c.author)
-      ].filter(Boolean))
-    ]
-
-    // Fetch author profiles
-    const { data: authorProfiles } = await supabase
-      .from('profiles')
-      .select('id, display_name')
-      .in('id', authorIds)
-
-    const authorProfileMap = new Map()
-    if (authorProfiles) {
-      authorProfiles.forEach(profile => {
-        authorProfileMap.set(profile.id, profile)
-      })
-    }
-
-    // Process reports to include target information
-    const items = reports.map(report => {
-      const baseReport = {
-        id: report.id,
-        status: report.status,
-        reason: report.reason,
-        target_type: report.target_type,
-        target_id: report.target_id,
-        created_at: report.created_at,
-        reporter: reporterProfileMap.get(report.reporter) || {
-          id: report.reporter,
-          display_name: 'Unknown User',
-          email: 'unknown@example.com'
-        }
+    const response = await fetch(`${baseUrl}/api/admin/reports?${params}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`
       }
-
-      // Add target information based on type
-      if (report.target_type === 'post') {
-        const post = postsMap.get(report.target_id)
-        if (post) {
-          const authorProfile = authorProfileMap.get(post.author)
-          baseReport.target = {
-            type: 'post',
-            id: post.id,
-            content: post.content,
-            created_at: post.created_at,
-            author: {
-              id: post.author,
-              display_name: authorProfile?.display_name || 'Unknown User'
-            }
-          }
-        } else {
-          baseReport.target = {
-            type: 'post',
-            id: report.target_id,
-            deleted: true
-          }
-        }
-      } else if (report.target_type === 'comment') {
-        const comment = commentsMap.get(report.target_id)
-        if (comment) {
-          const authorProfile = authorProfileMap.get(comment.author)
-          baseReport.target = {
-            type: 'comment',
-            id: comment.id,
-            content: comment.content,
-            created_at: comment.created_at,
-            author: {
-              id: comment.author,
-              display_name: authorProfile?.display_name || 'Unknown User'
-            }
-          }
-        } else {
-          baseReport.target = {
-            type: 'comment',
-            id: report.target_id,
-            deleted: true
-          }
-        }
-      } else {
-        // Unknown target type
-        baseReport.target = {
-          type: report.target_type,
-          id: report.target_id,
-          deleted: true
-        }
-      }
-
-      return baseReport
     })
 
-    return { items, nextCursor }
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      throw new Error(errorData.error || `Failed to fetch reports: ${response.status}`)
+    }
+
+    return await response.json()
   } catch (err) {
     throw new Error(`Admin operation failed: ${err.message}`)
   }
@@ -213,34 +89,36 @@ export async function listReports({ status = 'open', limit = 50, cursor } = {}) 
 
 /**
  * Update report status
+ * Uses backend API to bypass RLS
  * @param {string} id - Report ID
  * @param {string} status - New status: 'open', 'resolved', 'dismissed'
  * @returns {Promise<Object>} Updated report data
  */
 export async function updateReportStatus(id, status) {
-  await requireAdmin()
-
   const validStatuses = ['open', 'resolved', 'dismissed']
   if (!validStatuses.includes(status)) {
     throw new Error(`Invalid status. Must be one of: ${validStatuses.join(', ')}`)
   }
 
   try {
-    const { data, error } = await supabase
-      .from('reports')
-      .update({ 
-        status,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', id)
-      .select()
-      .single()
+    const token = await getAuthToken()
+    const baseUrl = getApiBaseUrl()
 
-    if (error) {
-      throw new Error(`Failed to update report status: ${error.message}`)
+    const response = await fetch(`${baseUrl}/api/admin/reports/${id}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ status })
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      throw new Error(errorData.error || `Failed to update report: ${response.status}`)
     }
 
-    return data
+    return await response.json()
   } catch (err) {
     throw new Error(`Admin operation failed: ${err.message}`)
   }

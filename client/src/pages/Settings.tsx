@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { ArrowLeft, User, Shield, Bell, Trash2, Upload, Clock, CheckCircle, XCircle } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
 import { getMyProfile, upsertMyProfile, ensureMyProfile } from '../lib/profiles'
+import { supabase } from '../lib/supabaseClient'
 import { ObjectUploader } from '../components/ObjectUploader'
 import { MediaRequestModal } from '../components/MediaRequestModal'
 import { getCurrentRequestStatus, checkMediaPermission } from '../lib/mediaRequests'
@@ -93,11 +94,18 @@ export default function Settings() {
   }
 
   const handleGetUploadParameters = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+    
+    if (session?.access_token) {
+      headers['Authorization'] = `Bearer ${session.access_token}`;
+    }
+    
     const response = await fetch('/api/objects/upload', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers,
     })
     
     if (!response.ok) {
@@ -118,11 +126,18 @@ export default function Settings() {
       const uploadURL = uploadedFile.uploadURL
       
       if (uploadURL) {
+        const { data: { session } } = await supabase.auth.getSession();
+        const headers: Record<string, string> = {
+          'Content-Type': 'application/json',
+        };
+        
+        if (session?.access_token) {
+          headers['Authorization'] = `Bearer ${session.access_token}`;
+        }
+        
         const response = await fetch('/api/avatar', {
           method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers,
           body: JSON.stringify({ avatarURL: uploadURL }),
         })
         

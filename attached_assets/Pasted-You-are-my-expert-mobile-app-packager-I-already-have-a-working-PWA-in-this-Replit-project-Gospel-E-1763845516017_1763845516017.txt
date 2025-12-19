@@ -1,0 +1,100 @@
+You are my expert mobile app packager.
+I already have a working PWA in this Replit project (Gospel Era).
+
+Goal:
+Wrap this existing PWA using Capacitor so I can build Android and iOS apps for the Google Play Store and Apple App Store.
+Do NOT rewrite my app. Only add what’s needed to integrate Capacitor cleanly.
+
+1. Analyze the current project
+
+Look at package.json and:
+
+Identify the build command (e.g., "build")
+
+Identify the build output folder (e.g., dist or build)
+
+Tell me which folder you will use as webDir for Capacitor.
+
+2. Install Capacitor
+
+Add Capacitor dependencies:
+
+npm install @capacitor/core @capacitor/cli
+
+
+Then initialize Capacitor with a suitable app name and app ID, using the correct webDir based on this project (update webDir accordingly):
+
+npx cap init "Gospel Era" "com.gospelera.app" --web-dir=dist
+
+
+If the build output folder is NOT dist, use the correct one from this project and adjust the command and config accordingly.
+
+3. Configure capacitor.config / capacitor.config.ts
+
+Create or update the Capacitor config file so that:
+
+appName is "Gospel Era"
+
+appId is "com.gospelera.app"
+
+webDir matches the actual build output folder from this project.
+
+Make sure the config file is valid for Capacitor v5+.
+
+4. Add Android and iOS platforms
+
+Add both platforms to the project:
+
+npm install @capacitor/android @capacitor/ios
+npx cap add android
+npx cap add ios
+
+
+This should create:
+
+android/ folder (Android Studio project)
+
+ios/ folder (Xcode project)
+
+Do NOT modify my React/PWA source code beyond what is strictly required for Capacitor.
+
+5. Build + Sync flow
+
+Update package.json scripts (if needed) to add a clear flow, for example:
+
+"scripts": {
+  "build": "...existing build command...",
+  "cap:sync": "npx cap sync",
+  "cap:android": "npm run build && npx cap sync android",
+  "cap:ios": "npm run build && npx cap sync ios"
+}
+
+
+Make sure the steps to produce a build are:
+
+npm run build
+
+npx cap sync
+
+Then open android/ in Android Studio and ios/ in Xcode locally.
+
+6. Verify everything
+
+Run a build inside Replit and make sure there are no errors from Capacitor.
+
+Confirm that:
+
+capacitor.config.* is correctly pointing to the build folder
+
+android/ and ios/ projects are generated
+
+Give me a short summary at the end with:
+
+The build command (npm run ...)
+
+The webDir value used
+
+The folders I need to download/open in Android Studio and Xcode to continue publishing to Play Store and App Store.
+
+Do all file edits and commands directly for me.
+When you’re done, explain the exact steps I should run from the Replit shell to build and sync (for Android and iOS).

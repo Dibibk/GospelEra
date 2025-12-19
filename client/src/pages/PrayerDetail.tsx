@@ -94,26 +94,17 @@ export default function PrayerDetail() {
     if (!request) return
 
     try {
-      // Fetch updated request data with fresh commitments
+      // Fetch updated request data with fresh commitments (without foreign key hints)
       const { data, error } = await supabase
         .from('prayer_requests')
         .select(`
           *,
-          profiles!prayer_requests_requester_fkey (
-            display_name,
-            avatar_url,
-            role
-          ),
           prayer_commitments (
             status,
             prayed_at,
             committed_at,
             note,
-            warrior,
-            profiles!prayer_commitments_warrior_fkey (
-              display_name,
-              avatar_url
-            )
+            warrior
           )
         `)
         .eq('id', request.id)
@@ -124,6 +115,23 @@ export default function PrayerDetail() {
         return
       }
 
+      // Collect all profile IDs needed
+      const profileIds = [data.requester, ...(data.prayer_commitments || []).map((c: any) => c.warrior)].filter(Boolean)
+      const uniqueProfileIds = Array.from(new Set(profileIds))
+
+      // Fetch profiles
+      const profilesMap = new Map<string, any>()
+      if (uniqueProfileIds.length > 0) {
+        const { data: profilesData } = await supabase
+          .from('profiles')
+          .select('id, display_name, avatar_url, role')
+          .in('id', uniqueProfileIds)
+        
+        if (profilesData) {
+          profilesData.forEach(p => profilesMap.set(p.id, p))
+        }
+      }
+
       // Calculate updated stats
       const commitments = data.prayer_commitments || []
       const updatedStats = {
@@ -132,9 +140,14 @@ export default function PrayerDetail() {
         total_warriors: commitments.length
       }
 
-      // Update the request with fresh data
+      // Merge profile data and update the request
       setRequest({
         ...data,
+        profiles: profilesMap.get(data.requester) || null,
+        prayer_commitments: commitments.map((c: any) => ({
+          ...c,
+          profiles: profilesMap.get(c.warrior) || null
+        })),
         prayer_stats: updatedStats
       })
     } catch (err) {

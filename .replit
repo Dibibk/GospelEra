@@ -4,7 +4,7 @@ hidden = [".config", ".git", "generated-icon.png", "node_modules", "dist"]
 
 [nix]
 channel = "stable-24_05"
-packages = ["imagemagick"]
+packages = ["imagemagick", "gir-rs"]
 
 [deployment]
 deploymentTarget = "autoscale"
@@ -69,7 +69,13 @@ task = "shell.exec"
 args = "cd gospel-era-mobile && npm start"
 
 [agent]
-integrations = ["javascript_object_storage==1.0.0", "javascript_paypal==1.0.0", "javascript_supabase==1.0.0", "javascript_websocket==1.0.0", "javascript_stripe==1.0.0"]
+integrations = ["javascript_openai_ai_integrations:1.0.0"]
 
 [objectStorage]
 defaultBucketID = "replit-objstore-9897ff2b-bdd0-4272-8b10-7a12a19d20a3"
+
+[userenv]
+
+[userenv.shared]
+VITE_API_URL = "https://gospel-era.com"
+VITE_API_URL_TEST = "https://gospel-era.replit.app"

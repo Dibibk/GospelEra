@@ -1,0 +1,93 @@
+Context
+On iOS Safari and Android Chrome, focusing any <input>/<textarea> causes flicker and keystrokes don’t appear. In client/src/pages/MobileApp.tsx, the login and other form inputs use inline styles with touchAction: 'manipulation' and WebkitAppearance: 'none', which interfere with the keyboard and text entry on mobile (these appear in the Login inputs and other form fields). 
+
+Goals (apply all):
+
+Remove problematic inline props everywhere
+
+Find all <input> and <textarea> elements in client/src/pages/MobileApp.tsx and any other form files.
+
+Delete touchAction: 'manipulation' and WebkitAppearance: 'none' from inline style={...} objects.
+
+Keep the rest of the styling intact.
+
+Make inputs mobile-friendly
+
+For text inputs/areas, add non-invasive mobile attrs:
+
+inputMode="text"
+autoCapitalize="sentences"
+autoCorrect="on"
+spellCheck={true}
+
+
+Ensure all inputs/textareas are controlled (they already are); don’t mix defaultValue with value.
+
+Height/viewport stabilization
+
+In MobileApp.tsx the container style uses height: '100vh' in styles.container. Replace it with:
+
+minHeight: '100dvh'
+
+
+(leave other style rules unchanged). This avoids iOS keyboard resize jumps.
+
+Tiny CSS safety shim (optional if present already)
+
+In client/src/index.css, ensure:
+
+html, body, #root { height: 100%; }
+/* Optional footer padding if you have a fixed bottom bar */
+.safe-bottom { padding-bottom: env(safe-area-inset-bottom, 0); }
+
+
+If a bottom bar overlaps inputs, add className="safe-bottom" to the scrollable content wrapper or adjust its padding-bottom by calc(env(safe-area-inset-bottom, 0) + 60px).
+
+Concrete edits (examples—apply globally in the file):
+
+Login email/password inputs (and any others using these props):
+
+- style={{ width:'100%', padding:'12px 16px', border:'1px solid #dbdbdb',
+-   borderRadius:'8px', fontSize:'16px', marginBottom:'12px', outline:'none',
+-   WebkitAppearance:'none', touchAction:'manipulation' }}
++ style={{ width:'100%', padding:'12px 16px', border:'1px solid #dbdbdb',
++   borderRadius:'8px', fontSize:'16px', marginBottom:'12px', outline:'none' }}
++ inputMode="text" autoCapitalize="sentences" autoCorrect="on" spellCheck={true}
+
+
+Textareas (Create Post, Prayer, Edit Profile, Contact):
+
+- style={{ width:'100%', padding:'12px 16px', border:'1px solid #dbdbdb',
+-   borderRadius:'8px', fontSize:'16px', resize:'none', outline:'none',
+-   fontFamily:'inherit', marginBottom:'12px', WebkitAppearance:'none', touchAction:'manipulation' }}
++ style={{ width:'100%', padding:'12px 16px', border:'1px solid #dbdbdb',
++   borderRadius:'8px', fontSize:'16px', resize:'none', outline:'none',
++   fontFamily:'inherit', marginBottom:'12px' }}
++ inputMode="text" autoCapitalize="sentences" autoCorrect="on" spellCheck={true}
+
+
+Container height (in styles.container):
+
+- height: '100vh',
++ minHeight: '100dvh',
+
+
+Do NOT:
+
+Do not add route/tab conditional rendering on focus.
+
+Do not wrap inputs in new animation containers.
+
+Do not switch to position: fixed for large wrappers (keep your current layout).
+
+Acceptance checks (manual):
+
+iOS Safari + Android Chrome: tap each text field (Login, Create Post, Create Prayer, Edit Profile, Contact). No flicker, keyboard opens, text appears immediately, cursor steady.
+
+Rotate device, focus again—no value loss or re-mount.
+
+Bottom bar doesn’t overlap the focused field; page scrolls normally if needed.
+
+Show me:
+
+A concise diff for each changed file, and a one-paragraph summary of what changed and why.

@@ -1,0 +1,83 @@
+Scope
+
+Target: mobile home view in client/src/pages/MobileApp.tsx and components it renders by default.
+
+Goal: Improve load and interaction performance only.
+
+Do NOT change visuals, copy, layout/DOM structure, routes, event semantics, or animation behavior/durations.
+
+Hard constraints (must follow)
+
+❌ No CSS/className changes that alter appearance.
+
+❌ No changes to motion variants, durations, or disabling animations.
+
+❌ No new UX (no loaders, no skeletons), no deleted features.
+
+❌ No changing order of elements, aria, or tab/focus behavior.
+
+✅ Pure perf engineering: reduce JS work, re-renders, and expensive effects.
+
+Required actions
+
+Eliminate avoidable re-renders
+
+Move any functions/objects/arrays created inline in JSX out of render or wrap them with useCallback/useMemo (stable deps).
+
+Hoist all inline style objects to module-level constants or useMemo.
+
+Ensure no React components are declared inside render (use pure helpers with no hooks or separate files).
+
+Wrap heavy child items (feed cards, list rows) in React.memo with a shallow compare; ensure their props are stable.
+
+Stabilize keys & state
+
+Remove any key={...} that changes with local state or on each render.
+
+Avoid state updates inside render paths; ensure setters are only in events/effects.
+
+Memoize any context provider values with useMemo to prevent tree-wide re-renders.
+
+Effects & listeners
+
+Ensure document/window listeners are attached once (in useEffect with empty deps) and cleaned up.
+
+Mark scroll/touch listeners added via addEventListener as { passive: true } and throttle/debounce handlers.
+
+Defer non-critical work in effects using queueMicrotask, setTimeout(0), or requestIdleCallback (feature-detect).
+
+Code size on initial route (logic-only splitting)
+
+Lazy import views not shown on the initial mobile home (create/profile/settings/etc.) using React.lazy + Suspense with fallback={null}.
+
+Import only used icons/utilities (no wildcard imports).
+
+Images & constants
+
+Add loading="lazy" and decoding="async" to non-critical images (keep sizes, srcs the same).
+
+Move large constant arrays (menu items, tab configs) to module scope to avoid recreations per render.
+
+Framer Motion
+
+Keep all existing animations and props.
+
+Ensure motion components don’t re-mount due to changing key/object props; memoize variants/transition objects.
+
+Acceptance
+
+Same UI/UX, same animations, same behavior.
+
+Fewer renders on initial home load and during scroll/tap.
+
+Lower main-thread time (profilable in React Profiler/Chrome Performance).
+
+No diffs to visual snapshots.
+
+Output format
+
+List each change with file:line and a one-line reason.
+
+Provide small diffs (unified) per change.
+
+Include a quick “Verify” section: run vite build && vite preview, record mobile performance, compare render counts in React Profiler before/after.
