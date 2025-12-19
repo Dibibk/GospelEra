@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { Capacitor } from '@capacitor/core';
+import { Browser } from '@capacitor/browser';
 import { validateDonationAmount, createStripeCheckout } from '@/lib/donations';
 
 interface SupporterMobileProps {
@@ -14,6 +16,10 @@ export function SupporterMobile({ onBack }: SupporterMobileProps) {
   const [activeTab, setActiveTab] = useState<'stripe' | 'paypal'>('stripe');
 
   const predefinedAmounts = [5, 10, 25, 50, 100];
+
+  // Detect native vs web
+  const isNative = Capacitor.isNativePlatform();
+
   const stripeEnabled = Boolean(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
   const paymentsEnabled = stripeEnabled;
 
@@ -58,16 +64,29 @@ export function SupporterMobile({ onBack }: SupporterMobileProps) {
       const result = await createStripeCheckout({
         amount: amount,
         note: message.trim() || undefined,
-        isMobile: true,
+        // Let backend know this is running inside native WebView
+        isMobile: isNative,
       });
 
       if ('error' in result) {
         setError(result.error);
         setIsProcessing(false);
       } else {
-        // Navigate to Stripe Checkout
-        window.location.href = result.url;
-        // Note: Keep isProcessing true while redirecting
+        const checkoutUrl = result.url;
+
+        // 🔑 IMPORTANT:
+        // On native (Capacitor), use the Browser plugin so Stripe Link opens
+        // in a real Safari View Controller instead of the in-app WebView.
+        if (isNative) {
+          await Browser.open({
+            url: checkoutUrl,
+            presentationStyle: 'popover',
+          });
+          // Keep isProcessing true while external browser is open
+        } else {
+          // Web: normal redirect
+          window.location.href = checkoutUrl;
+        }
       }
     } catch (error) {
       console.error('Stripe payment error:', error);
