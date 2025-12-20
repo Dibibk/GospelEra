@@ -167,7 +167,7 @@ export default function PrivacyPolicy() {
             at:
           </p>
           <p>
-            <strong>Email:</strong> privacy@gospelera.app
+            <strong>Email:</strong> ridible.support@ridible.com
           </p>
         </div>
       </div>
