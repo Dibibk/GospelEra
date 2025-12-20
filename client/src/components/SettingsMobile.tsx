@@ -887,6 +887,29 @@ export function SettingsMobile({ onBack, onEditProfile, onSuccess }: SettingsMob
             </button>
           </div>
 
+          {/* Privacy Policy Link */}
+          <a
+            href="/privacy"
+            data-testid="link-privacy-policy"
+            style={{
+              display: "block",
+              width: "100%",
+              minHeight: "48px",
+              background: "#ffffff",
+              border: "1px solid #e5e5e5",
+              borderRadius: "12px",
+              fontSize: "16px",
+              fontWeight: 500,
+              color: "#007AFF",
+              textDecoration: "none",
+              textAlign: "center",
+              lineHeight: "48px",
+              marginBottom: "12px",
+            }}
+          >
+            Privacy Policy
+          </a>
+
           {/* Sign Out Button */}
           <button
             onClick={async () => {
