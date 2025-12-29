@@ -1176,6 +1176,63 @@ Respond in JSON format:
     }
   });
 
+  // PATCH comment - only author can edit their own comments
+  app.patch("/api/comments/:id", authenticateUser, async (req: AuthenticatedRequest, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: "Authentication required" });
+      }
+      
+      const commentId = parseInt(req.params.id);
+      if (isNaN(commentId)) {
+        return res.status(400).json({ error: "Invalid comment ID" });
+      }
+      
+      const { content } = req.body;
+      if (!content || typeof content !== 'string' || content.trim().length === 0) {
+        return res.status(400).json({ error: "Comment content is required" });
+      }
+      
+      if (!supabaseAdmin) {
+        return res.status(500).json({ error: "Database not configured" });
+      }
+      
+      // Verify the comment exists and belongs to the user
+      const { data: existingComment, error: fetchError } = await supabaseAdmin
+        .from('comments')
+        .select('author_id, deleted')
+        .eq('id', commentId)
+        .single();
+      
+      if (fetchError || !existingComment) {
+        return res.status(404).json({ error: "Comment not found" });
+      }
+      
+      if (existingComment.deleted) {
+        return res.status(400).json({ error: "Cannot edit a deleted comment" });
+      }
+      
+      // Only allow author to edit (admins cannot edit others' comments)
+      if (existingComment.author_id !== req.user.id) {
+        return res.status(403).json({ error: "You can only edit your own comments" });
+      }
+      
+      // Update the comment
+      const { data: updatedComment, error } = await supabaseAdmin
+        .from('comments')
+        .update({ content: content.trim() })
+        .eq('id', commentId)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      res.json({ success: true, data: updatedComment });
+    } catch (error) {
+      console.error("Error updating comment:", error);
+      res.status(500).json({ error: "Failed to update comment" });
+    }
+  });
+
   // GET comments for a post
   app.get("/api/comments", async (req, res) => {
     try {

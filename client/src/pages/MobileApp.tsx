@@ -33,7 +33,7 @@ import {
   getAmenInfo,
   listBookmarks,
 } from "@/lib/engagement";
-import { listComments, createComment, softDeleteComment } from "@/lib/comments";
+import { listComments, createComment, softDeleteComment, updateComment } from "@/lib/comments";
 import { createReport } from "@/lib/reports";
 import { checkMediaPermission, getCurrentRequestStatus } from "@/lib/mediaRequests";
 import { validateAndNormalizeYouTubeUrl } from "../../../shared/youtube";
@@ -94,7 +94,7 @@ import {
 } from "@/lib/donations";
 import { PAYMENTS } from "@/config/payments";
 import { EmbedCard } from "@/components/EmbedCard";
-import { Flag, Trash2, Loader2 } from "lucide-react";
+import { Flag, Trash2, Loader2, Pencil, Check, X } from "lucide-react";
 // at top of MobileApp.tsx
 
 // focus helpers (no hooks here)
@@ -453,6 +453,8 @@ export default function MobileApp() {
   const [deletingCommentId, setDeletingCommentId] = useState<number | null>(
     null,
   );
+  const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
+  const [editingCommentContent, setEditingCommentContent] = useState("");
   const [reportModal, setReportModal] = useState<{
     isOpen: boolean;
     targetType: "post" | "comment";
@@ -1777,13 +1779,11 @@ export default function MobileApp() {
   };
 
   const handleReportComment = (commentId: number) => {
-    setReportModal({
-      isOpen: true,
-      targetType: "comment",
-      targetId: commentId.toString(),
-      reason: "",
-      selectedReason: "",
+    setReportTarget({
+      type: "comment",
+      id: commentId.toString(),
     });
+    setReportModalOpen(true);
   };
 
   const closeReportModal = () => {
@@ -1813,6 +1813,34 @@ export default function MobileApp() {
     }
 
     setDeletingCommentId(null);
+  };
+
+  const handleEditComment = (commentId: number, currentContent: string) => {
+    setEditingCommentId(commentId);
+    setEditingCommentContent(currentContent);
+  };
+
+  const handleCancelEditComment = () => {
+    setEditingCommentId(null);
+    setEditingCommentContent("");
+  };
+
+  const handleSaveEditComment = async (commentId: number, postId: number) => {
+    if (!editingCommentContent.trim()) {
+      alert("Comment cannot be empty");
+      return;
+    }
+
+    const { error } = await updateComment(commentId, editingCommentContent.trim());
+
+    if (error) {
+      alert(`Failed to update comment: ${(error as any).message}`);
+    } else {
+      // Reload comments to show updated list
+      await loadComments(postId);
+      setEditingCommentId(null);
+      setEditingCommentContent("");
+    }
   };
 
   const handleSubmitReport = async (reason: string) => {
@@ -2618,9 +2646,61 @@ export default function MobileApp() {
                                     >
                                       {getDisplayName(profiles.get(comment.author_id))}
                                     </span>
-                                    <span style={{ color: "#262626" }}>
-                                      {comment.content}
-                                    </span>
+                                    {editingCommentId === comment.id ? (
+                                      <div style={{ display: "flex", alignItems: "center", gap: "8px", marginTop: "4px" }}>
+                                        <input
+                                          type="text"
+                                          value={editingCommentContent}
+                                          onChange={(e) => setEditingCommentContent(e.target.value)}
+                                          style={{
+                                            flex: 1,
+                                            padding: "6px 10px",
+                                            border: "1px solid #dbdbdb",
+                                            borderRadius: "8px",
+                                            fontSize: "12px",
+                                            outline: "none",
+                                          }}
+                                          autoFocus
+                                          onKeyDown={(e) => {
+                                            if (e.key === "Enter") {
+                                              handleSaveEditComment(comment.id, post.id);
+                                            } else if (e.key === "Escape") {
+                                              handleCancelEditComment();
+                                            }
+                                          }}
+                                        />
+                                        <button
+                                          onClick={() => handleSaveEditComment(comment.id, post.id)}
+                                          style={{
+                                            background: "none",
+                                            border: "none",
+                                            color: "#22c55e",
+                                            cursor: "pointer",
+                                            padding: "4px",
+                                          }}
+                                          title="Save"
+                                        >
+                                          <Check size={16} />
+                                        </button>
+                                        <button
+                                          onClick={handleCancelEditComment}
+                                          style={{
+                                            background: "none",
+                                            border: "none",
+                                            color: "#ef4444",
+                                            cursor: "pointer",
+                                            padding: "4px",
+                                          }}
+                                          title="Cancel"
+                                        >
+                                          <X size={16} />
+                                        </button>
+                                      </div>
+                                    ) : (
+                                      <span style={{ color: "#262626" }}>
+                                        {comment.content}
+                                      </span>
+                                    )}
                                   </div>
                                   <div
                                     style={{
@@ -2636,6 +2716,27 @@ export default function MobileApp() {
                                       {formatTimeAgo(comment.created_at)}
                                     </span>
                                     <div style={{ display: "flex", alignItems: "center", gap: "4px", marginLeft: "auto", flexShrink: 0 }}>
+                                      {comment.author_id === user?.id && editingCommentId !== comment.id && (
+                                        <button
+                                          onClick={() => handleEditComment(comment.id, comment.content)}
+                                          style={{
+                                            background: "none",
+                                            border: "none",
+                                            color: "#3b82f6",
+                                            cursor: "pointer",
+                                            padding: "6px",
+                                            minWidth: "32px",
+                                            minHeight: "32px",
+                                            display: "flex",
+                                            alignItems: "center",
+                                            justifyContent: "center",
+                                            borderRadius: "50%",
+                                          }}
+                                          title="Edit comment"
+                                        >
+                                          <Pencil size={14} />
+                                        </button>
+                                      )}
                                       <button
                                         onClick={() =>
                                           handleReportComment(comment.id)

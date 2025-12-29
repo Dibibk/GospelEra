@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { createClient } from '@supabase/supabase-js';
+import { supabaseAdmin } from './supabaseAdmin';
 
 // Initialize Supabase client for server-side operations
 const supabaseUrl = process.env.VITE_SUPABASE_URL;
@@ -60,18 +61,22 @@ export async function authenticateUser(
       });
     }
 
-    // Fetch user profile to get role
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single();
+    // Fetch user profile to get role using admin client to bypass RLS
+    let role = 'user';
+    if (supabaseAdmin) {
+      const { data: profile } = await supabaseAdmin
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+      role = profile?.role || 'user';
+    }
 
     // Attach user info to request
     req.user = {
       id: user.id,
       email: user.email,
-      role: profile?.role || 'user'
+      role
     };
 
     next();
@@ -107,16 +112,21 @@ export async function optionalAuth(
     const { data: { user }, error } = await supabase.auth.getUser(token);
 
     if (!error && user) {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', user.id)
-        .single();
+      // Fetch user profile to get role using admin client to bypass RLS
+      let role = 'user';
+      if (supabaseAdmin) {
+        const { data: profile } = await supabaseAdmin
+          .from('profiles')
+          .select('role')
+          .eq('id', user.id)
+          .single();
+        role = profile?.role || 'user';
+      }
 
       req.user = {
         id: user.id,
         email: user.email,
-        role: profile?.role || 'user'
+        role
       };
     }
 

@@ -144,3 +144,40 @@ export async function softDeleteComment(id: number) {
     return { data: null, error: err };
   }
 }
+
+/**
+ * Updates a comment's content
+ * Only the author can edit their own comments
+ * @param {number} id - Comment ID to update
+ * @param {string} content - New comment content
+ * @returns {Promise<{data: Object|null, error: Error|null}>}
+ */
+export async function updateComment(id: number, content: string) {
+  try {
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+    
+    if (sessionError || !session) {
+      throw new Error('Authentication required to edit comments')
+    }
+    
+    const baseUrl = getApiBaseUrl();
+    const response = await fetch(`${baseUrl}/api/comments/${id}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`
+      },
+      body: JSON.stringify({ content })
+    });
+    
+    const result = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(result.error || 'Failed to update comment');
+    }
+    
+    return { data: result.data, error: null };
+  } catch (err) {
+    return { data: null, error: err };
+  }
+}
