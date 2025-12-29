@@ -483,6 +483,7 @@ export default function MobileApp() {
   const [pullDistance, setPullDistance] = useState(0);
   const pullStartY = useRef<number | null>(null);
   const feedContainerRef = useRef<HTMLDivElement>(null);
+  const loadMoreSentinelRef = useRef<HTMLDivElement>(null);
   
   // Banned user modal state
   const [showBannedModal, setShowBannedModal] = useState(false);
@@ -608,6 +609,24 @@ export default function MobileApp() {
       checkUserMediaPermission();
     }
   }, [user, isAdmin]);
+
+  // Infinite scroll observer for loading more posts
+  useEffect(() => {
+    if (!loadMoreSentinelRef.current) return;
+    
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && !loadingMore && nextCursor && !searchQuery && activeTab === 0) {
+          loadMorePosts();
+        }
+      },
+      { rootMargin: '200px' }
+    );
+    
+    observer.observe(loadMoreSentinelRef.current);
+    
+    return () => observer.disconnect();
+  }, [nextCursor, loadingMore, searchQuery, activeTab]);
 
   // Load daily verse separately to ensure it always loads
   useEffect(() => {
@@ -816,6 +835,50 @@ export default function MobileApp() {
       console.error("Error fetching data:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Load more posts for infinite scroll
+  const loadMorePosts = async () => {
+    if (loadingMore || !nextCursor || searchQuery) return;
+    
+    setLoadingMore(true);
+    try {
+      const feedResult = await fetchFeed({ limit: 20, fromId: nextCursor });
+      
+      if (feedResult.data) {
+        // Always update nextCursor to stop pagination when no more posts
+        setNextCursor(feedResult.data.nextCursor ?? null);
+        
+        if (feedResult.data.posts.length > 0) {
+          // Append new posts to existing posts
+          setPosts(prev => [...prev, ...feedResult.data!.posts]);
+        
+          // Merge profiles
+          if (feedResult.data.profiles) {
+            const profilesMap = new Map(Object.entries(feedResult.data.profiles));
+            setProfiles(prev => new Map([...Array.from(prev), ...Array.from(profilesMap)]));
+          }
+          
+          // Merge engagement data
+          if (feedResult.data.engagement) {
+            const engagementMap = new Map();
+            for (const [postId, data] of Object.entries(feedResult.data.engagement)) {
+              engagementMap.set(parseInt(postId), {
+                isBookmarked: false,
+                hasAmened: (data as any).userAmened || false,
+                amenCount: (data as any).amenCount || 0,
+                commentCount: (data as any).commentCount || 0,
+              });
+            }
+            setEngagementData(prev => new Map([...Array.from(prev), ...Array.from(engagementMap)]));
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error loading more posts:", error);
+    } finally {
+      setLoadingMore(false);
     }
   };
 
@@ -2643,6 +2706,50 @@ export default function MobileApp() {
               Share your faith and grow together
             </div>
           </div>
+        )}
+
+        {/* Infinite scroll sentinel and loading indicator */}
+        {posts.length > 0 && !searchQuery && (
+          <>
+            <div
+              ref={loadMoreSentinelRef}
+              style={{ height: "1px" }}
+            />
+            {loadingMore && (
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "center",
+                  padding: "20px",
+                  background: "#ffffff",
+                }}
+              >
+                <div
+                  style={{
+                    width: "24px",
+                    height: "24px",
+                    border: "3px solid #e0e0e0",
+                    borderTopColor: "#4285f4",
+                    borderRadius: "50%",
+                    animation: "spin 0.8s linear infinite",
+                  }}
+                />
+              </div>
+            )}
+            {!nextCursor && posts.length >= 20 && (
+              <div
+                style={{
+                  textAlign: "center",
+                  padding: "20px",
+                  color: "#8e8e8e",
+                  fontSize: "14px",
+                  background: "#ffffff",
+                }}
+              >
+                You've reached the end
+              </div>
+            )}
+          </>
         )}
       </div>
     );
