@@ -779,6 +779,10 @@ export default function MobileApp() {
         // Set posts directly from feed
         setPosts(feedResult.data.posts);
         console.log("🔍 fetchData: setPosts called with", feedResult.data.posts.length, "posts");
+        
+        // Set nextCursor for infinite scroll pagination
+        setNextCursor(feedResult.data.nextCursor ?? null);
+        console.log("🔍 fetchData: nextCursor set to", feedResult.data.nextCursor);
 
         // Set profiles from feed response (already a map)
         if (feedResult.data.profiles) {
