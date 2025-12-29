@@ -1,5 +1,5 @@
-import { useCallback, useState } from "react";
-import { User } from "lucide-react";
+import { useCallback, useState, useRef, useEffect } from "react";
+import { User, Loader2 } from "lucide-react";
 
 // Helper to convert relative image URLs to full URLs for native apps
 function getImageUrl(url: string | undefined | null): string | null {
@@ -30,6 +30,9 @@ interface PrayerBrowseMobileProps {
   onNavigateToMy: () => void;
   onNavigateToLeaderboard: () => void;
   onSelectPrayer: (prayer: any) => void;
+  nextCursor?: number | null;
+  loadingMore?: boolean;
+  onLoadMore?: () => void;
 }
 
 export function PrayerBrowseMobile({
@@ -38,10 +41,34 @@ export function PrayerBrowseMobile({
   onNavigateToMy,
   onNavigateToLeaderboard,
   onSelectPrayer,
+  nextCursor,
+  loadingMore,
+  onLoadMore,
 }: PrayerBrowseMobileProps) {
   const [avatarErrors, setAvatarErrors] = useState<
     Record<number | string, boolean>
   >({});
+  const loadMoreSentinelRef = useRef<HTMLDivElement>(null);
+
+  // IntersectionObserver for infinite scroll
+  useEffect(() => {
+    if (!onLoadMore) return;
+    
+    const sentinel = loadMoreSentinelRef.current;
+    if (!sentinel) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && nextCursor && !loadingMore) {
+          onLoadMore();
+        }
+      },
+      { rootMargin: "200px" }
+    );
+
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [nextCursor, loadingMore, onLoadMore]);
 
   const formatTimeAgo = useCallback((dateString: string) => {
     const date = new Date(dateString);
@@ -321,6 +348,36 @@ export function PrayerBrowseMobile({
             <div style={{ color: "#8e8e8e", fontSize: "14px" }}>
               Share your prayer needs and pray for others
             </div>
+          </div>
+        )}
+        
+        {/* Infinite scroll sentinel and loading indicator */}
+        <div ref={loadMoreSentinelRef} style={{ height: "1px" }} />
+        {loadingMore && (
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "center",
+              padding: "20px",
+            }}
+          >
+            <Loader2
+              size={24}
+              color="#8e8e8e"
+              style={{ animation: "spin 1s linear infinite" }}
+            />
+          </div>
+        )}
+        {!nextCursor && prayerRequests.length >= 20 && (
+          <div
+            style={{
+              textAlign: "center",
+              padding: "20px",
+              color: "#8e8e8e",
+              fontSize: "14px",
+            }}
+          >
+            You've reached the end
           </div>
         )}
       </div>

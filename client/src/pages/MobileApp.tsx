@@ -413,6 +413,8 @@ export default function MobileApp() {
   const [tagsLoading, setTagsLoading] = useState(true);
   const [nextCursor, setNextCursor] = useState<number | null>(null);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [prayerNextCursor, setPrayerNextCursor] = useState<number | null>(null);
+  const [loadingMorePrayers, setLoadingMorePrayers] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [committingToId, setCommittingToId] = useState<number | null>(null);
   // Prayer System Internal Routing
@@ -806,11 +808,12 @@ export default function MobileApp() {
       }
 
       // Fetch real prayer requests from API (in parallel)
-      const prayerResult = await listPrayerRequests({ limit: 10 });
+      const prayerResult = await listPrayerRequests({ limit: 20 });
       console.log("🙏 fetchData: prayerResult", { hasData: !!prayerResult.data, count: prayerResult.data?.length, error: prayerResult.error });
       if (prayerResult.data) {
         setPrayerRequests(prayerResult.data);
-        console.log("🙏 fetchData: setPrayerRequests called with", prayerResult.data.length, "requests");
+        setPrayerNextCursor(prayerResult.nextCursor ?? null);
+        console.log("🙏 fetchData: setPrayerRequests called with", prayerResult.data.length, "requests, nextCursor:", prayerResult.nextCursor);
       }
 
       // Fetch user's prayer commitments and requests if authenticated
@@ -883,6 +886,30 @@ export default function MobileApp() {
       console.error("Error loading more posts:", error);
     } finally {
       setLoadingMore(false);
+    }
+  };
+
+  // Load more prayer requests for infinite scroll
+  const loadMorePrayerRequests = async () => {
+    if (loadingMorePrayers || !prayerNextCursor) return;
+    
+    setLoadingMorePrayers(true);
+    try {
+      const prayerResult = await listPrayerRequests({ limit: 20, cursor: prayerNextCursor });
+      
+      if (prayerResult.data) {
+        // Always update nextCursor to stop pagination when no more requests
+        setPrayerNextCursor(prayerResult.nextCursor ?? null);
+        
+        if (prayerResult.data.length > 0) {
+          // Append new prayer requests to existing ones
+          setPrayerRequests(prev => [...prev, ...prayerResult.data!]);
+        }
+      }
+    } catch (error) {
+      console.error("Error loading more prayer requests:", error);
+    } finally {
+      setLoadingMorePrayers(false);
     }
   };
 
@@ -2779,6 +2806,9 @@ export default function MobileApp() {
               setSelectedPrayerDetail(prayer);
               setPrayerRoute("detail");
             }}
+            nextCursor={prayerNextCursor}
+            loadingMore={loadingMorePrayers}
+            onLoadMore={loadMorePrayerRequests}
           />
         );
       case "new":
@@ -2807,6 +2837,9 @@ export default function MobileApp() {
                 setSelectedPrayerDetail(prayer);
                 setPrayerRoute("detail");
               }}
+              nextCursor={prayerNextCursor}
+              loadingMore={loadingMorePrayers}
+              onLoadMore={loadMorePrayerRequests}
             />
           );
         }
@@ -2866,6 +2899,9 @@ export default function MobileApp() {
               setSelectedPrayerDetail(prayer);
               setPrayerRoute("detail");
             }}
+            nextCursor={prayerNextCursor}
+            loadingMore={loadingMorePrayers}
+            onLoadMore={loadMorePrayerRequests}
           />
         );
     }

@@ -60,6 +60,12 @@ export interface ApiResponse<T> {
   error: string | null
 }
 
+export interface PaginatedApiResponse<T> {
+  data: T | null
+  nextCursor: number | null
+  error: string | null
+}
+
 /**
  * Create a new prayer request
  */
@@ -106,7 +112,7 @@ export async function listPrayerRequests({
   tags = [], 
   limit = 20, 
   cursor = null as number | null
-}: PrayerRequestListParams): Promise<ApiResponse<any[]>> {
+}: PrayerRequestListParams): Promise<PaginatedApiResponse<any[]>> {
   try {
     console.log('🙏 [listPrayerRequests] Starting prayer requests fetch via API...', { status, limit });
     
@@ -134,7 +140,7 @@ export async function listPrayerRequests({
     
     if (!response.ok) {
       console.error('Failed to fetch prayer requests:', response.status, response.statusText);
-      return { data: null, error: 'Failed to load prayer requests' };
+      return { data: null, nextCursor: null, error: 'Failed to load prayer requests' };
     }
     
     const result = await response.json();
@@ -155,10 +161,10 @@ export async function listPrayerRequests({
       }
     }));
 
-    return { data: enhancedData, error: null };
+    return { data: enhancedData, nextCursor: result.nextCursor ?? null, error: null };
   } catch (err) {
     console.error('List prayer requests error:', err);
-    return { data: null, error: 'Unexpected error occurred' };
+    return { data: null, nextCursor: null, error: 'Unexpected error occurred' };
   }
 }
 
