@@ -260,20 +260,25 @@ export async function commitToPray(requestId: number): Promise<ApiResponse<any>>
     const data = await response.json()
 
     // Notify prayer request owner (if not self) - client-side notification
-    const { data: prayerRequest } = await supabase
-      .from('prayer_requests')
-      .select('requester')
-      .eq('id', requestId)
-      .single();
-    
-    if (prayerRequest?.requester && prayerRequest.requester !== sessionData.session.user.id) {
-      createNotification({
-        recipientId: prayerRequest.requester,
-        eventType: 'prayer_commitment',
-        prayerRequestId: requestId,
-        commitmentId: data.id,
-        message: 'committed to pray for your prayer request'
-      });
+    // Wrap in try-catch so RLS errors don't break the main flow
+    try {
+      const { data: prayerRequest } = await supabase
+        .from('prayer_requests')
+        .select('requester')
+        .eq('id', requestId)
+        .single();
+      
+      if (prayerRequest?.requester && prayerRequest.requester !== sessionData.session.user.id) {
+        createNotification({
+          recipientId: prayerRequest.requester,
+          eventType: 'prayer_commitment',
+          prayerRequestId: requestId,
+          commitmentId: data.id,
+          message: 'committed to pray for your prayer request'
+        });
+      }
+    } catch (notifyError) {
+      console.warn('Failed to send notification (non-critical):', notifyError);
     }
 
     // Return data with spam warning if applicable
@@ -360,20 +365,25 @@ export async function confirmPrayed(requestId: number, { note = null }: { note?:
     const data = await response.json()
 
     // Notify prayer request owner (if not self) - client-side notification
-    const { data: prayerRequest } = await supabase
-      .from('prayer_requests')
-      .select('requester')
-      .eq('id', requestId)
-      .single();
-    
-    if (prayerRequest?.requester && prayerRequest.requester !== sessionData.session.user.id) {
-      createNotification({
-        recipientId: prayerRequest.requester,
-        eventType: 'prayer_completed',
-        prayerRequestId: requestId,
-        commitmentId: data.id,
-        message: 'prayed for your prayer request'
-      });
+    // Wrap in try-catch so RLS errors don't break the main flow
+    try {
+      const { data: prayerRequest } = await supabase
+        .from('prayer_requests')
+        .select('requester')
+        .eq('id', requestId)
+        .single();
+      
+      if (prayerRequest?.requester && prayerRequest.requester !== sessionData.session.user.id) {
+        createNotification({
+          recipientId: prayerRequest.requester,
+          eventType: 'prayer_completed',
+          prayerRequestId: requestId,
+          commitmentId: data.id,
+          message: 'prayed for your prayer request'
+        });
+      }
+    } catch (notifyError) {
+      console.warn('Failed to send notification (non-critical):', notifyError);
     }
 
     return { data, error: null }
