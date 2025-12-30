@@ -754,11 +754,16 @@ Respond in JSON format:
         .select('id, display_name, avatar_url')
         .in('id', requesterIds);
       
-      // Fetch commitments separately
-      const { data: commitmentsData } = await supabase
-        .from('prayer_commitments')
-        .select('request_id, warrior, status, committed_at, prayed_at')
-        .in('request_id', requestIds);
+      // Fetch commitments separately using supabaseAdmin to bypass RLS
+      const { data: commitmentsData } = supabaseAdmin
+        ? await supabaseAdmin
+            .from('prayer_commitments')
+            .select('request_id, warrior, status, committed_at, prayed_at')
+            .in('request_id', requestIds)
+        : await supabase
+            .from('prayer_commitments')
+            .select('request_id, warrior, status, committed_at, prayed_at')
+            .in('request_id', requestIds);
       
       // Build profiles map
       const profilesMap: Record<string, any> = {};
