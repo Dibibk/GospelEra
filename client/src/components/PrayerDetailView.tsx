@@ -78,12 +78,12 @@ export function PrayerDetailView({
     setIsProcessing(true);
     try {
       if (effectiveStatus === "committed") {
-        await onConfirmPrayed(prayer.id);
         setOptimisticStatus("prayed");
+        await onConfirmPrayed(prayer.id);
         await onRefresh(prayer.id);
       } else if (effectiveStatus === "none") {
-        await onCommitToPray(prayer.id);
         setOptimisticStatus("committed");
+        await onCommitToPray(prayer.id);
         await onRefresh(prayer.id); 
       }
     } catch (error) {

@@ -92,13 +92,13 @@ export function PrayerDetailMobile({
     try {
       if (effectiveStatus === "committed") {
         console.log(" [PrayerDetailMobile] Confirming prayed...");
-        await onConfirmPrayed(prayer.id);
         setLocalCommitmentStatus("prayed");
+        await onConfirmPrayed(prayer.id);
         await onRefresh(prayer.id);
       } else if (effectiveStatus === "none") {
         console.log("[PrayerDetailMobile] Committing to pray...");
-        await onCommitToPray(prayer.id);
         setLocalCommitmentStatus("committed");
+        await onCommitToPray(prayer.id);
         await onRefresh(prayer.id);
       }
       console.log("[PrayerDetailMobile] Action completed successfully");
