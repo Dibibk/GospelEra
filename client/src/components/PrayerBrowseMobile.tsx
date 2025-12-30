@@ -4,22 +4,23 @@ import { User, Loader2 } from "lucide-react";
 // Helper to convert relative image URLs to full URLs for native apps
 function getImageUrl(url: string | undefined | null): string | null {
   if (!url) return null;
-  
+
   // Already a full URL
-  if (url.startsWith('http://') || url.startsWith('https://')) {
+  if (url.startsWith("http://") || url.startsWith("https://")) {
     return url;
   }
-  
+
   // Check if running on native platform
-  const isNative = typeof window !== 'undefined' && 
-    window.location.protocol === 'capacitor:';
-  
+  const isNative =
+    typeof window !== "undefined" && window.location.protocol === "capacitor:";
+
   if (isNative) {
     // Prepend production backend URL for native apps
-    const baseUrl = import.meta.env.VITE_API_URL || 'https://gospel-era.replit.app';
-    return `${baseUrl}${url.startsWith('/') ? '' : '/'}${url}`;
+    const baseUrl =
+      import.meta.env.VITE_API_URL || "https://gospel-era.replit.app";
+    return `${baseUrl}${url.startsWith("/") ? "" : "/"}${url}`;
   }
-  
+
   // For web, return as-is (relative URLs work)
   return url;
 }
@@ -53,7 +54,7 @@ export function PrayerBrowseMobile({
   // IntersectionObserver for infinite scroll
   useEffect(() => {
     if (!onLoadMore) return;
-    
+
     const sentinel = loadMoreSentinelRef.current;
     if (!sentinel) return;
 
@@ -63,7 +64,7 @@ export function PrayerBrowseMobile({
           onLoadMore();
         }
       },
-      { rootMargin: "200px" }
+      { rootMargin: "200px" },
     );
 
     observer.observe(sentinel);
@@ -192,9 +193,7 @@ export function PrayerBrowseMobile({
       <div style={{ padding: "16px" }}>
         {prayerRequests.length > 0 ? (
           prayerRequests.map((request) => {
-            const avatarUrl = getImageUrl(
-              request.profiles?.avatar_url || null,
-            );
+            const avatarUrl = getImageUrl(request.profiles?.avatar_url || null);
 
             const hasError = avatarErrors[request.id];
 
@@ -350,7 +349,7 @@ export function PrayerBrowseMobile({
             </div>
           </div>
         )}
-        
+
         {/* Infinite scroll sentinel and loading indicator */}
         <div ref={loadMoreSentinelRef} style={{ height: "1px" }} />
         {loadingMore && (

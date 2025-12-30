@@ -5,19 +5,20 @@ import { Capacitor } from "@capacitor/core";
 // Helper to convert relative image URLs to full URLs for native apps (same as Home page)
 function getImageUrl(url: string | undefined | null): string | null {
   if (!url) return null;
-  
+
   // Already a full URL
-  if (url.startsWith('http://') || url.startsWith('https://')) {
+  if (url.startsWith("http://") || url.startsWith("https://")) {
     return url;
   }
-  
+
   // Check if running on native platform
   if (Capacitor.isNativePlatform()) {
     // Prepend production backend URL for native apps
-    const baseUrl = import.meta.env.VITE_API_URL || 'https://gospel-era.replit.app';
-    return `${baseUrl}${url.startsWith('/') ? '' : '/'}${url}`;
+    const baseUrl =
+      import.meta.env.VITE_API_URL || "https://gospel-era.replit.app";
+    return `${baseUrl}${url.startsWith("/") ? "" : "/"}${url}`;
   }
-  
+
   // For web, return as-is (relative URLs work)
   return url;
 }
@@ -30,6 +31,7 @@ interface PrayerDetailMobileProps {
   onBack: () => void;
   onCommitToPray: (prayerId: number) => Promise<void>;
   onConfirmPrayed: (prayerId: number) => Promise<void>;
+  onRefresh: (prayerId: number) => Promise<void>;
 }
 
 export function PrayerDetailMobile({
@@ -40,24 +42,25 @@ export function PrayerDetailMobile({
   onBack,
   onCommitToPray,
   onConfirmPrayed,
+  onRefresh,
 }: PrayerDetailMobileProps) {
   const [isCommitting, setIsCommitting] = useState(false);
 
   // Check if this is user's own prayer request
   const isOwnPrayer = user?.id && prayer?.requester === user.id;
-  
+
   // Debug logging
-  console.log('🔍 PrayerDetail ownership check:', {
+  console.log("🔍 PrayerDetail ownership check:", {
     userId: user?.id,
     prayerRequester: prayer?.requester,
     isOwnPrayer,
     match: user?.id === prayer?.requester,
     userType: typeof user?.id,
-    requesterType: typeof prayer?.requester
+    requesterType: typeof prayer?.requester,
   });
-  
+
   // TEMP DEBUG: Show on screen
-  const debugInfo = `User: ${user?.id?.substring(0,8)}... | Requester: ${prayer?.requester?.substring(0,8)}... | Match: ${isOwnPrayer}`;
+  const debugInfo = `User: ${user?.id?.substring(0, 8)}... | Requester: ${prayer?.requester?.substring(0, 8)}... | Match: ${isOwnPrayer}`;
 
   const formatTimeAgo = useCallback((dateString: string) => {
     const date = new Date(dateString);
@@ -72,19 +75,24 @@ export function PrayerDetailMobile({
   }, []);
 
   const handleAction = async () => {
-    console.log("🙏 [PrayerDetailMobile] handleAction called", { prayerId: prayer.id, hasCommitment: !!commitment });
+    console.log("🙏 [PrayerDetailMobile] handleAction called", {
+      prayerId: prayer.id,
+      hasCommitment: !!commitment,
+    });
     setIsCommitting(true);
     try {
-      if (commitment && commitment.status !== 'prayed') {
-        console.log("🙏 [PrayerDetailMobile] Confirming prayed...");
+      if (commitment && commitment.status !== "prayed") {
+        console.log(" [PrayerDetailMobile] Confirming prayed...");
         await onConfirmPrayed(prayer.id);
+        await onRefresh(prayer.id);
       } else if (!commitment) {
-        console.log("🙏 [PrayerDetailMobile] Committing to pray...");
+        console.log("[PrayerDetailMobile] Committing to pray...");
         await onCommitToPray(prayer.id);
+        await onRefresh(prayer.id);
       }
-      console.log("🙏 [PrayerDetailMobile] Action completed successfully");
+      console.log("[PrayerDetailMobile] Action completed successfully");
     } catch (err) {
-      console.error("🙏 [PrayerDetailMobile] Action error:", err);
+      console.error(" [PrayerDetailMobile] Action error:", err);
     } finally {
       setIsCommitting(false);
     }
@@ -149,13 +157,15 @@ export function PrayerDetailMobile({
       </div>
 
       {/* TEMP DEBUG BANNER - REMOVE AFTER TESTING */}
-      <div style={{ 
-        padding: "8px 16px", 
-        background: "#fef3c7", 
-        fontSize: "10px", 
-        fontFamily: "monospace",
-        borderBottom: "1px solid #f59e0b"
-      }}>
+      <div
+        style={{
+          padding: "8px 16px",
+          background: "#fef3c7",
+          fontSize: "10px",
+          fontFamily: "monospace",
+          borderBottom: "1px solid #f59e0b",
+        }}
+      >
         {debugInfo}
       </div>
 
@@ -300,7 +310,9 @@ export function PrayerDetailMobile({
             style={{
               width: "100%",
               background:
-                commitment && commitment.status === 'prayed' ? "#28a745" : "#4285f4",
+                commitment && commitment.status === "prayed"
+                  ? "#28a745"
+                  : "#4285f4",
               color: "#ffffff",
               border: "none",
               padding: "16px",
@@ -316,9 +328,9 @@ export function PrayerDetailMobile({
           >
             {isCommitting
               ? "..."
-              : commitment && commitment.status === 'prayed'
+              : commitment && commitment.status === "prayed"
                 ? "✓ Prayed"
-                : commitment && commitment.status !== 'prayed'
+                : commitment && commitment.status !== "prayed"
                   ? "Confirm I Prayed"
                   : "I Will Pray"}
           </button>

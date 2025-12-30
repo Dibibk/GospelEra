@@ -2961,6 +2961,13 @@ export default function MobileApp() {
             }}
             onCommitToPray={handleCommitToPray}
             onConfirmPrayed={handleConfirmPrayed}
+            onRefresh={async (prayerId: number) => {
+              const { data: refreshedPrayer } = await getPrayerRequest(prayerId);
+              if (refreshedPrayer) {
+                setSelectedPrayerDetail(refreshedPrayer);
+              }
+              await fetchData();
+            }}
           />
         );
       case "my":
@@ -3047,6 +3054,13 @@ export default function MobileApp() {
         }}
         onCommitToPray={handleCommitToPray}
         onConfirmPrayed={handleConfirmPrayed}
+        onRefresh={async (prayerId: number) => {
+          const { data: refreshedPrayer } = await getPrayerRequest(prayerId);
+          if (refreshedPrayer) {
+            setSelectedPrayerDetail(refreshedPrayer);
+          }
+          await fetchData();
+        }}
       />
     );
   }
