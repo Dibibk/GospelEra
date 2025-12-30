@@ -767,9 +767,12 @@ export default function MobileApp() {
     return () => document.removeEventListener("click", handleClickOutside);
   }, []);
 
-  // Refresh prayer data when navigating to Prayer tab
+  // Refresh prayer data when navigating to Prayer tab or back to browse view
   useEffect(() => {
     if (activeTab !== 1 || !user) return;
+    if (prayerRoute !== 'browse') return;
+
+    console.log("🔄 Refreshing prayer data on navigation to browse...");
 
     const refreshPrayerData = async () => {
       try {
@@ -797,7 +800,7 @@ export default function MobileApp() {
     };
 
     refreshPrayerData();
-  }, [activeTab, user]);
+  }, [activeTab, prayerRoute, user]);
 
   // Open report modal for post
   const openReportModal = (postId: number) => {
