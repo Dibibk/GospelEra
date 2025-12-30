@@ -1540,6 +1540,56 @@ Respond in JSON format:
     }
   });
 
+  // Get current user's prayer commitments - uses supabaseAdmin to bypass RLS
+  app.get("/api/my-commitments", authenticateUser, async (req: AuthenticatedRequest, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: "Authentication required" });
+      }
+      
+      if (!supabaseAdmin) {
+        return res.status(500).json({ error: "Server configuration error" });
+      }
+
+      const status = req.query.status as string | undefined;
+      const limit = Math.min(parseInt(req.query.limit as string) || 50, 100);
+      
+      let query = supabaseAdmin
+        .from('prayer_commitments')
+        .select(`
+          *,
+          prayer_requests!inner (
+            id,
+            title,
+            details,
+            status,
+            created_at,
+            is_anonymous,
+            requester
+          )
+        `)
+        .eq('warrior', req.user.id)
+        .order('committed_at', { ascending: false })
+        .limit(limit);
+
+      if (status) {
+        query = query.eq('status', status);
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        console.error("Error fetching user commitments:", error);
+        return res.status(500).json({ error: "Failed to fetch commitments" });
+      }
+
+      res.json({ commitments: data || [] });
+    } catch (error) {
+      console.error("Error in my-commitments:", error);
+      res.status(500).json({ error: "Failed to fetch commitments" });
+    }
+  });
+
   // Prayer Activity - record when someone prays
   app.post("/api/prayer-requests/:id/pray", authenticateUser, checkNotBanned, async (req: AuthenticatedRequest, res) => {
     try {

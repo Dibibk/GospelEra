@@ -395,61 +395,40 @@ export async function confirmPrayed(requestId: number, { note = null }: { note?:
 
 /**
  * Get current user's prayer commitments
+ * Uses backend API to bypass RLS issues
  */
-export async function getMyCommitments({ status, limit = 20, cursor }: PrayerCommitmentParams = {}): Promise<ApiResponse<any[]>> {
+export async function getMyCommitments({ status, limit = 20 }: PrayerCommitmentParams = {}): Promise<ApiResponse<any[]>> {
   try {
-    const { data: user } = await supabase.auth.getUser()
+    const { data: sessionData } = await supabase.auth.getSession()
     
-    if (!user?.user?.id) {
-      return { data: null, error: 'Authentication required' }
+    if (!sessionData?.session?.access_token) {
+      return { data: [], error: null }
     }
 
-    let query = supabase
-      .from('prayer_commitments')
-      .select(`
-        *,
-        prayer_requests!inner (
-          id,
-          title,
-          details,
-          status,
-          created_at,
-          is_anonymous,
-          requester
-        )
-      `)
-      .eq('warrior', user.user.id)
-
-    // Filter by status
-    if (status) {
-      query = query.eq('status', status)
-    }
-
-    // Pagination
-    if (cursor) {
-      query = query.lt('committed_at', cursor)
-    }
-
-    // Order and limit
-    query = query
-      .order('committed_at', { ascending: false })
-      .limit(Math.min(limit, 50))
-
-    const { data, error } = await query
-
-    if (error) {
-      console.error('Failed to get my commitments:', error)
-      // Handle missing Supabase tables gracefully
-      if (error.code === 'PGRST200' || error.code === '42P01' || error.message?.includes('does not exist')) {
-        return { data: [], error: null }
+    const baseUrl = getApiBaseUrl()
+    const params = new URLSearchParams()
+    if (status) params.append('status', status)
+    if (limit) params.append('limit', String(limit))
+    
+    const url = `${baseUrl}/api/my-commitments?${params.toString()}`
+    
+    const response = await fetch(url, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${sessionData.session.access_token}`
       }
-      return { data: null, error: 'Failed to load your commitments' }
+    })
+
+    if (!response.ok) {
+      console.error('Failed to fetch commitments:', response.status)
+      return { data: [], error: null }
     }
 
-    return { data: data || [], error: null }
+    const result = await response.json()
+    return { data: result.commitments || [], error: null }
   } catch (err) {
     console.error('Get my commitments error:', err)
-    return { data: null, error: 'Unexpected error occurred' }
+    return { data: [], error: null }
   }
 }
 
