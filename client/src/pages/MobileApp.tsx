@@ -767,6 +767,38 @@ export default function MobileApp() {
     return () => document.removeEventListener("click", handleClickOutside);
   }, []);
 
+  // Refresh prayer data when navigating to Prayer tab
+  useEffect(() => {
+    if (activeTab !== 1 || !user) return;
+
+    const refreshPrayerData = async () => {
+      try {
+        const { listPrayerRequests, getMyCommitments } = await import("../lib/prayer");
+        const [prayerResult, commitmentsResult] = await Promise.all([
+          listPrayerRequests({ limit: 20 }),
+          getMyCommitments(),
+        ]);
+
+        if (prayerResult.data) {
+          setPrayerRequests(prayerResult.data);
+          setPrayerNextCursor(prayerResult.nextCursor ?? null);
+        }
+
+        if (commitmentsResult.data) {
+          setMyCommitments((prev) => {
+            const serverIds = new Set(commitmentsResult.data!.map((c: any) => c.request_id));
+            const localOnly = prev.filter((c) => !serverIds.has(c.request_id));
+            return [...commitmentsResult.data!, ...localOnly];
+          });
+        }
+      } catch (error) {
+        console.error("Error refreshing prayer data:", error);
+      }
+    };
+
+    refreshPrayerData();
+  }, [activeTab, user]);
+
   // Open report modal for post
   const openReportModal = (postId: number) => {
     setReportModal({
