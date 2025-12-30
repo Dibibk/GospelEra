@@ -1035,8 +1035,34 @@ export default function MobileApp() {
         } else {
           showToast("✓ Committed to pray", "success");
         }
-        // Refresh prayer requests to show updated counts
-        await fetchData();
+        
+        // Immediately add the new commitment to myCommitments state
+        if (data) {
+          setMyCommitments(prev => [
+            { 
+              ...data, 
+              request_id: requestId, 
+              warrior: user.id, 
+              status: 'committed',
+              committed_at: new Date().toISOString()
+            },
+            ...prev.filter(c => c.request_id !== requestId)
+          ]);
+        }
+        
+        // Update prayer request stats in the list
+        setPrayerRequests(prev => prev.map(p => 
+          p.id === requestId 
+            ? { 
+                ...p, 
+                prayer_stats: {
+                  ...p.prayer_stats,
+                  committed_count: (p.prayer_stats?.committed_count || 0) + 1,
+                  total_warriors: (p.prayer_stats?.total_warriors || 0) + 1
+                }
+              }
+            : p
+        ));
         
         // Also refresh the selected prayer detail if viewing this request
         if (selectedPrayerDetail && selectedPrayerDetail.id === requestId) {
@@ -1076,8 +1102,26 @@ export default function MobileApp() {
           });
         }, 3000);
 
-        // Refresh prayer requests and commitments to show updated counts
-        await fetchData();
+        // Immediately update the commitment status to 'prayed' in myCommitments
+        setMyCommitments(prev => prev.map(c => 
+          c.request_id === requestId 
+            ? { ...c, status: 'prayed', prayed_at: new Date().toISOString() }
+            : c
+        ));
+        
+        // Update prayer request stats in the list
+        setPrayerRequests(prev => prev.map(p => 
+          p.id === requestId 
+            ? { 
+                ...p, 
+                prayer_stats: {
+                  ...p.prayer_stats,
+                  committed_count: Math.max(0, (p.prayer_stats?.committed_count || 0) - 1),
+                  prayed_count: (p.prayer_stats?.prayed_count || 0) + 1
+                }
+              }
+            : p
+        ));
       }
     } catch (error) {
       console.error("Error confirming prayer:", error);
