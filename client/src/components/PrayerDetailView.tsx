@@ -13,8 +13,7 @@ function getImageUrl(url: string | undefined | null): string | null {
 
   // Check if running on native platform (Capacitor WebView)
   const isNative =
-    typeof window !== "undefined" &&
-    window.location.protocol === "capacitor:";
+    typeof window !== "undefined" && window.location.protocol === "capacitor:";
 
   if (isNative) {
     // Prepend production backend URL for native apps
@@ -22,7 +21,6 @@ function getImageUrl(url: string | undefined | null): string | null {
       import.meta.env.VITE_API_URL || "https://gospel-era.replit.app";
     return `${baseUrl}${url.startsWith("/") ? "" : "/"}${url}`;
   }
-  
 
   // For web, return as-is (relative URLs work)
   return url;
@@ -37,6 +35,7 @@ interface PrayerDetailViewProps {
   onBack: () => void;
   onCommitToPray: (prayerId: number) => Promise<void>;
   onConfirmPrayed: (prayerId: number) => Promise<void>;
+  onRefresh: (prayerId: number) => Promise<void>;
 }
 
 function formatTimeAgo(dateString: string) {
@@ -60,9 +59,13 @@ export function PrayerDetailView({
   onBack,
   onCommitToPray,
   onConfirmPrayed,
+  onRefresh, // ✅ ADD THIS
 }: PrayerDetailViewProps) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [avatarError, setAvatarError] = useState(false);
+  const [optimisticStatus, setOptimisticStatus] = useState<
+    "none" | "committed" | "prayed"
+  >("none");
 
   // This prayer belongs to the logged-in user
   const isOwnPrayer = !!user?.id && prayer?.requester === user.id;
@@ -70,20 +73,18 @@ export function PrayerDetailView({
   const avatarUrl = getImageUrl(prayer.profiles?.avatar_url || null);
 
   const handleAction = async () => {
-    if (!user || isBanned || isOwnPrayer) {
-      return;
-    }
+    if (!user || isBanned || isOwnPrayer) return;
 
     setIsProcessing(true);
     try {
-      const commitment = myCommitments.find(
-        (c) => c.request_id === prayer.id,
-      );
+      const commitment = myCommitments.find((c) => c.request_id === prayer.id);
 
       if (commitment && commitment.status !== "prayed") {
         await onConfirmPrayed(prayer.id);
+        await onRefresh(prayer.id);
       } else if (!commitment) {
         await onCommitToPray(prayer.id);
+        await onRefresh(prayer.id); 
       }
     } catch (error) {
       console.error("[PrayerDetailView] Error during action:", error);
@@ -92,33 +93,37 @@ export function PrayerDetailView({
     }
   };
 
+  const deriveStatusFromProps = () => {
+    const committed = myCommitments.some(
+      (c) => c.request_id === prayer.id && c.status !== "prayed",
+    );
+    const prayed = myCommitments.some(
+      (c) => c.request_id === prayer.id && c.status === "prayed",
+    );
+
+    if (prayed) return "prayed";
+    if (committed) return "committed";
+    return "none";
+  };
+
+  const effectiveStatus =
+    optimisticStatus !== "none" ? optimisticStatus : deriveStatusFromProps();
+
   const getButtonText = () => {
     if (!user) return "Login to Pray";
     if (isBanned) return "Account Limited";
     if (isOwnPrayer) return "This is your request";
     if (prayedJustNow.has(prayer.id)) return "✓ Prayed just now";
 
-    const hasCommitment = myCommitments.some(
-      (c) => c.request_id === prayer.id && c.status !== "prayed",
-    );
-    const hasPrayed = myCommitments.some(
-      (c) => c.request_id === prayer.id && c.status === "prayed",
-    );
-
     if (isProcessing) return "...";
-    if (hasCommitment) return "Confirm Prayed";
-    if (hasPrayed) return "✓ Prayed";
+    if (effectiveStatus === "committed") return "Confirm Prayed";
+    if (effectiveStatus === "prayed") return "✓ Prayed";
     return "I will pray";
   };
 
   const getButtonBackground = () => {
     if (!user || isBanned || isOwnPrayer) return "#dbdbdb";
-
-    const hasCommitment = myCommitments.some(
-      (c) => c.request_id === prayer.id && c.status !== "prayed",
-    );
-
-    return hasCommitment ? "#28a745" : "#4285f4";
+    return effectiveStatus === "committed" ? "#28a745" : "#4285f4";
   };
 
   return (
