@@ -45,6 +45,7 @@ export function PrayerDetailMobile({
   onRefresh,
 }: PrayerDetailMobileProps) {
   const [isCommitting, setIsCommitting] = useState(false);
+  const [localCommitmentStatus, setLocalCommitmentStatus] = useState<"none" | "committed" | "prayed">("none");
 
   // Check if this is user's own prayer request
   const isOwnPrayer = user?.id && prayer?.requester === user.id;
@@ -74,20 +75,30 @@ export function PrayerDetailMobile({
     return `${Math.floor(diffInSeconds / 604800)}w`;
   }, []);
 
+  // Derive effective status from prop or local state
+  const effectiveStatus = localCommitmentStatus !== "none" 
+    ? localCommitmentStatus 
+    : commitment 
+      ? (commitment.status === "prayed" ? "prayed" : "committed")
+      : "none";
+
   const handleAction = async () => {
     console.log("🙏 [PrayerDetailMobile] handleAction called", {
       prayerId: prayer.id,
       hasCommitment: !!commitment,
+      effectiveStatus,
     });
     setIsCommitting(true);
     try {
-      if (commitment && commitment.status !== "prayed") {
+      if (effectiveStatus === "committed") {
         console.log(" [PrayerDetailMobile] Confirming prayed...");
         await onConfirmPrayed(prayer.id);
+        setLocalCommitmentStatus("prayed");
         await onRefresh(prayer.id);
-      } else if (!commitment) {
+      } else if (effectiveStatus === "none") {
         console.log("[PrayerDetailMobile] Committing to pray...");
         await onCommitToPray(prayer.id);
+        setLocalCommitmentStatus("committed");
         await onRefresh(prayer.id);
       }
       console.log("[PrayerDetailMobile] Action completed successfully");
@@ -305,21 +316,23 @@ export function PrayerDetailMobile({
         {user && !isBanned && !isOwnPrayer && (
           <button
             onClick={handleAction}
-            disabled={isCommitting}
+            disabled={isCommitting || effectiveStatus === "prayed"}
             data-testid="button-commit-pray"
             style={{
               width: "100%",
               background:
-                commitment && commitment.status === "prayed"
+                effectiveStatus === "prayed"
                   ? "#28a745"
-                  : "#4285f4",
+                  : effectiveStatus === "committed"
+                    ? "#f59e0b"
+                    : "#4285f4",
               color: "#ffffff",
               border: "none",
               padding: "16px",
               borderRadius: "12px",
               fontSize: "16px",
               fontWeight: 600,
-              cursor: "pointer",
+              cursor: effectiveStatus === "prayed" ? "default" : "pointer",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -328,9 +341,9 @@ export function PrayerDetailMobile({
           >
             {isCommitting
               ? "..."
-              : commitment && commitment.status === "prayed"
+              : effectiveStatus === "prayed"
                 ? "✓ Prayed"
-                : commitment && commitment.status !== "prayed"
+                : effectiveStatus === "committed"
                   ? "Confirm I Prayed"
                   : "I Will Pray"}
           </button>

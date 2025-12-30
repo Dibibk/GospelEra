@@ -77,13 +77,13 @@ export function PrayerDetailView({
 
     setIsProcessing(true);
     try {
-      const commitment = myCommitments.find((c) => c.request_id === prayer.id);
-
-      if (commitment && commitment.status !== "prayed") {
+      if (effectiveStatus === "committed") {
         await onConfirmPrayed(prayer.id);
+        setOptimisticStatus("prayed");
         await onRefresh(prayer.id);
-      } else if (!commitment) {
+      } else if (effectiveStatus === "none") {
         await onCommitToPray(prayer.id);
+        setOptimisticStatus("committed");
         await onRefresh(prayer.id); 
       }
     } catch (error) {
@@ -123,7 +123,9 @@ export function PrayerDetailView({
 
   const getButtonBackground = () => {
     if (!user || isBanned || isOwnPrayer) return "#dbdbdb";
-    return effectiveStatus === "committed" ? "#28a745" : "#4285f4";
+    if (effectiveStatus === "prayed") return "#28a745";
+    if (effectiveStatus === "committed") return "#f59e0b";
+    return "#4285f4";
   };
 
   return (
