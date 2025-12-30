@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { User } from "lucide-react";
 import { Capacitor } from "@capacitor/core";
 
@@ -31,7 +31,7 @@ interface PrayerDetailMobileProps {
   onBack: () => void;
   onCommitToPray: (prayerId: number) => Promise<void>;
   onConfirmPrayed: (prayerId: number) => Promise<void>;
-  onRefresh: (prayerId: number) => Promise<void>;
+  onRefresh?: (prayerId: number) => Promise<void>;
 }
 
 export function PrayerDetailMobile({
@@ -42,13 +42,29 @@ export function PrayerDetailMobile({
   onBack,
   onCommitToPray,
   onConfirmPrayed,
-  onRefresh,
+  onRefresh = async () => {},
 }: PrayerDetailMobileProps) {
   const [isCommitting, setIsCommitting] = useState(false);
-  const [localCommitmentStatus, setLocalCommitmentStatus] = useState<"none" | "committed" | "prayed">("none");
+  const [localCommitmentStatus, setLocalCommitmentStatus] = useState<
+    "none" | "committed" | "prayed"
+  >("none");
 
   // Check if this is user's own prayer request
   const isOwnPrayer = user?.id && prayer?.requester === user.id;
+
+  useEffect(() => {
+    if (!prayer?.id) return;
+
+    // When you enter this screen again, re-sync from server
+    setLocalCommitmentStatus("none");
+    onRefresh(prayer.id);
+  }, [prayer?.id]);
+  useEffect(() => {
+    // Once parent provides updated commitment, stop using optimistic local override
+    if (commitment) {
+      setLocalCommitmentStatus("none");
+    }
+  }, [commitment?.status]);
 
   // Debug logging
   console.log("🔍 PrayerDetail ownership check:", {
@@ -76,11 +92,14 @@ export function PrayerDetailMobile({
   }, []);
 
   // Derive effective status from prop or local state
-  const effectiveStatus = localCommitmentStatus !== "none" 
-    ? localCommitmentStatus 
-    : commitment 
-      ? (commitment.status === "prayed" ? "prayed" : "committed")
-      : "none";
+  const effectiveStatus =
+    localCommitmentStatus !== "none"
+      ? localCommitmentStatus
+      : commitment
+        ? commitment.status === "prayed"
+          ? "prayed"
+          : "committed"
+        : "none";
 
   const handleAction = async () => {
     console.log("🙏 [PrayerDetailMobile] handleAction called", {
@@ -104,6 +123,7 @@ export function PrayerDetailMobile({
       console.log("[PrayerDetailMobile] Action completed successfully");
     } catch (err) {
       console.error(" [PrayerDetailMobile] Action error:", err);
+      setLocalCommitmentStatus("none");
     } finally {
       setIsCommitting(false);
     }
