@@ -3187,22 +3187,29 @@ export default function MobileApp() {
     if (!user?.id) return;
 
     try {
-      const { data, error } = await supabase
-        .from("prayer_commitments")
-        .select("request_id, status, committed_at, prayed_at, warrior")
-        .eq("request_id", requestId)
-        .eq("warrior", user.id)
-        .maybeSingle();
+      // Use backend API to bypass RLS issues
+      const baseUrl = getApiBaseUrl();
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData?.session?.access_token) return;
 
-      if (error) {
-        console.error("Failed to refresh commitment:", error);
+      const response = await fetch(`${baseUrl}/api/my-commitments`, {
+        headers: {
+          'Authorization': `Bearer ${sessionData.session.access_token}`
+        }
+      });
+
+      if (!response.ok) {
+        console.error("Failed to refresh commitments:", response.status);
         return;
       }
+
+      const result = await response.json();
+      const commitment = result.commitments?.find((c: any) => c.request_id === requestId);
 
       // 🔑 Merge into myCommitments so navigation keeps state
       setMyCommitments((prev) => {
         const filtered = prev.filter((c) => c.request_id !== requestId);
-        return data ? [data, ...filtered] : filtered;
+        return commitment ? [commitment, ...filtered] : filtered;
       });
     } catch (err) {
       console.error("refreshCommitmentForPrayer error:", err);
