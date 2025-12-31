@@ -430,8 +430,9 @@ export default function MobileApp() {
     "browse" | "new" | "detail" | "my" | "leaderboard"
   >("browse");
   const [previousPrayerRoute, setPreviousPrayerRoute] = useState<
-    "browse" | "my" | "leaderboard" | "new"
+    "browse" | "my"
   >("browse");
+  const [prayerRefreshTrigger, setPrayerRefreshTrigger] = useState(0);
   const [prayerDetailId, setPrayerDetailId] = useState<number | null>(null);
   const [selectedPrayerDetail, setSelectedPrayerDetail] = useState<any>(null);
   const [showFullLeaderboard, setShowFullLeaderboard] = useState(false);
@@ -767,40 +768,56 @@ export default function MobileApp() {
     return () => document.removeEventListener("click", handleClickOutside);
   }, []);
 
-  // Refresh prayer data when navigating to Prayer tab or back to browse view
-  useEffect(() => {
-    if (activeTab !== 1 || !user) return;
-    if (prayerRoute !== 'browse') return;
-
-    console.log("🔄 Refreshing prayer data on navigation to browse...");
-
-    const refreshPrayerData = async () => {
-      try {
-        const { listPrayerRequests, getMyCommitments } = await import("../lib/prayer");
-        const [prayerResult, commitmentsResult] = await Promise.all([
+  // Consolidated prayer data fetching function
+  const refreshAllPrayerData = useCallback(async () => {
+    if (!user) return;
+    console.log("🔄 refreshAllPrayerData called...");
+    try {
+      const { listPrayerRequests, getMyCommitments, getMyRequests } =
+        await import("../lib/prayer");
+      const [prayerResult, commitmentsResult, requestsResult] =
+        await Promise.all([
           listPrayerRequests({ limit: 20 }),
           getMyCommitments(),
+          getMyRequests(),
         ]);
 
-        if (prayerResult.data) {
-          setPrayerRequests(prayerResult.data);
-          setPrayerNextCursor(prayerResult.nextCursor ?? null);
-        }
-
-        if (commitmentsResult.data) {
-          setMyCommitments((prev) => {
-            const serverIds = new Set(commitmentsResult.data!.map((c: any) => c.request_id));
-            const localOnly = prev.filter((c) => !serverIds.has(c.request_id));
-            return [...commitmentsResult.data!, ...localOnly];
-          });
-        }
-      } catch (error) {
-        console.error("Error refreshing prayer data:", error);
+      if (prayerResult.data) {
+        setPrayerRequests(prayerResult.data);
+        setPrayerNextCursor(prayerResult.nextCursor ?? null);
       }
-    };
 
-    refreshPrayerData();
-  }, [activeTab, prayerRoute, user]);
+      if (commitmentsResult.data) {
+        setMyCommitments((prev) => {
+          const serverIds = new Set(
+            commitmentsResult.data!.map((c: any) => c.request_id),
+          );
+          const localOnly = prev.filter((c) => !serverIds.has(c.request_id));
+          return [...commitmentsResult.data!, ...localOnly];
+        });
+      }
+
+      if (requestsResult.data) {
+        setMyRequests(requestsResult.data);
+      }
+    } catch (error) {
+      console.error("Error refreshing prayer data:", error);
+    }
+  }, [user]);
+
+  // Refresh prayer data when navigating to Prayer tab or back to browse view
+  useEffect(() => {
+    if (activeTab !== 2 || !user) return; // Tab 2 is Prayer
+    if (prayerRoute !== "browse") return;
+
+    refreshAllPrayerData();
+  }, [
+    activeTab,
+    prayerRoute,
+    user,
+    prayerRefreshTrigger,
+    refreshAllPrayerData,
+  ]);
 
   // Open report modal for post
   const openReportModal = (postId: number) => {
@@ -928,9 +945,13 @@ export default function MobileApp() {
           if (commitmentsResult.data) {
             // MERGE server data with existing local commitments to preserve optimistic updates
             setMyCommitments((prev) => {
-              const serverIds = new Set(commitmentsResult.data!.map((c: any) => c.request_id));
+              const serverIds = new Set(
+                commitmentsResult.data!.map((c: any) => c.request_id),
+              );
               // Keep local commitments that aren't in server response (optimistic updates)
-              const localOnly = prev.filter((c) => !serverIds.has(c.request_id));
+              const localOnly = prev.filter(
+                (c) => !serverIds.has(c.request_id),
+              );
               // Server data takes precedence for items that exist on both
               return [...commitmentsResult.data!, ...localOnly];
             });
@@ -3257,8 +3278,12 @@ export default function MobileApp() {
               // Clear detail IDs FIRST to prevent any effects from reasserting the detail route
               setSelectedPrayerDetail(null);
               setPrayerDetailId(null);
+              // Trigger a refresh when going back
+              setPrayerRefreshTrigger((prev) => prev + 1);
               // Then navigate to the previous route
               setPrayerRoute(previousPrayerRoute);
+              // Force immediate refresh
+              refreshAllPrayerData();
             }}
             onCommitToPray={handleCommitToPray}
             onConfirmPrayed={handleConfirmPrayed}

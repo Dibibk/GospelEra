@@ -187,19 +187,6 @@ export function PrayerDetailMobile({
         </div>
       </div>
 
-      {/* TEMP DEBUG BANNER - REMOVE AFTER TESTING */}
-      <div
-        style={{
-          padding: "8px 16px",
-          background: "#fef3c7",
-          fontSize: "10px",
-          fontFamily: "monospace",
-          borderBottom: "1px solid #f59e0b",
-        }}
-      >
-        {debugInfo}
-      </div>
-
       {/* Content */}
       <div style={{ padding: "16px" }}>
         {/* Author */}
