@@ -682,6 +682,11 @@ Respond in JSON format:
 
   // PRAYER REQUESTS API ENDPOINT - Queries Supabase database
   app.get("/api/prayer-requests", optionalAuth, async (req: AuthenticatedRequest, res) => {
+    // Prevent caching to always return fresh commitment counts
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.set('Pragma', 'no-cache');
+    res.set('Expires', '0');
+    
     try {
       const token = extractToken(req.headers.authorization);
       const supabase = createServerSupabase(token);
