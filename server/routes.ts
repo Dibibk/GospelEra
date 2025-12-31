@@ -2476,10 +2476,8 @@ Respond with JSON only:
         return res.json({ success: true, skipped: true });
       }
       
-      const token = extractToken(req.headers.authorization);
-      const supabase = createServerSupabase(token);
-      
-      const { data: notification, error } = await supabase
+      // Use supabaseAdmin to bypass RLS for notification creation
+      const { data: notification, error } = await supabaseAdmin
         .from('notifications')
         .insert({
           recipient_id: recipientId,
