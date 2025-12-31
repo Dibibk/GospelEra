@@ -810,13 +810,45 @@ export default function MobileApp() {
     if (activeTab !== 2 || !user) return; // Tab 2 is Prayer
     if (prayerRoute !== "browse") return;
 
-    refreshAllPrayerData();
+    // Force fresh fetch by clearing state first
+    const forceRefreshPrayerData = async () => {
+      console.log("🔄 Force refreshing prayer data (clearing state first)...");
+      setPrayerRequests([]); // Clear to force re-render with fresh data
+      
+      try {
+        const { listPrayerRequests, getMyCommitments, getMyRequests } =
+          await import("../lib/prayer");
+        const [prayerResult, commitmentsResult, requestsResult] =
+          await Promise.all([
+            listPrayerRequests({ limit: 20 }),
+            getMyCommitments(),
+            getMyRequests(),
+          ]);
+
+        if (prayerResult.data) {
+          console.log("🔄 Setting fresh prayer data:", prayerResult.data.length, "requests");
+          setPrayerRequests(prayerResult.data);
+          setPrayerNextCursor(prayerResult.nextCursor ?? null);
+        }
+
+        if (commitmentsResult.data) {
+          setMyCommitments(commitmentsResult.data);
+        }
+
+        if (requestsResult.data) {
+          setMyRequests(requestsResult.data);
+        }
+      } catch (error) {
+        console.error("Error force refreshing prayer data:", error);
+      }
+    };
+
+    forceRefreshPrayerData();
   }, [
     activeTab,
     prayerRoute,
     user,
     prayerRefreshTrigger,
-    refreshAllPrayerData,
   ]);
 
   // Open report modal for post
