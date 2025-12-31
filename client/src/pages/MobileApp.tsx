@@ -3223,11 +3223,12 @@ export default function MobileApp() {
             onNavigateToNew={() => setPrayerRoute("new")}
             onNavigateToMy={() => setPrayerRoute("my")}
             onNavigateToLeaderboard={() => setPrayerRoute("leaderboard")}
-            onSelectPrayer={(prayer) => {
+            onSelectPrayer={async (prayer) => {
               setPreviousPrayerRoute("browse");
               setPrayerDetailId(prayer.id);
-              setSelectedPrayerDetail(prayer);
               setPrayerRoute("detail");
+              // Fetch fresh data from backend API
+              await handlePrayerClick(prayer.id);
             }}
             nextCursor={prayerNextCursor}
             loadingMore={loadingMorePrayers}
@@ -3327,11 +3328,12 @@ export default function MobileApp() {
             onNavigateToNew={() => setPrayerRoute("new")}
             onNavigateToMy={() => setPrayerRoute("my")}
             onNavigateToLeaderboard={() => setPrayerRoute("leaderboard")}
-            onSelectPrayer={(prayer) => {
+            onSelectPrayer={async (prayer) => {
               setPreviousPrayerRoute("browse");
               setPrayerDetailId(prayer.id);
-              setSelectedPrayerDetail(prayer);
               setPrayerRoute("detail");
+              // Fetch fresh data from backend API
+              await handlePrayerClick(prayer.id);
             }}
             nextCursor={prayerNextCursor}
             loadingMore={loadingMorePrayers}
