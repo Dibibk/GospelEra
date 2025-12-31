@@ -3341,11 +3341,14 @@ export default function MobileApp() {
             onCommitToPray={handleCommitToPray}
             onConfirmPrayed={handleConfirmPrayed}
             onRefresh={async (prayerId: number) => {
-              await refreshCommitmentForPrayer(prayerId); // ✅ ensure commitment exists
-              const { data: refreshedPrayer } =
-                await getPrayerRequest(prayerId);
-              if (refreshedPrayer) setSelectedPrayerDetail(refreshedPrayer);
-              await fetchData(); // optional: list refresh
+              try {
+                await refreshCommitmentForPrayer(prayerId);
+                const { data: refreshedPrayer } = await getPrayerRequest(prayerId);
+                if (refreshedPrayer) setSelectedPrayerDetail(refreshedPrayer);
+                await fetchData();
+              } catch (err) {
+                console.warn("onRefresh error (non-critical):", err);
+              }
             }}
           />
         );
@@ -3439,10 +3442,14 @@ export default function MobileApp() {
         onCommitToPray={handleCommitToPray}
         onConfirmPrayed={handleConfirmPrayed}
         onRefresh={async (prayerId: number) => {
-          await refreshCommitmentForPrayer(prayerId); // ✅ ensure commitment exists
-          const { data: refreshedPrayer } = await getPrayerRequest(prayerId);
-          if (refreshedPrayer) setSelectedPrayerDetail(refreshedPrayer);
-          await fetchData(); // optional: list refresh
+          try {
+            await refreshCommitmentForPrayer(prayerId);
+            const { data: refreshedPrayer } = await getPrayerRequest(prayerId);
+            if (refreshedPrayer) setSelectedPrayerDetail(refreshedPrayer);
+            await fetchData();
+          } catch (err) {
+            console.warn("onRefresh error (non-critical):", err);
+          }
         }}
       />
     );
