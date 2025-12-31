@@ -3442,14 +3442,10 @@ export default function MobileApp() {
         onCommitToPray={handleCommitToPray}
         onConfirmPrayed={handleConfirmPrayed}
         onRefresh={async (prayerId: number) => {
-          try {
-            await refreshCommitmentForPrayer(prayerId);
-            const { data: refreshedPrayer } = await getPrayerRequest(prayerId);
-            if (refreshedPrayer) setSelectedPrayerDetail(refreshedPrayer);
-            await fetchData();
-          } catch (err) {
-            console.warn("onRefresh error (non-critical):", err);
-          }
+          await refreshCommitmentForPrayer(prayerId); // ✅ ensure commitment exists
+          const { data: refreshedPrayer } = await getPrayerRequest(prayerId);
+          if (refreshedPrayer) setSelectedPrayerDetail(refreshedPrayer);
+          await fetchData(); // optional: list refresh
         }}
       />
     );
