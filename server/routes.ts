@@ -841,7 +841,7 @@ Respond in JSON format:
       // Fetch commitments using supabaseAdmin to bypass RLS
       const { data: commitments, error: commitError } = await supabaseAdmin
         .from('prayer_commitments')
-        .select('id, request_id, warrior, status, committed_at, prayed_at, note')
+        .select('request_id, warrior, status, committed_at, prayed_at, note')
         .eq('request_id', prayerId);
       
       console.log(`[Prayer Detail] Prayer ${prayerId}: Found ${commitments?.length || 0} commitments`, 
