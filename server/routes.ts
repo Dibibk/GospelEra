@@ -804,6 +804,77 @@ Respond in JSON format:
     }
   });
 
+  // GET SINGLE PRAYER REQUEST - Uses supabaseAdmin to bypass RLS
+  app.get("/api/prayer-requests/:id", optionalAuth, async (req: AuthenticatedRequest, res) => {
+    try {
+      const prayerId = parseInt(req.params.id);
+      if (isNaN(prayerId)) {
+        return res.status(400).json({ error: "Invalid prayer request ID" });
+      }
+
+      const currentUserId = req.user?.id;
+
+      // Fetch prayer request
+      const { data: prayerRequest, error: prayerError } = await supabaseAdmin
+        .from('prayer_requests')
+        .select('*')
+        .eq('id', prayerId)
+        .single();
+
+      if (prayerError || !prayerRequest) {
+        console.error("Prayer request not found:", prayerError);
+        return res.status(404).json({ error: "Prayer request not found" });
+      }
+
+      // Fetch requester profile
+      const { data: profile } = await supabaseAdmin
+        .from('profiles')
+        .select('id, display_name, avatar_url')
+        .eq('id', prayerRequest.requester)
+        .single();
+
+      // Fetch commitments using supabaseAdmin to bypass RLS
+      const { data: commitments } = await supabaseAdmin
+        .from('prayer_commitments')
+        .select('id, request_id, warrior, status, committed_at, prayed_at, note')
+        .eq('request_id', prayerId);
+
+      // Fetch activity using supabaseAdmin
+      const { data: activity } = await supabaseAdmin
+        .from('prayer_activity')
+        .select('id, request_id, actor, kind, message, created_at')
+        .eq('request_id', prayerId)
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      // Compute stats
+      const allCommitments = commitments || [];
+      const prayer_stats = {
+        committed_count: allCommitments.filter((c: any) => c.status === 'committed').length,
+        prayed_count: allCommitments.filter((c: any) => c.status === 'prayed').length,
+        total_warriors: allCommitments.length,
+        recent_activity: activity || []
+      };
+
+      // Get current user's commitment if logged in
+      const myCommitment = currentUserId
+        ? allCommitments.find((c: any) => c.warrior === currentUserId)
+        : null;
+
+      res.json({
+        ...prayerRequest,
+        profiles: profile,
+        prayer_commitments: allCommitments,
+        prayer_activity: activity || [],
+        prayer_stats,
+        myCommitment
+      });
+    } catch (error) {
+      console.error("Error fetching prayer request:", error);
+      res.status(500).json({ error: "Failed to fetch prayer request" });
+    }
+  });
+
   app.post("/api/posts", authenticateUser, checkNotBanned, async (req: AuthenticatedRequest, res) => {
     try {
       const { insertPostSchema } = await import("@shared/schema");

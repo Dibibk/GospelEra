@@ -170,53 +170,39 @@ export async function listPrayerRequests({
 
 /**
  * Get a single prayer request with full details
+ * Uses backend API to bypass RLS and get accurate data
  */
 export async function getPrayerRequest(id: number): Promise<ApiResponse<any>> {
   try {
-    const { data, error } = await supabase
-      .from('prayer_requests')
-      .select(`
-        *,
-        prayer_commitments (
-          status,
-          prayed_at,
-          committed_at,
-          note,
-          warrior
-        ),
-        prayer_activity (
-          kind,
-          message,
-          created_at,
-          actor
-        )
-      `)
-      .eq('id', id)
-      .single()
-
-    if (error) {
-      console.error('Failed to get prayer request:', error)
-      return { data: null, error: 'Prayer request not found' }
+    console.log('🙏 [getPrayerRequest] Fetching prayer request via API:', id);
+    
+    const baseUrl = getApiBaseUrl();
+    const url = `${baseUrl}/api/prayer-requests/${id}`;
+    
+    // Get auth token if available
+    const { data: sessionData } = await supabase.auth.getSession();
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json'
+    };
+    if (sessionData?.session?.access_token) {
+      headers['Authorization'] = `Bearer ${sessionData.session.access_token}`;
     }
-
-    // Compute comprehensive statistics
-    const commitments = data.prayer_commitments || []
-    const stats = {
-      committed_count: commitments.filter(c => c.status === 'committed').length,
-      prayed_count: commitments.filter(c => c.status === 'prayed').length,
-      total_warriors: commitments.length,
-      recent_activity: (data.prayer_activity || [])
-        .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-        .slice(0, 10)
+    
+    const response = await fetch(url, { headers });
+    
+    if (!response.ok) {
+      console.error('Failed to fetch prayer request:', response.status, response.statusText);
+      return { data: null, error: 'Prayer request not found' };
     }
+    
+    const data = await response.json();
+    console.log('🙏 [getPrayerRequest] API result:', { 
+      id: data.id,
+      hasStats: !!data.prayer_stats,
+      committedCount: data.prayer_stats?.committed_count
+    });
 
-    return { 
-      data: { 
-        ...data, 
-        prayer_stats: stats 
-      }, 
-      error: null 
-    }
+    return { data, error: null };
   } catch (err) {
     console.error('Get prayer request error:', err)
     return { data: null, error: 'Unexpected error occurred' }
