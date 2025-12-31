@@ -124,6 +124,8 @@ export async function listPrayerRequests({
     if (q) params.append('q', q);
     if (tags && tags.length > 0) params.append('tags', tags.join(','));
     
+    // Add cache-busting timestamp to ensure fresh data
+    params.append('_t', Date.now().toString());
     const url = `${baseUrl}/api/prayer-requests?${params.toString()}`;
     console.log('🙏 [listPrayerRequests] Fetching from:', url);
     
@@ -177,7 +179,8 @@ export async function getPrayerRequest(id: number): Promise<ApiResponse<any>> {
     console.log('🙏 [getPrayerRequest] Fetching prayer request via API:', id);
     
     const baseUrl = getApiBaseUrl();
-    const url = `${baseUrl}/api/prayer-requests/${id}`;
+    // Add cache-busting timestamp to ensure fresh data
+    const url = `${baseUrl}/api/prayer-requests/${id}?_t=${Date.now()}`;
     
     // Get auth token if available
     const { data: sessionData } = await supabase.auth.getSession();
@@ -245,18 +248,12 @@ export async function commitToPray(requestId: number): Promise<ApiResponse<any>>
 
     const data = await response.json()
 
-    // Notify prayer request owner (if not self) - client-side notification
-    // Wrap in try-catch so RLS errors don't break the main flow
+    // Notify prayer request owner (if not self) - using backend API
+    // The commit response includes the requester ID, use it directly
     try {
-      const { data: prayerRequest } = await supabase
-        .from('prayer_requests')
-        .select('requester')
-        .eq('id', requestId)
-        .single();
-      
-      if (prayerRequest?.requester && prayerRequest.requester !== sessionData.session.user.id) {
+      if (data.requester && data.requester !== sessionData.session.user.id) {
         createNotification({
-          recipientId: prayerRequest.requester,
+          recipientId: data.requester,
           eventType: 'prayer_commitment',
           prayerRequestId: requestId,
           commitmentId: data.id,

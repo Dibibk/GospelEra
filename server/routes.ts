@@ -1469,14 +1469,15 @@ Respond in JSON format:
           message: 'committed to pray'
         });
 
+      // Fetch the prayer request to get requester info (for response and notifications)
+      const { data: prayerRequest } = await supabase
+        .from('prayer_requests')
+        .select('requester, title')
+        .eq('id', requestId)
+        .single();
+
       // Create notification for the prayer request owner (if not self)
       try {
-        const { data: prayerRequest } = await supabase
-          .from('prayer_requests')
-          .select('requester, title')
-          .eq('id', requestId)
-          .single();
-
         if (prayerRequest && prayerRequest.requester !== req.user.id) {
           // Get the warrior's display name
           const { data: warriorProfile } = await supabase
@@ -1521,7 +1522,11 @@ Respond in JSON format:
         // Don't fail the request if notification fails
       }
 
-      res.json(commitment);
+      // Return commitment with requester info for client-side use
+      res.json({
+        ...commitment,
+        requester: prayerRequest?.requester || null
+      });
     } catch (error) {
       console.error("Error committing to prayer:", error);
       res.status(500).json({ error: "Failed to commit to prayer" });
