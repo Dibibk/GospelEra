@@ -3224,15 +3224,23 @@ export default function MobileApp() {
             onNavigateToMy={() => setPrayerRoute("my")}
             onNavigateToLeaderboard={() => setPrayerRoute("leaderboard")}
             onSelectPrayer={async (prayer) => {
+              console.log('📿 [onSelectPrayer] Prayer clicked:', prayer.id, 'stats:', prayer.prayer_stats);
               setPreviousPrayerRoute("browse");
               setPrayerDetailId(prayer.id);
               // Set initial data immediately for fast display
               setSelectedPrayerDetail(prayer);
               setPrayerRoute("detail");
               // Then fetch fresh data from backend API to update
-              const result = await getPrayerRequest(prayer.id);
-              if (result.data) {
-                setSelectedPrayerDetail(result.data);
+              console.log('📿 [onSelectPrayer] Calling getPrayerRequest API...');
+              try {
+                const result = await getPrayerRequest(prayer.id);
+                console.log('📿 [onSelectPrayer] API result:', result.data?.prayer_stats, 'error:', result.error);
+                if (result.data) {
+                  setSelectedPrayerDetail(result.data);
+                  console.log('📿 [onSelectPrayer] State updated with fresh data');
+                }
+              } catch (err) {
+                console.error('📿 [onSelectPrayer] API error:', err);
               }
             }}
             nextCursor={prayerNextCursor}
