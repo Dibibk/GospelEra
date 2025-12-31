@@ -3226,9 +3226,14 @@ export default function MobileApp() {
             onSelectPrayer={async (prayer) => {
               setPreviousPrayerRoute("browse");
               setPrayerDetailId(prayer.id);
+              // Set initial data immediately for fast display
+              setSelectedPrayerDetail(prayer);
               setPrayerRoute("detail");
-              // Fetch fresh data from backend API
-              await handlePrayerClick(prayer.id);
+              // Then fetch fresh data from backend API to update
+              const result = await getPrayerRequest(prayer.id);
+              if (result.data) {
+                setSelectedPrayerDetail(result.data);
+              }
             }}
             nextCursor={prayerNextCursor}
             loadingMore={loadingMorePrayers}
@@ -3331,9 +3336,14 @@ export default function MobileApp() {
             onSelectPrayer={async (prayer) => {
               setPreviousPrayerRoute("browse");
               setPrayerDetailId(prayer.id);
+              // Set initial data immediately for fast display
+              setSelectedPrayerDetail(prayer);
               setPrayerRoute("detail");
-              // Fetch fresh data from backend API
-              await handlePrayerClick(prayer.id);
+              // Then fetch fresh data from backend API to update
+              const result = await getPrayerRequest(prayer.id);
+              if (result.data) {
+                setSelectedPrayerDetail(result.data);
+              }
             }}
             nextCursor={prayerNextCursor}
             loadingMore={loadingMorePrayers}
