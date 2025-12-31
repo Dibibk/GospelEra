@@ -783,11 +783,7 @@ export default function MobileApp() {
         ]);
 
       if (prayerResult.data) {
-        console.log(
-          "🔄 Setting fresh prayer requests:",
-          prayerResult.data.length,
-        );
-        setPrayerRequests([...prayerResult.data]); // Use spread to ensure new reference
+        setPrayerRequests(prayerResult.data);
         setPrayerNextCursor(prayerResult.nextCursor ?? null);
       }
 
@@ -802,7 +798,7 @@ export default function MobileApp() {
       }
 
       if (requestsResult.data) {
-        setMyRequests([...requestsResult.data]);
+        setMyRequests(requestsResult.data);
       }
     } catch (error) {
       console.error("Error refreshing prayer data:", error);
@@ -811,15 +807,48 @@ export default function MobileApp() {
 
   // Refresh prayer data when navigating to Prayer tab or back to browse view
   useEffect(() => {
-    if (activeTab !== 2 || !user || prayerRoute !== "browse") return;
-    console.log("🔄 Navigation-triggered refresh for prayer data...");
-    refreshAllPrayerData();
+    if (activeTab !== 2 || !user) return; // Tab 2 is Prayer
+    if (prayerRoute !== "browse") return;
+
+    // Force fresh fetch by clearing state first
+    const forceRefreshPrayerData = async () => {
+      console.log("🔄 Force refreshing prayer data (clearing state first)...");
+      setPrayerRequests([]); // Clear to force re-render with fresh data
+      
+      try {
+        const { listPrayerRequests, getMyCommitments, getMyRequests } =
+          await import("../lib/prayer");
+        const [prayerResult, commitmentsResult, requestsResult] =
+          await Promise.all([
+            listPrayerRequests({ limit: 20 }),
+            getMyCommitments(),
+            getMyRequests(),
+          ]);
+
+        if (prayerResult.data) {
+          console.log("🔄 Setting fresh prayer data:", prayerResult.data.length, "requests");
+          setPrayerRequests(prayerResult.data);
+          setPrayerNextCursor(prayerResult.nextCursor ?? null);
+        }
+
+        if (commitmentsResult.data) {
+          setMyCommitments(commitmentsResult.data);
+        }
+
+        if (requestsResult.data) {
+          setMyRequests(requestsResult.data);
+        }
+      } catch (error) {
+        console.error("Error force refreshing prayer data:", error);
+      }
+    };
+
+    forceRefreshPrayerData();
   }, [
     activeTab,
     prayerRoute,
     user,
     prayerRefreshTrigger,
-    refreshAllPrayerData,
   ]);
 
   // Open report modal for post
@@ -1200,16 +1229,14 @@ export default function MobileApp() {
         await refreshCommitmentForPrayer(requestId);
 
         // Update prayer request stats in the list
-        setPrayerRequests((prev) => {
-          const updated = prev.map((p) => {
+        setPrayerRequests((prev) =>
+          prev.map((p) => {
             if (p.id !== requestId) return p;
 
-            // Check if we already have a commitment for this request in the current state
-            // Note: we use the current state from the closure here
             const alreadyHad = myCommitments.some(
               (c) => c.request_id === requestId,
             );
-            if (alreadyHad) return p;
+            if (alreadyHad) return p; // don't double-increment
 
             return {
               ...p,
@@ -1219,20 +1246,11 @@ export default function MobileApp() {
                 total_warriors: (p.prayer_stats?.total_warriors || 0) + 1,
               },
             };
-          });
-          return [...updated]; // Ensure new reference
-        });
-
+          }),
+        );
         if (selectedPrayerDetail?.id === requestId) {
           setSelectedPrayerDetail((prev) => {
             if (!prev) return prev;
-
-            // Check if already incremented
-            const alreadyHad = myCommitments.some(
-              (c) => c.request_id === requestId,
-            );
-            if (alreadyHad) return prev;
-
             return {
               ...prev,
               prayer_stats: {
@@ -1292,8 +1310,8 @@ export default function MobileApp() {
         );
 
         // Update prayer request stats in the list
-        setPrayerRequests((prev) => {
-          const updated = prev.map((p) =>
+        setPrayerRequests((prev) =>
+          prev.map((p) =>
             p.id === requestId
               ? {
                   ...p,
@@ -1307,27 +1325,8 @@ export default function MobileApp() {
                   },
                 }
               : p,
-          );
-          return [...updated]; // Ensure new reference
-        });
-
-        // Also update selected detail if open
-        if (selectedPrayerDetail?.id === requestId) {
-          setSelectedPrayerDetail((prev) => {
-            if (!prev) return prev;
-            return {
-              ...prev,
-              prayer_stats: {
-                ...prev.prayer_stats,
-                committed_count: Math.max(
-                  0,
-                  (prev.prayer_stats?.committed_count || 0) - 1,
-                ),
-                prayed_count: (prev.prayer_stats?.prayed_count || 0) + 1,
-              },
-            };
-          });
-        }
+          ),
+        );
       }
     } catch (error) {
       console.error("Error confirming prayer:", error);
@@ -3227,8 +3226,8 @@ export default function MobileApp() {
 
       const response = await fetch(`${baseUrl}/api/my-commitments`, {
         headers: {
-          Authorization: `Bearer ${sessionData.session.access_token}`,
-        },
+          'Authorization': `Bearer ${sessionData.session.access_token}`
+        }
       });
 
       if (!response.ok) {
@@ -3237,9 +3236,7 @@ export default function MobileApp() {
       }
 
       const result = await response.json();
-      const commitment = result.commitments?.find(
-        (c: any) => c.request_id === requestId,
-      );
+      const commitment = result.commitments?.find((c: any) => c.request_id === requestId);
 
       // 🔑 Merge into myCommitments so navigation keeps state
       setMyCommitments((prev) => {
@@ -3266,37 +3263,23 @@ export default function MobileApp() {
             onNavigateToMy={() => setPrayerRoute("my")}
             onNavigateToLeaderboard={() => setPrayerRoute("leaderboard")}
             onSelectPrayer={async (prayer) => {
-              console.log(
-                "📿 [onSelectPrayer] Prayer clicked:",
-                prayer.id,
-                "stats:",
-                prayer.prayer_stats,
-              );
+              console.log('📿 [onSelectPrayer] Prayer clicked:', prayer.id, 'stats:', prayer.prayer_stats);
               setPreviousPrayerRoute("browse");
               setPrayerDetailId(prayer.id);
               // Set initial data immediately for fast display
               setSelectedPrayerDetail(prayer);
               setPrayerRoute("detail");
               // Then fetch fresh data from backend API to update
-              console.log(
-                "📿 [onSelectPrayer] Calling getPrayerRequest API...",
-              );
+              console.log('📿 [onSelectPrayer] Calling getPrayerRequest API...');
               try {
                 const result = await getPrayerRequest(prayer.id);
-                console.log(
-                  "📿 [onSelectPrayer] API result:",
-                  result.data?.prayer_stats,
-                  "error:",
-                  result.error,
-                );
+                console.log('📿 [onSelectPrayer] API result:', result.data?.prayer_stats, 'error:', result.error);
                 if (result.data) {
                   setSelectedPrayerDetail(result.data);
-                  console.log(
-                    "📿 [onSelectPrayer] State updated with fresh data",
-                  );
+                  console.log('📿 [onSelectPrayer] State updated with fresh data');
                 }
               } catch (err) {
-                console.error("📿 [onSelectPrayer] API error:", err);
+                console.error('📿 [onSelectPrayer] API error:', err);
               }
             }}
             nextCursor={prayerNextCursor}
@@ -3352,7 +3335,7 @@ export default function MobileApp() {
               setPrayerRefreshTrigger((prev) => prev + 1);
               // Then navigate to the previous route
               setPrayerRoute(previousPrayerRoute);
-              // Force immediate refresh to see new data (like updated stats)
+              // Force immediate refresh
               refreshAllPrayerData();
             }}
             onCommitToPray={handleCommitToPray}
@@ -3480,10 +3463,8 @@ export default function MobileApp() {
             setPendingPostNavigation(notification.post_id);
           } else if (notification.prayer_request_id) {
             // Switch to prayer tab and open the prayer request
-            setActiveTab(2); // Prayer tab is index 2
+            setActiveTab(1);
             handlePrayerClick(notification.prayer_request_id);
-            // Also refresh the list in background
-            refreshAllPrayerData();
           }
         }}
       />
@@ -4224,8 +4205,6 @@ export default function MobileApp() {
             onClick={() => {
               resetAllModalStates();
               setActiveTab(2);
-              // Refresh prayer data every time we navigate to the prayer tab
-              refreshAllPrayerData();
             }}
             onTouchStart={(e) => {
               e.currentTarget.style.transform = "scale(0.95)";
