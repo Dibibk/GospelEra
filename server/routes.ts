@@ -806,6 +806,11 @@ Respond in JSON format:
 
   // GET SINGLE PRAYER REQUEST - Uses supabaseAdmin to bypass RLS
   app.get("/api/prayer-requests/:id", optionalAuth, async (req: AuthenticatedRequest, res) => {
+    // Prevent caching to always return fresh commitment counts
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.set('Pragma', 'no-cache');
+    res.set('Expires', '0');
+    
     try {
       const prayerId = parseInt(req.params.id);
       if (isNaN(prayerId)) {
@@ -834,10 +839,13 @@ Respond in JSON format:
         .single();
 
       // Fetch commitments using supabaseAdmin to bypass RLS
-      const { data: commitments } = await supabaseAdmin
+      const { data: commitments, error: commitError } = await supabaseAdmin
         .from('prayer_commitments')
         .select('id, request_id, warrior, status, committed_at, prayed_at, note')
         .eq('request_id', prayerId);
+      
+      console.log(`[Prayer Detail] Prayer ${prayerId}: Found ${commitments?.length || 0} commitments`, 
+        commitError ? `Error: ${commitError.message}` : '');
 
       // Fetch activity using supabaseAdmin
       const { data: activity } = await supabaseAdmin
