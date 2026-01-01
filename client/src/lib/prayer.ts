@@ -204,6 +204,7 @@ export async function getPrayerRequest(id: number): Promise<ApiResponse<any>> {
       hasStats: !!data.prayer_stats,
       committedCount: data.prayer_stats?.committed_count
     });
+    console.log('🙏 [getPrayerRequest] FULL RESPONSE:', JSON.stringify(data, null, 2));
 
     return { data, error: null };
   } catch (err) {
