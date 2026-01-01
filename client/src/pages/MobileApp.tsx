@@ -1200,6 +1200,7 @@ export default function MobileApp() {
         // Show spam-specific error messages
         showToast(error, "error");
       } else {
+        console.log('[handleCommitToPray] Step 1: Showing toast');
         // Show spam warning if present (non-blocking)
         if (data?.spamWarning) {
           showToast(data.spamWarning, "warning");
@@ -1207,6 +1208,7 @@ export default function MobileApp() {
           showToast("✓ Committed to pray", "success");
         }
 
+        console.log('[handleCommitToPray] Step 2: Updating myCommitments');
         // Immediately add the new commitment to myCommitments state
         if (data) {
           // ✅ Immediately add/update the commitment in myCommitments state (even if API returns no data)
@@ -1229,8 +1231,10 @@ export default function MobileApp() {
             return [merged, ...prev.filter((c) => c.request_id !== requestId)];
           });
         }
+        console.log('[handleCommitToPray] Step 3: Calling refreshCommitmentForPrayer');
         await refreshCommitmentForPrayer(requestId);
 
+        console.log('[handleCommitToPray] Step 4: Updating prayerRequests');
         // Update prayer request stats in the list
         setPrayerRequests((prev) =>
           prev.map((p) => {
@@ -1251,6 +1255,7 @@ export default function MobileApp() {
             };
           }),
         );
+        console.log('[handleCommitToPray] Step 5: Updating selectedPrayerDetail');
         if (selectedPrayerDetail?.id === requestId) {
           setSelectedPrayerDetail((prev) => {
             if (!prev) return prev;
@@ -1265,6 +1270,7 @@ export default function MobileApp() {
           });
         }
 
+        console.log('[handleCommitToPray] Step 6: Refreshing prayer detail');
         // Also refresh the selected prayer detail if viewing this request
         if (selectedPrayerDetail && selectedPrayerDetail.id === requestId) {
           const { data: refreshedPrayer } = await getPrayerRequest(requestId);
@@ -1272,6 +1278,7 @@ export default function MobileApp() {
             setSelectedPrayerDetail(refreshedPrayer);
           }
         }
+        console.log('[handleCommitToPray] Step 7: COMPLETED SUCCESS');
       }
     } catch (error) {
       console.error("[handleCommitToPray] CATCH - Error committing to prayer:", error);
