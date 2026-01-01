@@ -1188,10 +1188,13 @@ export default function MobileApp() {
   const handleCommitToPray = async (requestId: number) => {
     if (!user || isBanned) return;
 
+    console.log('[handleCommitToPray] START for request:', requestId);
     setCommittingToId(requestId);
 
     try {
+      console.log('[handleCommitToPray] Calling commitToPray API...');
       const { data, error } = await commitToPray(requestId);
+      console.log('[handleCommitToPray] API returned:', { hasData: !!data, error });
 
       if (error) {
         // Show spam-specific error messages
@@ -1271,9 +1274,11 @@ export default function MobileApp() {
         }
       }
     } catch (error) {
-      console.error("Error committing to prayer:", error);
+      console.error("[handleCommitToPray] CATCH - Error committing to prayer:", error);
+      console.error("[handleCommitToPray] Error type:", typeof error, Object.keys(error || {}));
       showToast("Failed to commit to prayer. Please try again.", "error");
     } finally {
+      console.log('[handleCommitToPray] FINALLY block');
       setCommittingToId(null);
     }
   };
