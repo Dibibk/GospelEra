@@ -508,6 +508,18 @@ export default function MobileApp() {
   );
   const [checkingGuidelines, setCheckingGuidelines] = useState(true);
 
+  // Toast state for notifications
+  const [toast, setToast] = useState<{
+    show: boolean;
+    message: string;
+    type: "success" | "error" | "warning";
+  }>({ show: false, message: "", type: "success" });
+
+  const showToast = (message: string, type: "success" | "error" | "warning" = "success") => {
+    setToast({ show: true, message, type });
+    setTimeout(() => setToast({ show: false, message: "", type: "success" }), 3000);
+  };
+
   // Show banned modal when user is banned
   useEffect(() => {
     if (isBanned && user && !bannedModalShownRef.current) {
@@ -3437,32 +3449,59 @@ export default function MobileApp() {
     return <GuidelinesAcceptanceModal onAccept={handleAcceptGuidelines} />;
   }
 
+  // Toast component
+  const ToastComponent = toast.show ? (
+    <div
+      style={{
+        position: "fixed",
+        top: "max(20px, env(safe-area-inset-top, 20px))",
+        left: "50%",
+        transform: "translateX(-50%)",
+        background: toast.type === "success" ? "#262626" : toast.type === "error" ? "#dc2626" : "#f59e0b",
+        color: "#ffffff",
+        padding: "12px 24px",
+        borderRadius: "8px",
+        fontSize: "14px",
+        fontWeight: 600,
+        zIndex: 9999,
+        maxWidth: "90%",
+        textAlign: "center",
+        boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+      }}
+    >
+      {toast.message}
+    </div>
+  ) : null;
+
   // Handle prayer detail view
   if (prayerDetailId && selectedPrayerDetail) {
     return (
-      <PrayerDetailView
-        prayer={selectedPrayerDetail}
-        myCommitments={myCommitments}
-        user={user}
-        isBanned={isBanned}
-        prayedJustNow={prayedJustNow}
-        onBack={() => {
-          setPrayerDetailId(null);
-          setSelectedPrayerDetail(null);
-        }}
-        onCommitToPray={handleCommitToPray}
-        onConfirmPrayed={handleConfirmPrayed}
-        onRefresh={async (prayerId: number) => {
-          try {
-            await refreshCommitmentForPrayer(prayerId);
-            const { data: refreshedPrayer } = await getPrayerRequest(prayerId);
-            if (refreshedPrayer) setSelectedPrayerDetail(refreshedPrayer);
-            await fetchData();
-          } catch (err) {
-            console.warn("onRefresh error (non-critical):", err);
-          }
-        }}
-      />
+      <>
+        {ToastComponent}
+        <PrayerDetailView
+          prayer={selectedPrayerDetail}
+          myCommitments={myCommitments}
+          user={user}
+          isBanned={isBanned}
+          prayedJustNow={prayedJustNow}
+          onBack={() => {
+            setPrayerDetailId(null);
+            setSelectedPrayerDetail(null);
+          }}
+          onCommitToPray={handleCommitToPray}
+          onConfirmPrayed={handleConfirmPrayed}
+          onRefresh={async (prayerId: number) => {
+            try {
+              await refreshCommitmentForPrayer(prayerId);
+              const { data: refreshedPrayer } = await getPrayerRequest(prayerId);
+              if (refreshedPrayer) setSelectedPrayerDetail(refreshedPrayer);
+              await fetchData();
+            } catch (err) {
+              console.warn("onRefresh error (non-critical):", err);
+            }
+          }}
+        />
+      </>
     );
   }
 
@@ -3502,6 +3541,8 @@ export default function MobileApp() {
   // Render main component
   return (
     <div style={STYLES.container}>
+      {/* Toast notifications */}
+      {ToastComponent}
       {/* Header */}
       <div style={STYLES.header}>
         <div
