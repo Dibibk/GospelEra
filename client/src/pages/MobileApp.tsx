@@ -1340,7 +1340,6 @@ export default function MobileApp() {
     try {
       const result = await getPrayerRequest(prayerId);
       if (result.data) {
-        setSelectedPrayerId(prayerId);
         setSelectedPrayerDetail(result.data);
       }
     } catch (error) {
