@@ -34,6 +34,7 @@ interface PrayerBrowseMobileProps {
   nextCursor?: number | null;
   loadingMore?: boolean;
   onLoadMore?: () => void;
+  onRefresh?: () => Promise<void>;
 }
 
 export function PrayerBrowseMobile({
@@ -45,11 +46,66 @@ export function PrayerBrowseMobile({
   nextCursor,
   loadingMore,
   onLoadMore,
+  onRefresh,
 }: PrayerBrowseMobileProps) {
   const [avatarErrors, setAvatarErrors] = useState<
     Record<number | string, boolean>
   >({});
   const loadMoreSentinelRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Pull-to-refresh state
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [pullDistance, setPullDistance] = useState(0);
+  const pullStartY = useRef<number | null>(null);
+
+  // Pull-to-refresh handlers
+  const handleTouchStart = (e: React.TouchEvent) => {
+    const container = containerRef.current;
+    if (!container || container.scrollTop > 0) {
+      pullStartY.current = null;
+      return;
+    }
+    pullStartY.current = e.touches[0].clientY;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (pullStartY.current === null || isRefreshing) return;
+
+    const container = containerRef.current;
+    if (!container || container.scrollTop > 0) {
+      pullStartY.current = null;
+      setPullDistance(0);
+      return;
+    }
+
+    const currentY = e.touches[0].clientY;
+    const diff = currentY - pullStartY.current;
+
+    if (diff > 0) {
+      const resistance = 0.4;
+      setPullDistance(Math.min(diff * resistance, 80));
+    }
+  };
+
+  const handleTouchEnd = async () => {
+    if (pullStartY.current === null) return;
+    pullStartY.current = null;
+
+    if (pullDistance >= 60 && !isRefreshing && onRefresh) {
+      setIsRefreshing(true);
+      try {
+        await onRefresh();
+      } catch (err) {
+        console.warn("Pull refresh error:", err);
+      } finally {
+        setIsRefreshing(false);
+        setPullDistance(0);
+      }
+    } else {
+      setPullDistance(0);
+    }
+  };
 
   // IntersectionObserver for infinite scroll
   useEffect(() => {
@@ -84,7 +140,44 @@ export function PrayerBrowseMobile({
   }, []);
 
   return (
-    <div style={{ minHeight: "100vh", background: "#ffffff" }}>
+    <div
+      ref={containerRef}
+      style={{
+        minHeight: "100vh",
+        background: "#ffffff",
+        overflowY: "auto",
+        position: "relative",
+      }}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+    >
+      {/* Pull-to-refresh indicator */}
+      {pullDistance > 0 && (
+        <div
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            height: `${pullDistance}px`,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            background: "#fafafa",
+            zIndex: 50,
+          }}
+        >
+          <Loader2
+            size={20}
+            color="#8e8e8e"
+            style={{
+              animation: isRefreshing ? "spin 1s linear infinite" : "none",
+              transform: `rotate(${pullDistance * 3}deg)`,
+            }}
+          />
+        </div>
+      )}
       {/* Header */}
       <div
         style={{

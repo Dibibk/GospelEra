@@ -3308,6 +3308,7 @@ export default function MobileApp() {
             nextCursor={prayerNextCursor}
             loadingMore={loadingMorePrayers}
             onLoadMore={loadMorePrayerRequests}
+            onRefresh={refreshAllPrayerData}
           />
         );
       case "new":
@@ -3339,6 +3340,7 @@ export default function MobileApp() {
               nextCursor={prayerNextCursor}
               loadingMore={loadingMorePrayers}
               onLoadMore={loadMorePrayerRequests}
+              onRefresh={refreshAllPrayerData}
             />
           );
         }
@@ -3421,6 +3423,7 @@ export default function MobileApp() {
             nextCursor={prayerNextCursor}
             loadingMore={loadingMorePrayers}
             onLoadMore={loadMorePrayerRequests}
+            onRefresh={refreshAllPrayerData}
           />
         );
     }
