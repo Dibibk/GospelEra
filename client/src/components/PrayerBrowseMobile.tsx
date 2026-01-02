@@ -143,29 +143,32 @@ export function PrayerBrowseMobile({
     <div
       ref={containerRef}
       style={{
-        minHeight: "100vh",
+        height: "100vh",
         background: "#ffffff",
         overflowY: "auto",
+        overflowX: "hidden",
         position: "relative",
+        WebkitOverflowScrolling: "touch",
       }}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
     >
       {/* Pull-to-refresh indicator */}
-      {pullDistance > 0 && (
+      {(pullDistance > 0 || isRefreshing) && (
         <div
           style={{
-            position: "absolute",
+            position: "sticky",
             top: 0,
             left: 0,
             right: 0,
-            height: `${pullDistance}px`,
+            height: isRefreshing ? "50px" : `${pullDistance}px`,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             background: "#fafafa",
-            zIndex: 50,
+            zIndex: 200,
+            transition: isRefreshing ? "height 0.2s ease" : "none",
           }}
         >
           <Loader2
@@ -173,9 +176,14 @@ export function PrayerBrowseMobile({
             color="#8e8e8e"
             style={{
               animation: isRefreshing ? "spin 1s linear infinite" : "none",
-              transform: `rotate(${pullDistance * 3}deg)`,
+              transform: isRefreshing ? "none" : `rotate(${pullDistance * 3}deg)`,
             }}
           />
+          {pullDistance >= 60 && !isRefreshing && (
+            <span style={{ marginLeft: "8px", fontSize: "12px", color: "#8e8e8e" }}>
+              Release to refresh
+            </span>
+          )}
         </div>
       )}
       {/* Header */}
