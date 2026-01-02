@@ -1248,27 +1248,27 @@ export default function MobileApp() {
 
         console.log('[handleCommitToPray] Step 4: Updating prayerRequests');
         // Update prayer request stats in the list
-        setPrayerRequests((prev) =>
-          prev.map((p) => {
-            if (p.id !== requestId) return p;
-
-            const alreadyHad = myCommitments.some(
-              (c) => c.request_id === requestId,
-            );
-            if (alreadyHad) return p; // don't double-increment
-
-            return {
-              ...p,
-              prayer_stats: {
-                ...p.prayer_stats,
-                committed_count: (p.prayer_stats?.committed_count || 0) + 1,
-                total_warriors: (p.prayer_stats?.total_warriors || 0) + 1,
-              },
-            };
-          }),
+        // Note: Check if we already had a commitment BEFORE this action (use a flag)
+        const alreadyHadCommitment = myCommitments.some(
+          (c) => c.request_id === requestId,
         );
+        if (!alreadyHadCommitment) {
+          setPrayerRequests((prev) =>
+            prev.map((p) => {
+              if (p.id !== requestId) return p;
+              return {
+                ...p,
+                prayer_stats: {
+                  ...p.prayer_stats,
+                  committed_count: (p.prayer_stats?.committed_count || 0) + 1,
+                  total_warriors: (p.prayer_stats?.total_warriors || 0) + 1,
+                },
+              };
+            }),
+          );
+        }
         console.log('[handleCommitToPray] Step 5: Updating selectedPrayerDetail');
-        if (selectedPrayerDetail?.id === requestId) {
+        if (selectedPrayerDetail?.id === requestId && !alreadyHadCommitment) {
           setSelectedPrayerDetail((prev) => {
             if (!prev) return prev;
             return {
@@ -3247,9 +3247,12 @@ export default function MobileApp() {
       const { data: sessionData } = await supabase.auth.getSession();
       if (!sessionData?.session?.access_token) return;
 
-      const response = await fetch(`${baseUrl}/api/my-commitments`, {
+      // Add cache-busting timestamp to ensure fresh data
+      const response = await fetch(`${baseUrl}/api/my-commitments?_t=${Date.now()}`, {
         headers: {
-          'Authorization': `Bearer ${sessionData.session.access_token}`
+          'Authorization': `Bearer ${sessionData.session.access_token}`,
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache'
         }
       });
 
