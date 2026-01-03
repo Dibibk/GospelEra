@@ -3526,7 +3526,7 @@ export default function MobileApp() {
             setPendingPostNavigation(notification.post_id);
           } else if (notification.prayer_request_id) {
             // Switch to prayer tab and open the prayer request
-            setActiveTab(1);
+            setActiveTab(2);
             handlePrayerClick(notification.prayer_request_id);
           }
         }}
