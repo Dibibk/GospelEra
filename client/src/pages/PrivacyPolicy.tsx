@@ -3,12 +3,19 @@ import { useLocation } from "wouter";
 export default function PrivacyPolicy() {
   const [, setLocation] = useLocation();
 
+  const handleBack = () => {
+    if (window.history.length > 1) {
+      window.history.back();
+    } else {
+      setLocation("/");
+    }
+  };
+
   return (
     <div
       style={{
         minHeight: "100vh",
         background: "#f5f5f7",
-        paddingTop: "env(safe-area-inset-top)",
       }}
     >
       <div
@@ -19,13 +26,14 @@ export default function PrivacyPolicy() {
           background: "#ffffff",
           borderBottom: "1px solid #e5e5e5",
           padding: "16px",
+          paddingTop: "calc(env(safe-area-inset-top) + 16px)",
           display: "flex",
           alignItems: "center",
           gap: "12px",
         }}
       >
         <button
-          onClick={() => setLocation("/")}
+          onClick={handleBack}
           style={{
             background: "none",
             border: "none",
