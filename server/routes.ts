@@ -25,11 +25,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Log storage configuration
   console.log("Storage Configuration:", hybridStorage.getStorageInfo());
 
-  // Initialize Stripe
-  if (!process.env.STRIPE_SECRET_KEY) {
-    console.warn('STRIPE_SECRET_KEY not found - Stripe payments will not work');
+  // Initialize Stripe (use STRIPE_SECRET_KEY_LIVE for live mode)
+  const stripeSecretKey = process.env.STRIPE_SECRET_KEY_LIVE || process.env.STRIPE_SECRET_KEY;
+  if (!stripeSecretKey) {
+    console.warn('STRIPE_SECRET_KEY_LIVE not found - Stripe payments will not work');
   }
-  const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY, {
+  const stripe = stripeSecretKey ? new Stripe(stripeSecretKey, {
     apiVersion: "2025-07-30.basil",
   }) : null;
 
