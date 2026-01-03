@@ -261,7 +261,10 @@ export function SettingsMobile({ onBack, onEditProfile, onSuccess }: SettingsMob
       }
       
       const baseUrl = getApiBaseUrl();
-      const response = await fetch(`${baseUrl}/api/account`, {
+      const deleteUrl = `${baseUrl}/api/account`;
+      console.log('[Delete Account] Making request to:', deleteUrl);
+      
+      const response = await fetch(deleteUrl, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
@@ -269,16 +272,24 @@ export function SettingsMobile({ onBack, onEditProfile, onSuccess }: SettingsMob
         }
       });
       
+      console.log('[Delete Account] Response status:', response.status);
+      
       if (response.ok) {
         alert("Your account has been deleted. You will now be signed out.");
         await signOut();
       } else {
-        const data = await response.json();
-        alert(data.error || "Failed to delete account. Please try again.");
+        let errorMessage = "Failed to delete account. Please try again.";
+        try {
+          const data = await response.json();
+          errorMessage = data.error || errorMessage;
+        } catch (e) {
+          console.error('[Delete Account] Failed to parse error response:', e);
+        }
+        alert(errorMessage);
       }
-    } catch (error) {
-      console.error("Error deleting account:", error);
-      alert("An error occurred while deleting your account. Please try again.");
+    } catch (error: any) {
+      console.error("[Delete Account] Error:", error);
+      alert(`An error occurred: ${error?.message || 'Network error'}. Please check your connection and try again.`);
     } finally {
       setIsDeletingAccount(false);
     }
