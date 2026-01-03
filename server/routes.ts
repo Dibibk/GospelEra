@@ -2771,7 +2771,7 @@ Respond with JSON only:
       const { db } = await import("../client/src/lib/db");
       const { 
         posts, comments, bookmarks, reactions, 
-        prayerCommitments, prayerActivity, donations, mediaRequests,
+        prayerCommitments, prayerActivity, prayerRequests, donations, mediaRequests,
         reports, notifications, pushTokens, profiles 
       } = await import("@shared/schema");
       const { eq, or } = await import("drizzle-orm");
@@ -2828,11 +2828,15 @@ Respond with JSON only:
       await db.delete(posts).where(eq(posts.author_id, userId));
       console.log("Deleted posts");
       
-      // 12. Delete profile (this should cascade other data with onDelete: 'cascade')
+      // 12. Delete prayer requests (this user created)
+      await db.delete(prayerRequests).where(eq(prayerRequests.requester, userId));
+      console.log("Deleted prayer requests");
+      
+      // 13. Delete profile (this should cascade other data with onDelete: 'cascade')
       await db.delete(profiles).where(eq(profiles.id, userId));
       console.log("Deleted profile");
 
-      // 13. Delete user from Supabase Auth (requires service role key)
+      // 14. Delete user from Supabase Auth (requires service role key)
       const authDeleteResult = await deleteSupabaseAuthUser(userId);
       if (!authDeleteResult.success) {
         console.error(`Failed to delete Supabase Auth user ${userId}:`, authDeleteResult.error);
