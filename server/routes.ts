@@ -1648,6 +1648,7 @@ Respond in JSON format:
       const status = req.query.status as string | undefined;
       const limit = Math.min(parseInt(req.query.limit as string) || 50, 100);
       
+      // First fetch commitments with prayer requests
       let query = supabaseAdmin
         .from('prayer_commitments')
         .select(`
@@ -1677,7 +1678,34 @@ Respond in JSON format:
         return res.status(500).json({ error: "Failed to fetch commitments" });
       }
 
-      res.json({ commitments: data || [] });
+      // Fetch profiles for all requesters to get display names
+      const requesterIds = [...new Set((data || []).map((c: any) => c.prayer_requests?.requester).filter(Boolean))];
+      let profilesMap: Record<string, any> = {};
+      
+      if (requesterIds.length > 0) {
+        const { data: profiles } = await supabaseAdmin
+          .from('profiles')
+          .select('id, display_name, avatar_url')
+          .in('id', requesterIds);
+        
+        if (profiles) {
+          profilesMap = profiles.reduce((acc: Record<string, any>, p: any) => {
+            acc[p.id] = p;
+            return acc;
+          }, {});
+        }
+      }
+
+      // Merge profiles into commitments
+      const commitmentsWithProfiles = (data || []).map((c: any) => ({
+        ...c,
+        prayer_requests: {
+          ...c.prayer_requests,
+          profiles: c.prayer_requests?.requester ? profilesMap[c.prayer_requests.requester] : null
+        }
+      }));
+
+      res.json({ commitments: commitmentsWithProfiles });
     } catch (error) {
       console.error("Error in my-commitments:", error);
       res.status(500).json({ error: "Failed to fetch commitments" });
