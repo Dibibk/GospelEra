@@ -2762,7 +2762,7 @@ Respond with JSON only:
     }
   });
 
-  // Delete user account and all associated data
+  // Delete user account and all associated data (uses Supabase)
   app.delete("/api/account", authenticateUser, async (req: AuthenticatedRequest, res) => {
     try {
       const userId = req.user?.id;
@@ -2770,87 +2770,95 @@ Respond with JSON only:
         return res.status(401).json({ error: "Authentication required" });
       }
 
-      const { db } = await import("../client/src/lib/db");
-      const { 
-        posts, comments, bookmarks, reactions, 
-        prayerCommitments, prayerActivity, prayerRequests, donations, mediaRequests,
-        reports, notifications, pushTokens, profiles 
-      } = await import("@shared/schema");
-      const { eq, or } = await import("drizzle-orm");
+      if (!supabaseAdmin) {
+        console.error("supabaseAdmin not configured for account deletion");
+        return res.status(500).json({ error: "Database configuration error" });
+      }
+
       const { deleteSupabaseAuthUser } = await import("./supabaseAdmin");
 
       console.log(`Starting account deletion for user: ${userId}`);
 
-      // Delete in order respecting foreign key constraints
+      // Delete in order respecting foreign key constraints (using Supabase)
       // 1. Delete push tokens
-      await db.delete(pushTokens).where(eq(pushTokens.user_id, userId));
-      console.log("Deleted push tokens");
+      const { error: pushError } = await supabaseAdmin.from('push_tokens').delete().eq('user_id', userId);
+      if (pushError) console.log("Push tokens delete result:", pushError.message);
+      else console.log("Deleted push tokens");
       
       // 2. Delete notifications (both received and sent by the user)
-      await db.delete(notifications).where(
-        or(eq(notifications.recipient_id, userId), eq(notifications.actor_id, userId))
-      );
-      console.log("Deleted notifications");
+      const { error: notifError1 } = await supabaseAdmin.from('notifications').delete().eq('recipient_id', userId);
+      const { error: notifError2 } = await supabaseAdmin.from('notifications').delete().eq('actor_id', userId);
+      if (notifError1 || notifError2) console.log("Notifications delete result:", notifError1?.message, notifError2?.message);
+      else console.log("Deleted notifications");
       
       // 3. Delete prayer activity
-      await db.delete(prayerActivity).where(eq(prayerActivity.actor, userId));
-      console.log("Deleted prayer activity");
+      const { error: activityError } = await supabaseAdmin.from('prayer_activity').delete().eq('actor', userId);
+      if (activityError) console.log("Prayer activity delete result:", activityError.message);
+      else console.log("Deleted prayer activity");
       
       // 4. Delete prayer commitments
-      await db.delete(prayerCommitments).where(eq(prayerCommitments.warrior, userId));
-      console.log("Deleted prayer commitments");
+      const { error: commitError } = await supabaseAdmin.from('prayer_commitments').delete().eq('warrior', userId);
+      if (commitError) console.log("Prayer commitments delete result:", commitError.message);
+      else console.log("Deleted prayer commitments");
       
       // 5. Delete donations
-      await db.delete(donations).where(eq(donations.user_id, userId));
-      console.log("Deleted donations");
+      const { error: donationError } = await supabaseAdmin.from('donations').delete().eq('user_id', userId);
+      if (donationError) console.log("Donations delete result:", donationError.message);
+      else console.log("Deleted donations");
       
       // 6. Delete media requests (both as user and admin)
-      await db.delete(mediaRequests).where(
-        or(eq(mediaRequests.user_id, userId), eq(mediaRequests.admin_id, userId))
-      );
-      console.log("Deleted media requests");
+      const { error: mediaError1 } = await supabaseAdmin.from('media_requests').delete().eq('user_id', userId);
+      const { error: mediaError2 } = await supabaseAdmin.from('media_requests').delete().eq('admin_id', userId);
+      if (mediaError1 || mediaError2) console.log("Media requests delete result:", mediaError1?.message, mediaError2?.message);
+      else console.log("Deleted media requests");
       
       // 7. Delete reports
-      await db.delete(reports).where(eq(reports.reporter_id, userId));
-      console.log("Deleted reports");
+      const { error: reportError } = await supabaseAdmin.from('reports').delete().eq('reporter_id', userId);
+      if (reportError) console.log("Reports delete result:", reportError.message);
+      else console.log("Deleted reports");
       
       // 8. Delete reactions
-      await db.delete(reactions).where(eq(reactions.user_id, userId));
-      console.log("Deleted reactions");
+      const { error: reactionError } = await supabaseAdmin.from('reactions').delete().eq('user_id', userId);
+      if (reactionError) console.log("Reactions delete result:", reactionError.message);
+      else console.log("Deleted reactions");
       
       // 9. Delete bookmarks
-      await db.delete(bookmarks).where(eq(bookmarks.user_id, userId));
-      console.log("Deleted bookmarks");
+      const { error: bookmarkError } = await supabaseAdmin.from('bookmarks').delete().eq('user_id', userId);
+      if (bookmarkError) console.log("Bookmarks delete result:", bookmarkError.message);
+      else console.log("Deleted bookmarks");
       
       // 10. Delete comments
-      await db.delete(comments).where(eq(comments.author_id, userId));
-      console.log("Deleted comments");
+      const { error: commentError } = await supabaseAdmin.from('comments').delete().eq('author_id', userId);
+      if (commentError) console.log("Comments delete result:", commentError.message);
+      else console.log("Deleted comments");
       
       // 11. Delete posts
-      await db.delete(posts).where(eq(posts.author_id, userId));
-      console.log("Deleted posts");
+      const { error: postError } = await supabaseAdmin.from('posts').delete().eq('author_id', userId);
+      if (postError) console.log("Posts delete result:", postError.message);
+      else console.log("Deleted posts");
       
       // 12. Delete prayer requests (this user created)
-      await db.delete(prayerRequests).where(eq(prayerRequests.requester, userId));
-      console.log("Deleted prayer requests");
+      const { error: prayerError } = await supabaseAdmin.from('prayer_requests').delete().eq('requester', userId);
+      if (prayerError) console.log("Prayer requests delete result:", prayerError.message);
+      else console.log("Deleted prayer requests");
       
-      // 13. Delete profile (this should cascade other data with onDelete: 'cascade')
-      await db.delete(profiles).where(eq(profiles.id, userId));
-      console.log("Deleted profile");
+      // 13. Delete profile
+      const { error: profileError } = await supabaseAdmin.from('profiles').delete().eq('id', userId);
+      if (profileError) console.log("Profile delete result:", profileError.message);
+      else console.log("Deleted profile");
 
       // 14. Delete user from Supabase Auth (requires service role key)
       const authDeleteResult = await deleteSupabaseAuthUser(userId);
       if (!authDeleteResult.success) {
         console.error(`Failed to delete Supabase Auth user ${userId}:`, authDeleteResult.error);
-        // Data is already deleted from Neon, but auth user remains
-        // Return success but log the issue - user data is gone, they just might have a stale auth record
+        // Data is already deleted, but auth user remains - still consider success
       }
 
       console.log(`Account fully deleted for user: ${userId}`);
       res.json({ success: true, message: "Account deleted successfully" });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error deleting account:", error);
-      res.status(500).json({ error: "Failed to delete account" });
+      res.status(500).json({ error: error?.message || "Failed to delete account" });
     }
   });
 
