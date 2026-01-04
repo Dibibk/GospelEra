@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { Browser } from '@capacitor/browser';
 import { validateDonationAmount, createStripeCheckout } from '@/lib/donations';
@@ -12,8 +12,28 @@ export function SupporterMobile({ onBack }: SupporterMobileProps) {
   const [customAmount, setCustomAmount] = useState('');
   const [message, setMessage] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [paymentCompleted, setPaymentCompleted] = useState(false);
   const [error, setError] = useState('');
   const [activeTab, setActiveTab] = useState<'stripe' | 'paypal'>('stripe');
+
+  // Listen for browser close on native apps
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+
+    const handleBrowserFinished = () => {
+      console.log('[Supporter] Browser closed');
+      if (isProcessing) {
+        setIsProcessing(false);
+        setPaymentCompleted(true);
+      }
+    };
+
+    Browser.addListener('browserFinished', handleBrowserFinished);
+
+    return () => {
+      Browser.removeAllListeners();
+    };
+  }, [isProcessing]);
 
   const predefinedAmounts = [5, 10, 25, 50, 100];
 
@@ -296,6 +316,25 @@ export function SupporterMobile({ onBack }: SupporterMobileProps) {
           }}
         />
       </div>
+
+      {/* Payment Completed Message */}
+      {paymentCompleted && (
+        <div
+          style={{
+            background: '#d4edda',
+            border: '1px solid #c3e6cb',
+            color: '#155724',
+            padding: '16px',
+            borderRadius: '8px',
+            marginBottom: '16px',
+            fontSize: '14px',
+            textAlign: 'center',
+          }}
+        >
+          <div style={{ fontWeight: 600, marginBottom: '4px' }}>Thank you!</div>
+          <div>If your payment was successful, you will receive a confirmation email from Stripe. Check your email for details.</div>
+        </div>
+      )}
 
       {/* Error */}
       {error && (
