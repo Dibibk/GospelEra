@@ -382,109 +382,30 @@ export function AdminReportsMobile({
     return { ...ADMIN_STYLES.badge, ...(styles[status] || ADMIN_STYLES.badgeDefault) };
   }, []);
 
-  // Load reports with server-side filtering
+  // Load reports via backend API (bypasses RLS)
   const loadReports = useCallback(async (status = statusFilter) => {
     try {
-      // Build query for reports
-      const query = supabase
-        .from('reports')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(100);
-
-      if (status !== 'all') {
-        query.eq('status', status);
-      }
-
-      const { data: reportsData, error: reportsError } = await query;
-      if (reportsError) throw reportsError;
-
-      if (!reportsData || reportsData.length === 0) {
-        setReports([]);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        console.error('No session for loading reports');
         return;
       }
 
-      // Collect IDs for related data
-      const reporterIds = Array.from(new Set(reportsData.map(r => r.reporter_id).filter(Boolean)));
-      const postIds = Array.from(new Set(reportsData.filter(r => r.target_type === 'post').map(r => r.target_id)));
-      const commentIds = Array.from(new Set(reportsData.filter(r => r.target_type === 'comment').map(r => r.target_id)));
-      const prayerRequestIds = Array.from(new Set(reportsData.filter(r => r.target_type === 'prayer').map(r => parseInt(r.target_id)).filter(id => !isNaN(id))));
-
-      // Fetch related data in parallel
-      const [profilesData, postsData, commentsData, prayerRequestsData] = await Promise.all([
-        reporterIds.length > 0 
-          ? supabase.from('profiles').select('id, display_name, email').in('id', reporterIds).then(r => r.data || [])
-          : Promise.resolve([]),
-        postIds.length > 0
-          ? supabase.from('posts').select('id, title, content, author').in('id', postIds).then(r => r.data || [])
-          : Promise.resolve([]),
-        commentIds.length > 0
-          ? supabase.from('comments').select('id, content, author').in('id', commentIds).then(r => r.data || [])
-          : Promise.resolve([]),
-        prayerRequestIds.length > 0
-          ? supabase.from('prayer_requests').select('id, title, details, requester').in('id', prayerRequestIds).then(r => r.data || [])
-          : Promise.resolve([])
-      ]);
-
-      // Get author IDs from posts, comments, and prayer requests
-      const authorIds = Array.from(new Set([
-        ...postsData.map(p => p.author).filter(Boolean),
-        ...commentsData.map(c => c.author).filter(Boolean),
-        ...prayerRequestsData.map(pr => pr.requester).filter(Boolean)
-      ]));
-
-      // Fetch author profiles
-      const authorsData = authorIds.length > 0
-        ? await supabase.from('profiles').select('id, display_name').in('id', authorIds).then(r => r.data || [])
-        : [];
-
-      // Create lookup maps
-      const profilesMap = new Map(profilesData.map(p => [p.id, p]));
-      const postsMap = new Map(postsData.map(p => [p.id, p]));
-      const commentsMap = new Map(commentsData.map(c => [c.id, c]));
-      const prayerRequestsMap = new Map(prayerRequestsData.map(pr => [pr.id, pr]));
-      const authorsMap = new Map(authorsData.map(a => [a.id, a]));
-
-      // Merge data
-      const enrichedReports = reportsData.map(report => {
-        const enriched: any = { ...report };
-        
-        // Add reporter
-        if (report.reporter_id) {
-          enriched.reporter = profilesMap.get(report.reporter_id);
+      const statusParam = status === 'all' ? 'open' : status;
+      const response = await fetch(`/api/admin/reports?status=${statusParam}&limit=100`, {
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json'
         }
-        
-        // Add post/comment/prayer with author
-        if (report.target_type === 'post' && report.target_id) {
-          const post = postsMap.get(report.target_id);
-          if (post) {
-            enriched.post = {
-              ...post,
-              author: authorsMap.get(post.author)
-            };
-          }
-        } else if (report.target_type === 'comment' && report.target_id) {
-          const comment = commentsMap.get(report.target_id);
-          if (comment) {
-            enriched.comment = {
-              ...comment,
-              author: authorsMap.get(comment.author)
-            };
-          }
-        } else if (report.target_type === 'prayer' && report.target_id) {
-          const prayerRequest = prayerRequestsMap.get(parseInt(report.target_id));
-          if (prayerRequest) {
-            enriched.prayer_request = {
-              ...prayerRequest,
-              author: authorsMap.get(prayerRequest.requester)
-            };
-          }
-        }
-        
-        return enriched;
       });
 
-      setReports(enrichedReports);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to load reports');
+      }
+
+      const data = await response.json();
+      setReports(data.reports || []);
     } catch (err: any) {
       console.error('Error loading reports:', err);
       showToast(err.message || 'Failed to load reports', 'error');
