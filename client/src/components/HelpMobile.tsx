@@ -216,7 +216,7 @@ export function HelpMobile({ onBack, onViewGuidelines }: HelpMobileProps) {
               How do I change my profile picture?
             </div>
             <div style={{ fontSize: "13px", color: "#8e8e8e" }}>
-              Click on the profile on top left corner, from dropdown tap "profile" click edit->Change Photo->Save.
+              Click on the profile on top left corner, from dropdown tap "profile" click edit → Change Photo → Save.
             </div>
           </div>
         </div>
