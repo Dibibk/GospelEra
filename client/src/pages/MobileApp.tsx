@@ -1489,6 +1489,15 @@ export default function MobileApp() {
   const [showMobileMediaRequests, setShowMobileMediaRequests] = useState(false);
   const [showMobileAdminSupport, setShowMobileAdminSupport] = useState(false);
 
+  // Security: Reset admin page states if non-admin user has them set
+  useEffect(() => {
+    if (!isAdmin && (showMobileReviewReports || showMobileMediaRequests || showMobileAdminSupport)) {
+      setShowMobileReviewReports(false);
+      setShowMobileMediaRequests(false);
+      setShowMobileAdminSupport(false);
+    }
+  }, [isAdmin, showMobileReviewReports, showMobileMediaRequests, showMobileAdminSupport]);
+
   // Debounced search effect - matching web app
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -4033,17 +4042,17 @@ export default function MobileApp() {
       <div style={STYLES.content}>
         {!user ? (
           <LoginMobile onSuccess={() => {}} />
-        ) : showMobileReviewReports ? (
+        ) : showMobileReviewReports && isAdmin ? (
           <AdminReportsMobile
             isVisible={showMobileReviewReports}
             onBack={() => setShowMobileReviewReports(false)}
           />
-        ) : showMobileMediaRequests ? (
+        ) : showMobileMediaRequests && isAdmin ? (
           <MediaRequestsMobile
             isVisible={showMobileMediaRequests}
             onBack={() => setShowMobileMediaRequests(false)}
           />
-        ) : showMobileAdminSupport ? (
+        ) : showMobileAdminSupport && isAdmin ? (
           <AdminSupportMobile
             isVisible={showMobileAdminSupport}
             onBack={() => setShowMobileAdminSupport(false)}
