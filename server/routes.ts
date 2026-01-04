@@ -2250,12 +2250,14 @@ Respond with JSON only:
       const baseUrl = `${protocol}://${host}`;
 
       // Use mobile or web URLs based on context
-      const successUrl = isMobile 
-        ? `${baseUrl}/mobile?payment=success&session_id={CHECKOUT_SESSION_ID}`
-        : `${baseUrl}/support/thanks?session_id={CHECKOUT_SESSION_ID}`;
-      const cancelUrl = isMobile 
-        ? `${baseUrl}/mobile`
-        : `${baseUrl}/support`;
+      const successUrl = isMobile
+      ? `gospelera://checkout/success?session_id={CHECKOUT_SESSION_ID}`
+      : `${baseUrl}/support/thanks?session_id={CHECKOUT_SESSION_ID}`;
+
+      const cancelUrl = isMobile
+      ? `gospelera://checkout/cancel`
+      : `${baseUrl}/support`;
+
 
       // Create checkout session
       const session = await stripe.checkout.sessions.create({

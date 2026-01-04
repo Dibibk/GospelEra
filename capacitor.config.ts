@@ -4,8 +4,13 @@ const config: CapacitorConfig = {
   appId: 'com.gospelera.app',
   appName: 'Gospel Era',
   webDir: 'dist/public',
+
   server: {
     androidScheme: 'https',
+
+    // ❗ keep https for normal web content
+    iosScheme: 'https',
+
     allowNavigation: [
       '*.youtube.com',
       '*.ytimg.com',
@@ -16,8 +21,8 @@ const config: CapacitorConfig = {
       '*.replit.dev',
       'gospel-era.replit.app'
     ],
-    cleartext: true,
-    iosScheme: 'https'
+
+    cleartext: true
   }
 };
 

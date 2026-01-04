@@ -103,6 +103,8 @@ import {
 import { PAYMENTS } from "@/config/payments";
 import { EmbedCard } from "@/components/EmbedCard";
 import { Flag, Trash2, Loader2, Pencil, Check, X } from "lucide-react";
+import { App } from '@capacitor/app'
+import { Browser } from '@capacitor/browser'
 // at top of MobileApp.tsx
 
 // focus helpers (no hooks here)
@@ -527,7 +529,27 @@ export default function MobileApp() {
       setShowBannedModal(true);
     }
   }, [isBanned, user]);
+  
+  useEffect(() => {
+  let handle: any;
 
+  (async () => {
+    handle = await App.addListener("appUrlOpen", async (event) => {
+      const url = event.url;
+
+      if (url.startsWith("gospelera://checkout/")) {
+        await Browser.close();
+        console.log("Stripe returned to app:", url);
+        // TODO: refresh state / navigate
+      }
+    });
+  })();
+
+  return () => {
+    // remove listener if it was attached
+    handle?.remove?.();
+  };
+  }, []);
   // Check guidelines acceptance status on login
   useEffect(() => {
     if (!user) {
