@@ -575,13 +575,27 @@ export function SettingsMobile({ onBack, onEditProfile, onSuccess }: SettingsMob
                       return;
                     }
                     const baseUrl = getApiBaseUrl();
+                    
+                    // First check debug info
+                    const debugResponse = await fetch(`${baseUrl}/api/push/debug`, {
+                      headers: { 'Authorization': `Bearer ${session.access_token}` }
+                    });
+                    const debugData = await debugResponse.json();
+                    
+                    if (debugData.tokenCount === 0) {
+                      alert(`No push tokens registered!\n\nFirebase configured: ${debugData.firebaseConfigured}\nVAPID configured: ${debugData.vapidConfigured}\n\nPlease toggle Push Notifications OFF then ON again.`);
+                      return;
+                    }
+                    
+                    // Then send test
                     const response = await fetch(`${baseUrl}/api/push/test`, {
                       method: 'POST',
                       headers: { 'Authorization': `Bearer ${session.access_token}` }
                     });
                     const data = await response.json();
                     if (response.ok) {
-                      alert('Test notification sent! Check your device.');
+                      const tokenInfo = debugData.tokens.map((t: any) => `${t.platform}: ${t.tokenPreview}`).join('\n');
+                      alert(`Test notification sent!\n\nTokens (${debugData.tokenCount}):\n${tokenInfo}`);
                     } else {
                       alert(`Error: ${data.error || 'Failed to send test'}`);
                     }
