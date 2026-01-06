@@ -559,6 +559,57 @@ export function SettingsMobile({ onBack, onEditProfile, onSuccess }: SettingsMob
               </label>
             </div>
 
+            {/* Test Push Notification Button */}
+            <div
+              style={{
+                borderTop: "1px solid #e5e5e5",
+                padding: "16px",
+              }}
+            >
+              <button
+                onClick={async () => {
+                  try {
+                    const { data: { session } } = await supabase.auth.getSession();
+                    if (!session?.access_token) {
+                      alert('Please log in first');
+                      return;
+                    }
+                    const baseUrl = getApiBaseUrl();
+                    const response = await fetch(`${baseUrl}/api/push/test`, {
+                      method: 'POST',
+                      headers: { 'Authorization': `Bearer ${session.access_token}` }
+                    });
+                    const data = await response.json();
+                    if (response.ok) {
+                      alert('Test notification sent! Check your device.');
+                    } else {
+                      alert(`Error: ${data.error || 'Failed to send test'}`);
+                    }
+                  } catch (error) {
+                    alert('Failed to send test notification');
+                    console.error(error);
+                  }
+                }}
+                data-testid="button-test-push"
+                style={{
+                  width: "100%",
+                  padding: "12px 16px",
+                  background: "#007AFF",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: "8px",
+                  fontSize: "16px",
+                  fontWeight: 500,
+                  cursor: "pointer",
+                }}
+              >
+                Send Test Notification
+              </button>
+              <div style={{ fontSize: "12px", color: "#8e8e8e", marginTop: "8px", textAlign: "center" }}>
+                Use this to verify push notifications are working
+              </div>
+            </div>
+
             <div
               style={{
                 minHeight: "48px",

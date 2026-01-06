@@ -2564,6 +2564,78 @@ Respond with JSON only:
 
   // ============ PUSH NOTIFICATIONS API ROUTES ============
   
+  // Debug endpoint - check push tokens for current user and test send
+  app.get("/api/push/debug", authenticateUser, async (req: AuthenticatedRequest, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      // Check Firebase initialization
+      const firebaseConfigured = !!process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
+      const vapidConfigured = !!process.env.VAPID_PUBLIC_KEY && !!process.env.VAPID_PRIVATE_KEY;
+      
+      // Get tokens for this user using supabaseAdmin
+      const { data: tokens, error } = await supabaseAdmin
+        .from('push_tokens')
+        .select('*')
+        .eq('user_id', req.user.id);
+      
+      if (error) {
+        return res.json({
+          userId: req.user.id,
+          error: error.message,
+          firebaseConfigured,
+          vapidConfigured,
+          tokens: []
+        });
+      }
+      
+      // Mask tokens for security
+      const maskedTokens = (tokens || []).map((t: any) => ({
+        id: t.id,
+        platform: t.platform,
+        tokenPreview: t.token?.substring(0, 30) + '...',
+        created_at: t.created_at,
+        daily_verse_enabled: t.daily_verse_enabled
+      }));
+      
+      res.json({
+        userId: req.user.id,
+        firebaseConfigured,
+        vapidConfigured,
+        tokenCount: tokens?.length || 0,
+        tokens: maskedTokens
+      });
+    } catch (error) {
+      console.error("Push debug error:", error);
+      res.status(500).json({ error: "Debug failed" });
+    }
+  });
+  
+  // Test push notification endpoint - send test notification to current user
+  app.post("/api/push/test", authenticateUser, async (req: AuthenticatedRequest, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      console.log(`[Push Test] Sending test notification to user ${req.user.id}`);
+      
+      const { sendPushNotification } = await import('./pushNotifications');
+      await sendPushNotification(req.user.id, {
+        title: 'Test Notification',
+        body: 'If you see this, push notifications are working!',
+        url: '/'
+      });
+      
+      res.json({ success: true, message: "Test notification sent. Check your device." });
+    } catch (error) {
+      console.error("Push test error:", error);
+      res.status(500).json({ error: "Test failed" });
+    }
+  });
+  
   // Get VAPID public key for Web Push
   app.get("/api/push/vapid-key", (req, res) => {
     const vapidPublicKey = process.env.VAPID_PUBLIC_KEY;
