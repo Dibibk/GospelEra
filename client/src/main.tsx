@@ -16,3 +16,11 @@ if (!import.meta.env.DEV) {
 }
 
 createRoot(document.getElementById("root")!).render(<App />);
+// Native push init (only on iOS/Android, avoids web build issues)
+import('@capacitor/core').then(({ Capacitor }) => {
+  if (Capacitor.isNativePlatform()) {
+    import('./push').then(({ initPushNotifications }) => {
+      initPushNotifications();
+    });
+  }
+});
