@@ -1,4 +1,5 @@
 import webPush from 'web-push';
+import admin from 'firebase-admin';
 
 // Initialize web-push with VAPID keys
 const vapidPublicKey = process.env.VAPID_PUBLIC_KEY;
@@ -7,9 +8,29 @@ const vapidEmail = process.env.VAPID_EMAIL || 'mailto:support@gospelera.com';
 
 if (vapidPublicKey && vapidPrivateKey) {
   webPush.setVapidDetails(vapidEmail, vapidPublicKey, vapidPrivateKey);
-  console.log('[Push] VAPID keys configured');
+  console.log('[Push] VAPID keys configured for web push');
 } else {
-  console.warn('[Push] VAPID keys not configured - push notifications disabled');
+  console.warn('[Push] VAPID keys not configured - web push notifications disabled');
+}
+
+// Initialize Firebase Admin SDK for FCM (iOS/Android)
+let fcmInitialized = false;
+try {
+  const firebaseCredentials = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
+  if (firebaseCredentials) {
+    const serviceAccount = JSON.parse(firebaseCredentials);
+    if (!admin.apps.length) {
+      admin.initializeApp({
+        credential: admin.credential.cert(serviceAccount)
+      });
+    }
+    fcmInitialized = true;
+    console.log('[Push] Firebase Admin SDK initialized for FCM');
+  } else {
+    console.warn('[Push] FIREBASE_SERVICE_ACCOUNT_KEY not configured - native push disabled');
+  }
+} catch (error) {
+  console.error('[Push] Failed to initialize Firebase Admin SDK:', error);
 }
 
 export interface PushPayload {
@@ -21,31 +42,65 @@ export interface PushPayload {
 }
 
 /**
- * Send push notification to a specific user
+ * Send push notification via FCM to native iOS/Android devices
  */
-export async function sendPushNotification(userId: string, payload: PushPayload): Promise<void> {
-  if (!vapidPublicKey || !vapidPrivateKey) {
-    console.log('[Push] Skipping - VAPID keys not configured');
-    return;
+async function sendFcmNotification(token: string, payload: PushPayload): Promise<boolean> {
+  if (!fcmInitialized) {
+    console.log('[FCM] Firebase not initialized, skipping');
+    return false;
   }
-  
+
   try {
-    const { db } = await import("../client/src/lib/db");
-    const { pushTokens } = await import("@shared/schema");
-    const { eq } = await import("drizzle-orm");
-    
-    // Get all push tokens for this user
-    const tokens = await db.select()
-      .from(pushTokens)
-      .where(eq(pushTokens.user_id, userId));
-    
-    if (tokens.length === 0) {
-      console.log(`[Push] No tokens for user ${userId}`);
-      return;
-    }
-    
-    console.log(`[Push] Sending to ${tokens.length} device(s) for user ${userId}`);
-    
+    const message: admin.messaging.Message = {
+      token: token,
+      notification: {
+        title: payload.title,
+        body: payload.body,
+      },
+      data: {
+        url: payload.url || '/',
+        tag: payload.tag || 'gospel-era-notification',
+      },
+      apns: {
+        payload: {
+          aps: {
+            alert: {
+              title: payload.title,
+              body: payload.body,
+            },
+            sound: 'default',
+            badge: 1,
+          },
+        },
+      },
+      android: {
+        priority: 'high',
+        notification: {
+          sound: 'default',
+          channelId: 'gospel-era-notifications',
+        },
+      },
+    };
+
+    const response = await admin.messaging().send(message);
+    console.log('[FCM] Successfully sent message:', response);
+    return true;
+  } catch (error: any) {
+    console.error('[FCM] Error sending message:', error.message);
+    return false;
+  }
+}
+
+/**
+ * Send push notification via Web Push to browsers
+ */
+async function sendWebPushNotification(subscription: any, payload: PushPayload): Promise<boolean> {
+  if (!vapidPublicKey || !vapidPrivateKey) {
+    console.log('[WebPush] VAPID keys not configured, skipping');
+    return false;
+  }
+
+  try {
     const notificationPayload = JSON.stringify({
       title: payload.title,
       body: payload.body,
@@ -53,20 +108,71 @@ export async function sendPushNotification(userId: string, payload: PushPayload)
       url: payload.url || '/',
       tag: payload.tag || 'gospel-era-notification',
     });
+
+    await webPush.sendNotification(subscription, notificationPayload);
+    return true;
+  } catch (error: any) {
+    console.error('[WebPush] Error sending notification:', error.message);
+    throw error;
+  }
+}
+
+/**
+ * Send push notification to a specific user (handles both web and native)
+ */
+export async function sendPushNotification(userId: string, payload: PushPayload): Promise<void> {
+  try {
+    const { supabaseAdmin } = await import('./supabaseAdmin');
+    
+    if (!supabaseAdmin) {
+      console.log('[Push] Supabase admin not configured');
+      return;
+    }
+    
+    // Get all push tokens for this user from Supabase
+    const { data: tokens, error } = await supabaseAdmin
+      .from('push_tokens')
+      .select('*')
+      .eq('user_id', userId);
+    
+    if (error) {
+      console.error('[Push] Error fetching tokens:', error);
+      return;
+    }
+    
+    if (!tokens || tokens.length === 0) {
+      console.log(`[Push] No tokens for user ${userId}`);
+      return;
+    }
+    
+    console.log(`[Push] Sending to ${tokens.length} device(s) for user ${userId}`);
     
     // Send to all user's devices
-    const sendPromises = tokens.map(async (tokenRecord) => {
+    const sendPromises = tokens.map(async (tokenRecord: any) => {
       try {
-        const subscription = JSON.parse(tokenRecord.token);
-        await webPush.sendNotification(subscription, notificationPayload);
-        console.log(`[Push] Sent to device ${tokenRecord.id}`);
+        const platform = tokenRecord.platform || 'web';
+        
+        if (platform === 'ios' || platform === 'android') {
+          // Native platform - use FCM
+          const success = await sendFcmNotification(tokenRecord.token, payload);
+          if (success) {
+            console.log(`[Push] FCM sent to ${platform} device ${tokenRecord.id}`);
+          }
+        } else {
+          // Web platform - use Web Push
+          const subscription = JSON.parse(tokenRecord.token);
+          await sendWebPushNotification(subscription, payload);
+          console.log(`[Push] Web Push sent to device ${tokenRecord.id}`);
+        }
       } catch (error: any) {
         console.error(`[Push] Failed to send to device ${tokenRecord.id}:`, error.message);
         
-        // Remove invalid/expired tokens (410 Gone or 404 Not Found)
-        if (error.statusCode === 410 || error.statusCode === 404) {
+        // Remove invalid/expired tokens
+        if (error.statusCode === 410 || error.statusCode === 404 || 
+            error.code === 'messaging/invalid-registration-token' ||
+            error.code === 'messaging/registration-token-not-registered') {
           console.log(`[Push] Removing invalid token ${tokenRecord.id}`);
-          await db.delete(pushTokens).where(eq(pushTokens.id, tokenRecord.id));
+          await supabaseAdmin.from('push_tokens').delete().eq('id', tokenRecord.id);
         }
       }
     });
@@ -116,22 +222,26 @@ function getTodaysVerse(): { reference: string; text: string } {
  * Send daily verse push notification to all subscribed users
  */
 export async function sendDailyVerseReminders(): Promise<{ sent: number; failed: number }> {
-  if (!vapidPublicKey || !vapidPrivateKey) {
-    console.log('[Push] Skipping daily verse - VAPID keys not configured');
-    return { sent: 0, failed: 0 };
-  }
-  
   try {
-    const { db } = await import("../client/src/lib/db");
-    const { pushTokens } = await import("@shared/schema");
-    const { eq } = await import("drizzle-orm");
+    const { supabaseAdmin } = await import('./supabaseAdmin');
+    
+    if (!supabaseAdmin) {
+      console.log('[Push] Supabase admin not configured');
+      return { sent: 0, failed: 0 };
+    }
     
     // Get all tokens with daily verse enabled
-    const tokens = await db.select()
-      .from(pushTokens)
-      .where(eq(pushTokens.daily_verse_enabled, true));
+    const { data: tokens, error } = await supabaseAdmin
+      .from('push_tokens')
+      .select('*')
+      .eq('daily_verse_enabled', true);
     
-    if (tokens.length === 0) {
+    if (error) {
+      console.error('[Push] Error fetching tokens:', error);
+      return { sent: 0, failed: 0 };
+    }
+    
+    if (!tokens || tokens.length === 0) {
       console.log('[Push] No users subscribed to daily verse reminders');
       return { sent: 0, failed: 0 };
     }
@@ -139,32 +249,46 @@ export async function sendDailyVerseReminders(): Promise<{ sent: number; failed:
     const verse = getTodaysVerse();
     console.log(`[Push] Sending daily verse to ${tokens.length} device(s): ${verse.reference}`);
     
-    const notificationPayload = JSON.stringify({
+    const payload: PushPayload = {
       title: `Daily Verse - ${verse.reference}`,
       body: verse.text,
       icon: '/icon-192.png',
       url: '/',
       tag: 'daily-verse',
-    });
+    };
     
     let sent = 0;
     let failed = 0;
     
     // Send to all subscribed devices
-    const sendPromises = tokens.map(async (tokenRecord) => {
+    const sendPromises = tokens.map(async (tokenRecord: any) => {
       try {
-        const subscription = JSON.parse(tokenRecord.token);
-        await webPush.sendNotification(subscription, notificationPayload);
-        console.log(`[Push] Daily verse sent to device ${tokenRecord.id}`);
-        sent++;
+        const platform = tokenRecord.platform || 'web';
+        
+        if (platform === 'ios' || platform === 'android') {
+          const success = await sendFcmNotification(tokenRecord.token, payload);
+          if (success) {
+            sent++;
+            console.log(`[Push] Daily verse sent to ${platform} device ${tokenRecord.id}`);
+          } else {
+            failed++;
+          }
+        } else {
+          const subscription = JSON.parse(tokenRecord.token);
+          await sendWebPushNotification(subscription, payload);
+          sent++;
+          console.log(`[Push] Daily verse sent to web device ${tokenRecord.id}`);
+        }
       } catch (error: any) {
         console.error(`[Push] Failed daily verse to device ${tokenRecord.id}:`, error.message);
         failed++;
         
         // Remove invalid/expired tokens
-        if (error.statusCode === 410 || error.statusCode === 404) {
+        if (error.statusCode === 410 || error.statusCode === 404 ||
+            error.code === 'messaging/invalid-registration-token' ||
+            error.code === 'messaging/registration-token-not-registered') {
           console.log(`[Push] Removing invalid token ${tokenRecord.id}`);
-          await db.delete(pushTokens).where(eq(pushTokens.id, tokenRecord.id));
+          await supabaseAdmin.from('push_tokens').delete().eq('id', tokenRecord.id);
         }
       }
     });
