@@ -2,6 +2,71 @@ import { supabase } from './supabaseClient';
 import { getApiBaseUrl } from './posts';
 import { Capacitor } from '@capacitor/core';
 import { PushNotifications } from '@capacitor/push-notifications';
+import { Preferences } from '@capacitor/preferences';
+
+
+// =====================================================
+// Shared helpers (Native token storage)
+// =====================================================
+const NATIVE_PUSH_TOKEN_KEY = 'native_push_token';
+const NATIVE_PUSH_PLATFORM_KEY = 'native_push_platform';
+const NATIVE_PUSH_ERROR_KEY = 'native_push_error';
+export function initNativeFCMTokenBridge(): void {
+  if (!isNativePlatform()) return;
+
+  // @ts-ignore
+  const bridge = (window as any).Capacitor?.Plugins?.FCMTokenBridge;
+  if (!bridge) {
+    console.log('[NativePushBridge] FCMTokenBridge plugin not found');
+    return;
+  }
+
+  bridge.addListener('fcmToken', async (data: { token?: string }) => {
+    const token = data?.token;
+    if (!token) return;
+
+    console.log('[NativePushBridge] ✅ Got FCM token from native:', token.substring(0, 25) + '...');
+    await saveNativePushToken(token, 'ios');
+    console.log('[NativePushBridge] ✅ Saved token to Preferences');
+  });
+
+  console.log('[NativePushBridge] ✅ Listener registered');
+}
+
+export function listenForNativeFCMTokenBridge(): void {
+  if (!Capacitor.isNativePlatform()) return;
+
+  // @ts-ignore - Capacitor global is available in native runtime
+  window.addEventListener('FCMToken', async (event: any) => {
+    const token = event?.detail?.token;
+    if (!token) return;
+
+    console.log('[NativePushBridge] ✅ Received token from AppDelegate');
+    await saveNativePushToken(token, 'ios');
+    console.log('[NativePushBridge] ✅ Saved token to Preferences');
+  });
+}
+
+
+export async function saveNativePushToken(token: string, platform: string) {
+  await Preferences.set({ key: NATIVE_PUSH_TOKEN_KEY, value: token });
+  await Preferences.set({ key: NATIVE_PUSH_PLATFORM_KEY, value: platform });
+}
+
+export async function getNativePushToken(): Promise<string | null> {
+  const { value } = await Preferences.get({ key: NATIVE_PUSH_TOKEN_KEY });
+  return value ?? null;
+}
+
+export async function clearNativePushToken(): Promise<void> {
+  await Preferences.remove({ key: NATIVE_PUSH_TOKEN_KEY });
+  await Preferences.remove({ key: NATIVE_PUSH_PLATFORM_KEY });
+  await Preferences.remove({ key: NATIVE_PUSH_ERROR_KEY });
+}
+
+// =====================================================
+// Web push helpers
+// =====================================================
 
 // Check if running on native platform (iOS/Android)
 export function isNativePlatform(): boolean {
@@ -18,21 +83,19 @@ export function isNativePushSupported(): boolean {
   return isNativePlatform();
 }
 
-// Get current notification permission state
+// Get current web notification permission state
 export function getNotificationPermission(): NotificationPermission {
-  if (!('Notification' in window)) {
-    return 'denied';
-  }
+  if (!('Notification' in window)) return 'denied';
   return Notification.permission;
 }
 
-// Request notification permission
+// Request web notification permission
 export async function requestNotificationPermission(): Promise<NotificationPermission> {
   if (!('Notification' in window)) {
     console.log('[Push] Notifications not supported');
     return 'denied';
   }
-  
+
   const permission = await Notification.requestPermission();
   console.log('[Push] Permission result:', permission);
   return permission;
@@ -43,18 +106,16 @@ async function getVapidPublicKey(): Promise<string | null> {
   try {
     const { data: { session } } = await supabase.auth.getSession();
     const baseUrl = getApiBaseUrl();
-    
+
     const response = await fetch(`${baseUrl}/api/push/vapid-key`, {
-      headers: session ? {
-        'Authorization': `Bearer ${session.access_token}`
-      } : {}
+      headers: session ? { 'Authorization': `Bearer ${session.access_token}` } : {}
     });
-    
+
     if (!response.ok) {
       console.error('[Push] Failed to get VAPID key:', response.status);
       return null;
     }
-    
+
     const data = await response.json();
     return data.publicKey;
   } catch (error) {
@@ -65,59 +126,48 @@ async function getVapidPublicKey(): Promise<string | null> {
 
 // Convert VAPID key to Uint8Array
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
-  const padding = '='.repeat((4 - base64String.length % 4) % 4);
-  const base64 = (base64String + padding)
-    .replace(/-/g, '+')
-    .replace(/_/g, '/');
-  
+  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+
   const rawData = window.atob(base64);
   const outputArray = new Uint8Array(rawData.length);
-  
-  for (let i = 0; i < rawData.length; ++i) {
-    outputArray[i] = rawData.charCodeAt(i);
-  }
+
+  for (let i = 0; i < rawData.length; ++i) outputArray[i] = rawData.charCodeAt(i);
   return outputArray;
 }
 
-// Subscribe to push notifications
+// Subscribe to web push notifications
 export async function subscribeToPush(): Promise<PushSubscription | null> {
   if (!isPushSupported()) {
     console.log('[Push] Push notifications not supported');
     return null;
   }
-  
+
   try {
-    // Get service worker registration
     const registration = await navigator.serviceWorker.ready;
     console.log('[Push] Service worker ready');
-    
-    // Check for existing subscription
+
     let subscription = await registration.pushManager.getSubscription();
-    
+
     if (subscription) {
       console.log('[Push] Already subscribed');
       await registerSubscriptionWithServer(subscription);
       return subscription;
     }
-    
-    // Get VAPID public key
+
     const vapidPublicKey = await getVapidPublicKey();
     if (!vapidPublicKey) {
       console.error('[Push] VAPID public key not available');
       return null;
     }
-    
-    // Subscribe
+
     subscription = await registration.pushManager.subscribe({
       userVisibleOnly: true,
       applicationServerKey: urlBase64ToUint8Array(vapidPublicKey)
     });
-    
+
     console.log('[Push] Subscribed successfully');
-    
-    // Register with server
     await registerSubscriptionWithServer(subscription);
-    
     return subscription;
   } catch (error) {
     console.error('[Push] Subscription failed:', error);
@@ -125,56 +175,46 @@ export async function subscribeToPush(): Promise<PushSubscription | null> {
   }
 }
 
-// Register subscription with backend
+// Register web subscription with backend
 async function registerSubscriptionWithServer(subscription: PushSubscription): Promise<void> {
   try {
     const { data: { session } } = await supabase.auth.getSession();
-    
     if (!session) {
       console.log('[Push] No session, skipping registration');
       return;
     }
-    
+
     const baseUrl = getApiBaseUrl();
-    
     const response = await fetch(`${baseUrl}/api/push/register`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${session.access_token}`
       },
-      body: JSON.stringify({
-        subscription: subscription.toJSON(),
-        platform: 'web'
-      })
+      body: JSON.stringify({ subscription: subscription.toJSON(), platform: 'web' })
     });
-    
-    if (!response.ok) {
-      throw new Error(`Registration failed: ${response.status}`);
-    }
-    
+
+    if (!response.ok) throw new Error(`Registration failed: ${response.status}`);
+
     console.log('[Push] Registered with server');
   } catch (error) {
     console.error('[Push] Server registration failed:', error);
   }
 }
 
-// Unsubscribe from push notifications
+// Unsubscribe from web push notifications
 export async function unsubscribeFromPush(): Promise<boolean> {
-  if (!isPushSupported()) {
-    return false;
-  }
-  
+  if (!isPushSupported()) return false;
+
   try {
     const registration = await navigator.serviceWorker.ready;
     const subscription = await registration.pushManager.getSubscription();
-    
+
     if (!subscription) {
       console.log('[Push] No subscription to unsubscribe');
       return true;
     }
-    
-    // Unregister from server
+
     const { data: { session } } = await supabase.auth.getSession();
     if (session) {
       const baseUrl = getApiBaseUrl();
@@ -184,16 +224,12 @@ export async function unsubscribeFromPush(): Promise<boolean> {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${session.access_token}`
         },
-        body: JSON.stringify({
-          subscription: subscription.toJSON()
-        })
+        body: JSON.stringify({ subscription: subscription.toJSON() })
       });
     }
-    
-    // Unsubscribe from browser
+
     await subscription.unsubscribe();
     console.log('[Push] Unsubscribed successfully');
-    
     return true;
   } catch (error) {
     console.error('[Push] Unsubscribe failed:', error);
@@ -201,37 +237,35 @@ export async function unsubscribeFromPush(): Promise<boolean> {
   }
 }
 
-// Initialize push notifications (call on app load when user is logged in)
+// Initialize web push (call on app load when user is logged in)
 export async function initPushNotifications(): Promise<void> {
   if (!isPushSupported()) {
     console.log('[Push] Push notifications not supported on this device');
     return;
   }
-  
+
   const permission = getNotificationPermission();
-  
+
   if (permission === 'granted') {
-    // Already have permission, subscribe
     await subscribeToPush();
   } else if (permission === 'default') {
-    // Haven't asked yet - will ask when user enables in settings
     console.log('[Push] Permission not yet requested');
   } else {
     console.log('[Push] Permission denied');
   }
 }
 
-// ============================================
-// NATIVE PUSH NOTIFICATIONS (iOS/Android)
-// ============================================
+// =====================================================
+// Native push (iOS/Android)
+// =====================================================
 
-// Request native push notification permission
+// Request native push permission
 export async function requestNativePushPermission(): Promise<'granted' | 'denied'> {
   if (!isNativePlatform()) {
     console.log('[NativePush] Not a native platform');
     return 'denied';
   }
-  
+
   try {
     const result = await PushNotifications.requestPermissions();
     console.log('[NativePush] Permission result:', result.receive);
@@ -242,12 +276,10 @@ export async function requestNativePushPermission(): Promise<'granted' | 'denied
   }
 }
 
-// Check current native push permission status
+// Check native push permission
 export async function checkNativePushPermission(): Promise<'granted' | 'denied' | 'prompt'> {
-  if (!isNativePlatform()) {
-    return 'denied';
-  }
-  
+  if (!isNativePlatform()) return 'denied';
+
   try {
     const result = await PushNotifications.checkPermissions();
     if (result.receive === 'granted') return 'granted';
@@ -259,60 +291,27 @@ export async function checkNativePushPermission(): Promise<'granted' | 'denied' 
   }
 }
 
-// Register for native push notifications
-export async function subscribeToNativePush(): Promise<boolean> {
-  if (!isNativePlatform()) {
-    console.log('[NativePush] Not a native platform');
-    return false;
-  }
-  
-  try {
-    // Request permission first
-    const permission = await requestNativePushPermission();
-    if (permission !== 'granted') {
-      console.log('[NativePush] Permission not granted');
-      return false;
-    }
-    
-    // Register to get a token
-    await PushNotifications.register();
-    console.log('[NativePush] Registration initiated');
-    
-    return true;
-  } catch (error) {
-    console.error('[NativePush] Registration failed:', error);
-    return false;
-  }
-}
-
 // Register native token with backend
 async function registerNativeTokenWithServer(token: string, platform: 'ios' | 'android'): Promise<void> {
   try {
     const { data: { session } } = await supabase.auth.getSession();
-    
     if (!session) {
       console.log('[NativePush] No session, skipping registration');
       return;
     }
-    
+
     const baseUrl = getApiBaseUrl();
-    
     const response = await fetch(`${baseUrl}/api/push/register`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${session.access_token}`
       },
-      body: JSON.stringify({
-        token: token,
-        platform: platform
-      })
+      body: JSON.stringify({ token, platform })
     });
-    
-    if (!response.ok) {
-      throw new Error(`Registration failed: ${response.status}`);
-    }
-    
+
+    if (!response.ok) throw new Error(`Registration failed: ${response.status}`);
+
     console.log(`[NativePush] Registered ${platform} token with server`);
   } catch (error) {
     console.error('[NativePush] Server registration failed:', error);
@@ -321,12 +320,9 @@ async function registerNativeTokenWithServer(token: string, platform: 'ios' | 'a
 
 // Unsubscribe from native push notifications
 export async function unsubscribeFromNativePush(): Promise<boolean> {
-  if (!isNativePlatform()) {
-    return false;
-  }
-  
+  if (!isNativePlatform()) return false;
+
   try {
-    // Unregister from server
     const { data: { session } } = await supabase.auth.getSession();
     if (session) {
       const baseUrl = getApiBaseUrl();
@@ -338,8 +334,11 @@ export async function unsubscribeFromNativePush(): Promise<boolean> {
         }
       });
     }
-    
-    console.log('[NativePush] Unsubscribed successfully');
+
+    // ✅ clear local token
+    await clearNativePushToken();
+
+    console.log('[NativePush] Unsubscribed successfully (token cleared)');
     return true;
   } catch (error) {
     console.error('[NativePush] Unsubscribe failed:', error);
@@ -350,91 +349,84 @@ export async function unsubscribeFromNativePush(): Promise<boolean> {
 // Track if listeners are already initialized to prevent duplicates
 let nativeListenersInitialized = false;
 
-// Initialize native push notification listeners
+// Initialize native push listeners (must be called BEFORE register())
 export function initNativePushListeners(): void {
   if (!isNativePlatform()) {
     console.log('[NativePush] initNativePushListeners: Not native platform, skipping');
     return;
   }
-  
+
   if (nativeListenersInitialized) {
     console.log('[NativePush] Listeners already initialized, skipping');
     return;
   }
-  
+
   nativeListenersInitialized = true;
   console.log('[NativePush] Setting up listeners...');
-  
-  // Listener for successful registration - receive the FCM/APNs token
+
+  // ✅ registration token from Capacitor plugin
   PushNotifications.addListener('registration', async (token) => {
     console.log('[NativePush] ✅ Registration successful!');
     console.log('[NativePush] Token preview:', token.value.substring(0, 30) + '...');
     console.log('[NativePush] Token length:', token.value.length);
-    
-    // Determine platform
+
     const platform = Capacitor.getPlatform() as 'ios' | 'android';
     console.log('[NativePush] Platform:', platform);
-    
-    // Store token locally for debugging
+
     try {
-      localStorage.setItem('fcm_token', token.value);
-      localStorage.setItem('fcm_platform', platform);
-      console.log('[NativePush] Token saved to localStorage');
+      await saveNativePushToken(token.value, platform);
+      console.log('[NativePush] Token saved via Preferences');
     } catch (e) {
-      console.log('[NativePush] Could not save to localStorage');
+      console.log('[NativePush] Could not save token');
+      try {
+        await Preferences.set({ key: NATIVE_PUSH_ERROR_KEY, value: String(e) });
+      } catch (_) {}
     }
-    
-    // Register token with backend
+
     console.log('[NativePush] Sending token to backend...');
     await registerNativeTokenWithServer(token.value, platform);
   });
-  
-  // Listener for registration errors
-  PushNotifications.addListener('registrationError', (error) => {
+
+  // registration error
+  PushNotifications.addListener('registrationError', async (error) => {
     console.error('[NativePush] ❌ Registration error:', JSON.stringify(error));
     try {
-      localStorage.setItem('fcm_error', JSON.stringify(error));
-    } catch (e) {}
+      await Preferences.set({ key: NATIVE_PUSH_ERROR_KEY, value: JSON.stringify(error) });
+    } catch (_) {}
   });
-  
-  // Listener for incoming notifications when app is in foreground
+
+  // foreground notification
   PushNotifications.addListener('pushNotificationReceived', (notification) => {
     console.log('[NativePush] 📬 Notification received in foreground:', JSON.stringify(notification));
   });
-  
-  // Listener for when user taps on a notification
+
+  // user tapped notification
   PushNotifications.addListener('pushNotificationActionPerformed', (action) => {
     console.log('[NativePush] 👆 Notification tapped:', JSON.stringify(action));
-    // Navigate to appropriate screen based on notification data
     const data = action.notification.data;
-    if (data?.url) {
-      window.location.href = data.url;
-    }
+    if (data?.url) window.location.href = data.url;
   });
-  
+
   console.log('[NativePush] ✅ All listeners initialized');
 }
 
-// Initialize native push notifications (call on app load when user is logged in)
+// Initialize native push on app load
 export async function initNativePushNotifications(): Promise<void> {
   console.log('[NativePush] initNativePushNotifications called');
   console.log('[NativePush] isNativePlatform:', isNativePlatform());
   console.log('[NativePush] Capacitor.getPlatform:', Capacitor.getPlatform());
-  
+
   if (!isNativePlatform()) {
     console.log('[NativePush] Not a native platform, skipping');
     return;
   }
-  
-  // Set up listeners first (before calling register)
+
   initNativePushListeners();
-  
-  // Check current permission
+
   const permission = await checkNativePushPermission();
   console.log('[NativePush] Current permission:', permission);
-  
+
   if (permission === 'granted') {
-    // Already have permission, register for token
     console.log('[NativePush] Permission granted, calling PushNotifications.register()...');
     try {
       await PushNotifications.register();
@@ -449,32 +441,30 @@ export async function initNativePushNotifications(): Promise<void> {
   }
 }
 
-// Full registration flow: request permission + register + wait for token
+// Full native registration flow (used by your settings toggle)
 export async function registerNativePush(): Promise<{ success: boolean; error?: string }> {
   console.log('[NativePush] registerNativePush called');
-  
+
   if (!isNativePlatform()) {
     return { success: false, error: 'Not a native platform' };
   }
-  
-  // Set up listeners first
+
+  // Ensure listeners exist before register()
   initNativePushListeners();
-  
+
   try {
-    // Request permission
     console.log('[NativePush] Requesting permission...');
     const permResult = await PushNotifications.requestPermissions();
     console.log('[NativePush] Permission result:', permResult.receive);
-    
+
     if (permResult.receive !== 'granted') {
       return { success: false, error: 'Permission denied' };
     }
-    
-    // Register to get FCM token
+
     console.log('[NativePush] Calling register()...');
     await PushNotifications.register();
     console.log('[NativePush] register() completed - token will arrive via listener');
-    
+
     return { success: true };
   } catch (error) {
     console.error('[NativePush] Registration failed:', error);

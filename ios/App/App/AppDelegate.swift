@@ -1,89 +1,119 @@
 import UIKit
 import Capacitor
-import FirebaseCore
+import Firebase
 import FirebaseMessaging
+import UserNotifications
 
 @UIApplicationMain
-class AppDelegate: UIResponder, UIApplicationDelegate, MessagingDelegate {
+class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterDelegate, MessagingDelegate {
 
     var window: UIWindow?
 
-    func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-        // Configure Firebase
+    func application(
+        _ application: UIApplication,
+        didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
+    ) -> Bool {
+
+        // 🔥 Firebase
         FirebaseApp.configure()
-        
-        // Set messaging delegate
-        Messaging.messaging().delegate = self
-        
-        // Register for remote notifications
+
+        // 🔔 Delegates
         UNUserNotificationCenter.current().delegate = self
+        Messaging.messaging().delegate = self
+
+        // ✅ Register for APNs
         application.registerForRemoteNotifications()
-        
-        print("[AppDelegate] Firebase configured, registered for remote notifications")
+
+        // ✅ Debug basics
+        print("✅✅✅ [AppDelegate] didFinishLaunching")
+        print("✅✅✅ [AppDelegate] Bundle ID: \(Bundle.main.bundleIdentifier ?? "nil")")
+        print("✅✅✅ [AppDelegate] Firebase configured + delegates set + registerForRemoteNotifications called")
+
+        // ✅ Force-fetch FCM token (very useful to see Firebase errors)
+        Messaging.messaging().token { token, error in
+            if let error = error {
+                print("❌❌❌ [FCM] Messaging.token error: \(error.localizedDescription)")
+            } else {
+                print("✅✅✅ [FCM] Messaging.token fetched: \(token ?? "nil")")
+            }
+        }
+
         return true
     }
 
-    // Handle APNs token registration
-    func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
-        let tokenParts = deviceToken.map { data in String(format: "%02.2hhx", data) }
-        let token = tokenParts.joined()
-        print("[AppDelegate] APNs device token: \(token.prefix(20))...")
-        
-        // Pass the APNs token to Firebase
+    // ✅ APNs token success
+    func application(
+        _ application: UIApplication,
+        didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data
+    ) {
+        // Set APNs token for Firebase Messaging
         Messaging.messaging().apnsToken = deviceToken
+
+        let tokenParts = deviceToken.map { data in String(format: "%02.2hhx", data) }
+        let apnsToken = tokenParts.joined()
+
+        print("✅✅✅ [APNs] didRegisterForRemoteNotificationsWithDeviceToken fired")
+        print("✅✅✅ [APNs] device token: \(apnsToken)")
+        print("✅✅✅ [APNs] set Messaging.messaging().apnsToken")
     }
-    
-    func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {
-        print("[AppDelegate] Failed to register for remote notifications: \(error.localizedDescription)")
+
+    // ❌ APNs token failure
+    func application(
+        _ application: UIApplication,
+        didFailToRegisterForRemoteNotificationsWithError error: Error
+    ) {
+        print("❌❌❌ [APNs] didFailToRegisterForRemoteNotificationsWithError: \(error.localizedDescription)")
     }
-    
-    // Firebase Messaging delegate - receive FCM token
+
+    // ✅ FCM token callback (Firebase Messaging Delegate)
     func messaging(_ messaging: Messaging, didReceiveRegistrationToken fcmToken: String?) {
-        print("[AppDelegate] FCM token received: \(fcmToken?.prefix(20) ?? "nil")...")
-        
-        // Post notification so Capacitor plugin can receive it
-        let dataDict: [String: String] = ["token": fcmToken ?? ""]
-        NotificationCenter.default.post(
-            name: Notification.Name("FCMToken"),
-            object: nil,
-            userInfo: dataDict
-        )
+    print("✅✅✅ [FCM] didReceiveRegistrationToken fired")
+    print("✅✅✅ [FCM] token: \(fcmToken ?? "nil")")
+
+    // ✅ Send token to Capacitor WebView (JS) via NotificationCenter
+    NotificationCenter.default.post(
+        name: Notification.Name("FCMToken"),
+        object: nil,
+        userInfo: ["token": fcmToken ?? ""]
+    )
     }
 
-    func applicationWillResignActive(_ application: UIApplication) {
+
+    // ✅ Show notification while app is foreground
+    func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        willPresent notification: UNNotification,
+        withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
+    ) {
+        print("✅✅✅ [UNUserNotificationCenter] notification received in foreground")
+        completionHandler([.banner, .badge, .sound])
     }
 
-    func applicationDidEnterBackground(_ application: UIApplication) {
+    // ✅ User tapped notification
+    func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        didReceive response: UNNotificationResponse,
+        withCompletionHandler completionHandler: @escaping () -> Void
+    ) {
+        print("✅✅✅ [UNUserNotificationCenter] notification tapped: \(response.notification.request.content.userInfo)")
+        completionHandler()
     }
 
-    func applicationWillEnterForeground(_ application: UIApplication) {
-    }
-
-    func applicationDidBecomeActive(_ application: UIApplication) {
-    }
-
-    func applicationWillTerminate(_ application: UIApplication) {
-    }
-
-    func application(_ app: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey: Any] = [:]) -> Bool {
+    // Capacitor deep links
+    func application(
+        _ app: UIApplication,
+        open url: URL,
+        options: [UIApplication.OpenURLOptionsKey: Any] = [:]
+    ) -> Bool {
         return ApplicationDelegateProxy.shared.application(app, open: url, options: options)
     }
 
-    func application(_ application: UIApplication, continue userActivity: NSUserActivity, restorationHandler: @escaping ([UIUserActivityRestoring]?) -> Void) -> Bool {
+    // Capacitor universal links
+    func application(
+        _ application: UIApplication,
+        continue userActivity: NSUserActivity,
+        restorationHandler: @escaping ([UIUserActivityRestoring]?) -> Void
+    ) -> Bool {
         return ApplicationDelegateProxy.shared.application(application, continue: userActivity, restorationHandler: restorationHandler)
-    }
-}
-
-// Handle notification display when app is in foreground
-extension AppDelegate: UNUserNotificationCenterDelegate {
-    func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification, withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
-        print("[AppDelegate] Notification received in foreground")
-        // Show banner, badge, and play sound even when app is in foreground
-        completionHandler([.banner, .badge, .sound])
-    }
-    
-    func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse, withCompletionHandler completionHandler: @escaping () -> Void) {
-        print("[AppDelegate] Notification tapped: \(response.notification.request.content.userInfo)")
-        completionHandler()
     }
 }

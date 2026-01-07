@@ -16,6 +16,8 @@ import {
 import { supabase } from '@/lib/supabaseClient';
 import { getApiBaseUrl } from '@/lib/posts';
 import { Capacitor } from '@capacitor/core';
+import { getNativePushToken } from '../lib/pushNotifications';
+
 
 interface SettingsMobileProps {
   onBack: () => void;
@@ -579,6 +581,19 @@ export function SettingsMobile({ onBack, onEditProfile, onSuccess }: SettingsMob
                     }
                     const baseUrl = getApiBaseUrl();
                     
+                    // FIRST: check native push token on device (iOS/Android)
+                    const nativeToken = await getNativePushToken();
+
+                    if (!nativeToken) {
+                      alert(
+                        `No push tokens registered!\n\n` +
+                        `Native token: (none)\n` +
+                        `Fix: Toggle Push Notifications ON and allow permission, then try again.`
+                      );
+                      return;
+                    }
+
+
                     // First check debug info
                     const debugResponse = await fetch(`${baseUrl}/api/push/debug`, {
                       headers: { 'Authorization': `Bearer ${session.access_token}` }
