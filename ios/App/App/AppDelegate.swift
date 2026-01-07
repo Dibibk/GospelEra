@@ -10,12 +10,13 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     var window: UIWindow?
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-        // Configure Firebase first
+        // Configure Firebase FIRST
         FirebaseApp.configure()
         print("[AppDelegate] ✅ Firebase configured")
         
-        // Set messaging delegate to receive FCM tokens
+        // Set messaging delegate BEFORE registering for notifications
         Messaging.messaging().delegate = self
+        print("[AppDelegate] ✅ Messaging delegate set")
         
         // Set notification center delegate for foreground notifications
         UNUserNotificationCenter.current().delegate = self
@@ -35,10 +36,47 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         
         // Pass APNs token to Firebase - it will exchange for FCM token
         Messaging.messaging().apnsToken = deviceToken
+        print("[AppDelegate] ✅ APNs token set on Messaging")
+        
+        // Manually fetch FCM token after setting APNs token
+        Messaging.messaging().token { token, error in
+            if let error = error {
+                print("[AppDelegate] ❌ Error fetching FCM token: \(error.localizedDescription)")
+            } else if let token = token {
+                print("[AppDelegate] ✅ FCM token fetched: \(token.prefix(30))...")
+                self.sendFCMTokenToJS(token: token)
+            }
+        }
     }
     
     func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {
         print("[AppDelegate] ❌ Failed to register for remote notifications: \(error.localizedDescription)")
+    }
+    
+    // Send FCM token to JavaScript
+    private func sendFCMTokenToJS(token: String) {
+        print("[AppDelegate] 📤 Sending FCM token to JavaScript...")
+        
+        DispatchQueue.main.async {
+            guard let viewController = self.window?.rootViewController as? CAPBridgeViewController,
+                  let webView = viewController.bridge?.webView else {
+                print("[AppDelegate] ⚠️ Could not find webView, retrying in 1 second...")
+                // Retry after delay if webView not ready
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                    self.sendFCMTokenToJS(token: token)
+                }
+                return
+            }
+            
+            let js = "window.dispatchEvent(new CustomEvent('fcmToken', { detail: { token: '\(token)' } })); console.log('[Native] FCM token event dispatched');"
+            webView.evaluateJavaScript(js) { result, error in
+                if let error = error {
+                    print("[AppDelegate] ❌ Error sending FCM token to JS: \(error.localizedDescription)")
+                } else {
+                    print("[AppDelegate] ✅ FCM token sent to JavaScript successfully")
+                }
+            }
+        }
     }
 
     // MARK: - URL Handling
@@ -56,29 +94,15 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
 extension AppDelegate: MessagingDelegate {
     func messaging(_ messaging: Messaging, didReceiveRegistrationToken fcmToken: String?) {
+        print("[AppDelegate] 🔔 MessagingDelegate didReceiveRegistrationToken called")
+        
         guard let token = fcmToken else {
             print("[AppDelegate] ❌ FCM token is nil")
             return
         }
         
-        print("[AppDelegate] ✅ FCM token received: \(token.prefix(30))...")
-        print("[AppDelegate] 📤 Sending FCM token to JavaScript...")
-        
-        // Send FCM token to JavaScript via Capacitor bridge
-        DispatchQueue.main.async {
-            if let viewController = self.window?.rootViewController as? CAPBridgeViewController {
-                let js = "window.dispatchEvent(new CustomEvent('fcmToken', { detail: { token: '\(token)' } }));"
-                viewController.bridge?.webView?.evaluateJavaScript(js) { result, error in
-                    if let error = error {
-                        print("[AppDelegate] ❌ Error sending FCM token to JS: \(error)")
-                    } else {
-                        print("[AppDelegate] ✅ FCM token sent to JavaScript successfully")
-                    }
-                }
-            } else {
-                print("[AppDelegate] ⚠️ Could not find CAPBridgeViewController")
-            }
-        }
+        print("[AppDelegate] ✅ FCM token from delegate: \(token.prefix(30))...")
+        sendFCMTokenToJS(token: token)
     }
 }
 
