@@ -407,7 +407,30 @@ export function initNativePushListeners(): void {
     if (data?.url) window.location.href = data.url;
   });
 
-  console.log('[NativePush] ✅ All listeners initialized');
+  // Listen for FCM token from native iOS (sent via custom event from AppDelegate.swift)
+  // This is needed because Firebase intercepts the APNs token and provides FCM token separately
+  window.addEventListener('fcmToken', async (event: any) => {
+    const token = event.detail?.token;
+    console.log('[NativePush] 🔥 FCM token received from native iOS:', token?.substring(0, 30) + '...');
+    
+    if (token) {
+      const platform = Capacitor.getPlatform() as 'ios' | 'android';
+      
+      // Store locally via Preferences
+      try {
+        await saveNativePushToken(token, platform);
+        console.log('[NativePush] FCM token saved via Preferences');
+      } catch (e) {
+        console.log('[NativePush] Could not save FCM token:', e);
+      }
+      
+      // Register FCM token with backend
+      console.log('[NativePush] Sending FCM token to backend...');
+      await registerNativeTokenWithServer(token, platform);
+    }
+  });
+
+  console.log('[NativePush] ✅ All listeners initialized (including FCM token listener)');
 }
 
 // Initialize native push on app load
