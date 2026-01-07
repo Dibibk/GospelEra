@@ -347,36 +347,64 @@ export async function unsubscribeFromNativePush(): Promise<boolean> {
   }
 }
 
+// Track if listeners are already initialized to prevent duplicates
+let nativeListenersInitialized = false;
+
 // Initialize native push notification listeners
 export function initNativePushListeners(): void {
   if (!isNativePlatform()) {
+    console.log('[NativePush] initNativePushListeners: Not native platform, skipping');
     return;
   }
   
+  if (nativeListenersInitialized) {
+    console.log('[NativePush] Listeners already initialized, skipping');
+    return;
+  }
+  
+  nativeListenersInitialized = true;
+  console.log('[NativePush] Setting up listeners...');
+  
   // Listener for successful registration - receive the FCM/APNs token
   PushNotifications.addListener('registration', async (token) => {
-    console.log('[NativePush] Registration successful, token:', token.value.substring(0, 20) + '...');
+    console.log('[NativePush] ✅ Registration successful!');
+    console.log('[NativePush] Token preview:', token.value.substring(0, 30) + '...');
+    console.log('[NativePush] Token length:', token.value.length);
     
     // Determine platform
     const platform = Capacitor.getPlatform() as 'ios' | 'android';
+    console.log('[NativePush] Platform:', platform);
+    
+    // Store token locally for debugging
+    try {
+      localStorage.setItem('fcm_token', token.value);
+      localStorage.setItem('fcm_platform', platform);
+      console.log('[NativePush] Token saved to localStorage');
+    } catch (e) {
+      console.log('[NativePush] Could not save to localStorage');
+    }
     
     // Register token with backend
+    console.log('[NativePush] Sending token to backend...');
     await registerNativeTokenWithServer(token.value, platform);
   });
   
   // Listener for registration errors
   PushNotifications.addListener('registrationError', (error) => {
-    console.error('[NativePush] Registration error:', error);
+    console.error('[NativePush] ❌ Registration error:', JSON.stringify(error));
+    try {
+      localStorage.setItem('fcm_error', JSON.stringify(error));
+    } catch (e) {}
   });
   
   // Listener for incoming notifications when app is in foreground
   PushNotifications.addListener('pushNotificationReceived', (notification) => {
-    console.log('[NativePush] Notification received:', notification);
+    console.log('[NativePush] 📬 Notification received in foreground:', JSON.stringify(notification));
   });
   
   // Listener for when user taps on a notification
   PushNotifications.addListener('pushNotificationActionPerformed', (action) => {
-    console.log('[NativePush] Notification action performed:', action);
+    console.log('[NativePush] 👆 Notification tapped:', JSON.stringify(action));
     // Navigate to appropriate screen based on notification data
     const data = action.notification.data;
     if (data?.url) {
@@ -384,28 +412,72 @@ export function initNativePushListeners(): void {
     }
   });
   
-  console.log('[NativePush] Listeners initialized');
+  console.log('[NativePush] ✅ All listeners initialized');
 }
 
 // Initialize native push notifications (call on app load when user is logged in)
 export async function initNativePushNotifications(): Promise<void> {
+  console.log('[NativePush] initNativePushNotifications called');
+  console.log('[NativePush] isNativePlatform:', isNativePlatform());
+  console.log('[NativePush] Capacitor.getPlatform:', Capacitor.getPlatform());
+  
   if (!isNativePlatform()) {
     console.log('[NativePush] Not a native platform, skipping');
     return;
   }
   
-  // Set up listeners first
+  // Set up listeners first (before calling register)
   initNativePushListeners();
   
   // Check current permission
   const permission = await checkNativePushPermission();
+  console.log('[NativePush] Current permission:', permission);
   
   if (permission === 'granted') {
     // Already have permission, register for token
-    await PushNotifications.register();
+    console.log('[NativePush] Permission granted, calling PushNotifications.register()...');
+    try {
+      await PushNotifications.register();
+      console.log('[NativePush] register() called successfully');
+    } catch (error) {
+      console.error('[NativePush] register() failed:', error);
+    }
   } else if (permission === 'prompt') {
-    console.log('[NativePush] Permission not yet requested');
+    console.log('[NativePush] Permission not yet requested - will request when user enables in settings');
   } else {
-    console.log('[NativePush] Permission denied');
+    console.log('[NativePush] Permission denied - user must enable in iOS Settings');
+  }
+}
+
+// Full registration flow: request permission + register + wait for token
+export async function registerNativePush(): Promise<{ success: boolean; error?: string }> {
+  console.log('[NativePush] registerNativePush called');
+  
+  if (!isNativePlatform()) {
+    return { success: false, error: 'Not a native platform' };
+  }
+  
+  // Set up listeners first
+  initNativePushListeners();
+  
+  try {
+    // Request permission
+    console.log('[NativePush] Requesting permission...');
+    const permResult = await PushNotifications.requestPermissions();
+    console.log('[NativePush] Permission result:', permResult.receive);
+    
+    if (permResult.receive !== 'granted') {
+      return { success: false, error: 'Permission denied' };
+    }
+    
+    // Register to get FCM token
+    console.log('[NativePush] Calling register()...');
+    await PushNotifications.register();
+    console.log('[NativePush] register() completed - token will arrive via listener');
+    
+    return { success: true };
+  } catch (error) {
+    console.error('[NativePush] Registration failed:', error);
+    return { success: false, error: String(error) };
   }
 }

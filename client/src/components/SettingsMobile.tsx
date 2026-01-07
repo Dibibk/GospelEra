@@ -10,7 +10,7 @@ import {
   unsubscribeFromPush,
   isNativePlatform,
   checkNativePushPermission,
-  subscribeToNativePush,
+  registerNativePush,
   unsubscribeFromNativePush
 } from '@/lib/pushNotifications';
 import { supabase } from '@/lib/supabaseClient';
@@ -141,11 +141,14 @@ export function SettingsMobile({ onBack, onEditProfile, onSuccess }: SettingsMob
         if (Capacitor.isNativePlatform()) {
           // Native push notifications (iOS/Android via Capacitor)
           if (value) {
-            const success = await subscribeToNativePush();
-            if (success) {
+            console.log('[Settings] Registering native push...');
+            const result = await registerNativePush();
+            console.log('[Settings] registerNativePush result:', result);
+            if (result.success) {
               setPushNotifications(true);
+              alert('Push notifications enabled! Token registration in progress...');
             } else {
-              alert('Push notification permission was denied. Please enable it in your device settings.');
+              alert(`Push notification permission was denied: ${result.error || 'Unknown error'}. Please enable it in your device settings.`);
               setPushNotifications(false);
             }
           } else {
