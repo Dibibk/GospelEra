@@ -50,6 +50,10 @@ async function sendFcmNotification(token: string, payload: PushPayload): Promise
     return false;
   }
 
+  console.log('[FCM] Preparing to send notification...');
+  console.log('[FCM] Token preview:', token.substring(0, 30) + '...');
+  console.log('[FCM] Payload:', JSON.stringify(payload));
+
   try {
     const message: admin.messaging.Message = {
       token: token,
@@ -62,6 +66,10 @@ async function sendFcmNotification(token: string, payload: PushPayload): Promise
         tag: payload.tag || 'gospel-era-notification',
       },
       apns: {
+        headers: {
+          'apns-priority': '10',
+          'apns-push-type': 'alert',
+        },
         payload: {
           aps: {
             alert: {
@@ -70,6 +78,7 @@ async function sendFcmNotification(token: string, payload: PushPayload): Promise
             },
             sound: 'default',
             badge: 1,
+            'mutable-content': 1,
           },
         },
       },
@@ -82,11 +91,14 @@ async function sendFcmNotification(token: string, payload: PushPayload): Promise
       },
     };
 
+    console.log('[FCM] Sending message via Firebase Admin SDK...');
     const response = await admin.messaging().send(message);
-    console.log('[FCM] Successfully sent message:', response);
+    console.log('[FCM] ✅ Successfully sent message! Response ID:', response);
     return true;
   } catch (error: any) {
-    console.error('[FCM] Error sending message:', error.message);
+    console.error('[FCM] ❌ Error sending message:', error.message);
+    console.error('[FCM] Error code:', error.code);
+    console.error('[FCM] Full error:', JSON.stringify(error, null, 2));
     return false;
   }
 }
