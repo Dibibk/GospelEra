@@ -1,0 +1,125 @@
+8:26:05 PM [express] POST /api/push/unregister-native 200 in 342ms :: {"success":true}
+2026-01-08 14:26:21.46
+085073de
+User
+8:26:21 PM [express] POST /api/push/register 200 in 397ms :: {"success":true,"token":{"id":22,"user_…
+2026-01-08 14:26:22.46
+085073de
+User
+8:26:22 PM [express] GET /api/push/debug 200 in 186ms :: {"userId":"27dcff69-40d5-43f0-8d14-8db48d49…
+2026-01-08 14:26:22.69
+085073de
+User
+[Push Test] User ID: 27dcff69-40d5-43f0-8d14-8db48d493cbf
+2026-01-08 14:26:22.69
+085073de
+User
+[Push] VAPID keys configured for web push
+2026-01-08 14:26:22.69
+085073de
+User
+[Push Test] ID: test_1767903982694
+2026-01-08 14:26:22.69
+085073de
+User
+[Push Test] ===== TEST NOTIFICATION START =====
+2026-01-08 14:26:22.69
+085073de
+User
+[Push] FIREBASE_SERVICE_ACCOUNT_KEY found, length: 2369
+2026-01-08 14:26:22.69
+085073de
+User
+[Push] Parsed service account - project_id: gospel-era
+2026-01-08 14:26:22.69
+085073de
+User
+[Push] private_key length: 1704
+2026-01-08 14:26:22.69
+085073de
+User
+[Push] Parsed service account - has private_key: true
+2026-01-08 14:26:22.69
+085073de
+User
+[Push] Parsed service account - client_email: firebase-adminsdk-fbsvc@gospel-era.iam.gserviceaccount.com
+2026-01-08 14:26:22.75
+085073de
+User
+[Push] Firebase Admin SDK initializeApp() completed
+2026-01-08 14:26:22.75
+085073de
+User
+[Push] ✅ Firebase Admin SDK initialized for FCM
+2026-01-08 14:26:22.75
+085073de
+User
+[Push] Firebase Admin SDK initializeApp() completed
+2026-01-08 14:26:22.75
+085073de
+User
+[Push] ✅ Firebase Admin SDK initialized for FCM
+2026-01-08 14:26:22.81
+085073de
+User
+[FCM] Sending message via Firebase Admin SDK...
+2026-01-08 14:26:22.81
+085073de
+User
+[FCM] Token length: 142
+2026-01-08 14:26:22.81
+085073de
+User
+[Push] Sending to 1 device(s) for user 27dcff69-40d5-43f0-8d14-8db48d493cbf
+2026-01-08 14:26:22.81
+085073de
+User
+[FCM] Payload: {"title":"Test Notification","body":"[test_1767903982694] If you see this banner, push notifications are working!","url":"/"}
+2026-01-08 14:26:22.81
+085073de
+User
+[FCM] Created named Firebase app: fcm-sender
+2026-01-08 14:26:22.81
+085073de
+User
+[FCM] ===== SENDING FCM NOTIFICATION =====
+2026-01-08 14:26:22.81
+085073de
+User
+[FCM] Token preview: cMsfT1gm5UIxr5tEpEcekl:APA91bH...
+2026-01-08 14:26:23.02
+085073de
+User
+8:26:23 PM [express] POST /api/push/test 200 in 464ms :: {"success":true,"message":"Test notificatio…
+2026-01-08 14:26:23.02
+085073de
+User
+[FCM] Full error: {
+2026-01-08 14:26:23.02
+085073de
+User
+}
+2026-01-08 14:26:23.02
+085073de
+User
+"message": "Request is missing required authentication credential. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project."
+2026-01-08 14:26:23.02
+085073de
+User
+[FCM] Error code: messaging/third-party-auth-error
+2026-01-08 14:26:23.02
+085073de
+User
+[FCM] ❌ Error sending message: Request is missing required authentication credential. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project.
+2026-01-08 14:26:23.02
+085073de
+User
+"code": "messaging/third-party-auth-error",
+2026-01-08 14:26:23.02
+085073de
+User
+[Push Test] ===== TEST NOTIFICATION END =====
+2026-01-08 14:26:26.65
+085073de
+User
+8:26:26 PM [express] GET /api/notifications/unread-count 304 in 187ms :: {"count":22}

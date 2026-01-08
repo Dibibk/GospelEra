@@ -115,6 +115,18 @@ async function sendFcmNotification(token: string, payload: PushPayload): Promise
     return false;
   }
 
+  // Verify we can get an access token before attempting to send
+  try {
+    const credential = firebaseApp.options.credential;
+    if (credential) {
+      const accessToken = await credential.getAccessToken();
+      console.log('[FCM] ✅ Access token verified, expires_in:', accessToken.expires_in);
+    }
+  } catch (tokenError: any) {
+    console.error('[FCM] ❌ Failed to get access token:', tokenError.message);
+    return false;
+  }
+
   try {
     const message: admin.messaging.Message = {
       token: token,
