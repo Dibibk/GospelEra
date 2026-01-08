@@ -59,19 +59,61 @@ export interface PushPayload {
 }
 
 /**
+ * Get or create a named Firebase app with fresh credentials
+ * This ensures we always use properly formatted credentials
+ */
+function getFirebaseApp(): admin.app.App | null {
+  const APP_NAME = 'fcm-sender';
+  
+  try {
+    // Try to get existing named app
+    return admin.app(APP_NAME);
+  } catch (_e) {
+    // App doesn't exist, create it
+    const raw = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
+    if (!raw) {
+      console.log('[FCM] No FIREBASE_SERVICE_ACCOUNT_KEY configured');
+      return null;
+    }
+    
+    try {
+      const serviceAccount = JSON.parse(raw);
+      
+      // Fix escaped newlines in private_key
+      if (serviceAccount.private_key?.includes('\\n')) {
+        serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
+      }
+      
+      const app = admin.initializeApp(
+        {
+          credential: admin.credential.cert(serviceAccount),
+          projectId: serviceAccount.project_id,
+        },
+        APP_NAME
+      );
+      console.log('[FCM] Created named Firebase app:', APP_NAME);
+      return app;
+    } catch (e: any) {
+      console.error('[FCM] Failed to create Firebase app:', e.message);
+      return null;
+    }
+  }
+}
+
+/**
  * Send push notification via FCM to native iOS/Android devices
  */
 async function sendFcmNotification(token: string, payload: PushPayload): Promise<boolean> {
-  if (!fcmInitialized) {
-    console.log('[FCM] ❌ Firebase not initialized, skipping');
-    console.log('[FCM] Init error was:', fcmInitError || 'Unknown');
-    return false;
-  }
-
   console.log('[FCM] ===== SENDING FCM NOTIFICATION =====');
   console.log('[FCM] Token preview:', token.substring(0, 30) + '...');
   console.log('[FCM] Token length:', token.length);
   console.log('[FCM] Payload:', JSON.stringify(payload));
+
+  const firebaseApp = getFirebaseApp();
+  if (!firebaseApp) {
+    console.log('[FCM] ❌ Could not get Firebase app');
+    return false;
+  }
 
   try {
     const message: admin.messaging.Message = {
@@ -111,7 +153,7 @@ async function sendFcmNotification(token: string, payload: PushPayload): Promise
     };
 
     console.log('[FCM] Sending message via Firebase Admin SDK...');
-    const response = await admin.messaging().send(message);
+    const response = await firebaseApp.messaging().send(message);
     console.log('[FCM] ✅ Successfully sent message! Response ID:', response);
     return true;
   } catch (error: any) {
