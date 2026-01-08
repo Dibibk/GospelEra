@@ -2651,16 +2651,30 @@ Respond with JSON only:
     try {
       const admin = (await import('firebase-admin')).default;
       
+      // Initialize Firebase if not already done
       if (!admin.apps.length) {
         const firebaseCredentials = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
         if (!firebaseCredentials) {
           console.log(`[PUSH][ERR] ${traceId} Firebase not configured`);
           return res.status(500).json({ ok: false, error: "Firebase not configured" });
         }
-        const serviceAccount = JSON.parse(firebaseCredentials);
-        admin.initializeApp({
-          credential: admin.credential.cert(serviceAccount)
-        });
+        try {
+          const serviceAccount = JSON.parse(firebaseCredentials);
+          console.log(`[PUSH][INIT] ${traceId} Service account project_id: ${serviceAccount.project_id}`);
+          console.log(`[PUSH][INIT] ${traceId} Service account client_email: ${serviceAccount.client_email}`);
+          console.log(`[PUSH][INIT] ${traceId} Has private_key: ${!!serviceAccount.private_key}`);
+          console.log(`[PUSH][INIT] ${traceId} private_key length: ${serviceAccount.private_key?.length || 0}`);
+          console.log(`[PUSH][INIT] ${traceId} private_key starts with: ${serviceAccount.private_key?.substring(0, 40) || 'N/A'}`);
+          admin.initializeApp({
+            credential: admin.credential.cert(serviceAccount)
+          });
+          console.log(`[PUSH][INIT] ${traceId} Firebase initialized successfully`);
+        } catch (parseError: any) {
+          console.error(`[PUSH][ERR] ${traceId} Failed to parse Firebase credentials:`, parseError.message);
+          return res.status(500).json({ ok: false, error: "Invalid Firebase credentials format", traceId });
+        }
+      } else {
+        console.log(`[PUSH][INIT] ${traceId} Firebase already initialized, apps count: ${admin.apps.length}`);
       }
       
       const message = {
@@ -2699,12 +2713,14 @@ Respond with JSON only:
         },
       };
       
+      console.log(`[PUSH][SEND] ${traceId} Calling admin.messaging().send()...`);
       const messageId = await admin.messaging().send(message);
       console.log(`[PUSH][OK] ${traceId} messageId=${messageId}`);
       
       res.json({ ok: true, traceId, messageId });
     } catch (error: any) {
       console.error(`[PUSH][ERR] ${traceId}`, error.message || error);
+      console.error(`[PUSH][ERR] ${traceId} Full error:`, JSON.stringify(error, Object.getOwnPropertyNames(error)));
       res.status(500).json({ ok: false, error: error.message || 'Unknown error', traceId });
     }
   });
