@@ -2639,63 +2639,127 @@ Respond with JSON only:
   });
   
 
-  // Debug endpoint - send push directly to a specific FCM token
+  // Debug endpoint - send push directly to a specific FCM token with maximum diagnostics.
+// Requirements:
+// - Replit Secret: FIREBASE_SERVICE_ACCOUNT_KEY (full service account JSON)
+// - Optional: set DEBUG_PUSH_DISABLE=1 to disable endpoint after testing
+
+
   app.post("/api/push/debug-send", async (req: Request, res: Response) => {
     const traceId = `trace_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
-    const { token } = req.body || {};
+    const startedAt = Date.now();
 
-    if (!token) {
-      return res.status(400).json({ ok: false, error: "Token is required" });
+    // Optional kill-switch for safety
+    if (process.env.DEBUG_PUSH_DISABLE === "1") {
+      return res.status(403).json({ ok: false, error: "Debug push disabled", traceId });
     }
 
-    const maskedToken = token.substring(0, 15) + "..." + token.substring(token.length - 8);
-    console.log(`[PUSH][SEND] ${traceId} token=${maskedToken}`);
+    const { token } = (req.body || {}) as { token?: string };
+    if (!token) {
+      return res.status(400).json({ ok: false, error: "Token is required", traceId });
+    }
+
+    const mask = (t: string) => `${t.slice(0, 14)}…${t.slice(-8)}`;
+    console.log(`[PUSH][REQ] ${traceId} token=${mask(token)} ua=${req.headers["user-agent"] || ""}`);
 
     try {
-      // Safe import for ESM/CommonJS
+      // Import firebase-admin (ESM/CJS safe)
       const adminMod = await import("firebase-admin");
-      const admin = adminMod.default ?? adminMod;
+      const admin = (adminMod as any).default ?? (adminMod as any);
 
-      // Initialize Firebase Admin once
-      if (!admin.apps.length) {
-        const firebaseCredentials = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
+      console.log(
+        `[PUSH][ADMIN] ${traceId} typeof_admin=${typeof admin} apps.length=${admin?.apps?.length ?? "n/a"}`
+      );
 
-        console.log(
-          `[PUSH][INIT] ${traceId} FIREBASE_SERVICE_ACCOUNT_KEY length: ${firebaseCredentials?.length || 0}`
-        );
+      // Read and sanity-check credentials (DON'T print private_key)
+      const raw = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
+      console.log(`[PUSH][CREDS] ${traceId} env_present=${!!raw} len=${raw?.length || 0}`);
 
-        if (!firebaseCredentials) {
-          console.error(`[PUSH][ERR] ${traceId} Firebase not configured`);
-          return res.status(500).json({ ok: false, error: "Firebase not configured", traceId });
-        }
-
-        const serviceAccount = JSON.parse(firebaseCredentials);
-
-        // 🔑 CRITICAL for Replit: fix escaped newlines
-        if (serviceAccount.private_key) {
-          serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, "\n");
-        }
-
-        console.log(`[PUSH][INIT] ${traceId} project_id=${serviceAccount.project_id}`);
-        console.log(`[PUSH][INIT] ${traceId} client_email=${serviceAccount.client_email}`);
-
-        admin.initializeApp({
-          credential: admin.credential.cert(serviceAccount),
-        });
-
-        console.log(`[PUSH][INIT] ${traceId} Firebase initialized`);
+      if (!raw) {
+        console.error(`[PUSH][CREDS][ERR] ${traceId} FIREBASE_SERVICE_ACCOUNT_KEY missing`);
+        return res.status(500).json({ ok: false, error: "Firebase not configured", traceId });
       }
 
-      // ✅ IMPORTANT: explicitly type the message
-      const message: messaging.Message = {
+      let serviceAccount: any;
+      try {
+        serviceAccount = JSON.parse(raw);
+      } catch (e: any) {
+        console.error(`[PUSH][CREDS][ERR] ${traceId} JSON parse failed: ${e?.message || e}`);
+        return res.status(500).json({ ok: false, error: "Invalid Firebase credentials JSON", traceId });
+      }
+
+      const hasProjectId = !!serviceAccount.project_id;
+      const hasClientEmail = !!serviceAccount.client_email;
+      const hasPrivateKey = !!serviceAccount.private_key;
+
+      console.log(
+        `[PUSH][CREDS] ${traceId} project_id=${serviceAccount.project_id || "n/a"} client_email=${
+          serviceAccount.client_email || "n/a"
+        } has_private_key=${hasPrivateKey}`
+      );
+
+      if (!hasProjectId || !hasClientEmail || !hasPrivateKey) {
+        console.error(
+          `[PUSH][CREDS][ERR] ${traceId} Missing fields: project_id=${hasProjectId} client_email=${hasClientEmail} private_key=${hasPrivateKey}`
+        );
+        return res.status(500).json({
+          ok: false,
+          error: "Service account JSON missing required fields (project_id/client_email/private_key)",
+          traceId,
+        });
+      }
+
+      // Critical Replit fix: convert escaped newlines
+      const pkLenBefore = String(serviceAccount.private_key).length;
+      serviceAccount.private_key = String(serviceAccount.private_key).replace(/\\n/g, "\n");
+      const pkLenAfter = String(serviceAccount.private_key).length;
+
+      console.log(
+        `[PUSH][CREDS] ${traceId} private_key_len_before=${pkLenBefore} after=${pkLenAfter} begins=${String(
+          serviceAccount.private_key
+        ).slice(0, 30)}`
+      );
+
+      // Always use a named app so we bypass any broken "default" initialization elsewhere
+      const APP_NAME = "debug-push";
+      let debugApp: any;
+
+      try {
+        debugApp = admin.app(APP_NAME);
+        console.log(`[PUSH][INIT] ${traceId} Using existing named app "${APP_NAME}"`);
+      } catch (_e) {
+        console.log(`[PUSH][INIT] ${traceId} Creating named app "${APP_NAME}"`);
+        debugApp = admin.initializeApp(
+          {
+            credential: admin.credential.cert(serviceAccount),
+            projectId: serviceAccount.project_id,
+          },
+          APP_NAME
+        );
+        console.log(`[PUSH][INIT] ${traceId} Named app created`);
+      }
+
+      // Verify credential can mint an access token (strongest auth proof)
+      try {
+        const at = await debugApp.options.credential.getAccessToken();
+        console.log(
+          `[PUSH][AUTH] ${traceId} ✅ getAccessToken ok expires_in=${at?.expires_in ?? "n/a"}`
+        );
+      } catch (e: any) {
+        console.error(`[PUSH][AUTH] ${traceId} ❌ getAccessToken failed: ${e?.message || e}`);
+        // Continue anyway; admin.messaging().send will give a concrete error too
+      }
+
+      const msg: messaging.Message = {
         token,
         notification: {
-          title: "Debug Push Test",
-          body: `TraceID: ${traceId} - If you see this banner, push is working!`,
+          title: "🔥 Debug Banner Test",
+          body: `traceId=${traceId} (if you see this banner, delivery works)`,
         },
         data: {
           traceId,
-          timestamp: new Date().toISOString(),
+          kind: "backend_debug",
+          ts: new Date().toISOString(),
         },
         apns: {
           headers: {
@@ -2712,25 +2776,44 @@ Respond with JSON only:
         android: {
           priority: "high",
           notification: {
-            sound: "default",
+            // channelId must exist on Android or it may fall back depending on app config
             channelId: "gospel-era-notifications",
+            sound: "default",
           },
         },
       };
 
-      console.log(`[PUSH][SEND] ${traceId} Calling admin.messaging().send()...`);
-      const messageId = await admin.messaging().send(message);
-      console.log(`[PUSH][OK] ${traceId} messageId=${messageId}`);
+      console.log(`[PUSH][SEND] ${traceId} sending... token=${mask(token)} title="${msg.notification?.title}"`);
 
-      return res.json({ ok: true, traceId, messageId });
-    } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : String(err);
-      console.error(`[PUSH][ERR] ${traceId}`, errorMessage);
-      return res.status(500).json({
-        ok: false,
-        error: errorMessage || "Unknown error",
-        traceId,
-      });
+      const messagingClient = debugApp.messaging();
+
+      let messageId: string;
+      try {
+        messageId = await messagingClient.send(msg);
+      } catch (e: any) {
+        // Extremely verbose error capture (safe: no private key)
+        console.error(`[PUSH][SEND][ERR] ${traceId} message=${e?.message || e}`);
+        if (e?.code) console.error(`[PUSH][SEND][ERR] ${traceId} code=${e.code}`);
+        if (e?.errorInfo) console.error(`[PUSH][SEND][ERR] ${traceId} errorInfo=${JSON.stringify(e.errorInfo)}`);
+        if (e?.details) console.error(`[PUSH][SEND][ERR] ${traceId} details=${JSON.stringify(e.details)}`);
+        try {
+          console.error(
+            `[PUSH][SEND][ERR] ${traceId} full=${JSON.stringify(e, Object.getOwnPropertyNames(e))}`
+          );
+        } catch {}
+        return res.status(500).json({ ok: false, error: e?.message || "Send failed", traceId });
+      }
+
+      const ms = Date.now() - startedAt;
+      console.log(`[PUSH][OK] ${traceId} messageId=${messageId} took_ms=${ms}`);
+
+      return res.json({ ok: true, traceId, messageId, took_ms: ms });
+    } catch (err: any) {
+      console.error(`[PUSH][FATAL] ${traceId} ${err?.message || err}`);
+      try {
+        console.error(`[PUSH][FATAL] ${traceId} full=${JSON.stringify(err, Object.getOwnPropertyNames(err))}`);
+      } catch {}
+      return res.status(500).json({ ok: false, error: err?.message || "Unknown error", traceId });
     }
   });
 
