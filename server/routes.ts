@@ -2644,6 +2644,69 @@ Respond with JSON only:
   });
   
 
+  // Diagnostic endpoint - check Firebase credentials without sending
+  app.get("/api/push/diagnose", async (_req: Request, res: Response) => {
+    const result: any = { timestamp: new Date().toISOString() };
+    
+    try {
+      const raw = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
+      result.hasCredentials = !!raw;
+      result.credentialsLength = raw?.length || 0;
+      
+      if (!raw) {
+        result.error = "FIREBASE_SERVICE_ACCOUNT_KEY not set";
+        return res.json(result);
+      }
+      
+      let sa: any;
+      try {
+        sa = JSON.parse(raw);
+        result.jsonValid = true;
+      } catch (e: any) {
+        result.jsonValid = false;
+        result.parseError = e.message;
+        return res.json(result);
+      }
+      
+      result.hasProjectId = !!sa.project_id;
+      result.projectId = sa.project_id;
+      result.hasClientEmail = !!sa.client_email;
+      result.clientEmail = sa.client_email;
+      result.hasPrivateKey = !!sa.private_key;
+      result.privateKeyLength = sa.private_key?.length || 0;
+      result.privateKeyStartsWith = sa.private_key?.substring(0, 30);
+      result.privateKeyEndsWith = sa.private_key?.substring(sa.private_key.length - 30);
+      result.privateKeyHasEscapedNewlines = sa.private_key?.includes('\\n') || false;
+      result.privateKeyHasRealNewlines = sa.private_key?.includes('\n') || false;
+      
+      // Fix the key and try to get an access token
+      if (sa.private_key?.includes('\\n')) {
+        sa.private_key = sa.private_key.replace(/\\n/g, '\n');
+        result.fixedNewlines = true;
+        result.fixedPrivateKeyLength = sa.private_key.length;
+      }
+      
+      // Try creating a credential and getting an access token
+      const admin = (await import('firebase-admin')).default;
+      const credential = admin.credential.cert(sa);
+      result.credentialCreated = true;
+      
+      try {
+        const token = await credential.getAccessToken();
+        result.accessTokenSuccess = true;
+        result.tokenExpiresIn = token.expires_in;
+      } catch (e: any) {
+        result.accessTokenSuccess = false;
+        result.accessTokenError = e.message;
+      }
+      
+      res.json(result);
+    } catch (e: any) {
+      result.error = e.message;
+      res.json(result);
+    }
+  });
+
   // Debug endpoint - send push directly to a specific FCM token with maximum diagnostics.
 // Requirements:
 // - Replit Secret: FIREBASE_SERVICE_ACCOUNT_KEY (full service account JSON)
