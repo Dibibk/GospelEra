@@ -162,19 +162,39 @@ export function SettingsMobile({ onBack, onEditProfile, onSuccess }: SettingsMob
           if (value) {
             if (!isPushSupported()) {
               console.log('Push notifications not supported on this device');
+              // Check if this is Safari on iOS
+              const isSafariIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !('MSStream' in window);
+              if (isSafariIOS) {
+                alert('Push notifications on Safari require iOS 16.4+ and adding this site to your Home Screen. Please use the Share button and select "Add to Home Screen", then open the app from there.');
+              } else {
+                alert('Push notifications are not supported in this browser. Please try using Chrome or another modern browser.');
+              }
+              setPushNotifications(false);
               return;
             }
-            const permission = await requestNotificationPermission();
-            if (permission === 'granted') {
-              await subscribeToPush();
-              setPushNotifications(true);
-            } else {
-              console.log('Push notification permission denied');
+            try {
+              const permission = await requestNotificationPermission();
+              if (permission === 'granted') {
+                await subscribeToPush();
+                setPushNotifications(true);
+              } else {
+                console.log('Push notification permission denied');
+                alert('Push notification permission was denied. Please enable notifications in your browser settings.');
+                setPushNotifications(false);
+              }
+            } catch (error) {
+              console.error('Error enabling push notifications:', error);
+              alert('Failed to enable push notifications. Please try again.');
               setPushNotifications(false);
             }
           } else {
-            await unsubscribeFromPush();
-            setPushNotifications(false);
+            try {
+              await unsubscribeFromPush();
+              setPushNotifications(false);
+            } catch (error) {
+              console.error('Error disabling push notifications:', error);
+              setPushNotifications(false);
+            }
           }
         }
         return; // Don't fall through to other logic
