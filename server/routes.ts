@@ -2636,6 +2636,79 @@ Respond with JSON only:
     }
   });
   
+  // Debug endpoint - send push directly to a specific FCM token
+  app.post("/api/push/debug-send", async (req, res) => {
+    const traceId = `trace_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
+    const { token } = req.body;
+    
+    if (!token) {
+      return res.status(400).json({ ok: false, error: "Token is required" });
+    }
+    
+    const maskedToken = token.substring(0, 15) + '...' + token.substring(token.length - 8);
+    console.log(`[PUSH][SEND] ${traceId} token=${maskedToken}`);
+    
+    try {
+      const admin = (await import('firebase-admin')).default;
+      
+      if (!admin.apps.length) {
+        const firebaseCredentials = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
+        if (!firebaseCredentials) {
+          console.log(`[PUSH][ERR] ${traceId} Firebase not configured`);
+          return res.status(500).json({ ok: false, error: "Firebase not configured" });
+        }
+        const serviceAccount = JSON.parse(firebaseCredentials);
+        admin.initializeApp({
+          credential: admin.credential.cert(serviceAccount)
+        });
+      }
+      
+      const message = {
+        token: token,
+        notification: {
+          title: 'Debug Push Test',
+          body: `TraceID: ${traceId} - If you see this banner, push is working!`,
+        },
+        data: {
+          traceId: traceId,
+          timestamp: new Date().toISOString(),
+        },
+        apns: {
+          headers: {
+            'apns-priority': '10',
+            'apns-push-type': 'alert',
+          },
+          payload: {
+            aps: {
+              alert: {
+                title: 'Debug Push Test',
+                body: `TraceID: ${traceId} - If you see this banner, push is working!`,
+              },
+              sound: 'default',
+              badge: 1,
+              'mutable-content': 1,
+            },
+          },
+        },
+        android: {
+          priority: 'high' as const,
+          notification: {
+            sound: 'default',
+            channelId: 'gospel-era-notifications',
+          },
+        },
+      };
+      
+      const messageId = await admin.messaging().send(message);
+      console.log(`[PUSH][OK] ${traceId} messageId=${messageId}`);
+      
+      res.json({ ok: true, traceId, messageId });
+    } catch (error: any) {
+      console.error(`[PUSH][ERR] ${traceId}`, error.message || error);
+      res.status(500).json({ ok: false, error: error.message || 'Unknown error', traceId });
+    }
+  });
+  
   // Get VAPID public key for Web Push
   app.get("/api/push/vapid-key", (req, res) => {
     const vapidPublicKey = process.env.VAPID_PUBLIC_KEY;
