@@ -2622,19 +2622,24 @@ Respond with JSON only:
         return res.status(401).json({ error: "Unauthorized" });
       }
       
-      console.log(`[Push Test] Sending test notification to user ${req.user.id}`);
+      const testId = `test_${Date.now()}`;
+      console.log(`[Push Test] ===== TEST NOTIFICATION START =====`);
+      console.log(`[Push Test] ID: ${testId}`);
+      console.log(`[Push Test] User ID: ${req.user.id}`);
       
       const { sendPushNotification } = await import('./pushNotifications');
       await sendPushNotification(req.user.id, {
         title: 'Test Notification',
-        body: 'If you see this, push notifications are working!',
+        body: `[${testId}] If you see this banner, push notifications are working!`,
         url: '/'
       });
       
-      res.json({ success: true, message: "Test notification sent. Check your device." });
-    } catch (error) {
-      console.error("Push test error:", error);
-      res.status(500).json({ error: "Test failed" });
+      console.log(`[Push Test] ===== TEST NOTIFICATION END =====`);
+      res.json({ success: true, message: "Test notification sent. Check your device.", testId });
+    } catch (error: any) {
+      console.error("[Push Test] ❌ Error:", error.message);
+      console.error("[Push Test] Full error:", JSON.stringify(error, Object.getOwnPropertyNames(error)));
+      res.status(500).json({ error: error.message || "Test failed" });
     }
   });
   

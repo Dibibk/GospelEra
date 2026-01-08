@@ -15,22 +15,39 @@ if (vapidPublicKey && vapidPrivateKey) {
 
 // Initialize Firebase Admin SDK for FCM (iOS/Android)
 let fcmInitialized = false;
+let fcmInitError: string | null = null;
 try {
   const firebaseCredentials = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
   if (firebaseCredentials) {
+    console.log('[Push] FIREBASE_SERVICE_ACCOUNT_KEY found, length:', firebaseCredentials.length);
     const serviceAccount = JSON.parse(firebaseCredentials);
+    console.log('[Push] Parsed service account - project_id:', serviceAccount.project_id);
+    console.log('[Push] Parsed service account - client_email:', serviceAccount.client_email);
+    console.log('[Push] Parsed service account - has private_key:', !!serviceAccount.private_key);
+    console.log('[Push] private_key length:', serviceAccount.private_key?.length || 0);
+    
+    // Fix private_key if it has escaped newlines
+    if (serviceAccount.private_key && serviceAccount.private_key.includes('\\n')) {
+      console.log('[Push] Fixing escaped newlines in private_key...');
+      serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
+    }
+    
     if (!admin.apps.length) {
       admin.initializeApp({
         credential: admin.credential.cert(serviceAccount)
       });
+      console.log('[Push] Firebase Admin SDK initializeApp() completed');
     }
     fcmInitialized = true;
-    console.log('[Push] Firebase Admin SDK initialized for FCM');
+    console.log('[Push] ✅ Firebase Admin SDK initialized for FCM');
   } else {
+    fcmInitError = 'FIREBASE_SERVICE_ACCOUNT_KEY not configured';
     console.warn('[Push] FIREBASE_SERVICE_ACCOUNT_KEY not configured - native push disabled');
   }
-} catch (error) {
-  console.error('[Push] Failed to initialize Firebase Admin SDK:', error);
+} catch (error: any) {
+  fcmInitError = error.message || 'Unknown initialization error';
+  console.error('[Push] ❌ Failed to initialize Firebase Admin SDK:', error.message);
+  console.error('[Push] Full error:', JSON.stringify(error, Object.getOwnPropertyNames(error)));
 }
 
 export interface PushPayload {
@@ -46,12 +63,14 @@ export interface PushPayload {
  */
 async function sendFcmNotification(token: string, payload: PushPayload): Promise<boolean> {
   if (!fcmInitialized) {
-    console.log('[FCM] Firebase not initialized, skipping');
+    console.log('[FCM] ❌ Firebase not initialized, skipping');
+    console.log('[FCM] Init error was:', fcmInitError || 'Unknown');
     return false;
   }
 
-  console.log('[FCM] Preparing to send notification...');
+  console.log('[FCM] ===== SENDING FCM NOTIFICATION =====');
   console.log('[FCM] Token preview:', token.substring(0, 30) + '...');
+  console.log('[FCM] Token length:', token.length);
   console.log('[FCM] Payload:', JSON.stringify(payload));
 
   try {
