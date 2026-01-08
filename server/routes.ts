@@ -17,6 +17,8 @@ import {
   type AuthenticatedRequest 
 } from "./auth";
 import { createServerSupabase, extractToken, supabaseAdmin } from "./supabaseClient";
+import type { Request, Response } from "express";
+import type { messaging } from "firebase-admin";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Initialize hybrid storage service (S3 or Replit Object Storage)
@@ -2636,95 +2638,103 @@ Respond with JSON only:
     }
   });
   
+
   // Debug endpoint - send push directly to a specific FCM token
-  app.post("/api/push/debug-send", async (req, res) => {
+  app.post("/api/push/debug-send", async (req: Request, res: Response) => {
     const traceId = `trace_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
-    const { token } = req.body;
-    
+    const { token } = req.body || {};
+
     if (!token) {
       return res.status(400).json({ ok: false, error: "Token is required" });
     }
-    
-    const maskedToken = token.substring(0, 15) + '...' + token.substring(token.length - 8);
+
+    const maskedToken = token.substring(0, 15) + "..." + token.substring(token.length - 8);
     console.log(`[PUSH][SEND] ${traceId} token=${maskedToken}`);
-    
+
     try {
-      const admin = (await import('firebase-admin')).default;
-      
-      // Initialize Firebase if not already done
+      // Safe import for ESM/CommonJS
+      const adminMod = await import("firebase-admin");
+      const admin = adminMod.default ?? adminMod;
+
+      // Initialize Firebase Admin once
       if (!admin.apps.length) {
         const firebaseCredentials = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
+
+        console.log(
+          `[PUSH][INIT] ${traceId} FIREBASE_SERVICE_ACCOUNT_KEY length: ${firebaseCredentials?.length || 0}`
+        );
+
         if (!firebaseCredentials) {
-          console.log(`[PUSH][ERR] ${traceId} Firebase not configured`);
-          return res.status(500).json({ ok: false, error: "Firebase not configured" });
+          console.error(`[PUSH][ERR] ${traceId} Firebase not configured`);
+          return res.status(500).json({ ok: false, error: "Firebase not configured", traceId });
         }
-        try {
-          const serviceAccount = JSON.parse(firebaseCredentials);
-          console.log(`[PUSH][INIT] ${traceId} Service account project_id: ${serviceAccount.project_id}`);
-          console.log(`[PUSH][INIT] ${traceId} Service account client_email: ${serviceAccount.client_email}`);
-          console.log(`[PUSH][INIT] ${traceId} Has private_key: ${!!serviceAccount.private_key}`);
-          console.log(`[PUSH][INIT] ${traceId} private_key length: ${serviceAccount.private_key?.length || 0}`);
-          console.log(`[PUSH][INIT] ${traceId} private_key starts with: ${serviceAccount.private_key?.substring(0, 40) || 'N/A'}`);
-          admin.initializeApp({
-            credential: admin.credential.cert(serviceAccount)
-          });
-          console.log(`[PUSH][INIT] ${traceId} Firebase initialized successfully`);
-        } catch (parseError: any) {
-          console.error(`[PUSH][ERR] ${traceId} Failed to parse Firebase credentials:`, parseError.message);
-          return res.status(500).json({ ok: false, error: "Invalid Firebase credentials format", traceId });
+
+        const serviceAccount = JSON.parse(firebaseCredentials);
+
+        // 🔑 CRITICAL for Replit: fix escaped newlines
+        if (serviceAccount.private_key) {
+          serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, "\n");
         }
-      } else {
-        console.log(`[PUSH][INIT] ${traceId} Firebase already initialized, apps count: ${admin.apps.length}`);
+
+        console.log(`[PUSH][INIT] ${traceId} project_id=${serviceAccount.project_id}`);
+        console.log(`[PUSH][INIT] ${traceId} client_email=${serviceAccount.client_email}`);
+
+        admin.initializeApp({
+          credential: admin.credential.cert(serviceAccount),
+        });
+
+        console.log(`[PUSH][INIT] ${traceId} Firebase initialized`);
       }
-      
-      const message = {
-        token: token,
+
+      // ✅ IMPORTANT: explicitly type the message
+      const message: messaging.Message = {
+        token,
         notification: {
-          title: 'Debug Push Test',
+          title: "Debug Push Test",
           body: `TraceID: ${traceId} - If you see this banner, push is working!`,
         },
         data: {
-          traceId: traceId,
+          traceId,
           timestamp: new Date().toISOString(),
         },
         apns: {
           headers: {
-            'apns-priority': '10',
-            'apns-push-type': 'alert',
+            "apns-priority": "10",
+            "apns-push-type": "alert",
           },
           payload: {
             aps: {
-              alert: {
-                title: 'Debug Push Test',
-                body: `TraceID: ${traceId} - If you see this banner, push is working!`,
-              },
-              sound: 'default',
+              sound: "default",
               badge: 1,
-              'mutable-content': 1,
             },
           },
         },
         android: {
-          priority: 'high' as const,
+          priority: "high",
           notification: {
-            sound: 'default',
-            channelId: 'gospel-era-notifications',
+            sound: "default",
+            channelId: "gospel-era-notifications",
           },
         },
       };
-      
+
       console.log(`[PUSH][SEND] ${traceId} Calling admin.messaging().send()...`);
       const messageId = await admin.messaging().send(message);
       console.log(`[PUSH][OK] ${traceId} messageId=${messageId}`);
-      
-      res.json({ ok: true, traceId, messageId });
-    } catch (error: any) {
-      console.error(`[PUSH][ERR] ${traceId}`, error.message || error);
-      console.error(`[PUSH][ERR] ${traceId} Full error:`, JSON.stringify(error, Object.getOwnPropertyNames(error)));
-      res.status(500).json({ ok: false, error: error.message || 'Unknown error', traceId });
+
+      return res.json({ ok: true, traceId, messageId });
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      console.error(`[PUSH][ERR] ${traceId}`, errorMessage);
+      return res.status(500).json({
+        ok: false,
+        error: errorMessage || "Unknown error",
+        traceId,
+      });
     }
   });
-  
+
+
   // Get VAPID public key for Web Push
   app.get("/api/push/vapid-key", (req, res) => {
     const vapidPublicKey = process.env.VAPID_PUBLIC_KEY;
