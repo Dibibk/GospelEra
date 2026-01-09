@@ -249,21 +249,8 @@ export async function commitToPray(requestId: number): Promise<ApiResponse<any>>
 
     const data = await response.json()
 
-    // Notify prayer request owner (if not self) - using backend API
-    // The commit response includes the requester ID, use it directly
-    try {
-      if (data.requester && data.requester !== sessionData.session.user.id) {
-        createNotification({
-          recipientId: data.requester,
-          eventType: 'prayer_commitment',
-          prayerRequestId: requestId,
-          commitmentId: data.id,
-          message: 'committed to pray for your prayer request'
-        });
-      }
-    } catch (notifyError) {
-      console.warn('Failed to send notification (non-critical):', notifyError);
-    }
+    // Note: Server already creates notification and sends push notification
+    // No need to create duplicate client-side notification
 
     // Return data with spam warning if applicable
     return { 
@@ -348,27 +335,8 @@ export async function confirmPrayed(requestId: number, { note = null }: { note?:
 
     const data = await response.json()
 
-    // Notify prayer request owner (if not self) - client-side notification
-    // Wrap in try-catch so RLS errors don't break the main flow
-    try {
-      const { data: prayerRequest } = await supabase
-        .from('prayer_requests')
-        .select('requester')
-        .eq('id', requestId)
-        .single();
-      
-      if (prayerRequest?.requester && prayerRequest.requester !== sessionData.session.user.id) {
-        createNotification({
-          recipientId: prayerRequest.requester,
-          eventType: 'prayer_completed',
-          prayerRequestId: requestId,
-          commitmentId: data.id,
-          message: 'prayed for your prayer request'
-        });
-      }
-    } catch (notifyError) {
-      console.warn('Failed to send notification (non-critical):', notifyError);
-    }
+    // Note: Server already creates notification and sends push notification
+    // No need to create duplicate client-side notification
 
     return { data, error: null }
   } catch (err) {
