@@ -122,7 +122,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setAuthTransition("signing-up");
     // Always use web URL for email confirmation - never use custom app schemes
     // This ensures browser stays on web page showing "signup successful" message
-    const emailRedirectUrl = "https://gospel-era.com/email-confirmed";
+    const emailRedirectUrl = "https://gospel-era.replit.app/email-confirmed";
 
     const { error, data } = await supabase.auth.signUp({
       email,
