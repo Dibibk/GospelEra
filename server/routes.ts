@@ -2644,6 +2644,61 @@ Respond with JSON only:
   });
   
 
+  // Clean up old tokens - keep only the most recent token per platform
+  app.post("/api/push/cleanup", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      const { supabaseAdmin } = await import('./supabaseAdmin');
+      
+      // Get all tokens for this user, grouped by platform
+      const { data: allTokens, error } = await supabaseAdmin
+        .from('push_tokens')
+        .select('id, platform, created_at, updated_at')
+        .eq('user_id', req.user.id)
+        .order('updated_at', { ascending: false });
+      
+      if (error) {
+        return res.status(500).json({ error: error.message });
+      }
+      
+      // Find tokens to delete (keep only the most recent per platform)
+      const keepTokenIds: number[] = [];
+      const seenPlatforms = new Set<string>();
+      
+      for (const token of allTokens || []) {
+        if (!seenPlatforms.has(token.platform)) {
+          seenPlatforms.add(token.platform);
+          keepTokenIds.push(token.id);
+        }
+      }
+      
+      // Delete all tokens except the ones we're keeping
+      const tokensToDelete = (allTokens || []).filter(t => !keepTokenIds.includes(t.id));
+      
+      if (tokensToDelete.length > 0) {
+        const idsToDelete = tokensToDelete.map(t => t.id);
+        await supabaseAdmin
+          .from('push_tokens')
+          .delete()
+          .in('id', idsToDelete);
+      }
+      
+      res.json({
+        success: true,
+        message: `Cleaned up ${tokensToDelete.length} old tokens`,
+        kept: keepTokenIds.length,
+        deleted: tokensToDelete.length,
+        platforms: Array.from(seenPlatforms)
+      });
+    } catch (error: any) {
+      console.error("Token cleanup error:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Debug endpoint - show stored tokens for current user
   app.get("/api/push/my-tokens", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
     try {
@@ -2960,9 +3015,10 @@ Respond with JSON only:
       
       const token = extractToken(req.headers.authorization);
       const supabase = createServerSupabase(token);
+      const { supabaseAdmin } = await import('./supabaseAdmin');
       
-      // Check if token already exists for this user
-      const { data: existing } = await supabase
+      // Check if this exact token already exists for this user
+      const { data: existing } = await supabaseAdmin
         .from('push_tokens')
         .select('id')
         .eq('user_id', req.user.id)
@@ -2970,16 +3026,35 @@ Respond with JSON only:
         .limit(1);
       
       if (existing && existing.length > 0) {
-        // Update existing token
-        await supabase
+        // Token exists - delete ALL OTHER tokens for same user+platform, keep only this one
+        console.log(`[Push] Token exists, cleaning up other ${platform} tokens for user ${req.user.id}`);
+        await supabaseAdmin
+          .from('push_tokens')
+          .delete()
+          .eq('user_id', req.user.id)
+          .eq('platform', platform)
+          .neq('id', existing[0].id);
+        
+        // Update timestamp on the current token
+        await supabaseAdmin
           .from('push_tokens')
           .update({ updated_at: new Date().toISOString() })
           .eq('id', existing[0].id);
-        return res.json({ success: true, message: "Token already registered" });
+        return res.json({ success: true, message: "Token already registered, cleaned up old tokens" });
       }
       
+      // New token - delete ALL old tokens for this user+platform first
+      console.log(`[Push] New token, deleting all old ${platform} tokens for user ${req.user.id}`);
+      const { data: deletedTokens } = await supabaseAdmin
+        .from('push_tokens')
+        .delete()
+        .eq('user_id', req.user.id)
+        .eq('platform', platform)
+        .select('id');
+      console.log(`[Push] Deleted ${deletedTokens?.length || 0} old tokens`);
+      
       // Insert new token
-      const { data: newToken, error } = await supabase
+      const { data: newToken, error } = await supabaseAdmin
         .from('push_tokens')
         .insert({
           user_id: req.user.id,
@@ -2990,6 +3065,7 @@ Respond with JSON only:
         .single();
       
       if (error) throw error;
+      console.log(`[Push] Registered new ${platform} token for user ${req.user.id}`);
       res.json({ success: true, token: newToken });
     } catch (error) {
       console.error("Error registering push token:", error);
