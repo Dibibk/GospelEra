@@ -542,6 +542,68 @@ export default function MobileApp() {
         console.log("Stripe returned to app:", url);
         // TODO: refresh state / navigate
       }
+      
+      // Handle email confirmation deep link
+      if (url.startsWith("gospelera://email-confirmed")) {
+        console.log("Email confirmation deep link received:", url);
+        
+        // Close browser if open
+        try {
+          await Browser.close();
+        } catch (e) {
+          // Browser might not be open, ignore
+        }
+        
+        // Extract tokens from URL - Supabase uses query params, not hash
+        try {
+          const urlObj = new URL(url);
+          const params = urlObj.searchParams;
+          
+          // Also check hash params as fallback
+          const hashParams: Record<string, string> = {};
+          if (urlObj.hash) {
+            urlObj.hash.substring(1).split('&').forEach(param => {
+              const [key, value] = param.split('=');
+              if (key && value) hashParams[key] = decodeURIComponent(value);
+            });
+          }
+          
+          // Get tokens from query params first, then hash
+          const accessToken = params.get('access_token') || hashParams.access_token;
+          const refreshToken = params.get('refresh_token') || hashParams.refresh_token;
+          const tokenHash = params.get('token_hash') || hashParams.token_hash;
+          const type = params.get('type') || hashParams.type || 'signup';
+          
+          // Check for access_token and refresh_token (standard flow)
+          if (accessToken && refreshToken) {
+            const { error } = await supabase.auth.setSession({
+              access_token: accessToken,
+              refresh_token: refreshToken,
+            });
+            
+            if (error) {
+              console.error("Error setting session from email confirmation:", error);
+            } else {
+              console.log("Session set successfully from email confirmation");
+            }
+          }
+          // Check for token_hash (PKCE flow)
+          else if (tokenHash) {
+            const { error } = await supabase.auth.verifyOtp({
+              token_hash: tokenHash,
+              type: type as any,
+            });
+            
+            if (error) {
+              console.error("Error verifying OTP from email confirmation:", error);
+            } else {
+              console.log("Email verified successfully");
+            }
+          }
+        } catch (err) {
+          console.error("Error processing email confirmation deep link:", err);
+        }
+      }
     });
   })();
 
