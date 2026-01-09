@@ -67,7 +67,9 @@ function getFirebaseApp(): admin.app.App | null {
   
   try {
     // Try to get existing named app
-    return admin.app(APP_NAME);
+    const existingApp = admin.app(APP_NAME);
+    console.log('[FCM] Using existing Firebase app:', APP_NAME, 'projectId:', existingApp.options.projectId);
+    return existingApp;
   } catch (_e) {
     // App doesn't exist, create it
     const raw = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
@@ -83,6 +85,10 @@ function getFirebaseApp(): admin.app.App | null {
       if (serviceAccount.private_key?.includes('\\n')) {
         serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
       }
+      
+      console.log('[FCM] Creating Firebase app with:');
+      console.log('[FCM]   project_id:', serviceAccount.project_id);
+      console.log('[FCM]   client_email:', serviceAccount.client_email);
       
       const app = admin.initializeApp(
         {

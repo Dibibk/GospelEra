@@ -2644,6 +2644,44 @@ Respond with JSON only:
   });
   
 
+  // Debug endpoint - show stored tokens for current user
+  app.get("/api/push/my-tokens", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      const { supabaseAdmin } = await import('./supabaseAdmin');
+      const { data: tokens, error } = await supabaseAdmin
+        .from('push_tokens')
+        .select('id, platform, created_at, token')
+        .eq('user_id', req.user.id);
+      
+      if (error) {
+        return res.status(500).json({ error: error.message });
+      }
+      
+      // Mask tokens for security but show enough to debug
+      const maskedTokens = tokens?.map(t => ({
+        id: t.id,
+        platform: t.platform,
+        created_at: t.created_at,
+        token_preview: t.token?.substring(0, 30) + '...',
+        token_length: t.token?.length,
+        looks_like_fcm: t.token?.includes(':') && t.token?.length > 100,
+        looks_like_web_push: t.token?.startsWith('{') || t.token?.startsWith('['),
+      }));
+      
+      res.json({ 
+        userId: req.user.id,
+        tokenCount: tokens?.length || 0,
+        tokens: maskedTokens 
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Diagnostic endpoint - check Firebase credentials without sending
   app.get("/api/push/diagnose", async (_req: Request, res: Response) => {
     const result: any = { timestamp: new Date().toISOString() };
