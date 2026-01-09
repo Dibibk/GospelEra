@@ -19,16 +19,10 @@ let fcmInitError: string | null = null;
 try {
   const firebaseCredentials = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
   if (firebaseCredentials) {
-    console.log('[Push] FIREBASE_SERVICE_ACCOUNT_KEY found, length:', firebaseCredentials.length);
     const serviceAccount = JSON.parse(firebaseCredentials);
-    console.log('[Push] Parsed service account - project_id:', serviceAccount.project_id);
-    console.log('[Push] Parsed service account - client_email:', serviceAccount.client_email);
-    console.log('[Push] Parsed service account - has private_key:', !!serviceAccount.private_key);
-    console.log('[Push] private_key length:', serviceAccount.private_key?.length || 0);
     
     // Fix private_key if it has escaped newlines
-    if (serviceAccount.private_key && serviceAccount.private_key.includes('\\n')) {
-      console.log('[Push] Fixing escaped newlines in private_key...');
+    if (serviceAccount.private_key?.includes('\\n')) {
       serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
     }
     
@@ -36,18 +30,16 @@ try {
       admin.initializeApp({
         credential: admin.credential.cert(serviceAccount)
       });
-      console.log('[Push] Firebase Admin SDK initializeApp() completed');
     }
     fcmInitialized = true;
-    console.log('[Push] ✅ Firebase Admin SDK initialized for FCM');
+    console.log('[Push] Firebase initialized - project:', serviceAccount.project_id);
   } else {
     fcmInitError = 'FIREBASE_SERVICE_ACCOUNT_KEY not configured';
-    console.warn('[Push] FIREBASE_SERVICE_ACCOUNT_KEY not configured - native push disabled');
+    console.warn('[Push] Firebase not configured');
   }
 } catch (error: any) {
   fcmInitError = error.message || 'Unknown initialization error';
-  console.error('[Push] ❌ Failed to initialize Firebase Admin SDK:', error.message);
-  console.error('[Push] Full error:', JSON.stringify(error, Object.getOwnPropertyNames(error)));
+  console.error('[Push] Firebase init failed:', error.message);
 }
 
 export interface PushPayload {
@@ -66,41 +58,26 @@ function getFirebaseApp(): admin.app.App | null {
   const APP_NAME = 'fcm-sender';
   
   try {
-    // Try to get existing named app
-    const existingApp = admin.app(APP_NAME);
-    console.log('[FCM] Using existing Firebase app:', APP_NAME, 'projectId:', existingApp.options.projectId);
-    return existingApp;
+    return admin.app(APP_NAME);
   } catch (_e) {
-    // App doesn't exist, create it
     const raw = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
-    if (!raw) {
-      console.log('[FCM] No FIREBASE_SERVICE_ACCOUNT_KEY configured');
-      return null;
-    }
+    if (!raw) return null;
     
     try {
       const serviceAccount = JSON.parse(raw);
-      
-      // Fix escaped newlines in private_key
       if (serviceAccount.private_key?.includes('\\n')) {
         serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
       }
       
-      console.log('[FCM] Creating Firebase app with:');
-      console.log('[FCM]   project_id:', serviceAccount.project_id);
-      console.log('[FCM]   client_email:', serviceAccount.client_email);
-      
-      const app = admin.initializeApp(
+      return admin.initializeApp(
         {
           credential: admin.credential.cert(serviceAccount),
           projectId: serviceAccount.project_id,
         },
         APP_NAME
       );
-      console.log('[FCM] Created named Firebase app:', APP_NAME);
-      return app;
     } catch (e: any) {
-      console.error('[FCM] Failed to create Firebase app:', e.message);
+      console.error('[FCM] Init failed:', e.message);
       return null;
     }
   }
@@ -110,26 +87,11 @@ function getFirebaseApp(): admin.app.App | null {
  * Send push notification via FCM to native iOS/Android devices
  */
 async function sendFcmNotification(token: string, payload: PushPayload): Promise<boolean> {
-  console.log('[FCM] ===== SENDING FCM NOTIFICATION =====');
-  console.log('[FCM] Token preview:', token.substring(0, 30) + '...');
-  console.log('[FCM] Token length:', token.length);
-  console.log('[FCM] Payload:', JSON.stringify(payload));
+  console.log('[FCM] Sending to token:', token.substring(0, 40) + '... (len=' + token.length + ')');
 
   const firebaseApp = getFirebaseApp();
   if (!firebaseApp) {
-    console.log('[FCM] ❌ Could not get Firebase app');
-    return false;
-  }
-
-  // Verify we can get an access token before attempting to send
-  try {
-    const credential = firebaseApp.options.credential;
-    if (credential) {
-      const accessToken = await credential.getAccessToken();
-      console.log('[FCM] ✅ Access token verified, expires_in:', accessToken.expires_in);
-    }
-  } catch (tokenError: any) {
-    console.error('[FCM] ❌ Failed to get access token:', tokenError.message);
+    console.log('[FCM] ❌ No Firebase app');
     return false;
   }
 
@@ -170,28 +132,11 @@ async function sendFcmNotification(token: string, payload: PushPayload): Promise
       },
     };
 
-    console.log('[FCM] Sending message via Firebase Admin SDK...');
     const response = await firebaseApp.messaging().send(message);
-    console.log('[FCM] ✅ Successfully sent message! Response ID:', response);
+    console.log('[FCM] ✅ Sent! Response:', response);
     return true;
   } catch (error: any) {
-    console.error('[FCM] ❌ Error sending message:', error.message);
-    console.error('[FCM] Error code:', error.code);
-    
-    // Detailed diagnosis for common errors
-    if (error.code === 'messaging/third-party-auth-error') {
-      console.error('[FCM] ⚠️ DIAGNOSIS: Firebase cannot authenticate with APNs (Apple Push Notification service)');
-      console.error('[FCM] ⚠️ FIX: Upload your APNs Authentication Key (.p8 file) to Firebase Console:');
-      console.error('[FCM] ⚠️ 1. Go to Firebase Console → Project Settings → Cloud Messaging');
-      console.error('[FCM] ⚠️ 2. Under "Apple app configuration", upload your APNs Auth Key');
-      console.error('[FCM] ⚠️ 3. Enter your Key ID and Team ID from Apple Developer Portal');
-    } else if (error.code === 'messaging/invalid-argument') {
-      console.error('[FCM] ⚠️ DIAGNOSIS: Invalid FCM token or message format');
-    } else if (error.code === 'messaging/registration-token-not-registered') {
-      console.error('[FCM] ⚠️ DIAGNOSIS: The FCM token is no longer valid (app was uninstalled or token expired)');
-    }
-    
-    console.error('[FCM] Full error:', JSON.stringify(error, null, 2));
+    console.error('[FCM] ❌ Error:', error.code, '-', error.message);
     return false;
   }
 }
