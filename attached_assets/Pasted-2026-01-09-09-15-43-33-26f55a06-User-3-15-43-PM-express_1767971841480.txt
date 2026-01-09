@@ -1,0 +1,96 @@
+2026-01-09 09:15:43.33
+26f55a06
+User
+3:15:43 PM [express] POST /api/push/test 200 in 495ms :: {"success":true,"message":"Test notificatio…
+2026-01-09 09:15:43.33
+26f55a06
+User
+3:15:43 PM [express] POST /api/push/test 200 in 495ms :: {"success":true,"message":"Test notificatio…
+2026-01-09 09:15:57.24
+26f55a06
+User
+3:15:57 PM [express] GET /api/notifications/unread-count 304 in 278ms :: {"count":30}
+2026-01-09 09:16:21.02
+26f55a06
+User
+3:16:21 PM [express] GET /api/push/debug 304 in 306ms :: {"userId":"27dcff69-40d5-43f0-8d14-8db48d49…
+2026-01-09 09:16:21.30
+26f55a06
+User
+[Push Test] User ID: 27dcff69-40d5-43f0-8d14-8db48d493cbf
+2026-01-09 09:16:21.30
+26f55a06
+User
+[Push Test] ID: test_1767971781308
+2026-01-09 09:16:21.30
+26f55a06
+User
+[Push Test] ===== TEST NOTIFICATION START =====
+2026-01-09 09:16:21.37
+26f55a06
+User
+[FCM] ===== SENDING FCM NOTIFICATION =====
+2026-01-09 09:16:21.37
+26f55a06
+User
+[FCM] Using existing Firebase app: fcm-sender projectId: gospel-era-app
+2026-01-09 09:16:21.37
+26f55a06
+User
+[FCM] Token preview: c-4zxruLS0ZOjABJfGSpFt:APA91bF...
+2026-01-09 09:16:21.37
+26f55a06
+User
+[FCM] ✅ Access token verified, expires_in: 3560
+2026-01-09 09:16:21.37
+26f55a06
+User
+[FCM] Sending message via Firebase Admin SDK...
+2026-01-09 09:16:21.37
+26f55a06
+User
+[Push] Sending to 1 device(s) for user 27dcff69-40d5-43f0-8d14-8db48d493cbf
+2026-01-09 09:16:21.37
+26f55a06
+User
+[FCM] Token length: 142
+2026-01-09 09:16:21.37
+26f55a06
+User
+[FCM] Payload: {"title":"Test Notification","body":"[test_1767971781308] If you see this banner, push notifications are working!","url":"/"}
+2026-01-09 09:16:21.58
+26f55a06
+User
+[FCM] Error code: messaging/third-party-auth-error
+2026-01-09 09:16:21.58
+26f55a06
+User
+}
+2026-01-09 09:16:21.58
+26f55a06
+User
+"code": "messaging/third-party-auth-error",
+2026-01-09 09:16:21.58
+26f55a06
+User
+[Push Test] ===== TEST NOTIFICATION END =====
+2026-01-09 09:16:21.58
+26f55a06
+User
+[FCM] ❌ Error sending message: Request is missing required authentication credential. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project.
+2026-01-09 09:16:21.58
+26f55a06
+User
+"message": "Request is missing required authentication credential. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project."
+2026-01-09 09:16:21.58
+26f55a06
+User
+[FCM] Full error: {
+2026-01-09 09:16:21.58
+26f55a06
+User
+3:16:21 PM [express] POST /api/push/test 200 in 447ms :: {"success":true,"message":"Test notificatio…
+2026-01-09 09:16:21.58
+26f55a06
+User
+3:16:21 PM [express] POST /api/push/test 200 in 447ms :: {"success":true,"message":"Test notificatio…

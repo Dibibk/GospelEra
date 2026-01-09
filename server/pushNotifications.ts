@@ -177,6 +177,20 @@ async function sendFcmNotification(token: string, payload: PushPayload): Promise
   } catch (error: any) {
     console.error('[FCM] ❌ Error sending message:', error.message);
     console.error('[FCM] Error code:', error.code);
+    
+    // Detailed diagnosis for common errors
+    if (error.code === 'messaging/third-party-auth-error') {
+      console.error('[FCM] ⚠️ DIAGNOSIS: Firebase cannot authenticate with APNs (Apple Push Notification service)');
+      console.error('[FCM] ⚠️ FIX: Upload your APNs Authentication Key (.p8 file) to Firebase Console:');
+      console.error('[FCM] ⚠️ 1. Go to Firebase Console → Project Settings → Cloud Messaging');
+      console.error('[FCM] ⚠️ 2. Under "Apple app configuration", upload your APNs Auth Key');
+      console.error('[FCM] ⚠️ 3. Enter your Key ID and Team ID from Apple Developer Portal');
+    } else if (error.code === 'messaging/invalid-argument') {
+      console.error('[FCM] ⚠️ DIAGNOSIS: Invalid FCM token or message format');
+    } else if (error.code === 'messaging/registration-token-not-registered') {
+      console.error('[FCM] ⚠️ DIAGNOSIS: The FCM token is no longer valid (app was uninstalled or token expired)');
+    }
+    
     console.error('[FCM] Full error:', JSON.stringify(error, null, 2));
     return false;
   }
