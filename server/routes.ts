@@ -3014,6 +3014,34 @@ Respond with JSON only:
     }
   });
 
+  // Clear ALL push tokens for a user (use when changing Firebase projects)
+  app.post("/api/push/clear-all", authenticateUser, async (req: AuthenticatedRequest, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      const { supabaseAdmin } = await import('./supabaseAdmin');
+      
+      // Delete ALL tokens for this user using admin client
+      const { error, count } = await supabaseAdmin
+        .from('push_tokens')
+        .delete()
+        .eq('user_id', req.user.id);
+      
+      if (error) {
+        console.error('[Push] Error clearing tokens:', error);
+        return res.status(500).json({ error: "Failed to clear tokens" });
+      }
+      
+      console.log(`[Push] Cleared all tokens for user ${req.user.id}`);
+      res.json({ success: true, message: "All push tokens cleared. Please re-enable notifications." });
+    } catch (error) {
+      console.error("Error clearing push tokens:", error);
+      res.status(500).json({ error: "Failed to clear push tokens" });
+    }
+  });
+
   // Update daily verse reminder preference
   app.patch("/api/push/daily-verse", authenticateUser, async (req: AuthenticatedRequest, res) => {
     try {

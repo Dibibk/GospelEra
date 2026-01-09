@@ -1,0 +1,136 @@
+2026-01-08 20:05:08.70
+58e8de48
+User
+"message": "SenderId mismatch"
+2026-01-08 20:05:08.70
+58e8de48
+User
+[FCM] Error code: messaging/mismatched-credential
+2026-01-08 20:05:08.70
+58e8de48
+User
+[FCM] Error code: messaging/mismatched-credential
+2026-01-08 20:05:08.70
+58e8de48
+User
+[FCM] Full error: {
+2026-01-08 20:05:08.70
+58e8de48
+User
+}
+2026-01-08 20:05:08.70
+58e8de48
+User
+[FCM] ❌ Error sending message: SenderId mismatch
+2026-01-08 20:05:08.70
+58e8de48
+User
+[FCM] ❌ Error sending message: SenderId mismatch
+2026-01-08 20:05:08.70
+58e8de48
+User
+}
+2026-01-08 20:05:08.70
+58e8de48
+User
+[FCM] Full error: {
+2026-01-08 20:05:08.70
+58e8de48
+User
+"code": "messaging/mismatched-credential",
+2026-01-08 20:05:08.84
+58e8de48
+User
+}
+2026-01-08 20:05:08.84
+58e8de48
+User
+"code": "messaging/third-party-auth-error",
+2026-01-08 20:05:08.84
+58e8de48
+User
+[FCM] Error code: messaging/third-party-auth-error
+2026-01-08 20:05:09.00
+58e8de48
+User
+[FCM] Error code: messaging/third-party-auth-error
+2026-01-08 20:05:09.00
+58e8de48
+User
+"code": "messaging/third-party-auth-error",
+2026-01-08 20:05:09.00
+58e8de48
+User
+}
+2026-01-08 20:05:09.00
+58e8de48
+User
+[FCM] ❌ Error sending message: Request is missing required authentication credential. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project.
+2026-01-08 20:05:09.00
+58e8de48
+User
+"message": "Request is missing required authentication credential. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project."
+2026-01-08 20:05:09.00
+58e8de48
+User
+[FCM] Error code: messaging/third-party-auth-error
+2026-01-08 20:05:09.00
+58e8de48
+User
+"code": "messaging/third-party-auth-error",
+2026-01-08 20:05:09.00
+58e8de48
+User
+}
+2026-01-08 20:05:09.00
+58e8de48
+User
+[FCM] ❌ Error sending message: Request is missing required authentication credential. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project.
+2026-01-08 20:05:09.00
+58e8de48
+User
+"message": "Request is missing required authentication credential. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project."
+2026-01-08 20:05:09.00
+58e8de48
+User
+[FCM] Error code: messaging/third-party-auth-error
+2026-01-08 20:05:09.00
+58e8de48
+User
+"code": "messaging/third-party-auth-error",
+2026-01-08 20:05:09.00
+58e8de48
+User
+}
+2026-01-08 20:05:09.00
+58e8de48
+User
+[FCM] ❌ Error sending message: Request is missing required authentication credential. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project.
+2026-01-08 20:05:09.00
+58e8de48
+User
+"message": "Request is missing required authentication credential. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project."
+2026-01-08 20:05:09.00
+58e8de48
+User
+[FCM] Error code: messaging/third-party-auth-error
+2026-01-08 20:05:09.00
+58e8de48
+User
+"code": "messaging/third-party-auth-error",
+2026-01-08 20:05:09.00
+58e8de48
+User
+}
+2026-01-08 20:05:09.00
+58e8de48
+User
+[FCM] ❌ Error sending message: Request is missing required authentication credential. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project.
+2026-01-08 20:05:09.00
+58e8de48
+User
+"message": "Request is missing required authentication credential. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project."
+2026-01-08 20:05:36.03
+58e8de48
+User
+2:05:36 AM [express] GET /api/notifications/unread-count 304 in 355ms :: {"count":26}
