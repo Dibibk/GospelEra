@@ -3428,7 +3428,7 @@ Respond with JSON only:
       const nextCursor = reports.length === limit ? reports[reports.length - 1].created_at : null;
 
       // Get unique reporter IDs
-      const reporterIds = [...new Set(reports.map(r => r.reporter).filter(Boolean))];
+      const reporterIds = [...new Set(reports.map(r => r.reporter_id).filter(Boolean))];
       
       // Fetch reporter profiles
       const { data: reporterProfiles } = await supabaseAdmin
@@ -3441,9 +3441,9 @@ Respond with JSON only:
         reporterProfileMap.set(profile.id, profile);
       });
 
-      // Get unique target IDs by type
-      const postIds = reports.filter(r => r.target_type === 'post').map(r => r.target_id);
-      const commentIds = reports.filter(r => r.target_type === 'comment').map(r => r.target_id);
+      // Get unique target IDs by type (convert to integers for posts/comments tables)
+      const postIds = reports.filter(r => r.target_type === 'post').map(r => parseInt(r.target_id)).filter(id => !isNaN(id));
+      const commentIds = reports.filter(r => r.target_type === 'comment').map(r => parseInt(r.target_id)).filter(id => !isNaN(id));
 
       // Fetch posts and comments in parallel
       const [postsResult, commentsResult] = await Promise.all([
@@ -3488,15 +3488,15 @@ Respond with JSON only:
           target_type: report.target_type,
           target_id: report.target_id,
           created_at: report.created_at,
-          reporter: reporterProfileMap.get(report.reporter) || {
-            id: report.reporter,
+          reporter: reporterProfileMap.get(report.reporter_id) || {
+            id: report.reporter_id,
             display_name: 'Unknown User',
             email: 'unknown@example.com'
           }
         };
 
         if (report.target_type === 'post') {
-          const post = postsMap.get(report.target_id);
+          const post = postsMap.get(parseInt(report.target_id));
           if (post) {
             const authorProfile = authorProfileMap.get(post.author_id);
             baseReport.target = {
@@ -3513,7 +3513,7 @@ Respond with JSON only:
             baseReport.target = { type: 'post', id: report.target_id, deleted: true };
           }
         } else if (report.target_type === 'comment') {
-          const comment = commentsMap.get(report.target_id);
+          const comment = commentsMap.get(parseInt(report.target_id));
           if (comment) {
             const authorProfile = authorProfileMap.get(comment.author_id);
             baseReport.target = {
