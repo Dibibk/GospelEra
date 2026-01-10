@@ -2694,22 +2694,25 @@ export default function MobileApp() {
                           minWidth: "120px",
                         }}
                       >
-                        <button
-                          onClick={() => openReportModal(post.id)}
-                          style={{
-                            width: "100%",
-                            padding: "12px 16px",
-                            border: "none",
-                            background: "none",
-                            textAlign: "left",
-                            fontSize: "14px",
-                            color: "#262626",
-                            cursor: "pointer",
-                            borderBottom: "1px solid #f0f0f0",
-                          }}
-                        >
-                          Report
-                        </button>
+                        {/* Report option - only show for other users' posts */}
+                        {post.author_id !== user?.id && (
+                          <button
+                            onClick={() => openReportModal(post.id)}
+                            style={{
+                              width: "100%",
+                              padding: "12px 16px",
+                              border: "none",
+                              background: "none",
+                              textAlign: "left",
+                              fontSize: "14px",
+                              color: "#262626",
+                              cursor: "pointer",
+                              borderBottom: "1px solid #f0f0f0",
+                            }}
+                          >
+                            Report
+                          </button>
+                        )}
 
                         {/* Edit option for post owner only */}
                         {post.author_id === user?.id && (
