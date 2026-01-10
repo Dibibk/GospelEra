@@ -949,6 +949,11 @@ export default function MobileApp() {
 
   // Open report modal for post
   const openReportModal = (postId: number) => {
+    setReportTarget({
+      type: "post",
+      id: postId.toString(),
+    });
+    setReportModalOpen(true);
     setReportModal({
       isOpen: true,
       targetType: "post",
@@ -2594,15 +2599,6 @@ export default function MobileApp() {
                   }}
                 >
                   <div
-                    onPointerUp={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      openPublicProfile(post.author_id);
-                    }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      openPublicProfile(post.author_id);
-                    }} //dibi
                     style={{
                       width: "32px",
                       height: "32px",
@@ -2644,11 +2640,13 @@ export default function MobileApp() {
                       onClick={(e) => {
                         e.stopPropagation();
                         openPublicProfile(post.author_id);
-                      }} //dibi
+                      }}
                       style={{
                         fontWeight: 600,
                         fontSize: "14px",
                         color: "#262626",
+                        cursor: "pointer",
+                        display: "inline-block",
                       }}
                     >
                       {getDisplayName(profiles.get(post.author_id))}
