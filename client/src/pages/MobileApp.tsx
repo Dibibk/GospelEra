@@ -4462,7 +4462,7 @@ export default function MobileApp() {
       {reportModalOpen && (
         <div
           style={{
-            position: "absolute",
+            position: "fixed",
             top: 0,
             left: 0,
             right: 0,
@@ -4471,7 +4471,7 @@ export default function MobileApp() {
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            zIndex: 1000,
+            zIndex: 9999,
             padding: "20px",
           }}
         >
