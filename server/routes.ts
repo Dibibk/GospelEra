@@ -3348,12 +3348,14 @@ Respond with JSON only:
       }
 
       // Insert report using supabaseAdmin to bypass RLS
+      console.log("Creating report:", { target_type, target_id, reason, reporter_id: req.user.id });
+      
       const { data, error } = await supabaseAdmin
         .from('reports')
         .insert({
           target_type,
           target_id: String(target_id),
-          reason: reason || null,
+          reason: reason || 'No reason provided',
           reporter_id: req.user.id,
           status: 'open'
         })
@@ -3362,8 +3364,10 @@ Respond with JSON only:
 
       if (error) {
         console.error("Error creating report:", error);
-        return res.status(500).json({ error: "Failed to create report" });
+        return res.status(500).json({ error: `Failed to create report: ${error.message}` });
       }
+      
+      console.log("Report created successfully:", data);
 
       // Auto-hide content for "Not Christ-Centered" reports
       if (reason?.includes('Not Christ-Centered')) {
