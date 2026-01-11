@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { supabase } from "@/lib/supabaseClient";
+import { getApiBaseUrl } from "@/lib/posts";
 import { updateReportStatus, banUser, unbanUser, getBannedUsers } from "@/lib/admin";
 import { 
   ArrowLeft, 
@@ -392,7 +393,8 @@ export function AdminReportsMobile({
       }
 
       const statusParam = status === 'all' ? 'open' : status;
-      const response = await fetch(`/api/admin/reports?status=${statusParam}&limit=100`, {
+      const baseUrl = getApiBaseUrl();
+      const response = await fetch(`${baseUrl}/api/admin/reports?status=${statusParam}&limit=100`, {
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
           'Content-Type': 'application/json'
