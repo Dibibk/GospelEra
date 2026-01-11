@@ -3277,7 +3277,7 @@ Respond with JSON only:
       else console.log("Deleted media requests");
       
       // 7. Delete reports
-      const { error: reportError } = await supabaseAdmin.from('reports').delete().eq('reporter_id', userId);
+      const { error: reportError } = await supabaseAdmin.from('reports').delete().eq('reporter', userId);
       if (reportError) console.log("Reports delete result:", reportError.message);
       else console.log("Deleted reports");
       
@@ -3352,7 +3352,7 @@ Respond with JSON only:
         .from('reports')
         .insert({
           target_type,
-          target_id: parseInt(target_id),
+          target_id: String(target_id),
           reason: reason || null,
           reporter: req.user.id,
           status: 'open'
@@ -3426,12 +3426,15 @@ Respond with JSON only:
       }
 
       console.log("Admin reports fetched:", reports.length, "reports");
-      console.log("Report IDs and reporter_ids:", reports.map(r => ({ id: r.id, reporter_id: r.reporter_id, target_id: r.target_id, target_type: r.target_type })));
+      console.log("Report columns:", Object.keys(reports[0] || {}));
+      console.log("Full first report:", JSON.stringify(reports[0], null, 2));
 
       const nextCursor = reports.length === limit ? reports[reports.length - 1].created_at : null;
 
-      // Get unique reporter IDs (filter out empty strings and nulls)
-      const reporterIds = [...new Set(reports.map(r => r.reporter_id).filter(id => id && typeof id === 'string' && id.trim().length > 0))];
+      // Get unique reporter IDs (filter out empty strings and nulls) - Supabase column is "reporter" not "reporter_id"
+      const reporterIds = [...new Set(reports.map(r => r.reporter).filter(id => id && typeof id === 'string' && id.trim().length > 0))];
+      
+      console.log("Reporter IDs to fetch:", reporterIds);
       
       // Fetch reporter profiles (only if we have valid IDs)
       const reporterProfileMap = new Map();
@@ -3504,8 +3507,8 @@ Respond with JSON only:
           target_type: report.target_type,
           target_id: report.target_id,
           created_at: report.created_at,
-          reporter: reporterProfileMap.get(report.reporter_id) || {
-            id: report.reporter_id,
+          reporter: reporterProfileMap.get(report.reporter) || {
+            id: report.reporter,
             display_name: 'Unknown User',
             email: 'unknown@example.com'
           }
