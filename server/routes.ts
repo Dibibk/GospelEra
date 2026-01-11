@@ -3277,7 +3277,7 @@ Respond with JSON only:
       else console.log("Deleted media requests");
       
       // 7. Delete reports
-      const { error: reportError } = await supabaseAdmin.from('reports').delete().eq('reporter', userId);
+      const { error: reportError } = await supabaseAdmin.from('reports').delete().eq('reporter_id', userId);
       if (reportError) console.log("Reports delete result:", reportError.message);
       else console.log("Deleted reports");
       
@@ -3354,7 +3354,7 @@ Respond with JSON only:
           target_type,
           target_id: String(target_id),
           reason: reason || null,
-          reporter: req.user.id,
+          reporter_id: req.user.id,
           status: 'open'
         })
         .select()
@@ -3431,8 +3431,8 @@ Respond with JSON only:
 
       const nextCursor = reports.length === limit ? reports[reports.length - 1].created_at : null;
 
-      // Get unique reporter IDs (filter out empty strings and nulls) - Supabase column is "reporter" not "reporter_id"
-      const reporterIds = [...new Set(reports.map(r => r.reporter).filter(id => id && typeof id === 'string' && id.trim().length > 0))];
+      // Get unique reporter IDs (filter out empty strings and nulls)
+      const reporterIds = [...new Set(reports.map(r => r.reporter_id).filter(id => id && typeof id === 'string' && id.trim().length > 0))];
       
       console.log("Reporter IDs to fetch:", reporterIds);
       
@@ -3507,8 +3507,8 @@ Respond with JSON only:
           target_type: report.target_type,
           target_id: report.target_id,
           created_at: report.created_at,
-          reporter: reporterProfileMap.get(report.reporter) || {
-            id: report.reporter,
+          reporter: reporterProfileMap.get(report.reporter_id) || {
+            id: report.reporter_id,
             display_name: 'Unknown User',
             email: 'unknown@example.com'
           }
