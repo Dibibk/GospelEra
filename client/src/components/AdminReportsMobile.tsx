@@ -405,7 +405,7 @@ export function AdminReportsMobile({
       }
 
       const data = await response.json();
-      setReports(data.reports || []);
+      setReports(data.items || []);
     } catch (err: any) {
       console.error('Error loading reports:', err);
       showToast(err.message || 'Failed to load reports', 'error');
