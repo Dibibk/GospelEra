@@ -3425,21 +3425,30 @@ Respond with JSON only:
         return res.json({ items: [], nextCursor: null });
       }
 
+      console.log("Admin reports fetched:", reports.length, "reports");
+      console.log("Report IDs and reporter_ids:", reports.map(r => ({ id: r.id, reporter_id: r.reporter_id, target_id: r.target_id, target_type: r.target_type })));
+
       const nextCursor = reports.length === limit ? reports[reports.length - 1].created_at : null;
 
-      // Get unique reporter IDs
-      const reporterIds = [...new Set(reports.map(r => r.reporter_id).filter(Boolean))];
+      // Get unique reporter IDs (filter out empty strings and nulls)
+      const reporterIds = [...new Set(reports.map(r => r.reporter_id).filter(id => id && typeof id === 'string' && id.trim().length > 0))];
       
-      // Fetch reporter profiles
-      const { data: reporterProfiles } = await supabaseAdmin
-        .from('profiles')
-        .select('id, display_name, email')
-        .in('id', reporterIds);
-
+      // Fetch reporter profiles (only if we have valid IDs)
       const reporterProfileMap = new Map();
-      (reporterProfiles || []).forEach((profile: any) => {
-        reporterProfileMap.set(profile.id, profile);
-      });
+      if (reporterIds.length > 0) {
+        const { data: reporterProfiles, error: reporterError } = await supabaseAdmin
+          .from('profiles')
+          .select('id, display_name, email')
+          .in('id', reporterIds);
+
+        if (reporterError) {
+          console.error("Error fetching reporter profiles:", reporterError);
+        }
+        
+        (reporterProfiles || []).forEach((profile: any) => {
+          reporterProfileMap.set(profile.id, profile);
+        });
+      }
 
       // Get unique target IDs by type (convert to integers for posts/comments tables)
       const postIds = reports.filter(r => r.target_type === 'post').map(r => parseInt(r.target_id)).filter(id => !isNaN(id));
@@ -3470,14 +3479,21 @@ Respond with JSON only:
       ];
 
       // Fetch author profiles
-      const { data: authorProfiles } = authorIds.length > 0
-        ? await supabaseAdmin.from('profiles').select('id, display_name').in('id', authorIds)
-        : { data: [] };
-
       const authorProfileMap = new Map();
-      (authorProfiles || []).forEach((profile: any) => {
-        authorProfileMap.set(profile.id, profile);
-      });
+      if (authorIds.length > 0) {
+        const { data: authorProfiles, error: authorError } = await supabaseAdmin
+          .from('profiles')
+          .select('id, display_name')
+          .in('id', authorIds);
+        
+        if (authorError) {
+          console.error("Error fetching author profiles:", authorError);
+        }
+        
+        (authorProfiles || []).forEach((profile: any) => {
+          authorProfileMap.set(profile.id, profile);
+        });
+      }
 
       // Build response items
       const items = reports.map(report => {
