@@ -2567,7 +2567,11 @@ Respond with JSON only:
   // ============ PUSH NOTIFICATIONS API ROUTES ============
   
   // Debug endpoint - check push tokens for current user and test send
+  // DISABLED IN PRODUCTION
   app.get("/api/push/debug", authenticateUser, async (req: AuthenticatedRequest, res) => {
+    if (process.env.NODE_ENV === 'production') {
+      return res.status(404).json({ error: "Not found" });
+    }
     try {
       if (!req.user) {
         return res.status(401).json({ error: "Unauthorized" });
@@ -2616,7 +2620,11 @@ Respond with JSON only:
   });
   
   // Test push notification endpoint - send test notification to current user
+  // DISABLED IN PRODUCTION
   app.post("/api/push/test", authenticateUser, async (req: AuthenticatedRequest, res) => {
+    if (process.env.NODE_ENV === 'production') {
+      return res.status(404).json({ error: "Not found" });
+    }
     try {
       if (!req.user) {
         return res.status(401).json({ error: "Unauthorized" });
@@ -2700,7 +2708,11 @@ Respond with JSON only:
   });
 
   // Debug endpoint - show stored tokens for current user
+  // DISABLED IN PRODUCTION
   app.get("/api/push/my-tokens", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
+    if (process.env.NODE_ENV === 'production') {
+      return res.status(404).json({ error: "Not found" });
+    }
     try {
       if (!req.user) {
         return res.status(401).json({ error: "Unauthorized" });
@@ -2738,7 +2750,11 @@ Respond with JSON only:
   });
 
   // Diagnostic endpoint - check Firebase credentials without sending
+  // DISABLED IN PRODUCTION
   app.get("/api/push/diagnose", async (_req: Request, res: Response) => {
+    if (process.env.NODE_ENV === 'production') {
+      return res.status(404).json({ error: "Not found" });
+    }
     const result: any = { timestamp: new Date().toISOString() };
     
     try {
@@ -2806,7 +2822,11 @@ Respond with JSON only:
 // - Optional: set DEBUG_PUSH_DISABLE=1 to disable endpoint after testing
 
 
+  // DISABLED IN PRODUCTION
   app.post("/api/push/debug-send", async (req: Request, res: Response) => {
+    if (process.env.NODE_ENV === 'production') {
+      return res.status(404).json({ error: "Not found" });
+    }
     const traceId = `trace_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
     const startedAt = Date.now();
 
