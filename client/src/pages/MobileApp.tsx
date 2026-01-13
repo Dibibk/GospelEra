@@ -1772,25 +1772,7 @@ export default function MobileApp() {
     try {
       console.log("Loading mobile profile... user:", user?.id);
 
-      // Fallback: Use the userProfile if it exists
-      if (userProfile && user) {
-        console.log("Using existing userProfile:", userProfile);
-        const fallbackProfile = {
-          id: user.id,
-          display_name: userProfile.display_name || user.email || "Gospel User",
-          bio: userProfile.bio || "",
-          avatar_url: userProfile.avatar_url || "",
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        };
-        setProfile(fallbackProfile);
-        setEditDisplayName(fallbackProfile.display_name);
-        setEditBio(fallbackProfile.bio);
-        setEditAvatarUrl(fallbackProfile.avatar_url);
-        setProfileLoading(false);
-        return;
-      }
-
+      // Always fetch fresh profile data (don't use cached userProfile)
       // Add timeout to prevent infinite loading
       const profilePromise = ensureMyProfile();
       const timeoutPromise = new Promise((_, reject) =>
@@ -1825,6 +1807,8 @@ export default function MobileApp() {
       } else if (data) {
         console.log("Profile data loaded:", data);
         setProfile(data);
+        // Also update userProfile so header reflects changes immediately
+        setUserProfile(data);
         setEditDisplayName(data.display_name || "");
         setEditBio(data.bio || "");
         setEditAvatarUrl(data.avatar_url || "");
