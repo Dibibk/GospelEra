@@ -60,6 +60,12 @@ export interface ApiResponse<T> {
   error: string | null
 }
 
+export interface PaginatedApiResponse<T> {
+  data: T | null
+  nextCursor: number | null
+  error: string | null
+}
+
 /**
  * Create a new prayer request
  */
@@ -106,7 +112,7 @@ export async function listPrayerRequests({
   tags = [], 
   limit = 20, 
   cursor = null as number | null
-}: PrayerRequestListParams): Promise<ApiResponse<any[]>> {
+}: PrayerRequestListParams): Promise<PaginatedApiResponse<any[]>> {
   try {
     console.log('🙏 [listPrayerRequests] Starting prayer requests fetch via API...', { status, limit });
     
@@ -118,6 +124,8 @@ export async function listPrayerRequests({
     if (q) params.append('q', q);
     if (tags && tags.length > 0) params.append('tags', tags.join(','));
     
+    // Add cache-busting timestamp to ensure fresh data
+    params.append('_t', Date.now().toString());
     const url = `${baseUrl}/api/prayer-requests?${params.toString()}`;
     console.log('🙏 [listPrayerRequests] Fetching from:', url);
     
@@ -134,7 +142,7 @@ export async function listPrayerRequests({
     
     if (!response.ok) {
       console.error('Failed to fetch prayer requests:', response.status, response.statusText);
-      return { data: null, error: 'Failed to load prayer requests' };
+      return { data: null, nextCursor: null, error: 'Failed to load prayer requests' };
     }
     
     const result = await response.json();
@@ -155,62 +163,50 @@ export async function listPrayerRequests({
       }
     }));
 
-    return { data: enhancedData, error: null };
+    return { data: enhancedData, nextCursor: result.nextCursor ?? null, error: null };
   } catch (err) {
     console.error('List prayer requests error:', err);
-    return { data: null, error: 'Unexpected error occurred' };
+    return { data: null, nextCursor: null, error: 'Unexpected error occurred' };
   }
 }
 
 /**
  * Get a single prayer request with full details
+ * Uses backend API to bypass RLS and get accurate data
  */
 export async function getPrayerRequest(id: number): Promise<ApiResponse<any>> {
   try {
-    const { data, error } = await supabase
-      .from('prayer_requests')
-      .select(`
-        *,
-        prayer_commitments (
-          status,
-          prayed_at,
-          committed_at,
-          note,
-          warrior
-        ),
-        prayer_activity (
-          kind,
-          message,
-          created_at,
-          actor
-        )
-      `)
-      .eq('id', id)
-      .single()
-
-    if (error) {
-      console.error('Failed to get prayer request:', error)
-      return { data: null, error: 'Prayer request not found' }
+    console.log('🙏 [getPrayerRequest] Fetching prayer request via API:', id);
+    
+    const baseUrl = getApiBaseUrl();
+    // Add cache-busting timestamp to ensure fresh data
+    const url = `${baseUrl}/api/prayer-requests/${id}?_t=${Date.now()}`;
+    
+    // Get auth token if available
+    const { data: sessionData } = await supabase.auth.getSession();
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json'
+    };
+    if (sessionData?.session?.access_token) {
+      headers['Authorization'] = `Bearer ${sessionData.session.access_token}`;
     }
-
-    // Compute comprehensive statistics
-    const commitments = data.prayer_commitments || []
-    const stats = {
-      committed_count: commitments.filter(c => c.status === 'committed').length,
-      prayed_count: commitments.filter(c => c.status === 'prayed').length,
-      total_warriors: commitments.length,
-      recent_activity: (data.prayer_activity || [])
-        .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-        .slice(0, 10)
+    
+    const response = await fetch(url, { headers });
+    
+    if (!response.ok) {
+      console.error('Failed to fetch prayer request:', response.status, response.statusText);
+      return { data: null, error: 'Prayer request not found' };
     }
+    
+    const data = await response.json();
+    console.log('🙏 [getPrayerRequest] API result:', { 
+      id: data.id,
+      hasStats: !!data.prayer_stats,
+      committedCount: data.prayer_stats?.committed_count
+    });
+    console.log('🙏 [getPrayerRequest] FULL RESPONSE:', JSON.stringify(data, null, 2));
 
-    return { 
-      data: { 
-        ...data, 
-        prayer_stats: stats 
-      }, 
-      error: null 
-    }
+    return { data, error: null };
   } catch (err) {
     console.error('Get prayer request error:', err)
     return { data: null, error: 'Unexpected error occurred' }
@@ -253,22 +249,8 @@ export async function commitToPray(requestId: number): Promise<ApiResponse<any>>
 
     const data = await response.json()
 
-    // Notify prayer request owner (if not self) - client-side notification
-    const { data: prayerRequest } = await supabase
-      .from('prayer_requests')
-      .select('requester')
-      .eq('id', requestId)
-      .single();
-    
-    if (prayerRequest?.requester && prayerRequest.requester !== sessionData.session.user.id) {
-      createNotification({
-        recipientId: prayerRequest.requester,
-        eventType: 'prayer_commitment',
-        prayerRequestId: requestId,
-        commitmentId: data.id,
-        message: 'committed to pray for your prayer request'
-      });
-    }
+    // Note: Server already creates notification and sends push notification
+    // No need to create duplicate client-side notification
 
     // Return data with spam warning if applicable
     return { 
@@ -353,22 +335,8 @@ export async function confirmPrayed(requestId: number, { note = null }: { note?:
 
     const data = await response.json()
 
-    // Notify prayer request owner (if not self) - client-side notification
-    const { data: prayerRequest } = await supabase
-      .from('prayer_requests')
-      .select('requester')
-      .eq('id', requestId)
-      .single();
-    
-    if (prayerRequest?.requester && prayerRequest.requester !== sessionData.session.user.id) {
-      createNotification({
-        recipientId: prayerRequest.requester,
-        eventType: 'prayer_completed',
-        prayerRequestId: requestId,
-        commitmentId: data.id,
-        message: 'prayed for your prayer request'
-      });
-    }
+    // Note: Server already creates notification and sends push notification
+    // No need to create duplicate client-side notification
 
     return { data, error: null }
   } catch (err) {
@@ -379,61 +347,40 @@ export async function confirmPrayed(requestId: number, { note = null }: { note?:
 
 /**
  * Get current user's prayer commitments
+ * Uses backend API to bypass RLS issues
  */
-export async function getMyCommitments({ status, limit = 20, cursor }: PrayerCommitmentParams = {}): Promise<ApiResponse<any[]>> {
+export async function getMyCommitments({ status, limit = 20 }: PrayerCommitmentParams = {}): Promise<ApiResponse<any[]>> {
   try {
-    const { data: user } = await supabase.auth.getUser()
+    const { data: sessionData } = await supabase.auth.getSession()
     
-    if (!user?.user?.id) {
-      return { data: null, error: 'Authentication required' }
+    if (!sessionData?.session?.access_token) {
+      return { data: [], error: null }
     }
 
-    let query = supabase
-      .from('prayer_commitments')
-      .select(`
-        *,
-        prayer_requests!inner (
-          id,
-          title,
-          details,
-          status,
-          created_at,
-          is_anonymous,
-          requester
-        )
-      `)
-      .eq('warrior', user.user.id)
-
-    // Filter by status
-    if (status) {
-      query = query.eq('status', status)
-    }
-
-    // Pagination
-    if (cursor) {
-      query = query.lt('committed_at', cursor)
-    }
-
-    // Order and limit
-    query = query
-      .order('committed_at', { ascending: false })
-      .limit(Math.min(limit, 50))
-
-    const { data, error } = await query
-
-    if (error) {
-      console.error('Failed to get my commitments:', error)
-      // Handle missing Supabase tables gracefully
-      if (error.code === 'PGRST200' || error.code === '42P01' || error.message?.includes('does not exist')) {
-        return { data: [], error: null }
+    const baseUrl = getApiBaseUrl()
+    const params = new URLSearchParams()
+    if (status) params.append('status', status)
+    if (limit) params.append('limit', String(limit))
+    
+    const url = `${baseUrl}/api/my-commitments?${params.toString()}`
+    
+    const response = await fetch(url, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${sessionData.session.access_token}`
       }
-      return { data: null, error: 'Failed to load your commitments' }
+    })
+
+    if (!response.ok) {
+      console.error('Failed to fetch commitments:', response.status)
+      return { data: [], error: null }
     }
 
-    return { data: data || [], error: null }
+    const result = await response.json()
+    return { data: result.commitments || [], error: null }
   } catch (err) {
     console.error('Get my commitments error:', err)
-    return { data: null, error: 'Unexpected error occurred' }
+    return { data: [], error: null }
   }
 }
 

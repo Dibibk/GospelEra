@@ -1,0 +1,93 @@
+ TO JS {"value":"fScXSI1s20mApmgFPZVDqV:APA91bFqSjR1QZBRUFC-ZXt-k746gL9FyTA9QG0JzSr69XvlX7PwvNk-MF-NXn5JRr5-A5Z7nVk46xSsfQmZXhFuDx0dG-yJZl0Rq_EEyWGq2zchs_c8u6E"}
+-[RTIInputSystemClient remoteTextInputSessionWithID:performInputOperation:]  perform input operation requires a valid sessionID. inputModality = Keyboard, inputOperation = <null selector>, customInfoType = UIEmojiSearchOperations
+-[RTIInputSystemClient remoteTextInputSessionWithID:performInputOperation:]  perform input operation requires a valid sessionID. inputModality = Keyboard, inputOperation = <null selector>, customInfoType = UIEmojiSearchOperations
+-[RTIInputSystemClient remoteTextInputSessionWithID:performInputOperation:]  perform input operation requires a valid sessionID. inputModality = Keyboard, inputOperation = <null selector>, customInfoType = UIEmojiSearchOperations
+-[RTIInputSystemClient remoteTextInputSessionWithID:performInputOperation:]  Can only perform input operation for an active session. sessionID = CECEFC7F-C5F8-43F4-8AB1-9E77A94D3B82
+-[RTIInputSystemClient remoteTextInputSessionWithID:textSuggestionsChanged:]  Can only set suggestions for an active session. sessionID = CECEFC7F-C5F8-43F4-8AB1-9E77A94D3B82
+-[RTIInputSystemClient remoteTextInputSessionWithID:textSuggestionsChanged:]  Can only set suggestions for an active session. sessionID = CECEFC7F-C5F8-43F4-8AB1-9E77A94D3B82
+Handled error from server: Connection interrupted
+Handle connection with error: Connection interrupted
+⚡️  To Native ->  PushNotifications checkPermissions 58354626
+⚡️  [log] - Feed subscription status: CLOSED
+⚡️  [log] - Notifications subscription status: CLOSED
+⚡️  [log] - 🔍 MobileApp fetchData effect {"hasUser":true,"postsLength":20}
+⚡️  [log] - 🔍 Posts already loaded, skipping fetchData
+⚡️  [log] - 🎥 Media permission: Admin user, granting access
+⚡️  [log] - [NativePush] initNativePushNotifications called
+⚡️  [log] - [NativePush] isNativePlatform: true
+⚡️  [log] - [NativePush] Capacitor.getPlatform: ios
+⚡️  [log] - [NativePush] Listeners already initialized, skipping
+⚡️  TO JS {"receive":"granted"}
+⚡️  To Native ->  PushNotifications register 58354627
+⚡️  [log] - [NativePush] Current permission: granted
+⚡️  [log] - [NativePush] Permission granted, calling PushNotifications.register()...
+⚡️  TO JS undefined
+⚡️  [log] - Feed subscription status: SUBSCRIBED
+⚡️  [log] - Notifications subscription status: SUBSCRIBED
+[AppDelegate] ✅ APNs token received: 809e9e972fa04c2b1fc8...
+[AppDelegate] ✅ APNs token set on Messaging
+⚡️  [log] - [NativePush] register() called successfully
+[AppDelegate] ✅ FCM token fetched: fScXSI1s20mApmgFPZVDqV:APA91bF...
+[AppDelegate] 📤 Sending FCM token to JavaScript...
+⚡️  To Native ->  Preferences set 58354628
+⚡️  [log] - [NativePush] 🔥 FCM token received from native iOS: fScXSI1s20mApmgFPZVDqV:APA91bF...
+⚡️  [log] - [Native] FCM token event dispatched
+[AppDelegate] ✅ FCM token sent to JavaScript successfully
+⚡️  TO JS undefined
+⚡️  To Native ->  Preferences set 58354629
+⚡️  TO JS undefined
+⚡️  [log] - [NativePush] FCM token saved via Preferences
+⚡️  [log] - [NativePush] Sending FCM token to backend...
+⚡️  [log] - 🌐 [posts.ts] Platform detection: {"platform":"ios","isNative":true}
+⚡️  [log] - 🌐 [posts.ts] Native app - using API URL: https://gospel-era.replit.app
+⚡️  [log] - [NativePush] Registered ios token with server
+⚡️  [log] - 🌐 [posts.ts] Platform detection: {"platform":"ios","isNative":true}
+⚡️  [log] - 🌐 [posts.ts] Native app - using API URL: https://gospel-era.replit.app
+⚡️  [log] - 🌐 [posts.ts] Platform detection: {"platform":"ios","isNative":true}
+⚡️  [log] - 🌐 [posts.ts] Native app - using API URL: https://gospel-era.replit.app
+⚡️  To Native ->  PushNotifications checkPermissions 58354630
+⚡️  TO JS {"receive":"granted"}
+⚡️  [log] - 🌐 [posts.ts] Platform detection: {"platform":"ios","isNative":true}
+⚡️  [log] - 🌐 [posts.ts] Native app - using API URL: https://gospel-era.replit.app
+⚡️  [log] - Feed subscription status: CLOSED
+⚡️  To Native ->  PushNotifications checkPermissions 58354631
+⚡️  [log] - Notifications subscription status: CLOSED
+⚡️  [log] - 🔍 MobileApp fetchData effect {"hasUser":true,"postsLength":20}
+⚡️  [log] - 🔍 Posts already loaded, skipping fetchData
+⚡️  [log] - 🎥 Media permission: Admin user, granting access
+⚡️  [log] - [NativePush] initNativePushNotifications called
+⚡️  [log] - [NativePush] isNativePlatform: true
+⚡️  [log] - [NativePush] Capacitor.getPlatform: ios
+⚡️  [log] - [NativePush] Listeners already initialized, skipping
+⚡️  TO JS {"receive":"granted"}
+⚡️  To Native ->  PushNotifications register ⚡️  [log] - [NativePush] Current permission: granted
+58354632
+⚡️  [log] - [NativePush] Permission granted, calling PushNotifications.register()...
+⚡️  TO JS undefined
+[AppDelegate] ✅ APNs token received: 809e9e972fa04c2b1fc8...
+[AppDelegate] ✅ APNs token set on Messaging
+⚡️  [log] - Feed subscription status: SUBSCRIBED
+⚡️  [log] - Notifications subscription status: SUBSCRIBED
+⚡️  [log] - [NativePush] register() called successfully
+[AppDelegate] ✅ FCM token fetched: fScXSI1s20mApmgFPZVDqV:APA91bF...
+[AppDelegate] 📤 Sending FCM token to JavaScript...
+⚡️  To Native ->  Preferences set 58354633
+⚡️  [log] - [NativePush] 🔥 FCM token received from native iOS: fScXSI1s20mApmgFPZVDqV:APA91bF...
+⚡️  [log] - [Native] FCM token event dispatched
+[AppDelegate] ✅ FCM token sent to JavaScript successfully
+⚡️  TO JS undefined
+⚡️  To Native ->  Preferences set 58354634
+⚡️  TO JS undefined
+⚡️  [log] - [NativePush] FCM token saved via Preferences
+⚡️  [log] - [NativePush] Sending FCM token to backend...
+⚡️  [log] - 🌐 [posts.ts] Platform detection: {"platform":"ios","isNative":true}
+⚡️  [log] - 🌐 [posts.ts] Native app - using API URL: https://gospel-era.replit.app
+⚡️  [log] - [NativePush] Registered ios token with server
+⚡️  [log] - 🌐 [posts.ts] Platform detection: {"platform":"ios","isNative":true}
+⚡️  [log] - 🌐 [posts.ts] Native app - using API URL: https://gospel-era.replit.app
+⚡️  [log] - 🌐 [posts.ts] Platform detection: {"platform":"ios","isNative":true}
+⚡️  [log] - 🌐 [posts.ts] Native app - using API URL: https://gospel-era.replit.app
+⚡️  To Native ->  PushNotifications checkPermissions 58354635
+⚡️  TO JS {"receive":"granted"}
+⚡️  [log] - 🌐 [posts.ts] Platform detection: {"platform":"ios","isNative":true}
+⚡️  [log] - 🌐 [posts.ts] Native app - using API URL: https://gospel-era.replit.app

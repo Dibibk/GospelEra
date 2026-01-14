@@ -1,4 +1,26 @@
 import { useState, useEffect } from "react";
+import { User } from "lucide-react";
+
+function getImageUrl(url: string | undefined | null): string | null {
+  if (!url) return null;
+  if (url.startsWith("http://") || url.startsWith("https://")) {
+    return url;
+  }
+  const isNative =
+    typeof window !== "undefined" && window.location.protocol === "capacitor:";
+  if (isNative) {
+    const baseUrl =
+      import.meta.env.VITE_API_URL || "https://gospel-era.replit.app";
+    return `${baseUrl}${url.startsWith("/") ? "" : "/"}${url}`;
+  }
+  return url;
+}
+
+function formatMemberSince(dateString: string | undefined | null): string {
+  if (!dateString) return "";
+  const date = new Date(dateString);
+  return date.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+}
 
 interface MobilePublicProfilePageProps {
   publicProfileUserId: string | null;
@@ -21,7 +43,6 @@ export function MobilePublicProfilePage({
           setError("No profile selected.");
           return;
         }
-        // Reuse your existing profile fetcher
         const { getProfilesByIds } = await import("../lib/profiles");
         const result = await getProfilesByIds([publicProfileUserId]);
         let p: any | null = null;
@@ -86,7 +107,9 @@ export function MobilePublicProfilePage({
         >
           ← Back
         </button>
-        <div style={{ fontWeight: 700 }}>Profile</div>
+        <div style={{ fontWeight: 700 }}>
+          {loading ? "Profile" : profile?.display_name ? `${profile.display_name}'s Profile` : "Profile"}
+        </div>
         <div style={{ width: 40 }} />
       </div>
 
@@ -120,11 +143,12 @@ export function MobilePublicProfilePage({
                   fontSize: "28px",
                   marginRight: "12px",
                   border: "1px solid #dbdbdb",
+                  color: "#8e8e8e",
                 }}
               >
-                {profile?.avatar_url ? (
+                {getImageUrl(profile?.avatar_url) ? (
                   <img
-                    src={profile.avatar_url}
+                    src={getImageUrl(profile?.avatar_url)!}
                     alt="Avatar"
                     style={{
                       width: "100%",
@@ -134,7 +158,7 @@ export function MobilePublicProfilePage({
                     }}
                   />
                 ) : (
-                  "👤"
+                  <User size={32} color="#8e8e8e" />
                 )}
               </div>
               <div>
@@ -156,6 +180,17 @@ export function MobilePublicProfilePage({
                     }}
                   >
                     {profile.bio}
+                  </div>
+                )}
+                {profile?.created_at && (
+                  <div
+                    style={{
+                      fontSize: "12px",
+                      color: "#8e8e8e",
+                      marginTop: 6,
+                    }}
+                  >
+                    Member since {formatMemberSince(profile.created_at)}
                   </div>
                 )}
               </div>

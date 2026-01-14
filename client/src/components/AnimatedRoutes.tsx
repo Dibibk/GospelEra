@@ -26,6 +26,7 @@ import ForgotPassword from "../pages/ForgotPassword";
 import ResetPassword from "../pages/ResetPassword";
 import MobileApp from "../pages/MobileApp";
 import EmailConfirmed from "../pages/EmailConfirmed";
+import PrivacyPolicy from "../pages/PrivacyPolicy";
 
 export function AnimatedRoutes() {
   const location = useLocation();
@@ -87,6 +88,14 @@ export function AnimatedRoutes() {
           element={
             <PageTransition>
               <EmailConfirmed />
+            </PageTransition>
+          }
+        />
+        <Route
+          path="/privacy"
+          element={
+            <PageTransition>
+              <PrivacyPolicy />
             </PageTransition>
           }
         />
@@ -324,6 +333,14 @@ export function AnimatedRoutes() {
           element={
             <PageTransition>
               <EmailConfirmed />
+            </PageTransition>
+          }
+        />
+        <Route
+          path="/privacy"
+          element={
+            <PageTransition>
+              <PrivacyPolicy />
             </PageTransition>
           }
         />

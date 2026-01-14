@@ -44,9 +44,12 @@ export function MobileSavedPostsPage({
   const [savedPostsError, setSavedPostsError] = useState("");
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const [avatarErrors, setAvatarErrors] = useState<Record<number, boolean>>({});
+  const [nextCursor, setNextCursor] = useState<{ created_at: string; post_id: number } | null>(null);
+  const [loadingMore, setLoadingMore] = useState(false);
 
   const didInitRef = useRef(false);
   const savedLoadInFlightRef = useRef(false);
+  const sentinelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (didInitRef.current) return;
@@ -55,6 +58,23 @@ export function MobileSavedPostsPage({
     setHasLoadedOnce(true);
     setSavedPostsLoading(false);
   }, []);
+
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && nextCursor && !loadingMore && !savedPostsLoading) {
+          loadMoreSavedPosts();
+        }
+      },
+      { rootMargin: "200px" }
+    );
+
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [nextCursor, loadingMore, savedPostsLoading]);
 
   const loadSavedPosts = async () => {
     if (savedLoadInFlightRef.current) return;
@@ -65,18 +85,20 @@ export function MobileSavedPostsPage({
 
     try {
       const { listBookmarks } = await import("../lib/engagement");
-      const { data, error } = await listBookmarks({ limit: 20 });
+      const { data, nextCursor: cursor, error } = await listBookmarks({ limit: 20 });
 
       if (error) {
         setSavedPostsError(
           (error as any).message || "Failed to load saved posts"
         );
         setSavedPosts([]);
+        setNextCursor(null);
         return;
       }
 
       const bookmarkedPosts = Array.isArray(data) ? data : [];
       setSavedPosts(bookmarkedPosts);
+      setNextCursor(cursor || null);
 
       if (bookmarkedPosts.length > 0) {
         try {
@@ -112,10 +134,65 @@ export function MobileSavedPostsPage({
     } catch (err: any) {
       setSavedPostsError(err?.message || "Failed to load saved posts");
       setSavedPosts([]);
+      setNextCursor(null);
     } finally {
       if (!hasLoadedOnce) setSavedPostsLoading(false);
       setHasLoadedOnce(true);
       savedLoadInFlightRef.current = false;
+    }
+  };
+
+  const loadMoreSavedPosts = async () => {
+    if (!nextCursor || loadingMore) return;
+    setLoadingMore(true);
+
+    try {
+      const { listBookmarks } = await import("../lib/engagement");
+      const { data, nextCursor: cursor, error } = await listBookmarks({ limit: 20, cursor: nextCursor });
+
+      if (error) {
+        console.error("Failed to load more saved posts:", error);
+        setLoadingMore(false);
+        return;
+      }
+
+      const newPosts = Array.isArray(data) ? data : [];
+      if (newPosts.length > 0) {
+        setSavedPosts(prev => [...prev, ...newPosts]);
+        setNextCursor(cursor || null);
+
+        try {
+          const { getProfilesByIds } = await import("../lib/profiles");
+          const authorIds = Array.from(
+            new Set(
+              newPosts
+                .map((p: any) => p?.author_id || p?.author)
+                .filter(Boolean)
+            )
+          );
+
+          if (authorIds.length > 0) {
+            const profilesResult: any = await getProfilesByIds(authorIds);
+            if (profilesResult?.data && !profilesResult?.error && Array.isArray(profilesResult.data)) {
+              onSetProfiles((prev) => {
+                const next = new Map(prev);
+                profilesResult.data.forEach((profile: any) => {
+                  next.set(profile.id, profile);
+                });
+                return next;
+              });
+            }
+          }
+        } catch (profileError) {
+          console.log("Profile loading failed (non-blocking):", profileError);
+        }
+      } else {
+        setNextCursor(null);
+      }
+    } catch (err) {
+      console.error("Error loading more saved posts:", err);
+    } finally {
+      setLoadingMore(false);
     }
   };
 
@@ -354,6 +431,27 @@ export function MobileSavedPostsPage({
               </div>
             </div>
           ))}
+
+          {/* Sentinel element for infinite scroll */}
+          <div ref={sentinelRef} style={{ height: "1px" }} />
+
+          {/* Loading more indicator */}
+          {loadingMore && (
+            <div style={{ padding: "20px", textAlign: "center" }}>
+              <div style={{ fontSize: "14px", color: "#8e8e8e" }}>
+                Loading more saved posts...
+              </div>
+            </div>
+          )}
+
+          {/* End of list indicator */}
+          {!loadingMore && !nextCursor && savedPosts.length > 0 && (
+            <div style={{ padding: "20px", textAlign: "center" }}>
+              <div style={{ fontSize: "14px", color: "#8e8e8e" }}>
+                No more saved posts
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

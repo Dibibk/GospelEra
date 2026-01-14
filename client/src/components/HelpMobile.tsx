@@ -4,7 +4,7 @@ interface HelpMobileProps {
 }
 
 export function HelpMobile({ onBack, onViewGuidelines }: HelpMobileProps) {
-  const SUPPORT_EMAIL = "ridibi.service@gmail.com";
+  const SUPPORT_EMAIL = "ridible.support@ridible.com";
 
   const copyEmail = async () => {
     try {
@@ -169,8 +169,7 @@ export function HelpMobile({ onBack, onViewGuidelines }: HelpMobileProps) {
               How do I create a prayer request?
             </div>
             <div style={{ fontSize: "13px", color: "#8e8e8e" }}>
-              Go to the Prayer tab and use the "Create Prayer Request" section
-              at the top.
+              Go to the Prayer tab and click the "New" button at the top.
             </div>
           </div>
 
@@ -217,8 +216,7 @@ export function HelpMobile({ onBack, onViewGuidelines }: HelpMobileProps) {
               How do I change my profile picture?
             </div>
             <div style={{ fontSize: "13px", color: "#8e8e8e" }}>
-              Go to Settings and tap "Change Profile Picture" in the Profile
-              Settings section.
+              Click on the profile on top left corner, from dropdown tap "profile" click edit → Change Photo → Save.
             </div>
           </div>
         </div>

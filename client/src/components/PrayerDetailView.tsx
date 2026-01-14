@@ -1,4 +1,30 @@
 import { useState } from "react";
+import { User } from "lucide-react";
+
+// Helper to convert relative image URLs to full URLs for native apps
+// (same logic as PrayerBrowseMobile)
+function getImageUrl(url: string | undefined | null): string | null {
+  if (!url) return null;
+
+  // Already a full URL
+  if (url.startsWith("http://") || url.startsWith("https://")) {
+    return url;
+  }
+
+  // Check if running on native platform (Capacitor WebView)
+  const isNative =
+    typeof window !== "undefined" && window.location.protocol === "capacitor:";
+
+  if (isNative) {
+    // Prepend production backend URL for native apps
+    const baseUrl =
+      import.meta.env.VITE_API_URL || "https://gospel-era.replit.app";
+    return `${baseUrl}${url.startsWith("/") ? "" : "/"}${url}`;
+  }
+
+  // For web, return as-is (relative URLs work)
+  return url;
+}
 
 interface PrayerDetailViewProps {
   prayer: any;
@@ -9,6 +35,7 @@ interface PrayerDetailViewProps {
   onBack: () => void;
   onCommitToPray: (prayerId: number) => Promise<void>;
   onConfirmPrayed: (prayerId: number) => Promise<void>;
+  onRefresh: (prayerId: number) => Promise<void>;
 }
 
 function formatTimeAgo(dateString: string) {
@@ -32,65 +59,73 @@ export function PrayerDetailView({
   onBack,
   onCommitToPray,
   onConfirmPrayed,
+  onRefresh, // ✅ ADD THIS
 }: PrayerDetailViewProps) {
   const [isProcessing, setIsProcessing] = useState(false);
+  const [avatarError, setAvatarError] = useState(false);
+  const [optimisticStatus, setOptimisticStatus] = useState<
+    "none" | "committed" | "prayed"
+  >("none");
+
+  // This prayer belongs to the logged-in user
+  const isOwnPrayer = !!user?.id && prayer?.requester === user.id;
+
+  const avatarUrl = getImageUrl(prayer.profiles?.avatar_url || null);
 
   const handleAction = async () => {
-    if (!user || isBanned) {
-      console.log('[PrayerDetailView] Cannot commit: user=', !!user, 'isBanned=', isBanned);
-      return;
-    }
-    
+    if (!user || isBanned || isOwnPrayer) return;
+
     setIsProcessing(true);
-    console.log('[PrayerDetailView] Processing prayer action for request:', prayer.id);
     try {
-      const commitment = myCommitments.find(
-        (c) => c.request_id === prayer.id
-      );
-      
-      console.log('[PrayerDetailView] Existing commitment:', commitment);
-      
-      if (commitment && commitment.status !== 'prayed') {
-        console.log('[PrayerDetailView] Calling onConfirmPrayed');
+      if (effectiveStatus === "committed") {
+        setOptimisticStatus("prayed");
         await onConfirmPrayed(prayer.id);
-      } else if (!commitment) {
-        console.log('[PrayerDetailView] Calling onCommitToPray');
+        await onRefresh(prayer.id);
+      } else if (effectiveStatus === "none") {
+        setOptimisticStatus("committed");
         await onCommitToPray(prayer.id);
+        await onRefresh(prayer.id); 
       }
-      console.log('[PrayerDetailView] Action completed successfully');
     } catch (error) {
-      console.error('[PrayerDetailView] Error during action:', error);
+      console.error("[PrayerDetailView] Error during action:", error);
     } finally {
       setIsProcessing(false);
     }
   };
 
+  const deriveStatusFromProps = () => {
+    const committed = myCommitments.some(
+      (c) => c.request_id === prayer.id && c.status !== "prayed",
+    );
+    const prayed = myCommitments.some(
+      (c) => c.request_id === prayer.id && c.status === "prayed",
+    );
+
+    if (prayed) return "prayed";
+    if (committed) return "committed";
+    return "none";
+  };
+
+  const effectiveStatus =
+    optimisticStatus !== "none" ? optimisticStatus : deriveStatusFromProps();
+
   const getButtonText = () => {
     if (!user) return "Login to Pray";
     if (isBanned) return "Account Limited";
+    if (isOwnPrayer) return "This is your request";
     if (prayedJustNow.has(prayer.id)) return "✓ Prayed just now";
-    
-    const hasCommitment = myCommitments.some(
-      (c) => c.request_id === prayer.id && c.status !== 'prayed'
-    );
-    const hasPrayed = myCommitments.some(
-      (c) => c.request_id === prayer.id && c.status === 'prayed'
-    );
-    
+
     if (isProcessing) return "...";
-    if (hasCommitment) return "Confirm Prayed";
-    if (hasPrayed) return "✓ Prayed";
+    if (effectiveStatus === "committed") return "Confirm Prayed";
+    if (effectiveStatus === "prayed") return "✓ Prayed";
     return "I will pray";
   };
 
   const getButtonBackground = () => {
-    if (!user || isBanned) return "#dbdbdb";
-    
-    const hasCommitment = myCommitments.some(
-      (c) => c.request_id === prayer.id && c.status !== 'prayed'
-    );
-    
-    return hasCommitment ? "#28a745" : "#4285f4";
+    if (!user || isBanned || isOwnPrayer) return "#dbdbdb";
+    if (effectiveStatus === "prayed") return "#28a745";
+    if (effectiveStatus === "committed") return "#f59e0b";
+    return "#4285f4";
   };
 
   return (
@@ -130,7 +165,7 @@ export function PrayerDetailView({
         </div>
       </div>
 
-      {/* Prayer Content */}
+      {/* Content */}
       <div style={{ padding: "16px" }}>
         {/* Author */}
         <div
@@ -145,7 +180,11 @@ export function PrayerDetailView({
               width: "40px",
               height: "40px",
               borderRadius: "50%",
-              background: prayer.is_anonymous ? "#dbdbdb" : (prayer.profiles?.avatar_url ? "transparent" : "#dbdbdb"),
+              background: prayer.is_anonymous
+                ? "#dbdbdb"
+                : avatarUrl && !avatarError
+                  ? "transparent"
+                  : "#dbdbdb",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -156,18 +195,19 @@ export function PrayerDetailView({
           >
             {prayer.is_anonymous ? (
               "🙏"
-            ) : prayer.profiles?.avatar_url ? (
+            ) : avatarUrl && !avatarError ? (
               <img
-                src={prayer.profiles.avatar_url}
+                src={avatarUrl}
                 alt=""
                 style={{
                   width: "100%",
                   height: "100%",
                   objectFit: "cover",
                 }}
+                onError={() => setAvatarError(true)}
               />
             ) : (
-              "•"
+              <User size={20} color="#8e8e8e" />
             )}
           </div>
           <div>
@@ -194,7 +234,7 @@ export function PrayerDetailView({
           {prayer.title}
         </div>
 
-        {/* Content */}
+        {/* Details */}
         <div
           style={{
             fontSize: "16px",
@@ -229,7 +269,7 @@ export function PrayerDetailView({
           </div>
         )}
 
-        {/* Prayer Stats */}
+        {/* Prayer Impact */}
         <div
           style={{
             background: "#f8f9fa",
@@ -265,24 +305,39 @@ export function PrayerDetailView({
           </div>
         </div>
 
-        {/* Action Button */}
-        <button
-          onClick={handleAction}
-          disabled={!user || isBanned || isProcessing}
-          style={{
-            width: "100%",
-            background: getButtonBackground(),
-            color: "#ffffff",
-            border: "none",
-            padding: "16px",
-            borderRadius: "12px",
-            fontSize: "16px",
-            fontWeight: 600,
-            cursor: !user || isBanned ? "not-allowed" : "pointer",
-          }}
-        >
-          {getButtonText()}
-        </button>
+        {/* Action Button – hidden for own prayers */}
+        {!isOwnPrayer && (
+          <button
+            onClick={handleAction}
+            disabled={!user || isBanned || isProcessing}
+            style={{
+              width: "100%",
+              background: getButtonBackground(),
+              color: "#ffffff",
+              border: "none",
+              padding: "16px",
+              borderRadius: "12px",
+              fontSize: "16px",
+              fontWeight: 600,
+              cursor: !user || isBanned ? "not-allowed" : "pointer",
+            }}
+          >
+            {getButtonText()}
+          </button>
+        )}
+
+        {isOwnPrayer && (
+          <div
+            style={{
+              marginTop: "8px",
+              fontSize: "13px",
+              textAlign: "center",
+              color: "#8e8e8e",
+            }}
+          >
+            This is your own prayer request, so you can’t commit to pray for it.
+          </div>
+        )}
       </div>
     </div>
   );

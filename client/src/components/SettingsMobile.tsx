@@ -10,12 +10,14 @@ import {
   unsubscribeFromPush,
   isNativePlatform,
   checkNativePushPermission,
-  subscribeToNativePush,
+  registerNativePush,
   unsubscribeFromNativePush
 } from '@/lib/pushNotifications';
 import { supabase } from '@/lib/supabaseClient';
 import { getApiBaseUrl } from '@/lib/posts';
 import { Capacitor } from '@capacitor/core';
+import { getNativePushToken } from '../lib/pushNotifications';
+
 
 interface SettingsMobileProps {
   onBack: () => void;
@@ -141,11 +143,14 @@ export function SettingsMobile({ onBack, onEditProfile, onSuccess }: SettingsMob
         if (Capacitor.isNativePlatform()) {
           // Native push notifications (iOS/Android via Capacitor)
           if (value) {
-            const success = await subscribeToNativePush();
-            if (success) {
+            console.log('[Settings] Registering native push...');
+            const result = await registerNativePush();
+            console.log('[Settings] registerNativePush result:', result);
+            if (result.success) {
               setPushNotifications(true);
+              alert('Push notifications enabled! Token registration in progress...');
             } else {
-              alert('Push notification permission was denied. Please enable it in your device settings.');
+              alert(`Push notification permission was denied: ${result.error || 'Unknown error'}. Please enable it in your device settings.`);
               setPushNotifications(false);
             }
           } else {
@@ -157,19 +162,39 @@ export function SettingsMobile({ onBack, onEditProfile, onSuccess }: SettingsMob
           if (value) {
             if (!isPushSupported()) {
               console.log('Push notifications not supported on this device');
+              // Check if this is Safari on iOS
+              const isSafariIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !('MSStream' in window);
+              if (isSafariIOS) {
+                alert('Push notifications on Safari require iOS 16.4+ and adding this site to your Home Screen. Please use the Share button and select "Add to Home Screen", then open the app from there.');
+              } else {
+                alert('Push notifications are not supported in this browser. Please try using Chrome or another modern browser.');
+              }
+              setPushNotifications(false);
               return;
             }
-            const permission = await requestNotificationPermission();
-            if (permission === 'granted') {
-              await subscribeToPush();
-              setPushNotifications(true);
-            } else {
-              console.log('Push notification permission denied');
+            try {
+              const permission = await requestNotificationPermission();
+              if (permission === 'granted') {
+                await subscribeToPush();
+                setPushNotifications(true);
+              } else {
+                console.log('Push notification permission denied');
+                alert('Push notification permission was denied. Please enable notifications in your browser settings.');
+                setPushNotifications(false);
+              }
+            } catch (error) {
+              console.error('Error enabling push notifications:', error);
+              alert('Failed to enable push notifications. Please try again.');
               setPushNotifications(false);
             }
           } else {
-            await unsubscribeFromPush();
-            setPushNotifications(false);
+            try {
+              await unsubscribeFromPush();
+              setPushNotifications(false);
+            } catch (error) {
+              console.error('Error disabling push notifications:', error);
+              setPushNotifications(false);
+            }
           }
         }
         return; // Don't fall through to other logic
@@ -261,7 +286,10 @@ export function SettingsMobile({ onBack, onEditProfile, onSuccess }: SettingsMob
       }
       
       const baseUrl = getApiBaseUrl();
-      const response = await fetch(`${baseUrl}/api/account`, {
+      const deleteUrl = `${baseUrl}/api/account`;
+      console.log('[Delete Account] Making request to:', deleteUrl);
+      
+      const response = await fetch(deleteUrl, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
@@ -269,16 +297,24 @@ export function SettingsMobile({ onBack, onEditProfile, onSuccess }: SettingsMob
         }
       });
       
+      console.log('[Delete Account] Response status:', response.status);
+      
       if (response.ok) {
         alert("Your account has been deleted. You will now be signed out.");
         await signOut();
       } else {
-        const data = await response.json();
-        alert(data.error || "Failed to delete account. Please try again.");
+        let errorMessage = "Failed to delete account. Please try again.";
+        try {
+          const data = await response.json();
+          errorMessage = data.error || errorMessage;
+        } catch (e) {
+          console.error('[Delete Account] Failed to parse error response:', e);
+        }
+        alert(errorMessage);
       }
-    } catch (error) {
-      console.error("Error deleting account:", error);
-      alert("An error occurred while deleting your account. Please try again.");
+    } catch (error: any) {
+      console.error("[Delete Account] Error:", error);
+      alert(`An error occurred: ${error?.message || 'Network error'}. Please check your connection and try again.`);
     } finally {
       setIsDeletingAccount(false);
     }
@@ -886,6 +922,29 @@ export function SettingsMobile({ onBack, onEditProfile, onSuccess }: SettingsMob
               <div style={{ fontSize: "16px", color: "#c7c7cc" }}>›</div>
             </button>
           </div>
+
+          {/* Privacy Policy Link */}
+          <a
+            href="/privacy"
+            data-testid="link-privacy-policy"
+            style={{
+              display: "block",
+              width: "100%",
+              minHeight: "48px",
+              background: "#ffffff",
+              border: "1px solid #e5e5e5",
+              borderRadius: "12px",
+              fontSize: "16px",
+              fontWeight: 500,
+              color: "#007AFF",
+              textDecoration: "none",
+              textAlign: "center",
+              lineHeight: "48px",
+              marginBottom: "12px",
+            }}
+          >
+            Privacy Policy
+          </a>
 
           {/* Sign Out Button */}
           <button

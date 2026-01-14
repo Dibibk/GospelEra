@@ -33,23 +33,31 @@ import {
   getAmenInfo,
   listBookmarks,
 } from "@/lib/engagement";
-import { listComments, createComment, softDeleteComment } from "@/lib/comments";
+import {
+  listComments,
+  createComment,
+  softDeleteComment,
+  updateComment,
+} from "@/lib/comments";
 import { createReport } from "@/lib/reports";
-import { checkMediaPermission, getCurrentRequestStatus } from "@/lib/mediaRequests";
+import {
+  checkMediaPermission,
+  getCurrentRequestStatus,
+} from "@/lib/mediaRequests";
 import { validateAndNormalizeYouTubeUrl } from "../../../shared/youtube";
 import { validateFaithContent } from "../../../shared/moderation";
 import { supabase } from "@/lib/supabaseClient";
 import { useRole } from "@/hooks/useRole";
-import { 
-  subscribeToFeed, 
-  unsubscribeFromFeed, 
-  subscribeToNotifications, 
+import {
+  subscribeToFeed,
+  unsubscribeFromFeed,
+  subscribeToNotifications,
   unsubscribeFromNotifications,
-  cleanupAllSubscriptions 
+  cleanupAllSubscriptions,
 } from "@/lib/realtime";
-import { 
-  isNativePlatform, 
-  initNativePushNotifications 
+import {
+  isNativePlatform,
+  initNativePushNotifications,
 } from "@/lib/pushNotifications";
 import { getTopPrayerWarriors } from "@/lib/leaderboard";
 import prayIconPath from "@assets/pray_7139204_1765217804830.png";
@@ -94,7 +102,9 @@ import {
 } from "@/lib/donations";
 import { PAYMENTS } from "@/config/payments";
 import { EmbedCard } from "@/components/EmbedCard";
-import { Flag, Trash2, Loader2 } from "lucide-react";
+import { Flag, Trash2, Loader2, Pencil, Check, X } from "lucide-react";
+import { App } from '@capacitor/app'
+import { Browser } from '@capacitor/browser'
 // at top of MobileApp.tsx
 
 // focus helpers (no hooks here)
@@ -131,9 +141,8 @@ const stopIfTextField = (e: React.SyntheticEvent) => {
 function getYoutubeEmbedSrc(url: string): string | null {
   try {
     const u = new URL(url);
-    const id = 
-      u.searchParams.get("v") ||
-      u.pathname.split("/").filter(Boolean).pop();
+    const id =
+      u.searchParams.get("v") || u.pathname.split("/").filter(Boolean).pop();
     return id || null;
   } catch {
     return null;
@@ -143,22 +152,23 @@ function getYoutubeEmbedSrc(url: string): string | null {
 // Helper to convert relative image URLs to full URLs for native apps
 function getImageUrl(url: string | undefined | null): string | null {
   if (!url) return null;
-  
+
   // Already a full URL
-  if (url.startsWith('http://') || url.startsWith('https://')) {
+  if (url.startsWith("http://") || url.startsWith("https://")) {
     return url;
   }
-  
+
   // Check if running on native platform
-  const isNative = typeof window !== 'undefined' && 
-    window.location.protocol === 'capacitor:';
-  
+  const isNative =
+    typeof window !== "undefined" && window.location.protocol === "capacitor:";
+
   if (isNative) {
     // Prepend production backend URL for native apps
-    const baseUrl = import.meta.env.VITE_API_URL || 'https://gospel-era.replit.app';
-    return `${baseUrl}${url.startsWith('/') ? '' : '/'}${url}`;
+    const baseUrl =
+      import.meta.env.VITE_API_URL || "https://gospel-era.replit.app";
+    return `${baseUrl}${url.startsWith("/") ? "" : "/"}${url}`;
   }
-  
+
   // For web, return as-is (relative URLs work)
   return url;
 }
@@ -170,18 +180,18 @@ function getDisplayName(profile: any, fallbackEmail?: string | null): string {
   if (displayName) {
     return displayName;
   }
-  
+
   // Try email username as fallback
   const email = profile?.email || fallbackEmail;
   if (email) {
-    const username = email.split('@')[0];
+    const username = email.split("@")[0];
     if (username) {
       return username;
     }
   }
-  
+
   // Ultimate fallback
-  return 'Gospel User';
+  return "Gospel User";
 }
 
 // Module-level style constants to prevent recreation on each render
@@ -413,6 +423,8 @@ export default function MobileApp() {
   const [tagsLoading, setTagsLoading] = useState(true);
   const [nextCursor, setNextCursor] = useState<number | null>(null);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [prayerNextCursor, setPrayerNextCursor] = useState<number | null>(null);
+  const [loadingMorePrayers, setLoadingMorePrayers] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [committingToId, setCommittingToId] = useState<number | null>(null);
   // Prayer System Internal Routing
@@ -420,8 +432,9 @@ export default function MobileApp() {
     "browse" | "new" | "detail" | "my" | "leaderboard"
   >("browse");
   const [previousPrayerRoute, setPreviousPrayerRoute] = useState<
-    "browse" | "my" | "leaderboard" | "new"
+    "browse" | "my"
   >("browse");
+  const [prayerRefreshTrigger, setPrayerRefreshTrigger] = useState(0);
   const [prayerDetailId, setPrayerDetailId] = useState<number | null>(null);
   const [selectedPrayerDetail, setSelectedPrayerDetail] = useState<any>(null);
   const [showFullLeaderboard, setShowFullLeaderboard] = useState(false);
@@ -451,6 +464,8 @@ export default function MobileApp() {
   const [deletingCommentId, setDeletingCommentId] = useState<number | null>(
     null,
   );
+  const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
+  const [editingCommentContent, setEditingCommentContent] = useState("");
   const [reportModal, setReportModal] = useState<{
     isOpen: boolean;
     targetType: "post" | "comment";
@@ -477,21 +492,36 @@ export default function MobileApp() {
     [postId: number]: boolean;
   }>({});
   const isLoading = useRef(false);
-  
+
   // Pull-to-refresh state
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [pullDistance, setPullDistance] = useState(0);
   const pullStartY = useRef<number | null>(null);
   const feedContainerRef = useRef<HTMLDivElement>(null);
-  
+  const loadMoreSentinelRef = useRef<HTMLDivElement>(null);
+
   // Banned user modal state
   const [showBannedModal, setShowBannedModal] = useState(false);
   const bannedModalShownRef = useRef(false);
-  
+
   // Guidelines acceptance state
-  const [guidelinesAccepted, setGuidelinesAccepted] = useState<boolean | null>(null);
+  const [guidelinesAccepted, setGuidelinesAccepted] = useState<boolean | null>(
+    null,
+  );
   const [checkingGuidelines, setCheckingGuidelines] = useState(true);
-  
+
+  // Toast state for notifications
+  const [toast, setToast] = useState<{
+    show: boolean;
+    message: string;
+    type: "success" | "error" | "warning";
+  }>({ show: false, message: "", type: "success" });
+
+  const showToast = (message: string, type: "success" | "error" | "warning" = "success") => {
+    setToast({ show: true, message, type });
+    setTimeout(() => setToast({ show: false, message: "", type: "success" }), 3000);
+  };
+
   // Show banned modal when user is banned
   useEffect(() => {
     if (isBanned && user && !bannedModalShownRef.current) {
@@ -500,6 +530,88 @@ export default function MobileApp() {
     }
   }, [isBanned, user]);
   
+  useEffect(() => {
+  let handle: any;
+
+  (async () => {
+    handle = await App.addListener("appUrlOpen", async (event) => {
+      const url = event.url;
+
+      if (url.startsWith("gospelera://checkout/")) {
+        await Browser.close();
+        console.log("Stripe returned to app:", url);
+        // TODO: refresh state / navigate
+      }
+      
+      // Handle email confirmation deep link
+      if (url.startsWith("gospelera://email-confirmed")) {
+        console.log("Email confirmation deep link received:", url);
+        
+        // Close browser if open
+        try {
+          await Browser.close();
+        } catch (e) {
+          // Browser might not be open, ignore
+        }
+        
+        // Extract tokens from URL - Supabase uses query params, not hash
+        try {
+          const urlObj = new URL(url);
+          const params = urlObj.searchParams;
+          
+          // Also check hash params as fallback
+          const hashParams: Record<string, string> = {};
+          if (urlObj.hash) {
+            urlObj.hash.substring(1).split('&').forEach(param => {
+              const [key, value] = param.split('=');
+              if (key && value) hashParams[key] = decodeURIComponent(value);
+            });
+          }
+          
+          // Get tokens from query params first, then hash
+          const accessToken = params.get('access_token') || hashParams.access_token;
+          const refreshToken = params.get('refresh_token') || hashParams.refresh_token;
+          const tokenHash = params.get('token_hash') || hashParams.token_hash;
+          const type = params.get('type') || hashParams.type || 'signup';
+          
+          // Check for access_token and refresh_token (standard flow)
+          if (accessToken && refreshToken) {
+            const { error } = await supabase.auth.setSession({
+              access_token: accessToken,
+              refresh_token: refreshToken,
+            });
+            
+            if (error) {
+              console.error("Error setting session from email confirmation:", error);
+            } else {
+              console.log("Session set successfully from email confirmation");
+            }
+          }
+          // Check for token_hash (PKCE flow)
+          else if (tokenHash) {
+            const { error } = await supabase.auth.verifyOtp({
+              token_hash: tokenHash,
+              type: type as any,
+            });
+            
+            if (error) {
+              console.error("Error verifying OTP from email confirmation:", error);
+            } else {
+              console.log("Email verified successfully");
+            }
+          }
+        } catch (err) {
+          console.error("Error processing email confirmation deep link:", err);
+        }
+      }
+    });
+  })();
+
+  return () => {
+    // remove listener if it was attached
+    handle?.remove?.();
+  };
+  }, []);
   // Check guidelines acceptance status on login
   useEffect(() => {
     if (!user) {
@@ -507,21 +619,25 @@ export default function MobileApp() {
       setCheckingGuidelines(false);
       return;
     }
-    
+
     const checkGuidelines = async () => {
       setCheckingGuidelines(true);
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
         if (!session?.access_token) {
           setGuidelinesAccepted(false);
           return;
         }
-        
-        const baseUrl = Capacitor.isNativePlatform() ? 'https://gospel-era.replit.app' : '';
+
+        const baseUrl = Capacitor.isNativePlatform()
+          ? "https://gospel-era.replit.app"
+          : "";
         const response = await fetch(`${baseUrl}/api/guidelines/status`, {
-          headers: { 'Authorization': `Bearer ${session.access_token}` }
+          headers: { Authorization: `Bearer ${session.access_token}` },
         });
-        
+
         if (response.ok) {
           const data = await response.json();
           setGuidelinesAccepted(data.accepted);
@@ -529,46 +645,53 @@ export default function MobileApp() {
           setGuidelinesAccepted(false);
         }
       } catch (error) {
-        console.error('Error checking guidelines status:', error);
+        console.error("Error checking guidelines status:", error);
         setGuidelinesAccepted(false);
       } finally {
         setCheckingGuidelines(false);
       }
     };
-    
+
     checkGuidelines();
   }, [user]);
-  
+
   // Handle guidelines acceptance
   const handleAcceptGuidelines = async () => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (!session?.access_token) {
-        throw new Error('No session');
+        throw new Error("No session");
       }
-      
-      const baseUrl = Capacitor.isNativePlatform() ? 'https://gospel-era.replit.app' : '';
+
+      const baseUrl = Capacitor.isNativePlatform()
+        ? "https://gospel-era.replit.app"
+        : "";
       const response = await fetch(`${baseUrl}/api/guidelines/accept`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-          'Content-Type': 'application/json'
-        }
+          Authorization: `Bearer ${session.access_token}`,
+          "Content-Type": "application/json",
+        },
       });
-      
+
       if (response.ok) {
         setGuidelinesAccepted(true);
       } else {
-        throw new Error('Failed to accept guidelines');
+        throw new Error("Failed to accept guidelines");
       }
     } catch (error) {
-      console.error('Error accepting guidelines:', error);
+      console.error("Error accepting guidelines:", error);
       throw error;
     }
   };
 
   useEffect(() => {
-    console.log("🔍 MobileApp fetchData effect", { hasUser: !!user, postsLength: posts.length });
+    console.log("🔍 MobileApp fetchData effect", {
+      hasUser: !!user,
+      postsLength: posts.length,
+    });
     if (!user) {
       console.log("🔍 No user, skipping fetchData");
       setLoading(false);
@@ -609,6 +732,30 @@ export default function MobileApp() {
     }
   }, [user, isAdmin]);
 
+  // Infinite scroll observer for loading more posts
+  useEffect(() => {
+    if (!loadMoreSentinelRef.current) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (
+          entries[0].isIntersecting &&
+          !loadingMore &&
+          nextCursor &&
+          !searchQuery &&
+          activeTab === 0
+        ) {
+          loadMorePosts();
+        }
+      },
+      { rootMargin: "200px" },
+    );
+
+    observer.observe(loadMoreSentinelRef.current);
+
+    return () => observer.disconnect();
+  }, [nextCursor, loadingMore, searchQuery, activeTab]);
+
   // Load daily verse separately to ensure it always loads
   useEffect(() => {
     if (!user) return;
@@ -632,20 +779,27 @@ export default function MobileApp() {
   const fetchNotificationCount = async () => {
     if (!user) return;
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (!session?.access_token) return;
-      
-      const baseUrl = Capacitor.isNativePlatform() ? 'https://gospel-era.replit.app' : '';
-      const response = await fetch(`${baseUrl}/api/notifications/unread-count`, {
-        headers: { 'Authorization': `Bearer ${session.access_token}` }
-      });
-      
+
+      const baseUrl = Capacitor.isNativePlatform()
+        ? "https://gospel-era.replit.app"
+        : "";
+      const response = await fetch(
+        `${baseUrl}/api/notifications/unread-count`,
+        {
+          headers: { Authorization: `Bearer ${session.access_token}` },
+        },
+      );
+
       if (response.ok) {
         const data = await response.json();
         setUnreadNotificationCount(data.count || 0);
       }
     } catch (error) {
-      console.error('Error fetching notification count:', error);
+      console.error("Error fetching notification count:", error);
     }
   };
 
@@ -653,7 +807,7 @@ export default function MobileApp() {
   useEffect(() => {
     if (!user) return;
     fetchNotificationCount();
-    
+
     // Refresh count every 30 seconds
     const interval = setInterval(fetchNotificationCount, 30000);
     return () => clearInterval(interval);
@@ -662,13 +816,13 @@ export default function MobileApp() {
   // Subscribe to real-time updates
   useEffect(() => {
     if (!user) return;
-    
+
     // Subscribe to feed changes for new posts
     subscribeToFeed();
-    
+
     // Subscribe to notifications for this user
     subscribeToNotifications(user.id);
-    
+
     return () => {
       cleanupAllSubscriptions();
     };
@@ -678,7 +832,7 @@ export default function MobileApp() {
   useEffect(() => {
     if (!user) return;
     if (!isNativePlatform()) return;
-    
+
     initNativePushNotifications();
   }, [user]);
 
@@ -710,8 +864,96 @@ export default function MobileApp() {
     return () => document.removeEventListener("click", handleClickOutside);
   }, []);
 
+  // Consolidated prayer data fetching function
+  const refreshAllPrayerData = useCallback(async () => {
+    if (!user) return;
+    console.log("🔄 refreshAllPrayerData called...");
+    try {
+      const { listPrayerRequests, getMyCommitments, getMyRequests } =
+        await import("../lib/prayer");
+      const [prayerResult, commitmentsResult, requestsResult] =
+        await Promise.all([
+          listPrayerRequests({ limit: 20 }),
+          getMyCommitments(),
+          getMyRequests(),
+        ]);
+
+      if (prayerResult.data) {
+        setPrayerRequests(prayerResult.data);
+        setPrayerNextCursor(prayerResult.nextCursor ?? null);
+      }
+
+      if (commitmentsResult.data) {
+        setMyCommitments((prev) => {
+          const serverIds = new Set(
+            commitmentsResult.data!.map((c: any) => c.request_id),
+          );
+          const localOnly = prev.filter((c) => !serverIds.has(c.request_id));
+          return [...commitmentsResult.data!, ...localOnly];
+        });
+      }
+
+      if (requestsResult.data) {
+        setMyRequests(requestsResult.data);
+      }
+    } catch (error) {
+      console.error("Error refreshing prayer data:", error);
+    }
+  }, [user]);
+
+  // Refresh prayer data when navigating to Prayer tab or back to browse view
+  useEffect(() => {
+    if (activeTab !== 2 || !user) return; // Tab 2 is Prayer
+    if (prayerRoute !== "browse") return;
+
+    // Force fresh fetch by clearing state first
+    const forceRefreshPrayerData = async () => {
+      console.log("🔄 Force refreshing prayer data (clearing state first)...");
+      setPrayerRequests([]); // Clear to force re-render with fresh data
+      
+      try {
+        const { listPrayerRequests, getMyCommitments, getMyRequests } =
+          await import("../lib/prayer");
+        const [prayerResult, commitmentsResult, requestsResult] =
+          await Promise.all([
+            listPrayerRequests({ limit: 20 }),
+            getMyCommitments(),
+            getMyRequests(),
+          ]);
+
+        if (prayerResult.data) {
+          console.log("🔄 Setting fresh prayer data:", prayerResult.data.length, "requests");
+          setPrayerRequests(prayerResult.data);
+          setPrayerNextCursor(prayerResult.nextCursor ?? null);
+        }
+
+        if (commitmentsResult.data) {
+          setMyCommitments(commitmentsResult.data);
+        }
+
+        if (requestsResult.data) {
+          setMyRequests(requestsResult.data);
+        }
+      } catch (error) {
+        console.error("Error force refreshing prayer data:", error);
+      }
+    };
+
+    forceRefreshPrayerData();
+  }, [
+    activeTab,
+    prayerRoute,
+    user,
+    prayerRefreshTrigger,
+  ]);
+
   // Open report modal for post
   const openReportModal = (postId: number) => {
+    setReportTarget({
+      type: "post",
+      id: postId.toString(),
+    });
+    setReportModalOpen(true);
     setReportModal({
       isOpen: true,
       targetType: "post",
@@ -735,7 +977,7 @@ export default function MobileApp() {
         setIsCheckingPermission(false);
         return;
       }
-      
+
       console.log("🎥 Media permission: Checking for user", user.id);
       const result = await checkMediaPermission(user.id);
       console.log("🎥 Media permission result:", result);
@@ -754,23 +996,42 @@ export default function MobileApp() {
       // Use optimized feed endpoint - combines posts + profiles + engagement in ONE request
       console.log("🔍 fetchData: calling fetchFeed (optimized)...");
       const feedResult = await fetchFeed({ limit: 20 });
-      console.log("🔍 fetchData: fetchFeed result", { hasData: !!feedResult.data, count: feedResult.data?.posts?.length });
-      
+      console.log("🔍 fetchData: fetchFeed result", {
+        hasData: !!feedResult.data,
+        count: feedResult.data?.posts?.length,
+      });
+
       if (feedResult.data) {
         // Set posts directly from feed
         setPosts(feedResult.data.posts);
-        console.log("🔍 fetchData: setPosts called with", feedResult.data.posts.length, "posts");
+        console.log(
+          "🔍 fetchData: setPosts called with",
+          feedResult.data.posts.length,
+          "posts",
+        );
+
+        // Set nextCursor for infinite scroll pagination
+        setNextCursor(feedResult.data.nextCursor ?? null);
+        console.log(
+          "🔍 fetchData: nextCursor set to",
+          feedResult.data.nextCursor,
+        );
 
         // Set profiles from feed response (already a map)
         if (feedResult.data.profiles) {
           const profilesMap = new Map(Object.entries(feedResult.data.profiles));
-          setProfiles(prev => new Map([...Array.from(prev), ...Array.from(profilesMap)]));
+          setProfiles(
+            (prev) =>
+              new Map([...Array.from(prev), ...Array.from(profilesMap)]),
+          );
         }
 
         // Set engagement data from feed response
         if (feedResult.data.engagement) {
           const engagementMap = new Map();
-          for (const [postId, data] of Object.entries(feedResult.data.engagement)) {
+          for (const [postId, data] of Object.entries(
+            feedResult.data.engagement,
+          )) {
             engagementMap.set(parseInt(postId), {
               isBookmarked: false, // Will be loaded separately if needed
               hasAmened: (data as any).userAmened || false,
@@ -778,16 +1039,29 @@ export default function MobileApp() {
               commentCount: (data as any).commentCount || 0,
             });
           }
-          setEngagementData(prev => new Map([...Array.from(prev), ...Array.from(engagementMap)]));
+          setEngagementData(
+            (prev) =>
+              new Map([...Array.from(prev), ...Array.from(engagementMap)]),
+          );
         }
       }
 
       // Fetch real prayer requests from API (in parallel)
-      const prayerResult = await listPrayerRequests({ limit: 10 });
-      console.log("🙏 fetchData: prayerResult", { hasData: !!prayerResult.data, count: prayerResult.data?.length, error: prayerResult.error });
+      const prayerResult = await listPrayerRequests({ limit: 20 });
+      console.log("🙏 fetchData: prayerResult", {
+        hasData: !!prayerResult.data,
+        count: prayerResult.data?.length,
+        error: prayerResult.error,
+      });
       if (prayerResult.data) {
         setPrayerRequests(prayerResult.data);
-        console.log("🙏 fetchData: setPrayerRequests called with", prayerResult.data.length, "requests");
+        setPrayerNextCursor(prayerResult.nextCursor ?? null);
+        console.log(
+          "🙏 fetchData: setPrayerRequests called with",
+          prayerResult.data.length,
+          "requests, nextCursor:",
+          prayerResult.nextCursor,
+        );
       }
 
       // Fetch user's prayer commitments and requests if authenticated
@@ -802,7 +1076,18 @@ export default function MobileApp() {
           ]);
 
           if (commitmentsResult.data) {
-            setMyCommitments(commitmentsResult.data);
+            // MERGE server data with existing local commitments to preserve optimistic updates
+            setMyCommitments((prev) => {
+              const serverIds = new Set(
+                commitmentsResult.data!.map((c: any) => c.request_id),
+              );
+              // Keep local commitments that aren't in server response (optimistic updates)
+              const localOnly = prev.filter(
+                (c) => !serverIds.has(c.request_id),
+              );
+              // Server data takes precedence for items that exist on both
+              return [...commitmentsResult.data!, ...localOnly];
+            });
           }
 
           if (requestsResult.data) {
@@ -816,6 +1101,87 @@ export default function MobileApp() {
       console.error("Error fetching data:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Load more posts for infinite scroll
+  const loadMorePosts = async () => {
+    if (loadingMore || !nextCursor || searchQuery) return;
+
+    setLoadingMore(true);
+    try {
+      const feedResult = await fetchFeed({ limit: 20, fromId: nextCursor });
+
+      if (feedResult.data) {
+        // Always update nextCursor to stop pagination when no more posts
+        setNextCursor(feedResult.data.nextCursor ?? null);
+
+        if (feedResult.data.posts.length > 0) {
+          // Append new posts to existing posts
+          setPosts((prev) => [...prev, ...feedResult.data!.posts]);
+
+          // Merge profiles
+          if (feedResult.data.profiles) {
+            const profilesMap = new Map(
+              Object.entries(feedResult.data.profiles),
+            );
+            setProfiles(
+              (prev) =>
+                new Map([...Array.from(prev), ...Array.from(profilesMap)]),
+            );
+          }
+
+          // Merge engagement data
+          if (feedResult.data.engagement) {
+            const engagementMap = new Map();
+            for (const [postId, data] of Object.entries(
+              feedResult.data.engagement,
+            )) {
+              engagementMap.set(parseInt(postId), {
+                isBookmarked: false,
+                hasAmened: (data as any).userAmened || false,
+                amenCount: (data as any).amenCount || 0,
+                commentCount: (data as any).commentCount || 0,
+              });
+            }
+            setEngagementData(
+              (prev) =>
+                new Map([...Array.from(prev), ...Array.from(engagementMap)]),
+            );
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error loading more posts:", error);
+    } finally {
+      setLoadingMore(false);
+    }
+  };
+
+  // Load more prayer requests for infinite scroll
+  const loadMorePrayerRequests = async () => {
+    if (loadingMorePrayers || !prayerNextCursor) return;
+
+    setLoadingMorePrayers(true);
+    try {
+      const prayerResult = await listPrayerRequests({
+        limit: 20,
+        cursor: prayerNextCursor,
+      });
+
+      if (prayerResult.data) {
+        // Always update nextCursor to stop pagination when no more requests
+        setPrayerNextCursor(prayerResult.nextCursor ?? null);
+
+        if (prayerResult.data.length > 0) {
+          // Append new prayer requests to existing ones
+          setPrayerRequests((prev) => [...prev, ...prayerResult.data!]);
+        }
+      }
+    } catch (error) {
+      console.error("Error loading more prayer requests:", error);
+    } finally {
+      setLoadingMorePrayers(false);
     }
   };
 
@@ -843,7 +1209,7 @@ export default function MobileApp() {
 
   const handleTouchMove = (e: React.TouchEvent) => {
     if (pullStartY.current === null || isRefreshing) return;
-    
+
     const container = feedContainerRef.current;
     if (!container || container.scrollTop > 0) {
       pullStartY.current = null;
@@ -853,7 +1219,7 @@ export default function MobileApp() {
 
     const currentY = e.touches[0].clientY;
     const diff = currentY - pullStartY.current;
-    
+
     if (diff > 0) {
       const resistance = 0.4;
       setPullDistance(Math.min(diff * resistance, 80));
@@ -863,7 +1229,7 @@ export default function MobileApp() {
   const handleTouchEnd = () => {
     if (pullStartY.current === null) return;
     pullStartY.current = null;
-    
+
     if (pullDistance >= 60 && !isRefreshing) {
       handlePullRefresh();
     } else {
@@ -920,28 +1286,92 @@ export default function MobileApp() {
     }
   };
 
-
   const handleCommitToPray = async (requestId: number) => {
     if (!user || isBanned) return;
 
+    console.log('[handleCommitToPray] START for request:', requestId);
     setCommittingToId(requestId);
 
     try {
+      console.log('[handleCommitToPray] Calling commitToPray API...');
       const { data, error } = await commitToPray(requestId);
-      
+      console.log('[handleCommitToPray] API returned:', { hasData: !!data, error });
+
       if (error) {
         // Show spam-specific error messages
         showToast(error, "error");
       } else {
+        console.log('[handleCommitToPray] Step 1: Showing toast');
         // Show spam warning if present (non-blocking)
         if (data?.spamWarning) {
           showToast(data.spamWarning, "warning");
         } else {
           showToast("✓ Committed to pray", "success");
         }
-        // Refresh prayer requests to show updated counts
-        await fetchData();
-        
+
+        console.log('[handleCommitToPray] Step 2: Updating myCommitments');
+        // Immediately add the new commitment to myCommitments state
+        if (data) {
+          // ✅ Immediately add/update the commitment in myCommitments state (even if API returns no data)
+          setMyCommitments((prev) => {
+            const existing = prev.find((c) => c.request_id === requestId);
+
+            const base = {
+              request_id: requestId,
+              warrior: user.id,
+              status: "committed",
+              committed_at: new Date().toISOString(),
+            };
+
+            const merged = {
+              ...(existing || {}),
+              ...base,
+              ...(data || {}), // if API returned extra fields, keep them
+            };
+
+            return [merged, ...prev.filter((c) => c.request_id !== requestId)];
+          });
+        }
+        console.log('[handleCommitToPray] Step 3: Calling refreshCommitmentForPrayer');
+        await refreshCommitmentForPrayer(requestId);
+
+        console.log('[handleCommitToPray] Step 4: Updating prayerRequests');
+        // Update prayer request stats in the list
+        // Note: Check if we already had a commitment BEFORE this action (use a flag)
+        const alreadyHadCommitment = myCommitments.some(
+          (c) => c.request_id === requestId,
+        );
+        if (!alreadyHadCommitment) {
+          setPrayerRequests((prev) =>
+            prev.map((p) => {
+              if (p.id !== requestId) return p;
+              return {
+                ...p,
+                prayer_stats: {
+                  ...p.prayer_stats,
+                  committed_count: (p.prayer_stats?.committed_count || 0) + 1,
+                  total_warriors: (p.prayer_stats?.total_warriors || 0) + 1,
+                },
+              };
+            }),
+          );
+        }
+        console.log('[handleCommitToPray] Step 5: Updating selectedPrayerDetail');
+        if (selectedPrayerDetail?.id === requestId && !alreadyHadCommitment) {
+          setSelectedPrayerDetail((prev) => {
+            if (!prev) return prev;
+            return {
+              ...prev,
+              prayer_stats: {
+                ...prev.prayer_stats,
+                committed_count: (prev.prayer_stats?.committed_count || 0) + 1,
+                total_warriors: (prev.prayer_stats?.total_warriors || 0) + 1,
+              },
+            };
+          });
+        }
+
+        console.log('[handleCommitToPray] Step 6: Refreshing prayer detail');
         // Also refresh the selected prayer detail if viewing this request
         if (selectedPrayerDetail && selectedPrayerDetail.id === requestId) {
           const { data: refreshedPrayer } = await getPrayerRequest(requestId);
@@ -949,11 +1379,14 @@ export default function MobileApp() {
             setSelectedPrayerDetail(refreshedPrayer);
           }
         }
+        console.log('[handleCommitToPray] Step 7: COMPLETED SUCCESS');
       }
     } catch (error) {
-      console.error("Error committing to prayer:", error);
+      console.error("[handleCommitToPray] CATCH - Error committing to prayer:", error);
+      console.error("[handleCommitToPray] Error type:", typeof error, Object.keys(error || {}));
       showToast("Failed to commit to prayer. Please try again.", "error");
     } finally {
+      console.log('[handleCommitToPray] FINALLY block');
       setCommittingToId(null);
     }
   };
@@ -980,8 +1413,33 @@ export default function MobileApp() {
           });
         }, 3000);
 
-        // Refresh prayer requests and commitments to show updated counts
-        await fetchData();
+        // Immediately update the commitment status to 'prayed' in myCommitments
+        setMyCommitments((prev) =>
+          prev.map((c) =>
+            c.request_id === requestId
+              ? { ...c, status: "prayed", prayed_at: new Date().toISOString() }
+              : c,
+          ),
+        );
+
+        // Update prayer request stats in the list
+        setPrayerRequests((prev) =>
+          prev.map((p) =>
+            p.id === requestId
+              ? {
+                  ...p,
+                  prayer_stats: {
+                    ...p.prayer_stats,
+                    committed_count: Math.max(
+                      0,
+                      (p.prayer_stats?.committed_count || 0) - 1,
+                    ),
+                    prayed_count: (p.prayer_stats?.prayed_count || 0) + 1,
+                  },
+                }
+              : p,
+          ),
+        );
       }
     } catch (error) {
       console.error("Error confirming prayer:", error);
@@ -995,7 +1453,6 @@ export default function MobileApp() {
     try {
       const result = await getPrayerRequest(prayerId);
       if (result.data) {
-        setSelectedPrayerId(prayerId);
         setSelectedPrayerDetail(result.data);
       }
     } catch (error) {
@@ -1017,7 +1474,9 @@ export default function MobileApp() {
   const [showUserDropdown, setShowUserDropdown] = useState(false);
   const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
   const [showNotifications, setShowNotifications] = useState(false);
-  const [pendingPostNavigation, setPendingPostNavigation] = useState<number | null>(null);
+  const [pendingPostNavigation, setPendingPostNavigation] = useState<
+    number | null
+  >(null);
   // Mobile page states
   const [showMobileSettings, setShowMobileSettings] = useState(false);
   const [showMobileCommunityGuidelines, setShowMobileCommunityGuidelines] =
@@ -1068,13 +1527,15 @@ export default function MobileApp() {
   useEffect(() => {
     const checkPasswordReset = async () => {
       const urlParams = new URLSearchParams(window.location.search);
-      if (urlParams.get('reset') === 'true') {
+      if (urlParams.get("reset") === "true") {
         // Check if user has a session from password reset flow
-        const { data: { session } } = await supabase.auth.getSession();
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
         if (session) {
           setShowPasswordUpdate(true);
           // Remove the parameter from URL
-          window.history.replaceState({}, '', '/mobile');
+          window.history.replaceState({}, "", "/mobile");
         }
       }
     };
@@ -1095,6 +1556,15 @@ export default function MobileApp() {
   const [showMobileMediaRequests, setShowMobileMediaRequests] = useState(false);
   const [showMobileAdminSupport, setShowMobileAdminSupport] = useState(false);
 
+  // Security: Reset admin page states if non-admin user has them set
+  useEffect(() => {
+    if (!isAdmin && (showMobileReviewReports || showMobileMediaRequests || showMobileAdminSupport)) {
+      setShowMobileReviewReports(false);
+      setShowMobileMediaRequests(false);
+      setShowMobileAdminSupport(false);
+    }
+  }, [isAdmin, showMobileReviewReports, showMobileMediaRequests, showMobileAdminSupport]);
+
   // Debounced search effect - matching web app
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -1114,11 +1584,16 @@ export default function MobileApp() {
     if (pendingPostNavigation !== null && !loading) {
       // Wait a tick for the DOM to update
       setTimeout(() => {
-        const postElement = document.getElementById(`post-${pendingPostNavigation}`);
+        const postElement = document.getElementById(
+          `post-${pendingPostNavigation}`,
+        );
         if (postElement) {
-          postElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          postElement.scrollIntoView({ behavior: "smooth", block: "center" });
           // Open the comment section for this post
-          setCommentForms(prev => ({ ...prev, [pendingPostNavigation]: true }));
+          setCommentForms((prev) => ({
+            ...prev,
+            [pendingPostNavigation]: true,
+          }));
           // Load comments if not already loaded
           if (!postComments[pendingPostNavigation]) {
             loadComments(pendingPostNavigation);
@@ -1297,25 +1772,7 @@ export default function MobileApp() {
     try {
       console.log("Loading mobile profile... user:", user?.id);
 
-      // Fallback: Use the userProfile if it exists
-      if (userProfile && user) {
-        console.log("Using existing userProfile:", userProfile);
-        const fallbackProfile = {
-          id: user.id,
-          display_name: userProfile.display_name || user.email || "Gospel User",
-          bio: userProfile.bio || "",
-          avatar_url: userProfile.avatar_url || "",
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        };
-        setProfile(fallbackProfile);
-        setEditDisplayName(fallbackProfile.display_name);
-        setEditBio(fallbackProfile.bio);
-        setEditAvatarUrl(fallbackProfile.avatar_url);
-        setProfileLoading(false);
-        return;
-      }
-
+      // Always fetch fresh profile data (don't use cached userProfile)
       // Add timeout to prevent infinite loading
       const profilePromise = ensureMyProfile();
       const timeoutPromise = new Promise((_, reject) =>
@@ -1350,6 +1807,8 @@ export default function MobileApp() {
       } else if (data) {
         console.log("Profile data loaded:", data);
         setProfile(data);
+        // Also update userProfile so header reflects changes immediately
+        setUserProfile(data);
         setEditDisplayName(data.display_name || "");
         setEditBio(data.bio || "");
         setEditAvatarUrl(data.avatar_url || "");
@@ -1397,15 +1856,17 @@ export default function MobileApp() {
   };
 
   const handleProfileGetUploadParameters = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
     };
-    
+
     if (session?.access_token) {
       headers["Authorization"] = `Bearer ${session.access_token}`;
     }
-    
+
     const response = await fetch("/api/objects/upload", {
       method: "POST",
       headers,
@@ -1429,15 +1890,17 @@ export default function MobileApp() {
       const uploadURL = uploadedFile.uploadURL;
 
       if (uploadURL) {
-        const { data: { session } } = await supabase.auth.getSession();
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
         const headers: Record<string, string> = {
           "Content-Type": "application/json",
         };
-        
+
         if (session?.access_token) {
           headers["Authorization"] = `Bearer ${session.access_token}`;
         }
-        
+
         const response = await fetch("/api/avatar", {
           method: "PUT",
           headers,
@@ -1610,27 +2073,27 @@ export default function MobileApp() {
       user: user?.id,
       isBanned,
     });
-    
+
     if (!user) {
-      throw new Error('You must be logged in to comment');
+      throw new Error("You must be logged in to comment");
     }
-    
+
     if (isBanned) {
-      throw new Error('Your account is limited. You cannot post comments.');
+      throw new Error("Your account is limited. You cannot post comments.");
     }
-    
+
     if (!content) {
-      throw new Error('Comment cannot be empty');
+      throw new Error("Comment cannot be empty");
     }
 
     console.log("🚀 Calling createComment API:", { postId, content });
     const { data, error } = await createComment({ postId, content });
     console.log("📤 Create comment response:", { data, error });
-    
+
     if (error) {
-      throw new Error((error as any)?.message || 'Failed to create comment');
+      throw new Error((error as any)?.message || "Failed to create comment");
     }
-    
+
     // Reload comments after successful creation
     console.log("✅ Comment created successfully, reloading comments");
     await loadComments(postId);
@@ -1683,13 +2146,11 @@ export default function MobileApp() {
   };
 
   const handleReportComment = (commentId: number) => {
-    setReportModal({
-      isOpen: true,
-      targetType: "comment",
-      targetId: commentId.toString(),
-      reason: "",
-      selectedReason: "",
+    setReportTarget({
+      type: "comment",
+      id: commentId.toString(),
     });
+    setReportModalOpen(true);
   };
 
   const closeReportModal = () => {
@@ -1719,6 +2180,37 @@ export default function MobileApp() {
     }
 
     setDeletingCommentId(null);
+  };
+
+  const handleEditComment = (commentId: number, currentContent: string) => {
+    setEditingCommentId(commentId);
+    setEditingCommentContent(currentContent);
+  };
+
+  const handleCancelEditComment = () => {
+    setEditingCommentId(null);
+    setEditingCommentContent("");
+  };
+
+  const handleSaveEditComment = async (commentId: number, postId: number) => {
+    if (!editingCommentContent.trim()) {
+      alert("Comment cannot be empty");
+      return;
+    }
+
+    const { error } = await updateComment(
+      commentId,
+      editingCommentContent.trim(),
+    );
+
+    if (error) {
+      alert(`Failed to update comment: ${(error as any).message}`);
+    } else {
+      // Reload comments to show updated list
+      await loadComments(postId);
+      setEditingCommentId(null);
+      setEditingCommentContent("");
+    }
   };
 
   const handleSubmitReport = async (reason: string) => {
@@ -1775,12 +2267,18 @@ export default function MobileApp() {
         {/* Pull-to-refresh indicator */}
         <div
           style={{
-            height: pullDistance > 0 || isRefreshing ? `${Math.max(pullDistance, isRefreshing ? 50 : 0)}px` : "0px",
+            height:
+              pullDistance > 0 || isRefreshing
+                ? `${Math.max(pullDistance, isRefreshing ? 50 : 0)}px`
+                : "0px",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             overflow: "hidden",
-            transition: pullDistance === 0 && !isRefreshing ? "height 0.2s ease-out" : "none",
+            transition:
+              pullDistance === 0 && !isRefreshing
+                ? "height 0.2s ease-out"
+                : "none",
             background: "#f5f5f5",
           }}
         >
@@ -1796,13 +2294,15 @@ export default function MobileApp() {
               }}
             />
           ) : pullDistance > 0 ? (
-            <div style={{ 
-              color: "#8e8e8e", 
-              fontSize: "12px",
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-            }}>
+            <div
+              style={{
+                color: "#8e8e8e",
+                fontSize: "12px",
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+              }}
+            >
               <svg
                 width="16"
                 height="16"
@@ -1811,13 +2311,16 @@ export default function MobileApp() {
                 stroke="currentColor"
                 strokeWidth="2"
                 style={{
-                  transform: pullDistance >= 60 ? "rotate(180deg)" : "rotate(0deg)",
+                  transform:
+                    pullDistance >= 60 ? "rotate(180deg)" : "rotate(0deg)",
                   transition: "transform 0.2s ease",
                 }}
               >
                 <path d="M12 5v14M19 12l-7 7-7-7" />
               </svg>
-              {pullDistance >= 60 ? "Release to refresh" : "Pull down to refresh"}
+              {pullDistance >= 60
+                ? "Release to refresh"
+                : "Pull down to refresh"}
             </div>
           ) : null}
         </div>
@@ -1987,7 +2490,11 @@ export default function MobileApp() {
 
         {/* Posts feed */}
         {(() => {
-          console.log("🔍 Posts feed render check:", { loading, postsLength: posts.length, postsArray: posts });
+          console.log("🔍 Posts feed render check:", {
+            loading,
+            postsLength: posts.length,
+            postsArray: posts,
+          });
           return loading;
         })() ? (
           Array(3)
@@ -2053,7 +2560,11 @@ export default function MobileApp() {
                 post.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 post.content?.toLowerCase().includes(searchQuery.toLowerCase()),
             );
-            console.log("🔍 Rendering posts:", { totalPosts: posts.length, filteredPosts: filteredPosts.length, searchQuery });
+            console.log("🔍 Rendering posts:", {
+              totalPosts: posts.length,
+              filteredPosts: filteredPosts.length,
+              searchQuery,
+            });
             return filteredPosts.map((post, index) => (
               <div
                 key={post.id}
@@ -2072,15 +2583,6 @@ export default function MobileApp() {
                   }}
                 >
                   <div
-                    onPointerUp={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      openPublicProfile(post.author_id);
-                    }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      openPublicProfile(post.author_id);
-                    }} //dibi
                     style={{
                       width: "32px",
                       height: "32px",
@@ -2097,7 +2599,9 @@ export default function MobileApp() {
                   >
                     {getImageUrl(profiles.get(post.author_id)?.avatar_url) ? (
                       <img
-                        src={getImageUrl(profiles.get(post.author_id)?.avatar_url)!}
+                        src={
+                          getImageUrl(profiles.get(post.author_id)?.avatar_url)!
+                        }
                         alt="Avatar"
                         style={{
                           width: "100%",
@@ -2120,11 +2624,13 @@ export default function MobileApp() {
                       onClick={(e) => {
                         e.stopPropagation();
                         openPublicProfile(post.author_id);
-                      }} //dibi
+                      }}
                       style={{
                         fontWeight: 600,
                         fontSize: "14px",
                         color: "#262626",
+                        cursor: "pointer",
+                        display: "inline-block",
                       }}
                     >
                       {getDisplayName(profiles.get(post.author_id))}
@@ -2172,22 +2678,25 @@ export default function MobileApp() {
                           minWidth: "120px",
                         }}
                       >
-                        <button
-                          onClick={() => openReportModal(post.id)}
-                          style={{
-                            width: "100%",
-                            padding: "12px 16px",
-                            border: "none",
-                            background: "none",
-                            textAlign: "left",
-                            fontSize: "14px",
-                            color: "#262626",
-                            cursor: "pointer",
-                            borderBottom: "1px solid #f0f0f0",
-                          }}
-                        >
-                          Report
-                        </button>
+                        {/* Report option - only show for other users' posts */}
+                        {post.author_id !== user?.id && (
+                          <button
+                            onClick={() => openReportModal(post.id)}
+                            style={{
+                              width: "100%",
+                              padding: "12px 16px",
+                              border: "none",
+                              background: "none",
+                              textAlign: "left",
+                              fontSize: "14px",
+                              color: "#262626",
+                              cursor: "pointer",
+                              borderBottom: "1px solid #f0f0f0",
+                            }}
+                          >
+                            Report
+                          </button>
+                        )}
 
                         {/* Edit option for post owner only */}
                         {post.author_id === user?.id && (
@@ -2311,17 +2820,16 @@ export default function MobileApp() {
                   )}
 
                   {/* YouTube embed */}
-                  {post.embed_url && (() => {
-                    const videoId = getYoutubeEmbedSrc(post.embed_url);
-                    if (!videoId) return null;
-                    return (
-                      <div style={{ marginBottom: "8px" }}>
-                        <EmbedCard 
-                          videoId={videoId}
-                        />
-                      </div>
-                    );
-                  })()}
+                  {post.embed_url &&
+                    (() => {
+                      const videoId = getYoutubeEmbedSrc(post.embed_url);
+                      if (!videoId) return null;
+                      return (
+                        <div style={{ marginBottom: "8px" }}>
+                          <EmbedCard videoId={videoId} />
+                        </div>
+                      );
+                    })()}
                 </div>
 
                 {/* Post actions - All 6 icons matching webapp */}
@@ -2498,9 +3006,16 @@ export default function MobileApp() {
                                     color: "#8e8e8e",
                                   }}
                                 >
-                                  {getImageUrl(profiles.get(comment.author_id)?.avatar_url) ? (
+                                  {getImageUrl(
+                                    profiles.get(comment.author_id)?.avatar_url,
+                                  ) ? (
                                     <img
-                                      src={getImageUrl(profiles.get(comment.author_id)?.avatar_url)!}
+                                      src={
+                                        getImageUrl(
+                                          profiles.get(comment.author_id)
+                                            ?.avatar_url,
+                                        )!
+                                      }
                                       alt="Avatar"
                                       style={{
                                         width: "100%",
@@ -2522,11 +3037,84 @@ export default function MobileApp() {
                                         marginRight: "6px",
                                       }}
                                     >
-                                      {getDisplayName(profiles.get(comment.author_id))}
+                                      {getDisplayName(
+                                        profiles.get(comment.author_id),
+                                      )}
                                     </span>
-                                    <span style={{ color: "#262626" }}>
-                                      {comment.content}
-                                    </span>
+                                    {editingCommentId === comment.id ? (
+                                      <div
+                                        style={{
+                                          display: "flex",
+                                          alignItems: "center",
+                                          gap: "8px",
+                                          marginTop: "4px",
+                                        }}
+                                      >
+                                        <input
+                                          type="text"
+                                          value={editingCommentContent}
+                                          onChange={(e) =>
+                                            setEditingCommentContent(
+                                              e.target.value,
+                                            )
+                                          }
+                                          style={{
+                                            flex: 1,
+                                            padding: "6px 10px",
+                                            border: "1px solid #dbdbdb",
+                                            borderRadius: "8px",
+                                            fontSize: "12px",
+                                            outline: "none",
+                                          }}
+                                          autoFocus
+                                          onKeyDown={(e) => {
+                                            if (e.key === "Enter") {
+                                              handleSaveEditComment(
+                                                comment.id,
+                                                post.id,
+                                              );
+                                            } else if (e.key === "Escape") {
+                                              handleCancelEditComment();
+                                            }
+                                          }}
+                                        />
+                                        <button
+                                          onClick={() =>
+                                            handleSaveEditComment(
+                                              comment.id,
+                                              post.id,
+                                            )
+                                          }
+                                          style={{
+                                            background: "none",
+                                            border: "none",
+                                            color: "#22c55e",
+                                            cursor: "pointer",
+                                            padding: "4px",
+                                          }}
+                                          title="Save"
+                                        >
+                                          <Check size={16} />
+                                        </button>
+                                        <button
+                                          onClick={handleCancelEditComment}
+                                          style={{
+                                            background: "none",
+                                            border: "none",
+                                            color: "#ef4444",
+                                            cursor: "pointer",
+                                            padding: "4px",
+                                          }}
+                                          title="Cancel"
+                                        >
+                                          <X size={16} />
+                                        </button>
+                                      </div>
+                                    ) : (
+                                      <span style={{ color: "#262626" }}>
+                                        {comment.content}
+                                      </span>
+                                    )}
                                   </div>
                                   <div
                                     style={{
@@ -2541,7 +3129,42 @@ export default function MobileApp() {
                                     <span style={{ flexShrink: 0 }}>
                                       {formatTimeAgo(comment.created_at)}
                                     </span>
-                                    <div style={{ display: "flex", alignItems: "center", gap: "4px", marginLeft: "auto", flexShrink: 0 }}>
+                                    <div
+                                      style={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: "4px",
+                                        marginLeft: "auto",
+                                        flexShrink: 0,
+                                      }}
+                                    >
+                                      {comment.author_id === user?.id &&
+                                        editingCommentId !== comment.id && (
+                                          <button
+                                            onClick={() =>
+                                              handleEditComment(
+                                                comment.id,
+                                                comment.content,
+                                              )
+                                            }
+                                            style={{
+                                              background: "none",
+                                              border: "none",
+                                              color: "#3b82f6",
+                                              cursor: "pointer",
+                                              padding: "6px",
+                                              minWidth: "32px",
+                                              minHeight: "32px",
+                                              display: "flex",
+                                              alignItems: "center",
+                                              justifyContent: "center",
+                                              borderRadius: "50%",
+                                            }}
+                                            title="Edit comment"
+                                          >
+                                            <Pencil size={14} />
+                                          </button>
+                                        )}
                                       <button
                                         onClick={() =>
                                           handleReportComment(comment.id)
@@ -2594,9 +3217,14 @@ export default function MobileApp() {
                                           }}
                                           title="Delete comment"
                                         >
-                                          {deletingCommentId === comment.id
-                                            ? <Loader2 size={14} className="animate-spin" />
-                                            : <Trash2 size={14} />}
+                                          {deletingCommentId === comment.id ? (
+                                            <Loader2
+                                              size={14}
+                                              className="animate-spin"
+                                            />
+                                          ) : (
+                                            <Trash2 size={14} />
+                                          )}
                                         </button>
                                       )}
                                     </div>
@@ -2644,9 +3272,85 @@ export default function MobileApp() {
             </div>
           </div>
         )}
+
+        {/* Infinite scroll sentinel and loading indicator */}
+        {posts.length > 0 && !searchQuery && (
+          <>
+            <div ref={loadMoreSentinelRef} style={{ height: "1px" }} />
+            {loadingMore && (
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "center",
+                  padding: "20px",
+                  background: "#ffffff",
+                }}
+              >
+                <div
+                  style={{
+                    width: "24px",
+                    height: "24px",
+                    border: "3px solid #e0e0e0",
+                    borderTopColor: "#4285f4",
+                    borderRadius: "50%",
+                    animation: "spin 0.8s linear infinite",
+                  }}
+                />
+              </div>
+            )}
+            {!nextCursor && posts.length >= 20 && (
+              <div
+                style={{
+                  textAlign: "center",
+                  padding: "20px",
+                  color: "#8e8e8e",
+                  fontSize: "14px",
+                  background: "#ffffff",
+                }}
+              >
+                You've reached the end
+              </div>
+            )}
+          </>
+        )}
       </div>
     );
   }
+  const refreshCommitmentForPrayer = async (requestId: number) => {
+    if (!user?.id) return;
+
+    try {
+      // Use backend API to bypass RLS issues
+      const baseUrl = getApiBaseUrl();
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData?.session?.access_token) return;
+
+      // Add cache-busting timestamp to ensure fresh data
+      const response = await fetch(`${baseUrl}/api/my-commitments?_t=${Date.now()}`, {
+        headers: {
+          'Authorization': `Bearer ${sessionData.session.access_token}`,
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache'
+        }
+      });
+
+      if (!response.ok) {
+        console.error("Failed to refresh commitments:", response.status);
+        return;
+      }
+
+      const result = await response.json();
+      const commitment = result.commitments?.find((c: any) => c.request_id === requestId);
+
+      // 🔑 Merge into myCommitments so navigation keeps state
+      setMyCommitments((prev) => {
+        const filtered = prev.filter((c) => c.request_id !== requestId);
+        return commitment ? [commitment, ...filtered] : filtered;
+      });
+    } catch (err) {
+      console.error("refreshCommitmentForPrayer error:", err);
+    }
+  };
 
   // Search Component
 
@@ -2662,12 +3366,30 @@ export default function MobileApp() {
             onNavigateToNew={() => setPrayerRoute("new")}
             onNavigateToMy={() => setPrayerRoute("my")}
             onNavigateToLeaderboard={() => setPrayerRoute("leaderboard")}
-            onSelectPrayer={(prayer) => {
+            onSelectPrayer={async (prayer) => {
+              console.log('📿 [onSelectPrayer] Prayer clicked:', prayer.id, 'stats:', prayer.prayer_stats);
               setPreviousPrayerRoute("browse");
               setPrayerDetailId(prayer.id);
+              // Set initial data immediately for fast display
               setSelectedPrayerDetail(prayer);
               setPrayerRoute("detail");
+              // Then fetch fresh data from backend API to update
+              console.log('📿 [onSelectPrayer] Calling getPrayerRequest API...');
+              try {
+                const result = await getPrayerRequest(prayer.id);
+                console.log('📿 [onSelectPrayer] API result:', result.data?.prayer_stats, 'error:', result.error);
+                if (result.data) {
+                  setSelectedPrayerDetail(result.data);
+                  console.log('📿 [onSelectPrayer] State updated with fresh data');
+                }
+              } catch (err) {
+                console.error('📿 [onSelectPrayer] API error:', err);
+              }
             }}
+            nextCursor={prayerNextCursor}
+            loadingMore={loadingMorePrayers}
+            onLoadMore={loadMorePrayerRequests}
+            onRefresh={refreshAllPrayerData}
           />
         );
       case "new":
@@ -2696,6 +3418,10 @@ export default function MobileApp() {
                 setSelectedPrayerDetail(prayer);
                 setPrayerRoute("detail");
               }}
+              nextCursor={prayerNextCursor}
+              loadingMore={loadingMorePrayers}
+              onLoadMore={loadMorePrayerRequests}
+              onRefresh={refreshAllPrayerData}
             />
           );
         }
@@ -2703,7 +3429,7 @@ export default function MobileApp() {
           <PrayerDetailMobile
             prayer={selectedPrayerDetail}
             commitment={myCommitments.find(
-              (c) => c.prayer_request_id === selectedPrayerDetail?.id
+              (c) => c.request_id === selectedPrayerDetail?.id,
             )}
             user={user}
             isBanned={isBanned}
@@ -2711,11 +3437,25 @@ export default function MobileApp() {
               // Clear detail IDs FIRST to prevent any effects from reasserting the detail route
               setSelectedPrayerDetail(null);
               setPrayerDetailId(null);
+              // Trigger a refresh when going back
+              setPrayerRefreshTrigger((prev) => prev + 1);
               // Then navigate to the previous route
               setPrayerRoute(previousPrayerRoute);
+              // Force immediate refresh
+              refreshAllPrayerData();
             }}
             onCommitToPray={handleCommitToPray}
             onConfirmPrayed={handleConfirmPrayed}
+            onRefresh={async (prayerId: number) => {
+              try {
+                await refreshCommitmentForPrayer(prayerId);
+                const { data: refreshedPrayer } = await getPrayerRequest(prayerId);
+                if (refreshedPrayer) setSelectedPrayerDetail(refreshedPrayer);
+                await fetchData();
+              } catch (err) {
+                console.warn("onRefresh error (non-critical):", err);
+              }
+            }}
           />
         );
       case "my":
@@ -2749,17 +3489,26 @@ export default function MobileApp() {
             onNavigateToNew={() => setPrayerRoute("new")}
             onNavigateToMy={() => setPrayerRoute("my")}
             onNavigateToLeaderboard={() => setPrayerRoute("leaderboard")}
-            onSelectPrayer={(prayer) => {
+            onSelectPrayer={async (prayer) => {
               setPreviousPrayerRoute("browse");
               setPrayerDetailId(prayer.id);
+              // Set initial data immediately for fast display
               setSelectedPrayerDetail(prayer);
               setPrayerRoute("detail");
+              // Then fetch fresh data from backend API to update
+              const result = await getPrayerRequest(prayer.id);
+              if (result.data) {
+                setSelectedPrayerDetail(result.data);
+              }
             }}
+            nextCursor={prayerNextCursor}
+            loadingMore={loadingMorePrayers}
+            onLoadMore={loadMorePrayerRequests}
+            onRefresh={refreshAllPrayerData}
           />
         );
     }
   }
-
 
   // Loading state (auth loading or checking guidelines)
   if (authLoading || (user && checkingGuidelines)) {
@@ -2784,22 +3533,59 @@ export default function MobileApp() {
     return <GuidelinesAcceptanceModal onAccept={handleAcceptGuidelines} />;
   }
 
+  // Toast component
+  const ToastComponent = toast.show ? (
+    <div
+      style={{
+        position: "fixed",
+        top: "max(20px, env(safe-area-inset-top, 20px))",
+        left: "50%",
+        transform: "translateX(-50%)",
+        background: toast.type === "success" ? "#262626" : toast.type === "error" ? "#dc2626" : "#f59e0b",
+        color: "#ffffff",
+        padding: "12px 24px",
+        borderRadius: "8px",
+        fontSize: "14px",
+        fontWeight: 600,
+        zIndex: 9999,
+        maxWidth: "90%",
+        textAlign: "center",
+        boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+      }}
+    >
+      {toast.message}
+    </div>
+  ) : null;
+
   // Handle prayer detail view
   if (prayerDetailId && selectedPrayerDetail) {
     return (
-      <PrayerDetailView
-        prayer={selectedPrayerDetail}
-        myCommitments={myCommitments}
-        user={user}
-        isBanned={isBanned}
-        prayedJustNow={prayedJustNow}
-        onBack={() => {
-          setPrayerDetailId(null);
-          setSelectedPrayerDetail(null);
-        }}
-        onCommitToPray={handleCommitToPray}
-        onConfirmPrayed={handleConfirmPrayed}
-      />
+      <>
+        {ToastComponent}
+        <PrayerDetailView
+          prayer={selectedPrayerDetail}
+          myCommitments={myCommitments}
+          user={user}
+          isBanned={isBanned}
+          prayedJustNow={prayedJustNow}
+          onBack={() => {
+            setPrayerDetailId(null);
+            setSelectedPrayerDetail(null);
+          }}
+          onCommitToPray={handleCommitToPray}
+          onConfirmPrayed={handleConfirmPrayed}
+          onRefresh={async (prayerId: number) => {
+            try {
+              await refreshCommitmentForPrayer(prayerId);
+              const { data: refreshedPrayer } = await getPrayerRequest(prayerId);
+              if (refreshedPrayer) setSelectedPrayerDetail(refreshedPrayer);
+              await fetchData();
+            } catch (err) {
+              console.warn("onRefresh error (non-critical):", err);
+            }
+          }}
+        />
+      </>
     );
   }
 
@@ -2818,7 +3604,7 @@ export default function MobileApp() {
             setPendingPostNavigation(notification.post_id);
           } else if (notification.prayer_request_id) {
             // Switch to prayer tab and open the prayer request
-            setActiveTab(1);
+            setActiveTab(2);
             handlePrayerClick(notification.prayer_request_id);
           }
         }}
@@ -2839,6 +3625,8 @@ export default function MobileApp() {
   // Render main component
   return (
     <div style={STYLES.container}>
+      {/* Toast notifications */}
+      {ToastComponent}
       {/* Header */}
       <div style={STYLES.header}>
         <div
@@ -2916,11 +3704,13 @@ export default function MobileApp() {
                     padding: "0 4px",
                   }}
                 >
-                  {unreadNotificationCount > 99 ? "99+" : unreadNotificationCount}
+                  {unreadNotificationCount > 99
+                    ? "99+"
+                    : unreadNotificationCount}
                 </span>
               )}
             </button>
-            
+
             {/* User Name and Avatar */}
             <button
               onClick={() => setShowUserDropdown(!showUserDropdown)}
@@ -2952,7 +3742,9 @@ export default function MobileApp() {
                   width: "28px",
                   height: "28px",
                   borderRadius: "50%",
-                  background: getImageUrl(userProfile?.avatar_url) ? "none" : "#dbdbdb",
+                  background: getImageUrl(userProfile?.avatar_url)
+                    ? "none"
+                    : "#dbdbdb",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -2984,21 +3776,25 @@ export default function MobileApp() {
                 )}
               </div>
               <span
-                style={{ 
-                  fontSize: "14px", 
-                  fontWeight: 600, 
+                style={{
+                  fontSize: "14px",
+                  fontWeight: 600,
                   color: "#262626",
                   maxWidth: "120px",
                   overflow: "hidden",
                   textOverflow: "ellipsis",
-                  whiteSpace: "nowrap"
+                  whiteSpace: "nowrap",
                 }}
               >
                 {userProfile?.display_name ||
                   user?.email?.split("@")[0] ||
                   "User"}
               </span>
-              <span style={{ fontSize: "12px", color: "#8e8e8e", flexShrink: 0 }}>▼</span>
+              <span
+                style={{ fontSize: "12px", color: "#8e8e8e", flexShrink: 0 }}
+              >
+                ▼
+              </span>
             </button>
 
             {/* Dropdown Menu */}
@@ -3293,17 +4089,17 @@ export default function MobileApp() {
       <div style={STYLES.content}>
         {!user ? (
           <LoginMobile onSuccess={() => {}} />
-        ) : showMobileReviewReports ? (
+        ) : showMobileReviewReports && isAdmin ? (
           <AdminReportsMobile
             isVisible={showMobileReviewReports}
             onBack={() => setShowMobileReviewReports(false)}
           />
-        ) : showMobileMediaRequests ? (
+        ) : showMobileMediaRequests && isAdmin ? (
           <MediaRequestsMobile
             isVisible={showMobileMediaRequests}
             onBack={() => setShowMobileMediaRequests(false)}
           />
-        ) : showMobileAdminSupport ? (
+        ) : showMobileAdminSupport && isAdmin ? (
           <AdminSupportMobile
             isVisible={showMobileAdminSupport}
             onBack={() => setShowMobileAdminSupport(false)}
@@ -3317,7 +4113,7 @@ export default function MobileApp() {
             onCancel={() => setShowPasswordUpdate(false)}
           />
         ) : showMobileEditProfile ? (
-          <EditProfileMobile 
+          <EditProfileMobile
             profile={profile}
             onBack={() => setShowMobileEditProfile(false)}
             onSuccess={() => {
@@ -3364,7 +4160,9 @@ export default function MobileApp() {
             }}
           />
         ) : showMobileCommunityGuidelines ? (
-          <CommunityGuidelinesMobile onBack={() => setShowMobileCommunityGuidelines(false)} />
+          <CommunityGuidelinesMobile
+            onBack={() => setShowMobileCommunityGuidelines(false)}
+          />
         ) : showMobileSupporter ? (
           <SupporterMobile onBack={() => setShowMobileSupporter(false)} />
         ) : showMobileHelp ? (
@@ -3574,16 +4372,24 @@ export default function MobileApp() {
               transition: "transform 0.1s, opacity 0.1s",
             }}
           >
-            <img 
-              src={prayIconPath} 
-              alt="Prayer" 
-              width="24" 
+            <img
+              src={prayIconPath}
+              alt="Prayer"
+              width="24"
               height="24"
-              style={{ 
-                opacity: activeTab === 2 ? 1 : 0.5
+              style={{
+                opacity: activeTab === 2 ? 1 : 0.5,
               }}
             />
-            <span style={{ fontSize: "10px", marginTop: "2px", color: activeTab === 2 ? "#000000" : "#8e8e8e" }}>Prayer</span>
+            <span
+              style={{
+                fontSize: "10px",
+                marginTop: "2px",
+                color: activeTab === 2 ? "#000000" : "#8e8e8e",
+              }}
+            >
+              Prayer
+            </span>
           </div>
           <div
             onClick={() => {
@@ -3643,7 +4449,7 @@ export default function MobileApp() {
       {reportModalOpen && (
         <div
           style={{
-            position: "absolute",
+            position: "fixed",
             top: 0,
             left: 0,
             right: 0,
@@ -3652,7 +4458,7 @@ export default function MobileApp() {
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            zIndex: 1000,
+            zIndex: 9999,
             padding: "20px",
           }}
         >
@@ -3806,13 +4612,21 @@ export default function MobileApp() {
               <button
                 onClick={async () => {
                   try {
-                    const { requestMediaAccess } = await import("@/lib/mediaRequests");
-                    const { data, error } = await requestMediaAccess("Requesting permission to share video links and upload media");
+                    const { requestMediaAccess } = await import(
+                      "@/lib/mediaRequests"
+                    );
+                    const { data, error } = await requestMediaAccess(
+                      "Requesting permission to share video links and upload media",
+                    );
                     setShowMediaRequestModal(false);
                     if (error) {
-                      alert(`Failed to submit request: ${error.message || 'Unknown error'}`);
+                      alert(
+                        `Failed to submit request: ${error.message || "Unknown error"}`,
+                      );
                     } else {
-                      alert("Link sharing request submitted! You will be notified when approved.");
+                      alert(
+                        "Link sharing request submitted! You will be notified when approved.",
+                      );
                     }
                   } catch (err) {
                     setShowMediaRequestModal(false);
@@ -3907,8 +4721,9 @@ export default function MobileApp() {
                 lineHeight: 1.5,
               }}
             >
-              Your account has been restricted due to a violation of our community guidelines. 
-              You can still browse content, but posting and interactions are limited.
+              Your account has been restricted due to a violation of our
+              community guidelines. You can still browse content, but posting
+              and interactions are limited.
             </p>
             <p
               style={{
@@ -3918,8 +4733,8 @@ export default function MobileApp() {
               }}
             >
               If you believe this is a mistake, please contact us at{" "}
-              <a 
-                href="mailto:support@gospelera.app" 
+              <a
+                href="mailto:support@gospelera.app"
                 style={{ color: "#2563eb", textDecoration: "underline" }}
               >
                 support@gospelera.app

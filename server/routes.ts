@@ -17,6 +17,8 @@ import {
   type AuthenticatedRequest 
 } from "./auth";
 import { createServerSupabase, extractToken, supabaseAdmin } from "./supabaseClient";
+import type { Request, Response } from "express";
+import type { messaging } from "firebase-admin";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Initialize hybrid storage service (S3 or Replit Object Storage)
@@ -682,6 +684,11 @@ Respond in JSON format:
 
   // PRAYER REQUESTS API ENDPOINT - Queries Supabase database
   app.get("/api/prayer-requests", optionalAuth, async (req: AuthenticatedRequest, res) => {
+    // Prevent caching to always return fresh commitment counts
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.set('Pragma', 'no-cache');
+    res.set('Expires', '0');
+    
     try {
       const token = extractToken(req.headers.authorization);
       const supabase = createServerSupabase(token);
@@ -754,11 +761,16 @@ Respond in JSON format:
         .select('id, display_name, avatar_url')
         .in('id', requesterIds);
       
-      // Fetch commitments separately
-      const { data: commitmentsData } = await supabase
-        .from('prayer_commitments')
-        .select('request_id, warrior, status, committed_at, prayed_at')
-        .in('request_id', requestIds);
+      // Fetch commitments separately using supabaseAdmin to bypass RLS
+      const { data: commitmentsData } = supabaseAdmin
+        ? await supabaseAdmin
+            .from('prayer_commitments')
+            .select('request_id, warrior, status, committed_at, prayed_at')
+            .in('request_id', requestIds)
+        : await supabase
+            .from('prayer_commitments')
+            .select('request_id, warrior, status, committed_at, prayed_at')
+            .in('request_id', requestIds);
       
       // Build profiles map
       const profilesMap: Record<string, any> = {};
@@ -796,6 +808,85 @@ Respond in JSON format:
     } catch (error) {
       console.error("Error fetching prayer requests:", error);
       res.status(500).json({ error: "Failed to fetch prayer requests" });
+    }
+  });
+
+  // GET SINGLE PRAYER REQUEST - Uses supabaseAdmin to bypass RLS
+  app.get("/api/prayer-requests/:id", optionalAuth, async (req: AuthenticatedRequest, res) => {
+    // Prevent caching to always return fresh commitment counts
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.set('Pragma', 'no-cache');
+    res.set('Expires', '0');
+    
+    try {
+      const prayerId = parseInt(req.params.id);
+      if (isNaN(prayerId)) {
+        return res.status(400).json({ error: "Invalid prayer request ID" });
+      }
+
+      const currentUserId = req.user?.id;
+
+      // Fetch prayer request
+      const { data: prayerRequest, error: prayerError } = await supabaseAdmin
+        .from('prayer_requests')
+        .select('*')
+        .eq('id', prayerId)
+        .single();
+
+      if (prayerError || !prayerRequest) {
+        console.error("Prayer request not found:", prayerError);
+        return res.status(404).json({ error: "Prayer request not found" });
+      }
+
+      // Fetch requester profile
+      const { data: profile } = await supabaseAdmin
+        .from('profiles')
+        .select('id, display_name, avatar_url')
+        .eq('id', prayerRequest.requester)
+        .single();
+
+      // Fetch commitments using supabaseAdmin to bypass RLS
+      const { data: commitments, error: commitError } = await supabaseAdmin
+        .from('prayer_commitments')
+        .select('request_id, warrior, status, committed_at, prayed_at, note')
+        .eq('request_id', prayerId);
+      
+      console.log(`[Prayer Detail] Prayer ${prayerId}: Found ${commitments?.length || 0} commitments`, 
+        commitError ? `Error: ${commitError.message}` : '');
+
+      // Fetch activity using supabaseAdmin
+      const { data: activity } = await supabaseAdmin
+        .from('prayer_activity')
+        .select('id, request_id, actor, kind, message, created_at')
+        .eq('request_id', prayerId)
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      // Compute stats
+      const allCommitments = commitments || [];
+      const prayer_stats = {
+        committed_count: allCommitments.filter((c: any) => c.status === 'committed').length,
+        prayed_count: allCommitments.filter((c: any) => c.status === 'prayed').length,
+        total_warriors: allCommitments.length,
+        recent_activity: activity || []
+      };
+
+      // Get current user's commitment if logged in
+      const myCommitment = currentUserId
+        ? allCommitments.find((c: any) => c.warrior === currentUserId)
+        : null;
+
+      res.json({
+        ...prayerRequest,
+        profiles: profile,
+        prayer_commitments: allCommitments,
+        prayer_activity: activity || [],
+        prayer_stats,
+        myCommitment
+      });
+    } catch (error) {
+      console.error("Error fetching prayer request:", error);
+      res.status(500).json({ error: "Failed to fetch prayer request" });
     }
   });
 
@@ -1176,6 +1267,63 @@ Respond in JSON format:
     }
   });
 
+  // PATCH comment - only author can edit their own comments
+  app.patch("/api/comments/:id", authenticateUser, async (req: AuthenticatedRequest, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: "Authentication required" });
+      }
+      
+      const commentId = parseInt(req.params.id);
+      if (isNaN(commentId)) {
+        return res.status(400).json({ error: "Invalid comment ID" });
+      }
+      
+      const { content } = req.body;
+      if (!content || typeof content !== 'string' || content.trim().length === 0) {
+        return res.status(400).json({ error: "Comment content is required" });
+      }
+      
+      if (!supabaseAdmin) {
+        return res.status(500).json({ error: "Database not configured" });
+      }
+      
+      // Verify the comment exists and belongs to the user
+      const { data: existingComment, error: fetchError } = await supabaseAdmin
+        .from('comments')
+        .select('author_id, deleted')
+        .eq('id', commentId)
+        .single();
+      
+      if (fetchError || !existingComment) {
+        return res.status(404).json({ error: "Comment not found" });
+      }
+      
+      if (existingComment.deleted) {
+        return res.status(400).json({ error: "Cannot edit a deleted comment" });
+      }
+      
+      // Only allow author to edit (admins cannot edit others' comments)
+      if (existingComment.author_id !== req.user.id) {
+        return res.status(403).json({ error: "You can only edit your own comments" });
+      }
+      
+      // Update the comment
+      const { data: updatedComment, error } = await supabaseAdmin
+        .from('comments')
+        .update({ content: content.trim() })
+        .eq('id', commentId)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      res.json({ success: true, data: updatedComment });
+    } catch (error) {
+      console.error("Error updating comment:", error);
+      res.status(500).json({ error: "Failed to update comment" });
+    }
+  });
+
   // GET comments for a post
   app.get("/api/comments", async (req, res) => {
     try {
@@ -1323,14 +1471,15 @@ Respond in JSON format:
           message: 'committed to pray'
         });
 
+      // Fetch the prayer request to get requester info (for response and notifications)
+      const { data: prayerRequest } = await supabase
+        .from('prayer_requests')
+        .select('requester, title')
+        .eq('id', requestId)
+        .single();
+
       // Create notification for the prayer request owner (if not self)
       try {
-        const { data: prayerRequest } = await supabase
-          .from('prayer_requests')
-          .select('requester, title')
-          .eq('id', requestId)
-          .single();
-
         if (prayerRequest && prayerRequest.requester !== req.user.id) {
           // Get the warrior's display name
           const { data: warriorProfile } = await supabase
@@ -1375,7 +1524,11 @@ Respond in JSON format:
         // Don't fail the request if notification fails
       }
 
-      res.json(commitment);
+      // Return commitment with requester info for client-side use
+      res.json({
+        ...commitment,
+        requester: prayerRequest?.requester || null
+      });
     } catch (error) {
       console.error("Error committing to prayer:", error);
       res.status(500).json({ error: "Failed to commit to prayer" });
@@ -1480,6 +1633,84 @@ Respond in JSON format:
     } catch (error) {
       console.error("Error confirming prayed:", error);
       res.status(500).json({ error: "Failed to confirm prayer" });
+    }
+  });
+
+  // Get current user's prayer commitments - uses supabaseAdmin to bypass RLS
+  app.get("/api/my-commitments", authenticateUser, async (req: AuthenticatedRequest, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: "Authentication required" });
+      }
+      
+      if (!supabaseAdmin) {
+        return res.status(500).json({ error: "Server configuration error" });
+      }
+
+      const status = req.query.status as string | undefined;
+      const limit = Math.min(parseInt(req.query.limit as string) || 50, 100);
+      
+      // First fetch commitments with prayer requests
+      let query = supabaseAdmin
+        .from('prayer_commitments')
+        .select(`
+          *,
+          prayer_requests!inner (
+            id,
+            title,
+            details,
+            status,
+            created_at,
+            is_anonymous,
+            requester
+          )
+        `)
+        .eq('warrior', req.user.id)
+        .order('committed_at', { ascending: false })
+        .limit(limit);
+
+      if (status) {
+        query = query.eq('status', status);
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        console.error("Error fetching user commitments:", error);
+        return res.status(500).json({ error: "Failed to fetch commitments" });
+      }
+
+      // Fetch profiles for all requesters to get display names
+      const requesterIds = [...new Set((data || []).map((c: any) => c.prayer_requests?.requester).filter(Boolean))];
+      let profilesMap: Record<string, any> = {};
+      
+      if (requesterIds.length > 0) {
+        const { data: profiles } = await supabaseAdmin
+          .from('profiles')
+          .select('id, display_name, avatar_url')
+          .in('id', requesterIds);
+        
+        if (profiles) {
+          profilesMap = profiles.reduce((acc: Record<string, any>, p: any) => {
+            acc[p.id] = p;
+            return acc;
+          }, {});
+        }
+      }
+
+      // Merge profiles into commitments
+      const commitmentsWithProfiles = (data || []).map((c: any) => ({
+        ...c,
+        prayer_requests: {
+          ...c.prayer_requests,
+          profiles: c.prayer_requests?.requester ? profilesMap[c.prayer_requests.requester] : null
+        }
+      }));
+
+      res.json({ commitments: commitmentsWithProfiles });
+    } catch (error) {
+      console.error("Error in my-commitments:", error);
+      res.status(500).json({ error: "Failed to fetch commitments" });
     }
   });
 
@@ -2021,12 +2252,14 @@ Respond with JSON only:
       const baseUrl = `${protocol}://${host}`;
 
       // Use mobile or web URLs based on context
-      const successUrl = isMobile 
-        ? `${baseUrl}/mobile?payment=success&session_id={CHECKOUT_SESSION_ID}`
-        : `${baseUrl}/support/thanks?session_id={CHECKOUT_SESSION_ID}`;
-      const cancelUrl = isMobile 
-        ? `${baseUrl}/mobile`
-        : `${baseUrl}/support`;
+      const successUrl = isMobile
+      ? `gospelera://checkout/success?session_id={CHECKOUT_SESSION_ID}`
+      : `${baseUrl}/support/thanks?session_id={CHECKOUT_SESSION_ID}`;
+
+      const cancelUrl = isMobile
+      ? `gospelera://checkout/cancel`
+      : `${baseUrl}/support`;
+
 
       // Create checkout session
       const session = await stripe.checkout.sessions.create({
@@ -2285,10 +2518,8 @@ Respond with JSON only:
         return res.json({ success: true, skipped: true });
       }
       
-      const token = extractToken(req.headers.authorization);
-      const supabase = createServerSupabase(token);
-      
-      const { data: notification, error } = await supabase
+      // Use supabaseAdmin to bypass RLS for notification creation
+      const { data: notification, error } = await supabaseAdmin
         .from('notifications')
         .insert({
           recipient_id: recipientId,
@@ -2335,6 +2566,439 @@ Respond with JSON only:
 
   // ============ PUSH NOTIFICATIONS API ROUTES ============
   
+  // Debug endpoint - check push tokens for current user and test send
+  // DISABLED IN PRODUCTION
+  app.get("/api/push/debug", authenticateUser, async (req: AuthenticatedRequest, res) => {
+    if (process.env.NODE_ENV === 'production') {
+      return res.status(404).json({ error: "Not found" });
+    }
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      // Check Firebase initialization
+      const firebaseConfigured = !!process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
+      const vapidConfigured = !!process.env.VAPID_PUBLIC_KEY && !!process.env.VAPID_PRIVATE_KEY;
+      
+      // Get tokens for this user using supabaseAdmin
+      const { data: tokens, error } = await supabaseAdmin
+        .from('push_tokens')
+        .select('*')
+        .eq('user_id', req.user.id);
+      
+      if (error) {
+        return res.json({
+          userId: req.user.id,
+          error: error.message,
+          firebaseConfigured,
+          vapidConfigured,
+          tokens: []
+        });
+      }
+      
+      // Mask tokens for security
+      const maskedTokens = (tokens || []).map((t: any) => ({
+        id: t.id,
+        platform: t.platform,
+        tokenPreview: t.token?.substring(0, 30) + '...',
+        created_at: t.created_at,
+        daily_verse_enabled: t.daily_verse_enabled
+      }));
+      
+      res.json({
+        userId: req.user.id,
+        firebaseConfigured,
+        vapidConfigured,
+        tokenCount: tokens?.length || 0,
+        tokens: maskedTokens
+      });
+    } catch (error) {
+      console.error("Push debug error:", error);
+      res.status(500).json({ error: "Debug failed" });
+    }
+  });
+  
+  // Test push notification endpoint - send test notification to current user
+  // DISABLED IN PRODUCTION
+  app.post("/api/push/test", authenticateUser, async (req: AuthenticatedRequest, res) => {
+    if (process.env.NODE_ENV === 'production') {
+      return res.status(404).json({ error: "Not found" });
+    }
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      const testId = `test_${Date.now()}`;
+      console.log(`[Push Test] ===== TEST NOTIFICATION START =====`);
+      console.log(`[Push Test] ID: ${testId}`);
+      console.log(`[Push Test] User ID: ${req.user.id}`);
+      
+      const { sendPushNotification } = await import('./pushNotifications');
+      await sendPushNotification(req.user.id, {
+        title: 'Test Notification',
+        body: `[${testId}] If you see this banner, push notifications are working!`,
+        url: '/'
+      });
+      
+      console.log(`[Push Test] ===== TEST NOTIFICATION END =====`);
+      res.json({ success: true, message: "Test notification sent. Check your device.", testId });
+    } catch (error: any) {
+      console.error("[Push Test] ❌ Error:", error.message);
+      console.error("[Push Test] Full error:", JSON.stringify(error, Object.getOwnPropertyNames(error)));
+      res.status(500).json({ error: error.message || "Test failed" });
+    }
+  });
+  
+
+  // Clean up old tokens - keep only the most recent token per platform
+  app.post("/api/push/cleanup", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      const { supabaseAdmin } = await import('./supabaseAdmin');
+      
+      // Get all tokens for this user, grouped by platform
+      const { data: allTokens, error } = await supabaseAdmin
+        .from('push_tokens')
+        .select('id, platform, created_at, updated_at')
+        .eq('user_id', req.user.id)
+        .order('updated_at', { ascending: false });
+      
+      if (error) {
+        return res.status(500).json({ error: error.message });
+      }
+      
+      // Find tokens to delete (keep only the most recent per platform)
+      const keepTokenIds: number[] = [];
+      const seenPlatforms = new Set<string>();
+      
+      for (const token of allTokens || []) {
+        if (!seenPlatforms.has(token.platform)) {
+          seenPlatforms.add(token.platform);
+          keepTokenIds.push(token.id);
+        }
+      }
+      
+      // Delete all tokens except the ones we're keeping
+      const tokensToDelete = (allTokens || []).filter(t => !keepTokenIds.includes(t.id));
+      
+      if (tokensToDelete.length > 0) {
+        const idsToDelete = tokensToDelete.map(t => t.id);
+        await supabaseAdmin
+          .from('push_tokens')
+          .delete()
+          .in('id', idsToDelete);
+      }
+      
+      res.json({
+        success: true,
+        message: `Cleaned up ${tokensToDelete.length} old tokens`,
+        kept: keepTokenIds.length,
+        deleted: tokensToDelete.length,
+        platforms: Array.from(seenPlatforms)
+      });
+    } catch (error: any) {
+      console.error("Token cleanup error:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Debug endpoint - show stored tokens for current user
+  // DISABLED IN PRODUCTION
+  app.get("/api/push/my-tokens", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
+    if (process.env.NODE_ENV === 'production') {
+      return res.status(404).json({ error: "Not found" });
+    }
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      const { supabaseAdmin } = await import('./supabaseAdmin');
+      const { data: tokens, error } = await supabaseAdmin
+        .from('push_tokens')
+        .select('id, platform, created_at, token')
+        .eq('user_id', req.user.id);
+      
+      if (error) {
+        return res.status(500).json({ error: error.message });
+      }
+      
+      // Mask tokens for security but show enough to debug
+      const maskedTokens = tokens?.map(t => ({
+        id: t.id,
+        platform: t.platform,
+        created_at: t.created_at,
+        token_preview: t.token?.substring(0, 30) + '...',
+        token_length: t.token?.length,
+        looks_like_fcm: t.token?.includes(':') && t.token?.length > 100,
+        looks_like_web_push: t.token?.startsWith('{') || t.token?.startsWith('['),
+      }));
+      
+      res.json({ 
+        userId: req.user.id,
+        tokenCount: tokens?.length || 0,
+        tokens: maskedTokens 
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Diagnostic endpoint - check Firebase credentials without sending
+  // DISABLED IN PRODUCTION
+  app.get("/api/push/diagnose", async (_req: Request, res: Response) => {
+    if (process.env.NODE_ENV === 'production') {
+      return res.status(404).json({ error: "Not found" });
+    }
+    const result: any = { timestamp: new Date().toISOString() };
+    
+    try {
+      const raw = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
+      result.hasCredentials = !!raw;
+      result.credentialsLength = raw?.length || 0;
+      
+      if (!raw) {
+        result.error = "FIREBASE_SERVICE_ACCOUNT_KEY not set";
+        return res.json(result);
+      }
+      
+      let sa: any;
+      try {
+        sa = JSON.parse(raw);
+        result.jsonValid = true;
+      } catch (e: any) {
+        result.jsonValid = false;
+        result.parseError = e.message;
+        return res.json(result);
+      }
+      
+      result.hasProjectId = !!sa.project_id;
+      result.projectId = sa.project_id;
+      result.hasClientEmail = !!sa.client_email;
+      result.clientEmail = sa.client_email;
+      result.hasPrivateKey = !!sa.private_key;
+      result.privateKeyLength = sa.private_key?.length || 0;
+      result.privateKeyStartsWith = sa.private_key?.substring(0, 30);
+      result.privateKeyEndsWith = sa.private_key?.substring(sa.private_key.length - 30);
+      result.privateKeyHasEscapedNewlines = sa.private_key?.includes('\\n') || false;
+      result.privateKeyHasRealNewlines = sa.private_key?.includes('\n') || false;
+      
+      // Fix the key and try to get an access token
+      if (sa.private_key?.includes('\\n')) {
+        sa.private_key = sa.private_key.replace(/\\n/g, '\n');
+        result.fixedNewlines = true;
+        result.fixedPrivateKeyLength = sa.private_key.length;
+      }
+      
+      // Try creating a credential and getting an access token
+      const admin = (await import('firebase-admin')).default;
+      const credential = admin.credential.cert(sa);
+      result.credentialCreated = true;
+      
+      try {
+        const token = await credential.getAccessToken();
+        result.accessTokenSuccess = true;
+        result.tokenExpiresIn = token.expires_in;
+      } catch (e: any) {
+        result.accessTokenSuccess = false;
+        result.accessTokenError = e.message;
+      }
+      
+      res.json(result);
+    } catch (e: any) {
+      result.error = e.message;
+      res.json(result);
+    }
+  });
+
+  // Debug endpoint - send push directly to a specific FCM token with maximum diagnostics.
+// Requirements:
+// - Replit Secret: FIREBASE_SERVICE_ACCOUNT_KEY (full service account JSON)
+// - Optional: set DEBUG_PUSH_DISABLE=1 to disable endpoint after testing
+
+
+  // DISABLED IN PRODUCTION
+  app.post("/api/push/debug-send", async (req: Request, res: Response) => {
+    if (process.env.NODE_ENV === 'production') {
+      return res.status(404).json({ error: "Not found" });
+    }
+    const traceId = `trace_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
+    const startedAt = Date.now();
+
+    // Optional kill-switch for safety
+    if (process.env.DEBUG_PUSH_DISABLE === "1") {
+      return res.status(403).json({ ok: false, error: "Debug push disabled", traceId });
+    }
+
+    const { token } = (req.body || {}) as { token?: string };
+    if (!token) {
+      return res.status(400).json({ ok: false, error: "Token is required", traceId });
+    }
+
+    const mask = (t: string) => `${t.slice(0, 14)}…${t.slice(-8)}`;
+    console.log(`[PUSH][REQ] ${traceId} token=${mask(token)} ua=${req.headers["user-agent"] || ""}`);
+
+    try {
+      // Import firebase-admin (ESM/CJS safe)
+      const adminMod = await import("firebase-admin");
+      const admin = (adminMod as any).default ?? (adminMod as any);
+
+      console.log(
+        `[PUSH][ADMIN] ${traceId} typeof_admin=${typeof admin} apps.length=${admin?.apps?.length ?? "n/a"}`
+      );
+
+      // Read and sanity-check credentials (DON'T print private_key)
+      const raw = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
+      console.log(`[PUSH][CREDS] ${traceId} env_present=${!!raw} len=${raw?.length || 0}`);
+
+      if (!raw) {
+        console.error(`[PUSH][CREDS][ERR] ${traceId} FIREBASE_SERVICE_ACCOUNT_KEY missing`);
+        return res.status(500).json({ ok: false, error: "Firebase not configured", traceId });
+      }
+
+      let serviceAccount: any;
+      try {
+        serviceAccount = JSON.parse(raw);
+      } catch (e: any) {
+        console.error(`[PUSH][CREDS][ERR] ${traceId} JSON parse failed: ${e?.message || e}`);
+        return res.status(500).json({ ok: false, error: "Invalid Firebase credentials JSON", traceId });
+      }
+
+      const hasProjectId = !!serviceAccount.project_id;
+      const hasClientEmail = !!serviceAccount.client_email;
+      const hasPrivateKey = !!serviceAccount.private_key;
+
+      console.log(
+        `[PUSH][CREDS] ${traceId} project_id=${serviceAccount.project_id || "n/a"} client_email=${
+          serviceAccount.client_email || "n/a"
+        } has_private_key=${hasPrivateKey}`
+      );
+
+      if (!hasProjectId || !hasClientEmail || !hasPrivateKey) {
+        console.error(
+          `[PUSH][CREDS][ERR] ${traceId} Missing fields: project_id=${hasProjectId} client_email=${hasClientEmail} private_key=${hasPrivateKey}`
+        );
+        return res.status(500).json({
+          ok: false,
+          error: "Service account JSON missing required fields (project_id/client_email/private_key)",
+          traceId,
+        });
+      }
+
+      // Critical Replit fix: convert escaped newlines
+      const pkLenBefore = String(serviceAccount.private_key).length;
+      serviceAccount.private_key = String(serviceAccount.private_key).replace(/\\n/g, "\n");
+      const pkLenAfter = String(serviceAccount.private_key).length;
+
+      console.log(
+        `[PUSH][CREDS] ${traceId} private_key_len_before=${pkLenBefore} after=${pkLenAfter} begins=${String(
+          serviceAccount.private_key
+        ).slice(0, 30)}`
+      );
+
+      // Always use a named app so we bypass any broken "default" initialization elsewhere
+      const APP_NAME = "debug-push";
+      let debugApp: any;
+
+      try {
+        debugApp = admin.app(APP_NAME);
+        console.log(`[PUSH][INIT] ${traceId} Using existing named app "${APP_NAME}"`);
+      } catch (_e) {
+        console.log(`[PUSH][INIT] ${traceId} Creating named app "${APP_NAME}"`);
+        debugApp = admin.initializeApp(
+          {
+            credential: admin.credential.cert(serviceAccount),
+            projectId: serviceAccount.project_id,
+          },
+          APP_NAME
+        );
+        console.log(`[PUSH][INIT] ${traceId} Named app created`);
+      }
+
+      // Verify credential can mint an access token (strongest auth proof)
+      try {
+        const at = await debugApp.options.credential.getAccessToken();
+        console.log(
+          `[PUSH][AUTH] ${traceId} ✅ getAccessToken ok expires_in=${at?.expires_in ?? "n/a"}`
+        );
+      } catch (e: any) {
+        console.error(`[PUSH][AUTH] ${traceId} ❌ getAccessToken failed: ${e?.message || e}`);
+        // Continue anyway; admin.messaging().send will give a concrete error too
+      }
+
+      const msg: messaging.Message = {
+        token,
+        notification: {
+          title: "🔥 Debug Banner Test",
+          body: `traceId=${traceId} (if you see this banner, delivery works)`,
+        },
+        data: {
+          traceId,
+          kind: "backend_debug",
+          ts: new Date().toISOString(),
+        },
+        apns: {
+          headers: {
+            "apns-priority": "10",
+            "apns-push-type": "alert",
+          },
+          payload: {
+            aps: {
+              sound: "default",
+              badge: 1,
+            },
+          },
+        },
+        android: {
+          priority: "high",
+          notification: {
+            // channelId must exist on Android or it may fall back depending on app config
+            channelId: "gospel-era-notifications",
+            sound: "default",
+          },
+        },
+      };
+
+      console.log(`[PUSH][SEND] ${traceId} sending... token=${mask(token)} title="${msg.notification?.title}"`);
+
+      const messagingClient = debugApp.messaging();
+
+      let messageId: string;
+      try {
+        messageId = await messagingClient.send(msg);
+      } catch (e: any) {
+        // Extremely verbose error capture (safe: no private key)
+        console.error(`[PUSH][SEND][ERR] ${traceId} message=${e?.message || e}`);
+        if (e?.code) console.error(`[PUSH][SEND][ERR] ${traceId} code=${e.code}`);
+        if (e?.errorInfo) console.error(`[PUSH][SEND][ERR] ${traceId} errorInfo=${JSON.stringify(e.errorInfo)}`);
+        if (e?.details) console.error(`[PUSH][SEND][ERR] ${traceId} details=${JSON.stringify(e.details)}`);
+        try {
+          console.error(
+            `[PUSH][SEND][ERR] ${traceId} full=${JSON.stringify(e, Object.getOwnPropertyNames(e))}`
+          );
+        } catch {}
+        return res.status(500).json({ ok: false, error: e?.message || "Send failed", traceId });
+      }
+
+      const ms = Date.now() - startedAt;
+      console.log(`[PUSH][OK] ${traceId} messageId=${messageId} took_ms=${ms}`);
+
+      return res.json({ ok: true, traceId, messageId, took_ms: ms });
+    } catch (err: any) {
+      console.error(`[PUSH][FATAL] ${traceId} ${err?.message || err}`);
+      try {
+        console.error(`[PUSH][FATAL] ${traceId} full=${JSON.stringify(err, Object.getOwnPropertyNames(err))}`);
+      } catch {}
+      return res.status(500).json({ ok: false, error: err?.message || "Unknown error", traceId });
+    }
+  });
+
+
   // Get VAPID public key for Web Push
   app.get("/api/push/vapid-key", (req, res) => {
     const vapidPublicKey = process.env.VAPID_PUBLIC_KEY;
@@ -2371,9 +3035,10 @@ Respond with JSON only:
       
       const token = extractToken(req.headers.authorization);
       const supabase = createServerSupabase(token);
+      const { supabaseAdmin } = await import('./supabaseAdmin');
       
-      // Check if token already exists for this user
-      const { data: existing } = await supabase
+      // Check if this exact token already exists for this user
+      const { data: existing } = await supabaseAdmin
         .from('push_tokens')
         .select('id')
         .eq('user_id', req.user.id)
@@ -2381,16 +3046,35 @@ Respond with JSON only:
         .limit(1);
       
       if (existing && existing.length > 0) {
-        // Update existing token
-        await supabase
+        // Token exists - delete ALL OTHER tokens for same user+platform, keep only this one
+        console.log(`[Push] Token exists, cleaning up other ${platform} tokens for user ${req.user.id}`);
+        await supabaseAdmin
+          .from('push_tokens')
+          .delete()
+          .eq('user_id', req.user.id)
+          .eq('platform', platform)
+          .neq('id', existing[0].id);
+        
+        // Update timestamp on the current token
+        await supabaseAdmin
           .from('push_tokens')
           .update({ updated_at: new Date().toISOString() })
           .eq('id', existing[0].id);
-        return res.json({ success: true, message: "Token already registered" });
+        return res.json({ success: true, message: "Token already registered, cleaned up old tokens" });
       }
       
+      // New token - delete ALL old tokens for this user+platform first
+      console.log(`[Push] New token, deleting all old ${platform} tokens for user ${req.user.id}`);
+      const { data: deletedTokens } = await supabaseAdmin
+        .from('push_tokens')
+        .delete()
+        .eq('user_id', req.user.id)
+        .eq('platform', platform)
+        .select('id');
+      console.log(`[Push] Deleted ${deletedTokens?.length || 0} old tokens`);
+      
       // Insert new token
-      const { data: newToken, error } = await supabase
+      const { data: newToken, error } = await supabaseAdmin
         .from('push_tokens')
         .insert({
           user_id: req.user.id,
@@ -2401,6 +3085,7 @@ Respond with JSON only:
         .single();
       
       if (error) throw error;
+      console.log(`[Push] Registered new ${platform} token for user ${req.user.id}`);
       res.json({ success: true, token: newToken });
     } catch (error) {
       console.error("Error registering push token:", error);
@@ -2460,6 +3145,34 @@ Respond with JSON only:
     } catch (error) {
       console.error("Error unregistering native push tokens:", error);
       res.status(500).json({ error: "Failed to unregister native push tokens" });
+    }
+  });
+
+  // Clear ALL push tokens for a user (use when changing Firebase projects)
+  app.post("/api/push/clear-all", authenticateUser, async (req: AuthenticatedRequest, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      const { supabaseAdmin } = await import('./supabaseAdmin');
+      
+      // Delete ALL tokens for this user using admin client
+      const { error, count } = await supabaseAdmin
+        .from('push_tokens')
+        .delete()
+        .eq('user_id', req.user.id);
+      
+      if (error) {
+        console.error('[Push] Error clearing tokens:', error);
+        return res.status(500).json({ error: "Failed to clear tokens" });
+      }
+      
+      console.log(`[Push] Cleared all tokens for user ${req.user.id}`);
+      res.json({ success: true, message: "All push tokens cleared. Please re-enable notifications." });
+    } catch (error) {
+      console.error("Error clearing push tokens:", error);
+      res.status(500).json({ error: "Failed to clear push tokens" });
     }
   });
 
@@ -2533,7 +3246,7 @@ Respond with JSON only:
     }
   });
 
-  // Delete user account and all associated data
+  // Delete user account and all associated data (uses Supabase)
   app.delete("/api/account", authenticateUser, async (req: AuthenticatedRequest, res) => {
     try {
       const userId = req.user?.id;
@@ -2541,83 +3254,95 @@ Respond with JSON only:
         return res.status(401).json({ error: "Authentication required" });
       }
 
-      const { db } = await import("../client/src/lib/db");
-      const { 
-        posts, comments, bookmarks, reactions, 
-        prayerCommitments, prayerActivity, donations, mediaRequests,
-        reports, notifications, pushTokens, profiles 
-      } = await import("@shared/schema");
-      const { eq, or } = await import("drizzle-orm");
+      if (!supabaseAdmin) {
+        console.error("supabaseAdmin not configured for account deletion");
+        return res.status(500).json({ error: "Database configuration error" });
+      }
+
       const { deleteSupabaseAuthUser } = await import("./supabaseAdmin");
 
       console.log(`Starting account deletion for user: ${userId}`);
 
-      // Delete in order respecting foreign key constraints
+      // Delete in order respecting foreign key constraints (using Supabase)
       // 1. Delete push tokens
-      await db.delete(pushTokens).where(eq(pushTokens.user_id, userId));
-      console.log("Deleted push tokens");
+      const { error: pushError } = await supabaseAdmin.from('push_tokens').delete().eq('user_id', userId);
+      if (pushError) console.log("Push tokens delete result:", pushError.message);
+      else console.log("Deleted push tokens");
       
       // 2. Delete notifications (both received and sent by the user)
-      await db.delete(notifications).where(
-        or(eq(notifications.recipient_id, userId), eq(notifications.actor_id, userId))
-      );
-      console.log("Deleted notifications");
+      const { error: notifError1 } = await supabaseAdmin.from('notifications').delete().eq('recipient_id', userId);
+      const { error: notifError2 } = await supabaseAdmin.from('notifications').delete().eq('actor_id', userId);
+      if (notifError1 || notifError2) console.log("Notifications delete result:", notifError1?.message, notifError2?.message);
+      else console.log("Deleted notifications");
       
       // 3. Delete prayer activity
-      await db.delete(prayerActivity).where(eq(prayerActivity.actor, userId));
-      console.log("Deleted prayer activity");
+      const { error: activityError } = await supabaseAdmin.from('prayer_activity').delete().eq('actor', userId);
+      if (activityError) console.log("Prayer activity delete result:", activityError.message);
+      else console.log("Deleted prayer activity");
       
       // 4. Delete prayer commitments
-      await db.delete(prayerCommitments).where(eq(prayerCommitments.warrior, userId));
-      console.log("Deleted prayer commitments");
+      const { error: commitError } = await supabaseAdmin.from('prayer_commitments').delete().eq('warrior', userId);
+      if (commitError) console.log("Prayer commitments delete result:", commitError.message);
+      else console.log("Deleted prayer commitments");
       
       // 5. Delete donations
-      await db.delete(donations).where(eq(donations.user_id, userId));
-      console.log("Deleted donations");
+      const { error: donationError } = await supabaseAdmin.from('donations').delete().eq('user_id', userId);
+      if (donationError) console.log("Donations delete result:", donationError.message);
+      else console.log("Deleted donations");
       
       // 6. Delete media requests (both as user and admin)
-      await db.delete(mediaRequests).where(
-        or(eq(mediaRequests.user_id, userId), eq(mediaRequests.admin_id, userId))
-      );
-      console.log("Deleted media requests");
+      const { error: mediaError1 } = await supabaseAdmin.from('media_requests').delete().eq('user_id', userId);
+      const { error: mediaError2 } = await supabaseAdmin.from('media_requests').delete().eq('admin_id', userId);
+      if (mediaError1 || mediaError2) console.log("Media requests delete result:", mediaError1?.message, mediaError2?.message);
+      else console.log("Deleted media requests");
       
       // 7. Delete reports
-      await db.delete(reports).where(eq(reports.reporter_id, userId));
-      console.log("Deleted reports");
+      const { error: reportError } = await supabaseAdmin.from('reports').delete().eq('reporter_id', userId);
+      if (reportError) console.log("Reports delete result:", reportError.message);
+      else console.log("Deleted reports");
       
       // 8. Delete reactions
-      await db.delete(reactions).where(eq(reactions.user_id, userId));
-      console.log("Deleted reactions");
+      const { error: reactionError } = await supabaseAdmin.from('reactions').delete().eq('user_id', userId);
+      if (reactionError) console.log("Reactions delete result:", reactionError.message);
+      else console.log("Deleted reactions");
       
       // 9. Delete bookmarks
-      await db.delete(bookmarks).where(eq(bookmarks.user_id, userId));
-      console.log("Deleted bookmarks");
+      const { error: bookmarkError } = await supabaseAdmin.from('bookmarks').delete().eq('user_id', userId);
+      if (bookmarkError) console.log("Bookmarks delete result:", bookmarkError.message);
+      else console.log("Deleted bookmarks");
       
       // 10. Delete comments
-      await db.delete(comments).where(eq(comments.author_id, userId));
-      console.log("Deleted comments");
+      const { error: commentError } = await supabaseAdmin.from('comments').delete().eq('author_id', userId);
+      if (commentError) console.log("Comments delete result:", commentError.message);
+      else console.log("Deleted comments");
       
       // 11. Delete posts
-      await db.delete(posts).where(eq(posts.author_id, userId));
-      console.log("Deleted posts");
+      const { error: postError } = await supabaseAdmin.from('posts').delete().eq('author_id', userId);
+      if (postError) console.log("Posts delete result:", postError.message);
+      else console.log("Deleted posts");
       
-      // 12. Delete profile (this should cascade other data with onDelete: 'cascade')
-      await db.delete(profiles).where(eq(profiles.id, userId));
-      console.log("Deleted profile");
+      // 12. Delete prayer requests (this user created)
+      const { error: prayerError } = await supabaseAdmin.from('prayer_requests').delete().eq('requester', userId);
+      if (prayerError) console.log("Prayer requests delete result:", prayerError.message);
+      else console.log("Deleted prayer requests");
+      
+      // 13. Delete profile
+      const { error: profileError } = await supabaseAdmin.from('profiles').delete().eq('id', userId);
+      if (profileError) console.log("Profile delete result:", profileError.message);
+      else console.log("Deleted profile");
 
-      // 13. Delete user from Supabase Auth (requires service role key)
+      // 14. Delete user from Supabase Auth (requires service role key)
       const authDeleteResult = await deleteSupabaseAuthUser(userId);
       if (!authDeleteResult.success) {
         console.error(`Failed to delete Supabase Auth user ${userId}:`, authDeleteResult.error);
-        // Data is already deleted from Neon, but auth user remains
-        // Return success but log the issue - user data is gone, they just might have a stale auth record
+        // Data is already deleted, but auth user remains - still consider success
       }
 
       console.log(`Account fully deleted for user: ${userId}`);
       res.json({ success: true, message: "Account deleted successfully" });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error deleting account:", error);
-      res.status(500).json({ error: "Failed to delete account" });
+      res.status(500).json({ error: error?.message || "Failed to delete account" });
     }
   });
 
@@ -2643,13 +3368,15 @@ Respond with JSON only:
       }
 
       // Insert report using supabaseAdmin to bypass RLS
+      console.log("Creating report:", { target_type, target_id, reason, reporter_id: req.user.id });
+      
       const { data, error } = await supabaseAdmin
         .from('reports')
         .insert({
           target_type,
-          target_id: parseInt(target_id),
-          reason: reason || null,
-          reporter: req.user.id,
+          target_id: String(target_id),
+          reason: reason || 'No reason provided',
+          reporter_id: req.user.id,
           status: 'open'
         })
         .select()
@@ -2657,8 +3384,10 @@ Respond with JSON only:
 
       if (error) {
         console.error("Error creating report:", error);
-        return res.status(500).json({ error: "Failed to create report" });
+        return res.status(500).json({ error: `Failed to create report: ${error.message}` });
       }
+      
+      console.log("Report created successfully:", data);
 
       // Auto-hide content for "Not Christ-Centered" reports
       if (reason?.includes('Not Christ-Centered')) {
@@ -2720,25 +3449,37 @@ Respond with JSON only:
         return res.json({ items: [], nextCursor: null });
       }
 
+      console.log("Admin reports fetched:", reports.length, "reports");
+      console.log("Report columns:", Object.keys(reports[0] || {}));
+      console.log("Full first report:", JSON.stringify(reports[0], null, 2));
+
       const nextCursor = reports.length === limit ? reports[reports.length - 1].created_at : null;
 
-      // Get unique reporter IDs
-      const reporterIds = [...new Set(reports.map(r => r.reporter).filter(Boolean))];
+      // Get unique reporter IDs (filter out empty strings and nulls)
+      const reporterIds = [...new Set(reports.map(r => r.reporter_id).filter(id => id && typeof id === 'string' && id.trim().length > 0))];
       
-      // Fetch reporter profiles
-      const { data: reporterProfiles } = await supabaseAdmin
-        .from('profiles')
-        .select('id, display_name, email')
-        .in('id', reporterIds);
-
+      console.log("Reporter IDs to fetch:", reporterIds);
+      
+      // Fetch reporter profiles (only if we have valid IDs)
       const reporterProfileMap = new Map();
-      (reporterProfiles || []).forEach((profile: any) => {
-        reporterProfileMap.set(profile.id, profile);
-      });
+      if (reporterIds.length > 0) {
+        const { data: reporterProfiles, error: reporterError } = await supabaseAdmin
+          .from('profiles')
+          .select('id, display_name, email')
+          .in('id', reporterIds);
 
-      // Get unique target IDs by type
-      const postIds = reports.filter(r => r.target_type === 'post').map(r => r.target_id);
-      const commentIds = reports.filter(r => r.target_type === 'comment').map(r => r.target_id);
+        if (reporterError) {
+          console.error("Error fetching reporter profiles:", reporterError);
+        }
+        
+        (reporterProfiles || []).forEach((profile: any) => {
+          reporterProfileMap.set(profile.id, profile);
+        });
+      }
+
+      // Get unique target IDs by type (convert to integers for posts/comments tables)
+      const postIds = reports.filter(r => r.target_type === 'post').map(r => parseInt(r.target_id)).filter(id => !isNaN(id));
+      const commentIds = reports.filter(r => r.target_type === 'comment').map(r => parseInt(r.target_id)).filter(id => !isNaN(id));
 
       // Fetch posts and comments in parallel
       const [postsResult, commentsResult] = await Promise.all([
@@ -2765,14 +3506,21 @@ Respond with JSON only:
       ];
 
       // Fetch author profiles
-      const { data: authorProfiles } = authorIds.length > 0
-        ? await supabaseAdmin.from('profiles').select('id, display_name').in('id', authorIds)
-        : { data: [] };
-
       const authorProfileMap = new Map();
-      (authorProfiles || []).forEach((profile: any) => {
-        authorProfileMap.set(profile.id, profile);
-      });
+      if (authorIds.length > 0) {
+        const { data: authorProfiles, error: authorError } = await supabaseAdmin
+          .from('profiles')
+          .select('id, display_name')
+          .in('id', authorIds);
+        
+        if (authorError) {
+          console.error("Error fetching author profiles:", authorError);
+        }
+        
+        (authorProfiles || []).forEach((profile: any) => {
+          authorProfileMap.set(profile.id, profile);
+        });
+      }
 
       // Build response items
       const items = reports.map(report => {
@@ -2783,15 +3531,15 @@ Respond with JSON only:
           target_type: report.target_type,
           target_id: report.target_id,
           created_at: report.created_at,
-          reporter: reporterProfileMap.get(report.reporter) || {
-            id: report.reporter,
+          reporter: reporterProfileMap.get(report.reporter_id) || {
+            id: report.reporter_id,
             display_name: 'Unknown User',
             email: 'unknown@example.com'
           }
         };
 
         if (report.target_type === 'post') {
-          const post = postsMap.get(report.target_id);
+          const post = postsMap.get(parseInt(report.target_id));
           if (post) {
             const authorProfile = authorProfileMap.get(post.author_id);
             baseReport.target = {
@@ -2808,7 +3556,7 @@ Respond with JSON only:
             baseReport.target = { type: 'post', id: report.target_id, deleted: true };
           }
         } else if (report.target_type === 'comment') {
-          const comment = commentsMap.get(report.target_id);
+          const comment = commentsMap.get(parseInt(report.target_id));
           if (comment) {
             const authorProfile = authorProfileMap.get(comment.author_id);
             baseReport.target = {

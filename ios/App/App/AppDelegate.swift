@@ -1,49 +1,155 @@
 import UIKit
 import Capacitor
+import FirebaseCore
+import FirebaseMessaging
+import UserNotifications
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
 
     var window: UIWindow?
 
-    func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-        // Override point for customization after application launch.
+    func application(_ application: UIApplication,
+                     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
+        print("📦 Runtime Bundle ID:", Bundle.main.bundleIdentifier ?? "nil")
+
+        // Configure Firebase FIRST
+        FirebaseApp.configure()
+        print("[AppDelegate] ✅ Firebase configured")
+
+        // Set messaging delegate BEFORE registering for notifications
+        Messaging.messaging().delegate = self
+        print("[AppDelegate] ✅ Messaging delegate set")
+
+        // Set notification center delegate for foreground notifications (banner in foreground)
+        UNUserNotificationCenter.current().delegate = self
+        print("[BANNER] ✅ UNUserNotificationCenter delegate set")
+
+        // Register for remote notifications
+        application.registerForRemoteNotifications()
+        print("[AppDelegate] ✅ Registered for remote notifications")
+
         return true
     }
 
-    func applicationWillResignActive(_ application: UIApplication) {
-        // Sent when the application is about to move from active to inactive state. This can occur for certain types of temporary interruptions (such as an incoming phone call or SMS message) or when the user quits the application and it begins the transition to the background state.
-        // Use this method to pause ongoing tasks, disable timers, and invalidate graphics rendering callbacks. Games should use this method to pause the game.
+    // MARK: - APNs Token Handling
+
+    func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
+        let tokenString = deviceToken.map { String(format: "%02.2hhx", $0) }.joined()
+        print("[AppDelegate] ✅ APNs token received: \(tokenString.prefix(20))...")
+
+        // Pass APNs token to Firebase - it will exchange for FCM token
+        Messaging.messaging().apnsToken = deviceToken
+        print("[AppDelegate] ✅ APNs token set on Messaging")
+
+        // Manually fetch FCM token after setting APNs token
+        Messaging.messaging().token { token, error in
+            if let error = error {
+                print("[AppDelegate] ❌ Error fetching FCM token: \(error.localizedDescription)")
+            } else if let token = token {
+                print("[AppDelegate] ✅ FCM token fetched: \(token.prefix(30))...")
+                self.sendFCMTokenToJS(token: token)
+            }
+        }
     }
 
-    func applicationDidEnterBackground(_ application: UIApplication) {
-        // Use this method to release shared resources, save user data, invalidate timers, and store enough application state information to restore your application to its current state in case it is terminated later.
-        // If your application supports background execution, this method is called instead of applicationWillTerminate: when the user quits.
+    func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {
+        print("[AppDelegate] ❌ Failed to register for remote notifications: \(error.localizedDescription)")
     }
 
-    func applicationWillEnterForeground(_ application: UIApplication) {
-        // Called as part of the transition from the background to the active state; here you can undo many of the changes made on entering the background.
+    // MARK: - RECEIPT (proof the push payload reached the device)
+
+    func application(_ application: UIApplication,
+                     didReceiveRemoteNotification userInfo: [AnyHashable : Any],
+                     fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void) {
+
+        // This is your strongest “receipt” log that the remote notification arrived at the device.
+        print("[RECEIPT] ✅ didReceiveRemoteNotification userInfo=\(userInfo)")
+
+        completionHandler(.newData)
     }
 
-    func applicationDidBecomeActive(_ application: UIApplication) {
-        // Restart any tasks that were paused (or not yet started) while the application was inactive. If the application was previously in the background, optionally refresh the user interface.
+    // Send FCM token to JavaScript
+    private func sendFCMTokenToJS(token: String) {
+        print("[AppDelegate] 📤 Sending FCM token to JavaScript...")
+
+        DispatchQueue.main.async {
+            guard let viewController = self.window?.rootViewController as? CAPBridgeViewController,
+                  let webView = viewController.bridge?.webView else {
+                print("[AppDelegate] ⚠️ Could not find webView, retrying in 1 second...")
+                // Retry after delay if webView not ready
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                    self.sendFCMTokenToJS(token: token)
+                }
+                return
+            }
+
+            let js = "window.dispatchEvent(new CustomEvent('fcmToken', { detail: { token: '\(token)' } })); console.log('[Native] FCM token event dispatched');"
+            webView.evaluateJavaScript(js) { _, error in
+                if let error = error {
+                    print("[AppDelegate] ❌ Error sending FCM token to JS: \(error.localizedDescription)")
+                } else {
+                    print("[AppDelegate] ✅ FCM token sent to JavaScript successfully")
+                }
+            }
+        }
     }
 
-    func applicationWillTerminate(_ application: UIApplication) {
-        // Called when the application is about to terminate. Save data if appropriate. See also applicationDidEnterBackground:.
-    }
+    // MARK: - URL Handling
 
-    func application(_ app: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey: Any] = [:]) -> Bool {
-        // Called when the app was launched with a url. Feel free to add additional processing here,
-        // but if you want the App API to support tracking app url opens, make sure to keep this call
+    func application(_ app: UIApplication,
+                     open url: URL,
+                     options: [UIApplication.OpenURLOptionsKey: Any] = [:]) -> Bool {
         return ApplicationDelegateProxy.shared.application(app, open: url, options: options)
     }
 
-    func application(_ application: UIApplication, continue userActivity: NSUserActivity, restorationHandler: @escaping ([UIUserActivityRestoring]?) -> Void) -> Bool {
-        // Called when the app was launched with an activity, including Universal Links.
-        // Feel free to add additional processing here, but if you want the App API to support
-        // tracking app url opens, make sure to keep this call
+    func application(_ application: UIApplication,
+                     continue userActivity: NSUserActivity,
+                     restorationHandler: @escaping ([UIUserActivityRestoring]?) -> Void) -> Bool {
         return ApplicationDelegateProxy.shared.application(application, continue: userActivity, restorationHandler: restorationHandler)
     }
+}
 
+// MARK: - Firebase Messaging Delegate
+
+extension AppDelegate: MessagingDelegate {
+    func messaging(_ messaging: Messaging, didReceiveRegistrationToken fcmToken: String?) {
+        print("[AppDelegate] 🔔 MessagingDelegate didReceiveRegistrationToken called")
+
+        guard let token = fcmToken else {
+            print("[AppDelegate] ❌ FCM token is nil")
+            return
+        }
+
+        print("[AppDelegate] ✅ FCM token from delegate: \(token.prefix(30))...")
+        sendFCMTokenToJS(token: token)
+    }
+}
+
+// MARK: - User Notification Center Delegate (Banner + Tap logs)
+
+extension AppDelegate: UNUserNotificationCenterDelegate {
+
+    // Banner delivery (foreground): proves iOS is presenting (or attempting to present) a banner while app is open
+    func userNotificationCenter(_ center: UNUserNotificationCenter,
+                                willPresent notification: UNNotification,
+                                withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
+
+        let c = notification.request.content
+        print("[BANNER] ✅ willPresent (foreground) title='\(c.title)' body='\(c.body)' userInfo=\(c.userInfo)")
+
+        // Show banner, badge, and sound even in foreground
+        completionHandler([.banner, .badge, .sound])
+    }
+
+    // Receipt via interaction: proves user tapped/opened the notification
+    func userNotificationCenter(_ center: UNUserNotificationCenter,
+                                didReceive response: UNNotificationResponse,
+                                withCompletionHandler completionHandler: @escaping () -> Void) {
+
+        let c = response.notification.request.content
+        print("[BANNER] 👉 didReceive (tap/open) action='\(response.actionIdentifier)' title='\(c.title)' userInfo=\(c.userInfo)")
+
+        completionHandler()
+    }
 }

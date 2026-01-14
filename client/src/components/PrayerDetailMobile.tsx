@@ -1,25 +1,24 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { User } from "lucide-react";
+import { Capacitor } from "@capacitor/core";
 
-// Helper to convert relative image URLs to full URLs for native apps
+// Helper to convert relative image URLs to full URLs for native apps (same as Home page)
 function getImageUrl(url: string | undefined | null): string | null {
   if (!url) return null;
-  
+
   // Already a full URL
-  if (url.startsWith('http://') || url.startsWith('https://')) {
+  if (url.startsWith("http://") || url.startsWith("https://")) {
     return url;
   }
-  
+
   // Check if running on native platform
-  const isNative = typeof window !== 'undefined' && 
-    window.location.protocol === 'capacitor:';
-  
-  if (isNative) {
+  if (Capacitor.isNativePlatform()) {
     // Prepend production backend URL for native apps
-    const baseUrl = import.meta.env.VITE_API_URL || 'https://gospel-era.replit.app';
-    return `${baseUrl}${url.startsWith('/') ? '' : '/'}${url}`;
+    const baseUrl =
+      import.meta.env.VITE_API_URL || "https://gospel-era.replit.app";
+    return `${baseUrl}${url.startsWith("/") ? "" : "/"}${url}`;
   }
-  
+
   // For web, return as-is (relative URLs work)
   return url;
 }
@@ -32,6 +31,7 @@ interface PrayerDetailMobileProps {
   onBack: () => void;
   onCommitToPray: (prayerId: number) => Promise<void>;
   onConfirmPrayed: (prayerId: number) => Promise<void>;
+  onRefresh?: (prayerId: number) => Promise<void>;
 }
 
 export function PrayerDetailMobile({
@@ -42,9 +42,42 @@ export function PrayerDetailMobile({
   onBack,
   onCommitToPray,
   onConfirmPrayed,
+  onRefresh = async () => {},
 }: PrayerDetailMobileProps) {
   const [isCommitting, setIsCommitting] = useState(false);
-  const [avatarError, setAvatarError] = useState(false);
+  const [localCommitmentStatus, setLocalCommitmentStatus] = useState<
+    "none" | "committed" | "prayed"
+  >("none");
+
+  // Check if this is user's own prayer request
+  const isOwnPrayer = user?.id && prayer?.requester === user.id;
+
+  useEffect(() => {
+    if (!prayer?.id) return;
+
+    // When you enter this screen again, re-sync from server
+    setLocalCommitmentStatus("none");
+    onRefresh(prayer.id);
+  }, [prayer?.id]);
+  useEffect(() => {
+    // Once parent provides updated commitment, stop using optimistic local override
+    if (commitment) {
+      setLocalCommitmentStatus("none");
+    }
+  }, [commitment?.status]);
+
+  // Debug logging
+  console.log("🔍 PrayerDetail ownership check:", {
+    userId: user?.id,
+    prayerRequester: prayer?.requester,
+    isOwnPrayer,
+    match: user?.id === prayer?.requester,
+    userType: typeof user?.id,
+    requesterType: typeof prayer?.requester,
+  });
+
+  // TEMP DEBUG: Show on screen
+  const debugInfo = `User: ${user?.id?.substring(0, 8)}... | Requester: ${prayer?.requester?.substring(0, 8)}... | Match: ${isOwnPrayer}`;
 
   const formatTimeAgo = useCallback((dateString: string) => {
     const date = new Date(dateString);
@@ -58,20 +91,39 @@ export function PrayerDetailMobile({
     return `${Math.floor(diffInSeconds / 604800)}w`;
   }, []);
 
+  // Derive effective status from prop or local state
+  const effectiveStatus =
+    localCommitmentStatus !== "none"
+      ? localCommitmentStatus
+      : commitment
+        ? commitment.status === "prayed"
+          ? "prayed"
+          : "committed"
+        : "none";
+
   const handleAction = async () => {
-    console.log("🙏 [PrayerDetailMobile] handleAction called", { prayerId: prayer.id, hasCommitment: !!commitment });
+    console.log("🙏 [PrayerDetailMobile] handleAction called", {
+      prayerId: prayer.id,
+      hasCommitment: !!commitment,
+      effectiveStatus,
+    });
     setIsCommitting(true);
     try {
-      if (commitment && commitment.status !== 'prayed') {
-        console.log("🙏 [PrayerDetailMobile] Confirming prayed...");
+      if (effectiveStatus === "committed") {
+        console.log(" [PrayerDetailMobile] Confirming prayed...");
+        setLocalCommitmentStatus("prayed");
         await onConfirmPrayed(prayer.id);
-      } else if (!commitment) {
-        console.log("🙏 [PrayerDetailMobile] Committing to pray...");
+        await onRefresh(prayer.id);
+      } else if (effectiveStatus === "none") {
+        console.log("[PrayerDetailMobile] Committing to pray...");
+        setLocalCommitmentStatus("committed");
         await onCommitToPray(prayer.id);
+        await onRefresh(prayer.id);
       }
-      console.log("🙏 [PrayerDetailMobile] Action completed successfully");
+      console.log("[PrayerDetailMobile] Action completed successfully");
     } catch (err) {
-      console.error("🙏 [PrayerDetailMobile] Action error:", err);
+      console.error(" [PrayerDetailMobile] Action error:", err);
+      setLocalCommitmentStatus("none");
     } finally {
       setIsCommitting(false);
     }
@@ -150,7 +202,7 @@ export function PrayerDetailMobile({
               width: "48px",
               height: "48px",
               borderRadius: "50%",
-              background: prayer.is_anonymous ? "#dbdbdb" : (getImageUrl(prayer.profiles?.avatar_url) && !avatarError ? "transparent" : "#dbdbdb"),
+              background: "#dbdbdb",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -161,7 +213,7 @@ export function PrayerDetailMobile({
           >
             {prayer.is_anonymous ? (
               "🙏"
-            ) : getImageUrl(prayer.profiles?.avatar_url) && !avatarError ? (
+            ) : getImageUrl(prayer.profiles?.avatar_url) ? (
               <img
                 src={getImageUrl(prayer.profiles.avatar_url)!}
                 alt=""
@@ -169,8 +221,8 @@ export function PrayerDetailMobile({
                   width: "100%",
                   height: "100%",
                   objectFit: "cover",
+                  borderRadius: "50%",
                 }}
-                onError={() => setAvatarError(true)}
               />
             ) : (
               <User size={24} color="#8e8e8e" />
@@ -267,23 +319,27 @@ export function PrayerDetailMobile({
           </div>
         </div>
 
-        {/* Action Button */}
-        {user && !isBanned && (
+        {/* Action Button - hide for own prayer requests */}
+        {user && !isBanned && !isOwnPrayer && (
           <button
             onClick={handleAction}
-            disabled={isCommitting}
+            disabled={isCommitting || effectiveStatus === "prayed"}
             data-testid="button-commit-pray"
             style={{
               width: "100%",
               background:
-                commitment && commitment.status === 'prayed' ? "#28a745" : "#4285f4",
+                effectiveStatus === "prayed"
+                  ? "#28a745"
+                  : effectiveStatus === "committed"
+                    ? "#f59e0b"
+                    : "#4285f4",
               color: "#ffffff",
               border: "none",
               padding: "16px",
               borderRadius: "12px",
               fontSize: "16px",
               fontWeight: 600,
-              cursor: "pointer",
+              cursor: effectiveStatus === "prayed" ? "default" : "pointer",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -292,9 +348,9 @@ export function PrayerDetailMobile({
           >
             {isCommitting
               ? "..."
-              : commitment && commitment.status === 'prayed'
+              : effectiveStatus === "prayed"
                 ? "✓ Prayed"
-                : commitment && commitment.status !== 'prayed'
+                : effectiveStatus === "committed"
                   ? "Confirm I Prayed"
                   : "I Will Pray"}
           </button>

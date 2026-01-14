@@ -1,5 +1,5 @@
 export const PAYMENTS = {
-  ENABLE_STRIPE: !!import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY,
+  ENABLE_STRIPE: !!import.meta.env.VITE_STRIPE_PUBLIC_KEY,
   ENABLE_PAYPAL: !!import.meta.env.VITE_PAYPAL_CLIENT_ID,
   CURRENCY: 'USD'
 } as const;

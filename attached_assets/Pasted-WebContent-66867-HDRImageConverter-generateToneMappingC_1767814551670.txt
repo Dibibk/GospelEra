@@ -1,0 +1,40 @@
+WebContent[66867] -[HDRImageConverter generateToneMappingCurveForImage:targetHeadroom:]:135: Missing gain map: <HDRImage(MPP) base: 4032x3024 'xf20' [DisplayP3] h=1.0
+	gainMap: 2016x1512 'L008' [n/a]>
+WebContent[66867] IIOApplyHDRGainMap:368: *** ERROR: Failed to generate FlexGTC info
+⚡️  [log] - Feed subscription status: CLOSED
+⚡️  [log] - Notifications subscription status: CLOSED
+⚡️  [log] - 🔍 MobileApp fetchData effect {"hasUser":true,"postsLength":27}
+⚡️  [log] - 🔍 Posts already loaded, skipping fetchData
+⚡️  [log] - 🎥 Media permission: Admin user, granting access
+⚡️  [log] - [NativePush] initNativePushNotifications called
+⚡️  [log] - [NativePush] isNativePlatform: true
+⚡️  [log] - [NativePush] Capacitor.getPlatform: ios
+⚡️  [log] - [NativePush] Listeners already initialized, skipping
+⚡️  To Native ->  PushNotifications checkPermissions 34922737
+⚡️  TO JS {"receive":"granted"}
+⚡️  [log] - [NativePush] Current permission: granted
+⚡️  [log] - [NativePush] Permission granted, calling PushNotifications.register()...
+⚡️  To Native ->  PushNotifications register 34922738
+✅✅✅ [APNs] didRegisterForRemoteNotificationsWithDeviceToken fired
+✅✅✅ [APNs] device token: 704cf2fa81e468acd862ed8c7d41c2c21c4e7084515bdfcd54576ace6eb42482
+✅✅✅ [APNs] set Messaging.messaging().apnsToken
+⚡️  TO JS undefined
+⚡️  [log] - [NativePush] register() called successfully
+⚡️  [log] - Feed subscription status: SUBSCRIBED
+⚡️  [log] - Notifications subscription status: SUBSCRIBED
+⚡️  [log] - 🌐 [posts.ts] Platform detection: {"platform":"ios","isNative":true}
+⚡️  [log] - 🌐 [posts.ts] Native app - using API URL: https://gospel-era.replit.app
+⚡️  [log] - 🌐 [posts.ts] Platform detection: {"platform":"ios","isNative":true}
+⚡️  [log] - 🌐 [posts.ts] Native app - using API URL: https://gospel-era.replit.app
+⚡️  To Native ->  PushNotifications checkPermissions 34922739
+⚡️  TO JS {"receive":"granted"}
+⚡️  [log] - 🌐 [posts.ts] Platform detection: {"platform":"ios","isNative":true}
+⚡️  [log] - 🌐 [posts.ts] Native app - using API URL: https://gospel-era.replit.app
+⚡️  [log] - 🌐 [posts.ts] Platform detection: {"platform":"ios","isNative":true}
+⚡️  To Native ->  Preferences get 34922740
+⚡️  [log] - 🌐 [posts.ts] Native app - using API URL: https://gospel-era.replit.app
+⚡️  TO JS {"value":null}
+⚡️  [log] - 🌐 [posts.ts] Platform detection: {"platform":"ios","isNative":true}
+⚡️  [log] - 🌐 [posts.ts] Native app - using API URL: https://gospel-era.replit.app
+⚡️  To Native ->  Preferences get 34922741
+⚡️  TO JS {"value":null}
