@@ -582,13 +582,28 @@ Respond in JSON format:
       const fromId = req.query.fromId as string;
       const currentUserId = req.user?.id;
       
+      // Get blocked user IDs to filter from feed
+      let blockedUserIds: string[] = [];
+      if (currentUserId && supabaseAdmin) {
+        const { data: blocks } = await supabaseAdmin
+          .from('blocked_users')
+          .select('blocked_id')
+          .eq('blocker_id', currentUserId);
+        blockedUserIds = blocks?.map(b => b.blocked_id) || [];
+      }
+      
       // Build the query with proper pagination
       let query = supabase
         .from('posts')
         .select('*')
         .eq('hidden', false)
         .order('created_at', { ascending: false })
-        .limit(limit);
+        .limit(limit + blockedUserIds.length); // Fetch extra to account for filtered posts
+      
+      // Filter out blocked users' posts
+      if (blockedUserIds.length > 0) {
+        query = query.not('author_id', 'in', `(${blockedUserIds.join(',')})`);
+      }
       
       // Add keyset pagination if fromId is provided
       if (fromId) {
@@ -603,7 +618,12 @@ Respond in JSON format:
         }
       }
       
-      const { data: feedPosts, error: postsError } = await query;
+      let { data: feedPosts, error: postsError } = await query;
+      
+      // Ensure we return the correct limit
+      if (feedPosts && feedPosts.length > limit) {
+        feedPosts = feedPosts.slice(0, limit);
+      }
       
       if (postsError) {
         console.error("Error fetching posts:", postsError);
@@ -700,6 +720,16 @@ Respond in JSON format:
       const tagsParam = req.query.tags as string;
       const currentUserId = req.user?.id;
       
+      // Get blocked user IDs to filter from prayer requests
+      let blockedUserIds: string[] = [];
+      if (currentUserId && supabaseAdmin) {
+        const { data: blocks } = await supabaseAdmin
+          .from('blocked_users')
+          .select('blocked_id')
+          .eq('blocker_id', currentUserId);
+        blockedUserIds = blocks?.map(b => b.blocked_id) || [];
+      }
+      
       // Query prayer requests (without joins to avoid FK issues)
       let query = supabase
         .from('prayer_requests')
@@ -707,6 +737,11 @@ Respond in JSON format:
         .eq('status', status)
         .order('created_at', { ascending: false })
         .limit(limit);
+      
+      // Filter out blocked users' prayer requests
+      if (blockedUserIds.length > 0) {
+        query = query.not('requester', 'in', `(${blockedUserIds.join(',')})`);
+      }
       
       if (cursor) {
         query = query.lt('id', parseInt(cursor));
@@ -1325,7 +1360,7 @@ Respond in JSON format:
   });
 
   // GET comments for a post
-  app.get("/api/comments", async (req, res) => {
+  app.get("/api/comments", optionalAuth, async (req: AuthenticatedRequest, res) => {
     try {
       // Use supabaseAdmin to bypass RLS - comments are public data
       if (!supabaseAdmin) {
@@ -1335,9 +1370,20 @@ Respond in JSON format:
       const postId = parseInt(req.query.post_id as string);
       const limit = Math.min(parseInt(req.query.limit as string) || 20, 100);
       const fromId = req.query.from_id ? parseInt(req.query.from_id as string) : null;
+      const currentUserId = req.user?.id;
       
       if (isNaN(postId)) {
         return res.status(400).json({ error: "post_id is required and must be a number" });
+      }
+      
+      // Get blocked user IDs to filter from comments
+      let blockedUserIds: string[] = [];
+      if (currentUserId) {
+        const { data: blocks } = await supabaseAdmin
+          .from('blocked_users')
+          .select('blocked_id')
+          .eq('blocker_id', currentUserId);
+        blockedUserIds = blocks?.map(b => b.blocked_id) || [];
       }
       
       let query = supabaseAdmin
@@ -1348,6 +1394,11 @@ Respond in JSON format:
         .eq('hidden', false)
         .order('created_at', { ascending: false })
         .limit(limit);
+      
+      // Filter out blocked users' comments
+      if (blockedUserIds.length > 0) {
+        query = query.not('author_id', 'in', `(${blockedUserIds.join(',')})`);
+      }
       
       // Add keyset pagination if fromId provided
       if (fromId) {
