@@ -149,6 +149,20 @@ function getYoutubeEmbedSrc(url: string): string | null {
   }
 }
 
+// Helper to detect if running in Capacitor native app
+function isCapacitorNative(): boolean {
+  if (typeof window === "undefined") return false;
+  // Check for Capacitor global object (most reliable)
+  if ((window as any).Capacitor?.isNativePlatform?.()) return true;
+  // iOS uses capacitor: protocol
+  if (window.location.protocol === "capacitor:") return true;
+  // Android Capacitor uses http://localhost with specific user agent
+  if (window.location.hostname === "localhost" && 
+      navigator.userAgent.includes("Android") &&
+      (window as any).Capacitor) return true;
+  return false;
+}
+
 // Helper to convert relative image URLs to full URLs for native apps
 function getImageUrl(url: string | undefined | null): string | null {
   if (!url) return null;
@@ -158,14 +172,8 @@ function getImageUrl(url: string | undefined | null): string | null {
     return url;
   }
 
-  // Check if running on native platform (iOS uses capacitor:, Android uses http://localhost or file://)
-  const isNative =
-    typeof window !== "undefined" && 
-    (window.location.protocol === "capacitor:" || 
-     window.location.hostname === "localhost" ||
-     window.location.protocol === "file:");
-
-  if (isNative) {
+  // Check if running on native platform
+  if (isCapacitorNative()) {
     // Prepend production backend URL for native apps
     const baseUrl =
       import.meta.env.VITE_API_URL || "https://gospel-era.replit.app";
@@ -232,7 +240,7 @@ const STYLES = {
     flex: 1,
     overflowY: "auto" as const,
     background: "#ffffff",
-    paddingBottom: "calc(80px + env(safe-area-inset-bottom, 0px))",
+    paddingBottom: "calc(90px + env(safe-area-inset-bottom, 0px))",
   },
   bottomNav: {
     position: "fixed" as const,
@@ -241,16 +249,17 @@ const STYLES = {
     transform: "translateX(-50%)",
     width: "100%",
     maxWidth: "414px",
-    height: "calc(56px + env(safe-area-inset-bottom, 0px))",
+    minHeight: "70px",
+    height: "calc(70px + env(safe-area-inset-bottom, 0px))",
     paddingBottom: "env(safe-area-inset-bottom, 0px)",
     background: "#ffffff",
     borderTop: "1px solid #dbdbdb",
     display: "flex",
     justifyContent: "space-around",
-    alignItems: "flex-start",
-    paddingTop: "8px",
-    paddingLeft: "16px",
-    paddingRight: "16px",
+    alignItems: "center",
+    paddingTop: "4px",
+    paddingLeft: "8px",
+    paddingRight: "8px",
     zIndex: 1100,
   },
   searchContainer: {
