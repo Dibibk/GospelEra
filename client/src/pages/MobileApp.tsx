@@ -158,9 +158,12 @@ function getImageUrl(url: string | undefined | null): string | null {
     return url;
   }
 
-  // Check if running on native platform
+  // Check if running on native platform (iOS uses capacitor:, Android uses http://localhost or file://)
   const isNative =
-    typeof window !== "undefined" && window.location.protocol === "capacitor:";
+    typeof window !== "undefined" && 
+    (window.location.protocol === "capacitor:" || 
+     window.location.hostname === "localhost" ||
+     window.location.protocol === "file:");
 
   if (isNative) {
     // Prepend production backend URL for native apps
@@ -4308,7 +4311,10 @@ export default function MobileApp() {
               transition: "transform 0.1s, opacity 0.1s",
             }}
           >
-            🔍
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="11" cy="11" r="8"/>
+              <path d="m21 21-4.35-4.35"/>
+            </svg>
             <span style={{ fontSize: "10px", marginTop: "2px" }}>Search</span>
           </div>
           <div
@@ -4342,7 +4348,11 @@ export default function MobileApp() {
               transition: "transform 0.1s, opacity 0.1s",
             }}
           >
-            ➕<span style={{ fontSize: "10px", marginTop: "2px" }}>Post</span>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="12" y1="5" x2="12" y2="19"/>
+              <line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            <span style={{ fontSize: "10px", marginTop: "2px" }}>Post</span>
           </div>
           <div
             onClick={() => {
