@@ -149,6 +149,20 @@ function getYoutubeEmbedSrc(url: string): string | null {
   }
 }
 
+// Helper to detect if running in Capacitor native app
+function isCapacitorNative(): boolean {
+  if (typeof window === "undefined") return false;
+  // Check for Capacitor global object (most reliable)
+  if ((window as any).Capacitor?.isNativePlatform?.()) return true;
+  // iOS uses capacitor: protocol
+  if (window.location.protocol === "capacitor:") return true;
+  // Android Capacitor uses http://localhost with specific user agent
+  if (window.location.hostname === "localhost" && 
+      navigator.userAgent.includes("Android") &&
+      (window as any).Capacitor) return true;
+  return false;
+}
+
 // Helper to convert relative image URLs to full URLs for native apps
 function getImageUrl(url: string | undefined | null): string | null {
   if (!url) return null;
@@ -159,10 +173,7 @@ function getImageUrl(url: string | undefined | null): string | null {
   }
 
   // Check if running on native platform
-  const isNative =
-    typeof window !== "undefined" && window.location.protocol === "capacitor:";
-
-  if (isNative) {
+  if (isCapacitorNative()) {
     // Prepend production backend URL for native apps
     const baseUrl =
       import.meta.env.VITE_API_URL || "https://gospel-era.replit.app";
@@ -229,7 +240,7 @@ const STYLES = {
     flex: 1,
     overflowY: "auto" as const,
     background: "#ffffff",
-    paddingBottom: "calc(80px + env(safe-area-inset-bottom, 0px))",
+    paddingBottom: "calc(90px + env(safe-area-inset-bottom, 0px))",
   },
   bottomNav: {
     position: "fixed" as const,
@@ -238,16 +249,17 @@ const STYLES = {
     transform: "translateX(-50%)",
     width: "100%",
     maxWidth: "414px",
-    height: "calc(56px + env(safe-area-inset-bottom, 0px))",
+    minHeight: "70px",
+    height: "calc(70px + env(safe-area-inset-bottom, 0px))",
     paddingBottom: "env(safe-area-inset-bottom, 0px)",
     background: "#ffffff",
     borderTop: "1px solid #dbdbdb",
     display: "flex",
     justifyContent: "space-around",
-    alignItems: "flex-start",
-    paddingTop: "8px",
-    paddingLeft: "16px",
-    paddingRight: "16px",
+    alignItems: "center",
+    paddingTop: "4px",
+    paddingLeft: "8px",
+    paddingRight: "8px",
     zIndex: 1100,
   },
   searchContainer: {
@@ -4308,7 +4320,10 @@ export default function MobileApp() {
               transition: "transform 0.1s, opacity 0.1s",
             }}
           >
-            🔍
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="11" cy="11" r="8"/>
+              <path d="m21 21-4.35-4.35"/>
+            </svg>
             <span style={{ fontSize: "10px", marginTop: "2px" }}>Search</span>
           </div>
           <div
@@ -4342,7 +4357,11 @@ export default function MobileApp() {
               transition: "transform 0.1s, opacity 0.1s",
             }}
           >
-            ➕<span style={{ fontSize: "10px", marginTop: "2px" }}>Post</span>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="12" y1="5" x2="12" y2="19"/>
+              <line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            <span style={{ fontSize: "10px", marginTop: "2px" }}>Post</span>
           </div>
           <div
             onClick={() => {

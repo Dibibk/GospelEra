@@ -1,0 +1,74 @@
+Hello, 
+
+We noticed this is your first app submission and want to congratulate you on joining the Apple Developer Program. We look forward to working together on your submissions.
+
+When App Review identifies an issue with a submission, we’ll contact you with a message in App Store Connect with details about what we found and how to resolve the issue. Learn more about App Review and tips for a smooth review experience. 
+
+See below for additional information about the issues that require your attention for this submission. If you have any questions, we are here to help. Reply to this message in App Store Connect and let us know.
+
+
+Review Environment
+
+Submission ID: 5e210189-d336-4a24-a212-9debebfa669f
+Review date: January 16, 2026
+Review Device: iPad Air 11-inch (M3) 
+Version reviewed: 1.0
+
+
+Guideline 1.2 - Safety - User-Generated Content
+
+We found in our review that your app includes user-generated content but does not have all the required precautions. Apps with user-generated content must take specific steps to moderate content and prevent abusive behavior.
+
+Next Steps
+
+To resolve this issue, please revise your app to implement the following precautions:
+
+- A mechanism for users to block abusive users. Blocking should also notify the developer of the inappropriate content and should remove it from the user's feed instantly.
+
+Resources
+
+Learn more about our policies for user-generated content in App Review Guideline 1.2.
+
+
+Guideline 2.1 - Performance
+Issue Description
+
+The app crashed during review. Apps that crash negatively impact users. 
+
+Specifically, the app crashes when the camera button is selected. 
+
+Review device details:
+
+- Device type: iPad Air 11-inch (M3) 
+- OS version: iPadOS 26.1
+
+Next Steps
+
+Test the app on supported devices to identify crashes and stability issues before resubmitting for review. Crash logs have been attached to help resolve this issue:
+
+1. Fully symbolicate the crash report. See Adding Identifiable Symbol Names to a Crash Report.
+2. Match the crash report to a common pattern. Based on the pattern, take specific actions to further investigate the crash. See Identifying the Cause of Common Crashes.
+3. Once the root causes of the crash have been identified, make the appropriate changes to the binary to resolve the issue.
+4. Test the app on a device to ensure that it runs as expected.
+
+Resources
+
+- For more information on crash reports, see Diagnosing Issues Using Crash Reports and Device Logs.
+- For information about testing apps and preparing them for review, see Testing a Release Build.
+- To learn about troubleshooting networking issues, see Networking Overview.
+
+
+
+Guideline 3.1.1 - Business - Payments - In-App Purchase
+
+We noticed that your app allows users to contribute donations to the development of your app with a mechanism other than in-app purchase. Although these donations may be optional, they must use in-app purchase since they are associated with receiving digital content or services.
+
+Apps on the United States storefront may link out to the default browser, using buttons, external links, or other calls to action, for payment mechanisms other than in-app purchase. To learn more, see the News post on Apple Developer. For storefronts where there are not alternative options for qualifying apps, the app must use in-app purchase.
+
+Next Steps
+
+Revise the app to use in-app purchase to pay for this type of transaction or remove these transactions from the app. 
+
+Resources 
+
+Learn more about appropriate uses for in-app purchase in App Review Guideline 3.1.1.
