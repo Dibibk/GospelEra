@@ -3619,6 +3619,182 @@ Respond with JSON only:
     }
   });
 
+  // ==================== BLOCKED USERS API ====================
+
+  // Block a user
+  app.post("/api/block", authenticateUser, async (req: AuthenticatedRequest, res) => {
+    try {
+      if (!supabaseAdmin) {
+        return res.status(500).json({ error: "Database configuration error" });
+      }
+
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+
+      const { blocked_id, reason } = req.body;
+
+      if (!blocked_id) {
+        return res.status(400).json({ error: "blocked_id is required" });
+      }
+
+      if (blocked_id === userId) {
+        return res.status(400).json({ error: "Cannot block yourself" });
+      }
+
+      // Check if already blocked
+      const { data: existing } = await supabaseAdmin
+        .from('blocked_users')
+        .select('id')
+        .eq('blocker_id', userId)
+        .eq('blocked_id', blocked_id)
+        .single();
+
+      if (existing) {
+        return res.status(400).json({ error: "User already blocked" });
+      }
+
+      // Create block record
+      const { data, error } = await supabaseAdmin
+        .from('blocked_users')
+        .insert({
+          blocker_id: userId,
+          blocked_id: blocked_id,
+          reason: reason || null,
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error("Error blocking user:", error);
+        return res.status(500).json({ error: "Failed to block user" });
+      }
+
+      // Log for admin awareness (safety event)
+      console.log(`[SAFETY] User ${userId} blocked user ${blocked_id}. Reason: ${reason || 'No reason provided'}`);
+
+      res.json({ success: true, data });
+    } catch (error) {
+      console.error("Error blocking user:", error);
+      res.status(500).json({ error: "Failed to block user" });
+    }
+  });
+
+  // Unblock a user
+  app.delete("/api/block/:blocked_id", authenticateUser, async (req: AuthenticatedRequest, res) => {
+    try {
+      if (!supabaseAdmin) {
+        return res.status(500).json({ error: "Database configuration error" });
+      }
+
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+
+      const { blocked_id } = req.params;
+
+      const { error } = await supabaseAdmin
+        .from('blocked_users')
+        .delete()
+        .eq('blocker_id', userId)
+        .eq('blocked_id', blocked_id);
+
+      if (error) {
+        console.error("Error unblocking user:", error);
+        return res.status(500).json({ error: "Failed to unblock user" });
+      }
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error unblocking user:", error);
+      res.status(500).json({ error: "Failed to unblock user" });
+    }
+  });
+
+  // Get blocked users list
+  app.get("/api/blocked-users", authenticateUser, async (req: AuthenticatedRequest, res) => {
+    try {
+      if (!supabaseAdmin) {
+        return res.status(500).json({ error: "Database configuration error" });
+      }
+
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+
+      // Get all blocked user IDs
+      const { data: blocks, error } = await supabaseAdmin
+        .from('blocked_users')
+        .select('blocked_id, reason, created_at')
+        .eq('blocker_id', userId)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error("Error fetching blocked users:", error);
+        return res.status(500).json({ error: "Failed to fetch blocked users" });
+      }
+
+      if (!blocks || blocks.length === 0) {
+        return res.json([]);
+      }
+
+      // Get profile info for blocked users
+      const blockedIds = blocks.map(b => b.blocked_id);
+      const { data: profiles } = await supabaseAdmin
+        .from('profiles')
+        .select('id, display_name, avatar_url')
+        .in('id', blockedIds);
+
+      // Merge profile info with block data
+      const result = blocks.map(block => {
+        const profile = profiles?.find(p => p.id === block.blocked_id);
+        return {
+          ...block,
+          display_name: profile?.display_name || 'Unknown User',
+          avatar_url: profile?.avatar_url || null,
+        };
+      });
+
+      res.json(result);
+    } catch (error) {
+      console.error("Error fetching blocked users:", error);
+      res.status(500).json({ error: "Failed to fetch blocked users" });
+    }
+  });
+
+  // Get list of blocked user IDs (for filtering)
+  app.get("/api/blocked-user-ids", authenticateUser, async (req: AuthenticatedRequest, res) => {
+    try {
+      if (!supabaseAdmin) {
+        return res.status(500).json({ error: "Database configuration error" });
+      }
+
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+
+      const { data, error } = await supabaseAdmin
+        .from('blocked_users')
+        .select('blocked_id')
+        .eq('blocker_id', userId);
+
+      if (error) {
+        console.error("Error fetching blocked user IDs:", error);
+        return res.status(500).json({ error: "Failed to fetch blocked user IDs" });
+      }
+
+      const blockedIds = data?.map(b => b.blocked_id) || [];
+      res.json(blockedIds);
+    } catch (error) {
+      console.error("Error fetching blocked user IDs:", error);
+      res.status(500).json({ error: "Failed to fetch blocked user IDs" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;
