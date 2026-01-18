@@ -16,6 +16,7 @@ import {
   searchPosts,
   getTopTags,
   fetchFeed,
+  getApiBaseUrl,
 } from "@/lib/posts";
 import {
   listPrayerRequests,
@@ -2751,8 +2752,8 @@ export default function MobileApp() {
                           <button
                             onClick={() => handleBlockUser(
                               post.author_id,
-                              profiles[post.author_id]?.display_name ||
-                                profiles[post.author_id]?.email?.split("@")[0] ||
+                              profiles.get(post.author_id)?.display_name ||
+                                profiles.get(post.author_id)?.email?.split("@")[0] ||
                                 "this user"
                             )}
                             disabled={blockingUserId === post.author_id}
