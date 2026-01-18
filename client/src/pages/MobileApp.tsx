@@ -2154,7 +2154,7 @@ export default function MobileApp() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
         },
-        body: JSON.stringify({ blockedId: userId }),
+        body: JSON.stringify({ blocked_id: userId }),
       });
 
       if (!response.ok) {
