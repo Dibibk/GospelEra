@@ -1,69 +1,101 @@
 /**
  * iOS In-App Purchase Integration using cordova-plugin-purchase (CdvPurchase)
  * 
- * This module handles iOS-only In-App Purchases via window.store (global CdvPurchase).
+ * This module handles iOS-only In-App Purchases via window.CdvPurchase.store.
  * Android and Web continue to use Stripe - this code does nothing on those platforms.
  * 
- * IMPORTANT: Do NOT import cordova-plugin-purchase as a module.
- * Access it via window.store which is injected by the Cordova plugin.
+ * IMPORTANT: cordova-plugin-purchase exposes CdvPurchase globally, not window.store.
+ * Access it via window.CdvPurchase.store which is injected by the Cordova plugin.
  */
 
 import { Capacitor } from '@capacitor/core';
 
-// Declare CdvPurchase types for window.store
+// Declare CdvPurchase types for window.CdvPurchase
 declare global {
   interface Window {
-    store?: CdvPurchaseStore;
+    CdvPurchase?: {
+      store: CdvPurchaseStore;
+      ProductType: {
+        CONSUMABLE: string;
+        NON_CONSUMABLE: string;
+        PAID_SUBSCRIPTION: string;
+        FREE_SUBSCRIPTION: string;
+      };
+      Platform: {
+        APPLE_APPSTORE: string;
+        GOOGLE_PLAY: string;
+        TEST: string;
+      };
+      LogLevel: {
+        QUIET: number;
+        ERROR: number;
+        WARNING: number;
+        INFO: number;
+        DEBUG: number;
+      };
+    };
   }
 }
 
 interface CdvPurchaseStore {
-  register: (products: CdvProduct[]) => void;
-  refresh: () => Promise<void>;
-  ready: (callback: () => void) => void;
-  when: (product: string) => CdvProductEvents;
-  get: (productId: string) => CdvPurchasedProduct | undefined;
-  order: (productId: string) => Promise<any>;
+  // register() is called on the STORE object, NOT on products
+  register: (products: CdvProductDefinition[]) => void;
+  initialize: (platforms?: string[]) => Promise<void>;
+  update: () => Promise<void>;
   restorePurchases: () => Promise<void>;
-  CONSUMABLE: string;
-  NON_CONSUMABLE: string;
-  PAID_SUBSCRIPTION: string;
+  get: (productId: string, platform?: string) => CdvProduct | undefined;
+  products: CdvProduct[];
+  when: () => CdvEventHandlers;
+  order: (offer: CdvOffer) => Promise<void>;
   verbosity: number;
-  DEBUG: number;
-  INFO: number;
-  WARNING: number;
-  ERROR: number;
-  QUIET: number;
+  ready: (callback: () => void) => void;
 }
 
-interface CdvProduct {
+interface CdvProductDefinition {
   id: string;
   type: string;
   platform: string;
 }
 
-interface CdvProductEvents {
-  approved: (callback: (product: CdvPurchasedProduct) => void) => CdvProductEvents;
-  verified: (callback: (product: CdvPurchasedProduct) => void) => CdvProductEvents;
-  finished: (callback: (product: CdvPurchasedProduct) => void) => CdvProductEvents;
-  error: (callback: (error: any) => void) => CdvProductEvents;
-  cancelled: (callback: (product: CdvPurchasedProduct) => void) => CdvProductEvents;
+interface CdvProduct {
+  id: string;
+  title: string;
+  description: string;
+  platform: string;
+  offers: CdvOffer[];
+  owned: boolean;
+  pricing?: {
+    price: string;
+    priceMicros: number;
+    currency: string;
+  };
+  canPurchase: boolean;
 }
 
-interface CdvPurchasedProduct {
+interface CdvOffer {
   id: string;
-  title?: string;
-  description?: string;
-  price?: string;
-  priceMicros?: number;
-  currency?: string;
-  owned?: boolean;
-  finish: () => void;
+  productId: string;
+  productType: string;
+  platform: string;
+  pricingPhases: any[];
+}
+
+interface CdvEventHandlers {
+  productUpdated: (callback: (product: CdvProduct) => void) => CdvEventHandlers;
+  approved: (callback: (transaction: CdvTransaction) => void) => CdvEventHandlers;
+  verified: (callback: (receipt: any) => void) => CdvEventHandlers;
+  finished: (callback: (transaction: CdvTransaction) => void) => CdvEventHandlers;
+  receiptsReady: (callback: () => void) => CdvEventHandlers;
+  receiptUpdated: (callback: (receipt: any) => void) => CdvEventHandlers;
+}
+
+interface CdvTransaction {
+  transactionId: string;
+  state: string;
+  products: { id: string }[];
+  platform: string;
+  finish: () => Promise<void>;
   verify: () => Promise<void>;
-  transaction?: {
-    id: string;
-    type: string;
-  };
 }
 
 // --- Platform Detection (iOS-only logic) ---
@@ -98,19 +130,36 @@ export const AMOUNT_TO_PRODUCT_ID: Record<number, string> = {
 
 let isStoreInitialized = false;
 let storeReadyPromise: Promise<void> | null = null;
+let pendingPurchaseResolve: ((result: { success: boolean; cancelled?: boolean; error?: string }) => void) | null = null;
 
 /**
  * Check if CdvPurchase store is available (iOS only)
+ * Returns false on simulator or if plugin not loaded - this is expected behavior
  */
 export function isStoreAvailable(): boolean {
-  // Only available on iOS with window.store defined
+  // Only available on iOS with CdvPurchase defined
   if (!isIOS()) return false;
-  return typeof window.store !== 'undefined';
+  
+  // Check if CdvPurchase global exists (injected by cordova-plugin-purchase)
+  return typeof window.CdvPurchase !== 'undefined' && 
+         typeof window.CdvPurchase.store !== 'undefined';
+}
+
+/**
+ * Get the CdvPurchase store instance
+ * Returns undefined if not on iOS or plugin not loaded
+ */
+function getStore(): CdvPurchaseStore | undefined {
+  if (!isStoreAvailable()) return undefined;
+  return window.CdvPurchase!.store;
 }
 
 /**
  * Initialize the iOS In-App Purchase store
- * Does nothing on Android/Web
+ * Does nothing on Android/Web or if plugin not available (simulator)
+ * 
+ * IMPORTANT: store.register() is called HERE on the store object,
+ * NOT on product objects or arrays. This is the correct usage.
  */
 export async function initializeStore(): Promise<void> {
   // iOS-only: Skip on Android and Web
@@ -119,9 +168,12 @@ export async function initializeStore(): Promise<void> {
     return;
   }
 
-  // Check if store is available
-  if (!window.store) {
-    console.warn('[iOS IAP] window.store not available - cordova-plugin-purchase not loaded');
+  const store = getStore();
+  
+  // Skip if store not available (simulator or plugin not loaded)
+  // This is expected behavior - simulator doesn't support IAP
+  if (!store) {
+    console.warn('[iOS IAP] CdvPurchase.store not available - likely running in simulator or plugin not installed');
     return;
   }
 
@@ -138,42 +190,47 @@ export async function initializeStore(): Promise<void> {
 
   storeReadyPromise = new Promise<void>((resolve, reject) => {
     try {
-      const store = window.store!;
+      const CdvPurchase = window.CdvPurchase!;
       
       // Set verbosity for debugging (can be reduced in production)
-      store.verbosity = store.INFO;
+      store.verbosity = CdvPurchase.LogLevel.INFO;
       
-      console.log('[iOS IAP] Registering products...');
+      console.log('[iOS IAP] Registering products with store.register()...');
       
-      // Register all consumable support products
-      const products: CdvProduct[] = SUPPORT_PRODUCT_IDS.map(id => ({
+      // CORRECT: Call register() on the STORE object with an array of product definitions
+      // Each product needs id, type (CONSUMABLE), and platform (APPLE_APPSTORE)
+      const productDefinitions: CdvProductDefinition[] = SUPPORT_PRODUCT_IDS.map(id => ({
         id,
-        type: store.CONSUMABLE,
-        platform: 'ios'
+        type: CdvPurchase.ProductType.CONSUMABLE,
+        platform: CdvPurchase.Platform.APPLE_APPSTORE
       }));
       
-      store.register(products);
+      // store.register() - called on store, NOT on products
+      store.register(productDefinitions);
+      console.log('[iOS IAP] Products registered:', productDefinitions.length);
       
-      // Set up global event handlers for all products
-      SUPPORT_PRODUCT_IDS.forEach(productId => {
-        store.when(productId)
-          .approved((product) => {
-            console.log('[iOS IAP] Product approved:', product.id);
-            // Verify the purchase with Apple
-            product.verify();
-          })
-          .verified((product) => {
-            console.log('[iOS IAP] Product verified:', product.id);
-            // Finish the transaction
-            product.finish();
-          })
-          .finished((product) => {
-            console.log('[iOS IAP] Product finished:', product.id);
-          })
-          .error((error) => {
-            console.error('[iOS IAP] Product error:', error);
-          });
-      });
+      // Set up global event handlers using store.when()
+      store.when()
+        .productUpdated((product) => {
+          console.log('[iOS IAP] Product updated:', product.id, product.canPurchase ? 'available' : 'unavailable');
+        })
+        .approved((transaction) => {
+          // Transaction approved by Apple - verify and finish
+          console.log('[iOS IAP] Transaction approved:', transaction.transactionId);
+          transaction.verify();
+        })
+        .verified((receipt) => {
+          console.log('[iOS IAP] Receipt verified');
+          // Finish all transactions in the receipt
+        })
+        .finished((transaction) => {
+          // Transaction complete - resolve pending purchase
+          console.log('[iOS IAP] Transaction finished:', transaction.transactionId);
+          if (pendingPurchaseResolve) {
+            pendingPurchaseResolve({ success: true });
+            pendingPurchaseResolve = null;
+          }
+        });
       
       // Wait for store to be ready
       store.ready(() => {
@@ -182,13 +239,21 @@ export async function initializeStore(): Promise<void> {
         resolve();
       });
       
-      // Refresh to load products from App Store
-      store.refresh().catch((err: any) => {
-        console.error('[iOS IAP] Store refresh error:', err);
-      });
+      // Initialize and update products from App Store
+      store.initialize([CdvPurchase.Platform.APPLE_APPSTORE])
+        .then(() => {
+          console.log('[iOS IAP] Store initialized');
+          return store.update();
+        })
+        .then(() => {
+          console.log('[iOS IAP] Products updated from App Store');
+        })
+        .catch((err: any) => {
+          console.error('[iOS IAP] Store initialization error:', err);
+        });
       
     } catch (error) {
-      console.error('[iOS IAP] Store initialization error:', error);
+      console.error('[iOS IAP] Store setup error:', error);
       reject(error);
     }
   });
@@ -199,22 +264,23 @@ export async function initializeStore(): Promise<void> {
 /**
  * Get product information (iOS only)
  */
-export function getProduct(productId: string): CdvPurchasedProduct | undefined {
-  if (!isIOS() || !window.store) return undefined;
-  return window.store.get(productId);
+export function getProduct(productId: string): CdvProduct | undefined {
+  const store = getStore();
+  if (!store) return undefined;
+  
+  const CdvPurchase = window.CdvPurchase!;
+  return store.get(productId, CdvPurchase.Platform.APPLE_APPSTORE);
 }
 
 /**
  * Get product price string for display
  */
 export function getProductPrice(amount: number): string | null {
-  if (!isIOS() || !window.store) return null;
-  
   const productId = AMOUNT_TO_PRODUCT_ID[amount];
   if (!productId) return null;
   
-  const product = window.store.get(productId);
-  return product?.price || null;
+  const product = getProduct(productId);
+  return product?.pricing?.price || null;
 }
 
 /**
@@ -227,8 +293,9 @@ export async function purchaseByAmount(amount: number): Promise<{ success: boole
     return { success: false, error: 'In-App Purchase is only available on iOS' };
   }
 
-  if (!window.store) {
-    return { success: false, error: 'Store not available' };
+  const store = getStore();
+  if (!store) {
+    return { success: false, error: 'Store not available. Please try again later.' };
   }
 
   const productId = AMOUNT_TO_PRODUCT_ID[amount];
@@ -239,45 +306,51 @@ export async function purchaseByAmount(amount: number): Promise<{ success: boole
   // Ensure store is initialized
   await initializeStore();
 
+  const CdvPurchase = window.CdvPurchase!;
+  const product = store.get(productId, CdvPurchase.Platform.APPLE_APPSTORE);
+  
+  if (!product) {
+    return { success: false, error: 'Product not found. Please try again later.' };
+  }
+  
+  if (!product.canPurchase || product.offers.length === 0) {
+    return { success: false, error: 'Product not available for purchase.' };
+  }
+
   return new Promise((resolve) => {
-    const store = window.store!;
-    
-    // Set up one-time handlers for this specific purchase
-    const cleanup = () => {
-      // Handlers are managed globally, no cleanup needed
-    };
+    // Store the resolve function for the finished handler
+    pendingPurchaseResolve = resolve;
 
     // Create a timeout for the purchase
     const timeout = setTimeout(() => {
-      cleanup();
-      resolve({ success: false, error: 'Purchase timeout' });
+      if (pendingPurchaseResolve) {
+        pendingPurchaseResolve = null;
+        resolve({ success: false, error: 'Purchase timeout. Please try again.' });
+      }
     }, 120000); // 2 minute timeout
 
-    // Override handlers temporarily for this purchase
-    store.when(productId)
-      .finished((product) => {
-        clearTimeout(timeout);
-        console.log('[iOS IAP] Purchase completed:', product.id);
-        resolve({ success: true });
-      })
-      .cancelled((product) => {
-        clearTimeout(timeout);
-        console.log('[iOS IAP] Purchase cancelled:', product.id);
-        resolve({ success: false, cancelled: true });
-      })
-      .error((error) => {
-        clearTimeout(timeout);
-        console.error('[iOS IAP] Purchase error:', error);
-        resolve({ success: false, error: error.message || 'Purchase failed' });
-      });
-
-    // Initiate the purchase
+    // Initiate the purchase using the first offer
+    const offer = product.offers[0];
     console.log('[iOS IAP] Starting purchase for:', productId);
-    store.order(productId).catch((err: any) => {
-      clearTimeout(timeout);
-      console.error('[iOS IAP] Order error:', err);
-      resolve({ success: false, error: err.message || 'Failed to start purchase' });
-    });
+    
+    store.order(offer)
+      .then(() => {
+        console.log('[iOS IAP] Order placed successfully');
+        // Wait for finished event to resolve
+      })
+      .catch((err: any) => {
+        clearTimeout(timeout);
+        pendingPurchaseResolve = null;
+        
+        // Check if user cancelled
+        if (err.code === 'E_USER_CANCELLED' || err.message?.includes('cancel')) {
+          console.log('[iOS IAP] Purchase cancelled by user');
+          resolve({ success: false, cancelled: true });
+        } else {
+          console.error('[iOS IAP] Order error:', err);
+          resolve({ success: false, error: err.message || 'Failed to start purchase' });
+        }
+      });
   });
 }
 
@@ -289,14 +362,15 @@ export async function restorePurchases(): Promise<void> {
     throw new Error('Restore purchases is only available on iOS');
   }
 
-  if (!window.store) {
+  const store = getStore();
+  if (!store) {
     throw new Error('Store not available');
   }
 
   await initializeStore();
   
   console.log('[iOS IAP] Restoring purchases...');
-  await window.store.restorePurchases();
+  await store.restorePurchases();
   console.log('[iOS IAP] Restore complete');
 }
 
@@ -311,6 +385,11 @@ export async function loadProducts(): Promise<any[]> {
 
   await initializeStore();
   
+  const store = getStore();
+  if (!store) {
+    return [];
+  }
+  
   // Return product info
   return SUPPORT_PRODUCT_IDS.map(id => {
     const product = getProduct(id);
@@ -318,7 +397,7 @@ export async function loadProducts(): Promise<any[]> {
       id: product.id,
       displayName: product.title || id,
       description: product.description || '',
-      displayPrice: product.price || ''
+      displayPrice: product.pricing?.price || ''
     } : null;
   }).filter(Boolean);
 }
