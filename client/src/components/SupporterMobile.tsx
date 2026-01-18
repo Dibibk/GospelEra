@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { Browser } from '@capacitor/browser';
 import { validateDonationAmount, createStripeCheckout } from '@/lib/donations';
+import { isIOS, loadProducts, purchaseByAmount, AMOUNT_TO_PRODUCT_ID, getProductPrice } from '@/lib/iosIAP';
 
 interface SupporterMobileProps {
   onBack: () => void;
@@ -15,10 +16,23 @@ export function SupporterMobile({ onBack }: SupporterMobileProps) {
   const [paymentCompleted, setPaymentCompleted] = useState(false);
   const [error, setError] = useState('');
   const [activeTab, setActiveTab] = useState<'stripe' | 'paypal'>('stripe');
+  const [iapProductsLoaded, setIapProductsLoaded] = useState(false);
 
-  // Listen for browser close on native apps
+  // Detect iOS for Apple In-App Purchase
+  const isiOSDevice = isIOS();
+
+  // Load iOS IAP products on mount
   useEffect(() => {
-    if (!Capacitor.isNativePlatform()) return;
+    if (isiOSDevice) {
+      loadProducts()
+        .then(() => setIapProductsLoaded(true))
+        .catch((err) => console.error('[Supporter] Failed to load IAP products:', err));
+    }
+  }, [isiOSDevice]);
+
+  // Listen for browser close on native apps (for Stripe on Android)
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform() || isiOSDevice) return;
 
     const handleBrowserFinished = () => {
       console.log('[Supporter] Browser closed');
@@ -33,15 +47,17 @@ export function SupporterMobile({ onBack }: SupporterMobileProps) {
     return () => {
       Browser.removeAllListeners();
     };
-  }, [isProcessing]);
+  }, [isProcessing, isiOSDevice]);
 
+  // iOS only allows predefined IAP amounts
   const predefinedAmounts = [5, 10, 25, 50, 100];
 
   // Detect native vs web
   const isNative = Capacitor.isNativePlatform();
 
   const stripeEnabled = Boolean(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
-  const paymentsEnabled = stripeEnabled;
+  // iOS uses Apple IAP, Android/web uses Stripe
+  const paymentsEnabled = isiOSDevice || stripeEnabled;
 
   const handleAmountSelect = (amount: number) => {
     console.log('Amount button clicked:', amount);
@@ -70,6 +86,38 @@ export function SupporterMobile({ onBack }: SupporterMobileProps) {
       return;
     }
 
+    // iOS: Use Apple In-App Purchase
+    if (isiOSDevice) {
+      // iOS only supports predefined amounts
+      if (!AMOUNT_TO_PRODUCT_ID[amount]) {
+        setError('Please select a predefined amount for iOS payments.');
+        return;
+      }
+
+      setIsProcessing(true);
+      setError('');
+
+      try {
+        const result = await purchaseByAmount(amount);
+        
+        if (result.success) {
+          setPaymentCompleted(true);
+          console.log('[Supporter] iOS purchase successful:', result);
+        } else if (result.cancelled) {
+          setError('');
+        } else if (result.pending) {
+          setError('Purchase is pending approval.');
+        }
+      } catch (err: any) {
+        console.error('[Supporter] iOS purchase error:', err);
+        setError(err.message || 'Purchase failed. Please try again.');
+      } finally {
+        setIsProcessing(false);
+      }
+      return;
+    }
+
+    // Android/Web: Use Stripe
     if (!paymentsEnabled || activeTab !== 'stripe') {
       alert(
         `Thank you for wanting to support with $${amount}! Payment processing will be implemented soon.`
@@ -84,7 +132,6 @@ export function SupporterMobile({ onBack }: SupporterMobileProps) {
       const result = await createStripeCheckout({
         amount: amount,
         note: message.trim() || undefined,
-        // Let backend know this is running inside native WebView
         isMobile: isNative,
       });
 
@@ -94,17 +141,12 @@ export function SupporterMobile({ onBack }: SupporterMobileProps) {
       } else {
         const checkoutUrl = result.url;
 
-        // 🔑 IMPORTANT:
-        // On native (Capacitor), use the Browser plugin so Stripe Link opens
-        // in a real Safari View Controller instead of the in-app WebView.
         if (isNative) {
           await Browser.open({
             url: checkoutUrl,
             presentationStyle: 'popover',
           });
-          // Keep isProcessing true while external browser is open
         } else {
-          // Web: normal redirect
           window.location.href = checkoutUrl;
         }
       }
@@ -246,37 +288,40 @@ export function SupporterMobile({ onBack }: SupporterMobileProps) {
           ))}
         </div>
 
-        <div style={{ marginBottom: '8px' }}>
-          <input
-            type="number"
-            placeholder="Custom amount"
-            value={customAmount}
-            onChange={(e) => handleCustomAmountChange(e.target.value)}
-            inputMode="decimal"
-            autoCapitalize="none"
-            autoCorrect="off"
-            spellCheck={false}
-            data-testid="input-custom-amount"
-            style={{
-              width: '100%',
-              padding: '12px',
-              border: customAmount
-                ? '2px solid #4285f4'
-                : '1px solid #dbdbdb',
-              borderRadius: '8px',
-              fontSize: '16px',
-              touchAction: 'manipulation',
-              WebkitAppearance: 'none',
-              boxSizing: 'border-box',
-              transition: 'all 0.2s ease',
-              boxShadow: customAmount
-                ? '0 2px 8px rgba(66, 133, 244, 0.2)'
-                : 'none',
-            }}
-            min="2"
-            max="200"
-          />
-        </div>
+        {/* Custom amount only available on Android/Web (not iOS) */}
+        {!isiOSDevice && (
+          <div style={{ marginBottom: '8px' }}>
+            <input
+              type="number"
+              placeholder="Custom amount"
+              value={customAmount}
+              onChange={(e) => handleCustomAmountChange(e.target.value)}
+              inputMode="decimal"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
+              data-testid="input-custom-amount"
+              style={{
+                width: '100%',
+                padding: '12px',
+                border: customAmount
+                  ? '2px solid #4285f4'
+                  : '1px solid #dbdbdb',
+                borderRadius: '8px',
+                fontSize: '16px',
+                touchAction: 'manipulation',
+                WebkitAppearance: 'none',
+                boxSizing: 'border-box',
+                transition: 'all 0.2s ease',
+                boxShadow: customAmount
+                  ? '0 2px 8px rgba(66, 133, 244, 0.2)'
+                  : 'none',
+              }}
+              min="2"
+              max="200"
+            />
+          </div>
+        )}
       </div>
 
       {/* Message */}
@@ -332,7 +377,11 @@ export function SupporterMobile({ onBack }: SupporterMobileProps) {
           }}
         >
           <div style={{ fontWeight: 600, marginBottom: '4px' }}>Thank you!</div>
-          <div>If your payment was successful, you will receive a confirmation email from Stripe. Check your email for details.</div>
+          <div>
+            {isiOSDevice 
+              ? 'Your purchase was successful. Thank you for supporting Gospel Era!'
+              : 'If your payment was successful, you will receive a confirmation email from Stripe. Check your email for details.'}
+          </div>
         </div>
       )}
 
@@ -354,8 +403,8 @@ export function SupporterMobile({ onBack }: SupporterMobileProps) {
         </div>
       )}
 
-      {/* Payment Method Selection */}
-      {paymentsEnabled && (
+      {/* Payment Method Selection - Only show on Android/Web */}
+      {paymentsEnabled && !isiOSDevice && (
         <div style={{ marginBottom: '16px' }}>
           <div
             style={{
@@ -405,6 +454,23 @@ export function SupporterMobile({ onBack }: SupporterMobileProps) {
         </div>
       )}
 
+      {/* iOS Payment Info */}
+      {isiOSDevice && (
+        <div
+          style={{
+            marginBottom: '16px',
+            padding: '12px',
+            background: '#f0f7ff',
+            borderRadius: '8px',
+            fontSize: '13px',
+            color: '#1a73e8',
+            textAlign: 'center',
+          }}
+        >
+          Secure payment via Apple In-App Purchase
+        </div>
+      )}
+
       {/* Support Button */}
       <button
         onClick={handleSupport}
@@ -433,9 +499,11 @@ export function SupporterMobile({ onBack }: SupporterMobileProps) {
       >
         {isProcessing
           ? 'Processing...'
-          : paymentsEnabled
-            ? `Pay $${getSelectedAmount() || 0} via Stripe`
-            : `Support with $${getSelectedAmount() || 0}`}
+          : isiOSDevice
+            ? `Support with $${getSelectedAmount() || 0}`
+            : paymentsEnabled
+              ? `Pay $${getSelectedAmount() || 0} via Stripe`
+              : `Support with $${getSelectedAmount() || 0}`}
       </button>
 
       {/* Info */}
