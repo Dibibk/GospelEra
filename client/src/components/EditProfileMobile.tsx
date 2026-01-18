@@ -39,12 +39,10 @@ export function EditProfileMobile({ profile, onBack, onSuccess }: EditProfileMob
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [showPhotoMenu, setShowPhotoMenu] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   
-  // Refs for hidden file inputs
-  const photoLibraryInputRef = useRef<HTMLInputElement>(null);
-  const cameraInputRef = useRef<HTMLInputElement>(null);
+  // Ref for file input
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Initialize edit buffers from profile prop
   useEffect(() => {
@@ -130,7 +128,6 @@ export function EditProfileMobile({ profile, onBack, onSuccess }: EditProfileMob
   const processSelectedFile = async (file: File) => {
     setError('');
     setUploadingPhoto(true);
-    setShowPhotoMenu(false);
     
     try {
       // Validate file type - check MIME type or fall back to file extension (iOS HEIC has empty MIME)
@@ -243,14 +240,9 @@ export function EditProfileMobile({ profile, onBack, onSuccess }: EditProfileMob
     e.target.value = '';
   };
 
-  // Open Photo Library
-  const handlePhotoLibrary = () => {
-    photoLibraryInputRef.current?.click();
-  };
-
-  // Open Camera
-  const handleTakePhoto = () => {
-    cameraInputRef.current?.click();
+  // Open file picker (iOS shows native options: Photo Library, Take Photo, Choose File)
+  const handleChangePhoto = () => {
+    fileInputRef.current?.click();
   };
 
   // Get display URL with cache busting for immediate refresh
@@ -417,126 +409,39 @@ export function EditProfileMobile({ profile, onBack, onSuccess }: EditProfileMob
               </div>
             )}
           </div>
-          {/* Hidden file inputs */}
+          {/* Hidden file input - iOS shows native picker with Photo Library, Take Photo, Choose File */}
           <input
-            ref={photoLibraryInputRef}
+            ref={fileInputRef}
             type="file"
             accept="image/jpeg,image/png,image/heic,image/heif"
             onChange={handleFileInputChange}
             style={{ display: 'none' }}
-            data-testid="input-photo-library"
-          />
-          <input
-            ref={cameraInputRef}
-            type="file"
-            accept="image/jpeg,image/png,image/heic,image/heif"
-            capture="environment"
-            onChange={handleFileInputChange}
-            style={{ display: 'none' }}
-            data-testid="input-camera"
+            data-testid="input-photo"
           />
           
           {/* Change Photo Button */}
-          <div style={{ position: 'relative' }}>
-            <button
-              onClick={() => setShowPhotoMenu(!showPhotoMenu)}
-              disabled={uploadingPhoto}
-              data-testid="button-change-photo"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px',
-                background: uploadingPhoto ? '#a0c4f4' : '#4285f4',
-                color: '#ffffff',
-                border: 'none',
-                padding: '12px 24px',
-                borderRadius: '8px',
-                fontSize: '14px',
-                cursor: uploadingPhoto ? 'not-allowed' : 'pointer',
-                width: '100%',
-              }}
-            >
-              <span>📷</span>
-              <span>{uploadingPhoto ? 'Uploading...' : 'Change Photo'}</span>
-            </button>
-            
-            {/* Photo Menu Dropdown */}
-            {showPhotoMenu && (
-              <>
-                {/* Backdrop to close menu */}
-                <div
-                  onClick={() => setShowPhotoMenu(false)}
-                  style={{
-                    position: 'fixed',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    background: 'rgba(0,0,0,0.3)',
-                    zIndex: 998,
-                  }}
-                />
-                {/* Menu */}
-                <div
-                  style={{
-                    position: 'absolute',
-                    top: '100%',
-                    left: 0,
-                    right: 0,
-                    marginTop: '8px',
-                    background: '#ffffff',
-                    borderRadius: '12px',
-                    boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
-                    overflow: 'hidden',
-                    zIndex: 999,
-                  }}
-                >
-                  <button
-                    onClick={handlePhotoLibrary}
-                    data-testid="button-photo-library"
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '12px',
-                      width: '100%',
-                      padding: '16px 20px',
-                      border: 'none',
-                      background: '#ffffff',
-                      fontSize: '16px',
-                      color: '#000000',
-                      cursor: 'pointer',
-                      textAlign: 'left',
-                      borderBottom: '1px solid #e5e5e5',
-                    }}
-                  >
-                    <span style={{ fontSize: '20px' }}>🖼️</span>
-                    <span>Photo Library</span>
-                  </button>
-                  <button
-                    onClick={handleTakePhoto}
-                    data-testid="button-take-photo"
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '12px',
-                      width: '100%',
-                      padding: '16px 20px',
-                      border: 'none',
-                      background: '#ffffff',
-                      fontSize: '16px',
-                      color: '#000000',
-                      cursor: 'pointer',
-                      textAlign: 'left',
-                    }}
-                  >
-                    <span style={{ fontSize: '20px' }}>📷</span>
-                    <span>Take Photo</span>
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
+          <button
+            onClick={handleChangePhoto}
+            disabled={uploadingPhoto}
+            data-testid="button-change-photo"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+              background: uploadingPhoto ? '#a0c4f4' : '#4285f4',
+              color: '#ffffff',
+              border: 'none',
+              padding: '12px 24px',
+              borderRadius: '8px',
+              fontSize: '14px',
+              cursor: uploadingPhoto ? 'not-allowed' : 'pointer',
+              width: '100%',
+            }}
+          >
+            <span>📷</span>
+            <span>{uploadingPhoto ? 'Uploading...' : 'Change Photo'}</span>
+          </button>
         </div>
 
         {/* Profile Information */}
