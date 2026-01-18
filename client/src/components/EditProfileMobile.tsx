@@ -1,8 +1,18 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { upsertMyProfile } from '@/lib/profiles';
 import { Capacitor } from '@capacitor/core';
 import { getApiBaseUrl } from '@/lib/posts';
+
+// Photo requirements for error messages
+const PHOTO_REQUIREMENTS = {
+  maxSizeMB: 5,
+  maxSizeBytes: 5 * 1024 * 1024,
+  minPixels: 100,
+  maxPixels: 4096,
+  allowedTypes: ['image/jpeg', 'image/jpg', 'image/png', 'image/heic', 'image/heif'],
+  allowedExtensions: ['.jpg', '.jpeg', '.png', '.heic', '.heif'],
+};
 
 // Helper to get avatar URL with proper base for native apps
 function getAvatarSrc(url: string): string {
@@ -29,6 +39,12 @@ export function EditProfileMobile({ profile, onBack, onSuccess }: EditProfileMob
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [showPhotoMenu, setShowPhotoMenu] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  
+  // Refs for hidden file inputs
+  const photoLibraryInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
 
   // Initialize edit buffers from profile prop
   useEffect(() => {
@@ -72,103 +88,169 @@ export function EditProfileMobile({ profile, onBack, onSuccess }: EditProfileMob
     onBack();
   };
 
-  const handleAvatarUpload = async () => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'image/jpeg,image/png,image/heic,image/heif';
-    input.onchange = async (e) => {
-      const files = (e.target as HTMLInputElement).files;
-      if (files && files[0]) {
-        const file = files[0];
+  // Validate image dimensions
+  const validateImageDimensions = (file: File): Promise<{ valid: boolean; width?: number; height?: number; error?: string }> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        const { width, height } = img;
         
-        // Clear any previous error
-        setError('');
-        
-        // Validate file type - check MIME type or fall back to file extension (iOS HEIC has empty MIME)
-        const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/heic', 'image/heif'];
-        const allowedExtensions = ['.jpg', '.jpeg', '.png', '.heic', '.heif'];
-        const fileExtension = file.name.toLowerCase().substring(file.name.lastIndexOf('.'));
-        const mimeType = file.type.toLowerCase();
-        
-        const isValidType = mimeType ? allowedTypes.includes(mimeType) : allowedExtensions.includes(fileExtension);
-        if (!isValidType) {
-          setError('This photo can\'t be used. Please upload a JPG, PNG, or HEIC image.');
-          return;
-        }
-        
-        // Validate file size (max 5MB)
-        const maxSizeBytes = 5 * 1024 * 1024; // 5MB
-        if (file.size > maxSizeBytes) {
-          setError('This photo is too large. Please upload an image under 5 MB.');
-          return;
-        }
-        
-        try {
-          const { supabase } = await import('../lib/supabaseClient');
-          const { data: { session } } = await supabase.auth.getSession();
-          const baseUrl = getApiBaseUrl();
-          const headers: Record<string, string> = {
-            'Content-Type': 'application/json',
-          };
-          
-          if (session?.access_token) {
-            headers['Authorization'] = `Bearer ${session.access_token}`;
-          }
-          
-          const response = await fetch(`${baseUrl}/api/objects/upload`, {
-            method: 'POST',
-            headers,
+        if (width < PHOTO_REQUIREMENTS.minPixels || height < PHOTO_REQUIREMENTS.minPixels) {
+          resolve({
+            valid: false,
+            width,
+            height,
+            error: `Photo is too small (${width}x${height}px). Minimum size is ${PHOTO_REQUIREMENTS.minPixels}x${PHOTO_REQUIREMENTS.minPixels} pixels.`
           });
-
-          if (!response.ok) {
-            throw new Error('Failed to get upload URL');
-          }
-
-          const { uploadURL } = await response.json();
-
-          const uploadResponse = await fetch(uploadURL, {
-            method: 'PUT',
-            body: file,
-            headers: {
-              'Content-Type': file.type || 'application/octet-stream',
-            },
+        } else if (width > PHOTO_REQUIREMENTS.maxPixels || height > PHOTO_REQUIREMENTS.maxPixels) {
+          resolve({
+            valid: false,
+            width,
+            height,
+            error: `Photo is too large (${width}x${height}px). Maximum size is ${PHOTO_REQUIREMENTS.maxPixels}x${PHOTO_REQUIREMENTS.maxPixels} pixels.`
           });
+        } else {
+          resolve({ valid: true, width, height });
+        }
+      };
+      
+      img.onerror = () => {
+        URL.revokeObjectURL(url);
+        resolve({ valid: false, error: 'Could not read image. Please try a different photo.' });
+      };
+      
+      img.src = url;
+    });
+  };
 
-          if (uploadResponse.ok) {
-            const headersForAvatar: Record<string, string> = {
-              'Content-Type': 'application/json',
-            };
-            
-            if (session?.access_token) {
-              headersForAvatar['Authorization'] = `Bearer ${session.access_token}`;
-            }
-            
-            const avatarResponse = await fetch(`${baseUrl}/api/avatar`, {
-              method: 'PUT',
-              headers: headersForAvatar,
-              body: JSON.stringify({ avatarURL: uploadURL }),
-            });
-
-            if (avatarResponse.ok) {
-              const { objectPath } = await avatarResponse.json();
-              // Store clean path for persistence, use cache bust for display only
-              setAvatarUrl(objectPath);
-              setAvatarCacheBust(Date.now());
-              setSuccess('Avatar updated successfully!');
-              setTimeout(() => setSuccess(''), 3000);
-            } else {
-              setError('Failed to process uploaded image');
-            }
-          } else {
-            setError('Failed to upload photo. Please try again.');
-          }
-        } catch (error) {
-          console.error('Upload error:', error);
-          setError('Failed to upload avatar. Please try again.');
+  // Process selected file (from either Photo Library or Camera)
+  const processSelectedFile = async (file: File) => {
+    setError('');
+    setUploadingPhoto(true);
+    setShowPhotoMenu(false);
+    
+    try {
+      // Validate file type - check MIME type or fall back to file extension (iOS HEIC has empty MIME)
+      const fileExtension = file.name.toLowerCase().substring(file.name.lastIndexOf('.'));
+      const mimeType = file.type.toLowerCase();
+      
+      const isValidType = mimeType 
+        ? PHOTO_REQUIREMENTS.allowedTypes.includes(mimeType) 
+        : PHOTO_REQUIREMENTS.allowedExtensions.includes(fileExtension);
+      
+      if (!isValidType) {
+        setError(`Invalid file type. Allowed formats: JPG, PNG, HEIC. Your file: ${mimeType || fileExtension}`);
+        setUploadingPhoto(false);
+        return;
+      }
+      
+      // Validate file size
+      if (file.size > PHOTO_REQUIREMENTS.maxSizeBytes) {
+        const fileSizeMB = (file.size / (1024 * 1024)).toFixed(1);
+        setError(`Photo is too large (${fileSizeMB}MB). Maximum size is ${PHOTO_REQUIREMENTS.maxSizeMB}MB.`);
+        setUploadingPhoto(false);
+        return;
+      }
+      
+      // Validate image dimensions (skip for HEIC as it may not load in browser)
+      if (!fileExtension.includes('heic') && !fileExtension.includes('heif')) {
+        const dimensionCheck = await validateImageDimensions(file);
+        if (!dimensionCheck.valid) {
+          setError(dimensionCheck.error || 'Invalid image dimensions.');
+          setUploadingPhoto(false);
+          return;
         }
       }
-    };
-    input.click();
+      
+      // Upload the file
+      const { supabase } = await import('../lib/supabaseClient');
+      const { data: { session } } = await supabase.auth.getSession();
+      const baseUrl = getApiBaseUrl();
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+      
+      if (session?.access_token) {
+        headers['Authorization'] = `Bearer ${session.access_token}`;
+      }
+      
+      const response = await fetch(`${baseUrl}/api/objects/upload`, {
+        method: 'POST',
+        headers,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `Server error (${response.status}). Please try again.`);
+      }
+
+      const { uploadURL } = await response.json();
+
+      const uploadResponse = await fetch(uploadURL, {
+        method: 'PUT',
+        body: file,
+        headers: {
+          'Content-Type': file.type || 'application/octet-stream',
+        },
+      });
+
+      if (!uploadResponse.ok) {
+        throw new Error(`Upload failed (${uploadResponse.status}). Please try again.`);
+      }
+
+      const headersForAvatar: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+      
+      if (session?.access_token) {
+        headersForAvatar['Authorization'] = `Bearer ${session.access_token}`;
+      }
+      
+      const avatarResponse = await fetch(`${baseUrl}/api/avatar`, {
+        method: 'PUT',
+        headers: headersForAvatar,
+        body: JSON.stringify({ avatarURL: uploadURL }),
+      });
+
+      if (avatarResponse.ok) {
+        const { objectPath } = await avatarResponse.json();
+        setAvatarUrl(objectPath);
+        setAvatarCacheBust(Date.now());
+        setSuccess('Photo updated successfully!');
+        setTimeout(() => setSuccess(''), 3000);
+      } else {
+        const errorData = await avatarResponse.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Failed to save photo. Please try again.');
+      }
+    } catch (err: any) {
+      console.error('Upload error:', err);
+      setError(err.message || 'Failed to upload photo. Please try again.');
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
+
+  // Handle file input change
+  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files && files[0]) {
+      processSelectedFile(files[0]);
+    }
+    // Reset input so same file can be selected again
+    e.target.value = '';
+  };
+
+  // Open Photo Library
+  const handlePhotoLibrary = () => {
+    photoLibraryInputRef.current?.click();
+  };
+
+  // Open Camera
+  const handleTakePhoto = () => {
+    cameraInputRef.current?.click();
   };
 
   // Get display URL with cache busting for immediate refresh
@@ -335,26 +417,125 @@ export function EditProfileMobile({ profile, onBack, onSuccess }: EditProfileMob
               </div>
             )}
           </div>
-          <div
-            onClick={handleAvatarUpload}
-            data-testid="button-change-photo"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px',
-              background: '#4285f4',
-              color: '#ffffff',
-              border: 'none',
-              padding: '12px 24px',
-              borderRadius: '8px',
-              fontSize: '14px',
-              cursor: 'pointer',
-              width: '100%',
-            }}
-          >
-            <span>📷</span>
-            <span>Change Photo</span>
+          {/* Hidden file inputs */}
+          <input
+            ref={photoLibraryInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/heic,image/heif"
+            onChange={handleFileInputChange}
+            style={{ display: 'none' }}
+            data-testid="input-photo-library"
+          />
+          <input
+            ref={cameraInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/heic,image/heif"
+            capture="environment"
+            onChange={handleFileInputChange}
+            style={{ display: 'none' }}
+            data-testid="input-camera"
+          />
+          
+          {/* Change Photo Button */}
+          <div style={{ position: 'relative' }}>
+            <button
+              onClick={() => setShowPhotoMenu(!showPhotoMenu)}
+              disabled={uploadingPhoto}
+              data-testid="button-change-photo"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                background: uploadingPhoto ? '#a0c4f4' : '#4285f4',
+                color: '#ffffff',
+                border: 'none',
+                padding: '12px 24px',
+                borderRadius: '8px',
+                fontSize: '14px',
+                cursor: uploadingPhoto ? 'not-allowed' : 'pointer',
+                width: '100%',
+              }}
+            >
+              <span>📷</span>
+              <span>{uploadingPhoto ? 'Uploading...' : 'Change Photo'}</span>
+            </button>
+            
+            {/* Photo Menu Dropdown */}
+            {showPhotoMenu && (
+              <>
+                {/* Backdrop to close menu */}
+                <div
+                  onClick={() => setShowPhotoMenu(false)}
+                  style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    background: 'rgba(0,0,0,0.3)',
+                    zIndex: 998,
+                  }}
+                />
+                {/* Menu */}
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: '100%',
+                    left: 0,
+                    right: 0,
+                    marginTop: '8px',
+                    background: '#ffffff',
+                    borderRadius: '12px',
+                    boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+                    overflow: 'hidden',
+                    zIndex: 999,
+                  }}
+                >
+                  <button
+                    onClick={handlePhotoLibrary}
+                    data-testid="button-photo-library"
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '12px',
+                      width: '100%',
+                      padding: '16px 20px',
+                      border: 'none',
+                      background: '#ffffff',
+                      fontSize: '16px',
+                      color: '#000000',
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                      borderBottom: '1px solid #e5e5e5',
+                    }}
+                  >
+                    <span style={{ fontSize: '20px' }}>🖼️</span>
+                    <span>Photo Library</span>
+                  </button>
+                  <button
+                    onClick={handleTakePhoto}
+                    data-testid="button-take-photo"
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '12px',
+                      width: '100%',
+                      padding: '16px 20px',
+                      border: 'none',
+                      background: '#ffffff',
+                      fontSize: '16px',
+                      color: '#000000',
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                    }}
+                  >
+                    <span style={{ fontSize: '20px' }}>📷</span>
+                    <span>Take Photo</span>
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
 
