@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { Browser } from '@capacitor/browser';
 import { validateDonationAmount, createStripeCheckout } from '@/lib/donations';
-import { isIOS, loadProducts, purchaseByAmount, AMOUNT_TO_PRODUCT_ID, getProductPrice } from '@/lib/iosIAP';
+import { isIOS, isStoreAvailable, loadProducts, purchaseByAmount, AMOUNT_TO_PRODUCT_ID, getProductPrice } from '@/lib/iosIAP';
 
 interface SupporterMobileProps {
   onBack: () => void;
@@ -18,15 +18,27 @@ export function SupporterMobile({ onBack }: SupporterMobileProps) {
   const [activeTab, setActiveTab] = useState<'stripe' | 'paypal'>('stripe');
   const [iapProductsLoaded, setIapProductsLoaded] = useState(false);
 
-  // Detect iOS for Apple In-App Purchase
+  // Detect iOS for Apple In-App Purchase (via cordova-plugin-purchase)
   const isiOSDevice = isIOS();
+  const [iapAvailable, setIapAvailable] = useState(false);
 
-  // Load iOS IAP products on mount
+  // Load iOS IAP products on mount (iOS only, uses window.store from cordova-plugin-purchase)
   useEffect(() => {
-    if (isiOSDevice) {
+    if (isiOSDevice && isStoreAvailable()) {
+      console.log('[Supporter] iOS detected with store available, loading IAP products...');
       loadProducts()
-        .then(() => setIapProductsLoaded(true))
-        .catch((err) => console.error('[Supporter] Failed to load IAP products:', err));
+        .then((products) => {
+          console.log('[Supporter] IAP products loaded:', products.length);
+          setIapProductsLoaded(true);
+          setIapAvailable(true);
+        })
+        .catch((err) => {
+          console.error('[Supporter] Failed to load IAP products:', err);
+          setIapAvailable(false);
+        });
+    } else if (isiOSDevice) {
+      console.log('[Supporter] iOS detected but store not available (simulator or plugin not loaded)');
+      setIapAvailable(false);
     }
   }, [isiOSDevice]);
 
@@ -56,8 +68,8 @@ export function SupporterMobile({ onBack }: SupporterMobileProps) {
   const isNative = Capacitor.isNativePlatform();
 
   const stripeEnabled = Boolean(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
-  // iOS uses Apple IAP, Android/web uses Stripe
-  const paymentsEnabled = isiOSDevice || stripeEnabled;
+  // iOS uses Apple IAP (if store available), Android/web uses Stripe
+  const paymentsEnabled = (isiOSDevice && iapAvailable) || stripeEnabled;
 
   const handleAmountSelect = (amount: number) => {
     console.log('Amount button clicked:', amount);
@@ -86,8 +98,9 @@ export function SupporterMobile({ onBack }: SupporterMobileProps) {
       return;
     }
 
-    // iOS: Use Apple In-App Purchase
-    if (isiOSDevice) {
+    // iOS: Use Apple In-App Purchase (via cordova-plugin-purchase / window.store)
+    // Only use IAP if on iOS AND the store is available (not simulator, plugin loaded)
+    if (isiOSDevice && iapAvailable) {
       // iOS only supports predefined amounts
       if (!AMOUNT_TO_PRODUCT_ID[amount]) {
         setError('Please select a predefined amount for iOS payments.');
@@ -105,8 +118,8 @@ export function SupporterMobile({ onBack }: SupporterMobileProps) {
           console.log('[Supporter] iOS purchase successful:', result);
         } else if (result.cancelled) {
           setError('');
-        } else if (result.pending) {
-          setError('Purchase is pending approval.');
+        } else if (result.error) {
+          setError(result.error);
         }
       } catch (err: any) {
         console.error('[Supporter] iOS purchase error:', err);
@@ -288,8 +301,8 @@ export function SupporterMobile({ onBack }: SupporterMobileProps) {
           ))}
         </div>
 
-        {/* Custom amount only available on Android/Web (not iOS) */}
-        {!isiOSDevice && (
+        {/* Custom amount only available on Android/Web (not iOS with IAP) */}
+        {!(isiOSDevice && iapAvailable) && (
           <div style={{ marginBottom: '8px' }}>
             <input
               type="number"
@@ -378,7 +391,7 @@ export function SupporterMobile({ onBack }: SupporterMobileProps) {
         >
           <div style={{ fontWeight: 600, marginBottom: '4px' }}>Thank you!</div>
           <div>
-            {isiOSDevice 
+            {(isiOSDevice && iapAvailable)
               ? 'Your purchase was successful. Thank you for supporting Gospel Era!'
               : 'If your payment was successful, you will receive a confirmation email from Stripe. Check your email for details.'}
           </div>
@@ -403,8 +416,8 @@ export function SupporterMobile({ onBack }: SupporterMobileProps) {
         </div>
       )}
 
-      {/* Payment Method Selection - Only show on Android/Web */}
-      {paymentsEnabled && !isiOSDevice && (
+      {/* Payment Method Selection - Only show on Android/Web (not iOS with IAP) */}
+      {paymentsEnabled && !(isiOSDevice && iapAvailable) && (
         <div style={{ marginBottom: '16px' }}>
           <div
             style={{
@@ -454,8 +467,8 @@ export function SupporterMobile({ onBack }: SupporterMobileProps) {
         </div>
       )}
 
-      {/* iOS Payment Info */}
-      {isiOSDevice && (
+      {/* iOS Payment Info - Only show when IAP is available */}
+      {isiOSDevice && iapAvailable && (
         <div
           style={{
             marginBottom: '16px',
@@ -499,7 +512,7 @@ export function SupporterMobile({ onBack }: SupporterMobileProps) {
       >
         {isProcessing
           ? 'Processing...'
-          : isiOSDevice
+          : (isiOSDevice && iapAvailable)
             ? `Support with $${getSelectedAmount() || 0}`
             : paymentsEnabled
               ? `Pay $${getSelectedAmount() || 0} via Stripe`
