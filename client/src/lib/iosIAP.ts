@@ -211,26 +211,32 @@ export async function initializeStore(): Promise<void> {
       
       // Set up global event handlers using store.when()
       store.when()
-        .productUpdated((product) => {
-          console.log('[iOS IAP] Product updated:', product.id, product.canPurchase ? 'available' : 'unavailable');
-        })
-        .approved((transaction) => {
-          // Transaction approved by Apple - verify and finish
-          console.log('[iOS IAP] Transaction approved:', transaction.transactionId);
-          transaction.verify();
-        })
-        .verified((receipt) => {
-          console.log('[iOS IAP] Receipt verified');
-          // Finish all transactions in the receipt
-        })
-        .finished((transaction) => {
-          // Transaction complete - resolve pending purchase
-          console.log('[iOS IAP] Transaction finished:', transaction.transactionId);
-          if (pendingPurchaseResolve) {
-            pendingPurchaseResolve({ success: true });
-            pendingPurchaseResolve = null;
-          }
-        });
+      .productUpdated((product) => {
+        console.log(
+          '[iOS IAP] Product updated:',
+          product.id,
+          product.canPurchase ? 'available' : 'unavailable'
+        );
+      })
+      .approved((transaction) => {
+        console.log('[iOS IAP] Transaction approved:', transaction.transactionId);
+        transaction.verify(); // REQUIRED
+      })
+      .verified((transactionOrReceipt: any) => {
+        console.log('[iOS IAP] Verified:', transactionOrReceipt);
+
+        // REQUIRED: tell StoreKit the transaction is complete
+        if (transactionOrReceipt?.finish) {
+          transactionOrReceipt.finish();
+        }
+      })
+      .finished((transaction) => {
+        console.log('[iOS IAP] Transaction finished:', transaction.transactionId);
+        if (pendingPurchaseResolve) {
+          pendingPurchaseResolve({ success: true });
+          pendingPurchaseResolve = null;
+        }
+      });
       
       // Wait for store to be ready
       store.ready(() => {
