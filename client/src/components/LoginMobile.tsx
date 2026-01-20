@@ -2,7 +2,6 @@ import { useState, useRef, useEffect, type RefObject } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/lib/supabaseClient";
 import { validatePassword } from "@/lib/passwordValidation";
-import { Capacitor } from "@capacitor/core";
 
 const REMEMBER_ME_KEY = "gospel_era_remember_me";
 const REMEMBERED_EMAIL_KEY = "gospel_era_remembered_email";
@@ -145,14 +144,10 @@ export function LoginMobile({ onSuccess }: LoginMobileProps) {
     setLoading(true);
     setLoginError("");
 
-    // Use deep link for native apps, web URL for browser
-    const isNative = Capacitor.isNativePlatform();
-    const redirectUrl = isNative 
-      ? "gospelera://password-reset"
-      : `${window.location.origin}/mobile?reset=true`;
-    
+    // Use custom app URL scheme to redirect directly to the app after password reset
+    // Same approach as email confirmation
     const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
-      redirectTo: redirectUrl,
+      redirectTo: "gospelera://password-reset",
     });
 
     if (error) {
