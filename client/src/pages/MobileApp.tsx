@@ -16,6 +16,7 @@ import {
   searchPosts,
   getTopTags,
   fetchFeed,
+  getApiBaseUrl,
 } from "@/lib/posts";
 import {
   listPrayerRequests,
@@ -460,6 +461,7 @@ export default function MobileApp() {
   const [leaderboardData, setLeaderboardData] = useState<any[]>([]);
   const [deletingPostId, setDeletingPostId] = useState<number | null>(null);
   const [editingPostId, setEditingPostId] = useState<number | null>(null);
+  const [blockingUserId, setBlockingUserId] = useState<string | null>(null);
   const [reportModalOpen, setReportModalOpen] = useState(false);
   const [reportTarget, setReportTarget] = useState<{
     type: "post" | "comment";
@@ -2135,6 +2137,41 @@ export default function MobileApp() {
     setDeletingPostId(null);
   };
 
+  const handleBlockUser = async (userId: string, displayName: string) => {
+    if (
+      !confirm(
+        `Are you sure you want to block ${displayName}? You will no longer see their posts, comments, or prayer requests.`,
+      )
+    ) {
+      return;
+    }
+
+    setBlockingUserId(userId);
+    try {
+      const response = await fetch(`${getApiBaseUrl()}/api/block`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
+        },
+        body: JSON.stringify({ blocked_id: userId }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to block user");
+      }
+
+      alert(`${displayName} has been blocked. Refreshing feed...`);
+      fetchData();
+    } catch (error: any) {
+      alert(`Failed to block user: ${error.message || "Unknown error"}`);
+    } finally {
+      setBlockingUserId(null);
+      setShowPostMenu({});
+    }
+  };
+
   const handleEditPost = (postId: number) => {
     const post = posts.find((p) => p.id === postId);
     if (!post) return;
@@ -2707,6 +2744,32 @@ export default function MobileApp() {
                             }}
                           >
                             Report
+                          </button>
+                        )}
+
+                        {/* Block User option - only show for other users' posts */}
+                        {post.author_id !== user?.id && (
+                          <button
+                            onClick={() => handleBlockUser(
+                              post.author_id,
+                              profiles.get(post.author_id)?.display_name ||
+                                profiles.get(post.author_id)?.email?.split("@")[0] ||
+                                "this user"
+                            )}
+                            disabled={blockingUserId === post.author_id}
+                            style={{
+                              width: "100%",
+                              padding: "12px 16px",
+                              border: "none",
+                              background: "none",
+                              textAlign: "left",
+                              fontSize: "14px",
+                              color: "#ef4444",
+                              cursor: "pointer",
+                              borderBottom: "1px solid #f0f0f0",
+                            }}
+                          >
+                            {blockingUserId === post.author_id ? "Blocking..." : "Block User"}
                           </button>
                         )}
 

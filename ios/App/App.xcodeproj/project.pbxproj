@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		2AD708F72F107C0600D99C14 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 2AD708F62F107C0600D99C14 /* GoogleService-Info.plist */; };
+		2AF2750D2F1E8C88001D24FE /* GospelEra.storekit in Resources */ = {isa = PBXBuildFile; fileRef = 2AF2750C2F1E8C88001D24FE /* GospelEra.storekit */; };
 		2FAD9763203C412B000D30F8 /* config.xml in Resources */ = {isa = PBXBuildFile; fileRef = 2FAD9762203C412B000D30F8 /* config.xml */; };
 		50379B232058CBB4000EE86E /* capacitor.config.json in Resources */ = {isa = PBXBuildFile; fileRef = 50379B222058CBB4000EE86E /* capacitor.config.json */; };
 		504EC3081FED79650016851F /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 504EC3071FED79650016851F /* AppDelegate.swift */; };
@@ -21,6 +22,7 @@
 /* Begin PBXFileReference section */
 		2AD708F02F0DC2D200D99C14 /* App.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = App.entitlements; sourceTree = "<group>"; };
 		2AD708F62F107C0600D99C14 /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
+		2AF2750C2F1E8C88001D24FE /* GospelEra.storekit */ = {isa = PBXFileReference; lastKnownFileType = text; path = GospelEra.storekit; sourceTree = "<group>"; };
 		2FAD9762203C412B000D30F8 /* config.xml */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = config.xml; sourceTree = "<group>"; };
 		50379B222058CBB4000EE86E /* capacitor.config.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = capacitor.config.json; sourceTree = "<group>"; };
 		504EC3041FED79650016851F /* App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = App.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -86,6 +88,7 @@
 				2FAD9762203C412B000D30F8 /* config.xml */,
 				50B271D01FEDC1A000F3C39B /* public */,
 				2AD708F62F107C0600D99C14 /* GoogleService-Info.plist */,
+				2AF2750C2F1E8C88001D24FE /* GospelEra.storekit */,
 			);
 			path = App;
 			sourceTree = "<group>";
@@ -170,6 +173,7 @@
 				504EC30D1FED79650016851F /* Main.storyboard in Resources */,
 				2FAD9763203C412B000D30F8 /* config.xml in Resources */,
 				2AD708F72F107C0600D99C14 /* GoogleService-Info.plist in Resources */,
+				2AF2750D2F1E8C88001D24FE /* GospelEra.storekit in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

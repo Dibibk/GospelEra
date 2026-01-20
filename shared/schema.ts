@@ -317,3 +317,24 @@ export const insertPushTokenSchema = createInsertSchema(pushTokens).omit({
 
 export type InsertPushToken = z.infer<typeof insertPushTokenSchema>;
 export type PushToken = typeof pushTokens.$inferSelect;
+
+// Blocked users table for user safety
+export const blockedUsers = pgTable("blocked_users", {
+  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+  blocker_id: varchar("blocker_id").notNull(), // User who is blocking
+  blocked_id: varchar("blocked_id").notNull(), // User being blocked
+  reason: text("reason"), // Optional reason for blocking
+  created_at: timestamp("created_at").defaultNow().notNull(),
+}, (table) => ({
+  blockerIdx: index("blocked_users_blocker_idx").on(table.blocker_id),
+  blockedIdx: index("blocked_users_blocked_idx").on(table.blocked_id),
+  uniqueBlock: index("blocked_users_unique_idx").on(table.blocker_id, table.blocked_id),
+}));
+
+export const insertBlockedUserSchema = createInsertSchema(blockedUsers).omit({
+  id: true,
+  created_at: true,
+});
+
+export type InsertBlockedUser = z.infer<typeof insertBlockedUserSchema>;
+export type BlockedUser = typeof blockedUsers.$inferSelect;
