@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { User } from "lucide-react";
+import { Capacitor } from "@capacitor/core";
 
 // Helper to convert relative image URLs to full URLs for native apps
-// (same logic as PrayerBrowseMobile)
 function getImageUrl(url: string | undefined | null): string | null {
   if (!url) return null;
 
@@ -11,9 +11,8 @@ function getImageUrl(url: string | undefined | null): string | null {
     return url;
   }
 
-  // Check if running on native platform (Capacitor WebView)
-  const isNative =
-    typeof window !== "undefined" && window.location.protocol === "capacitor:";
+  // Check if running on native platform (works for both iOS and Android)
+  const isNative = Capacitor.isNativePlatform();
 
   if (isNative) {
     // Prepend production backend URL for native apps
