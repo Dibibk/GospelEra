@@ -3653,16 +3653,16 @@ Respond with JSON only:
         return res.status(400).json({ error: "Invalid status. Must be 'open', 'resolved', or 'dismissed'" });
       }
 
-      // Parse ID - could be numeric or string depending on database schema
-      const reportId = parseInt(id);
-      if (isNaN(reportId)) {
+      // Validate UUID format (reports table uses UUID for id)
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (!uuidRegex.test(id)) {
         return res.status(400).json({ error: "Invalid report ID" });
       }
 
       const { data, error, count } = await supabaseAdmin
         .from('reports')
         .update({ status })
-        .eq('id', reportId)
+        .eq('id', id)
         .select();
 
       if (error) {
