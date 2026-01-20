@@ -16,6 +16,7 @@ import {
   searchPosts,
   getTopTags,
   fetchFeed,
+  getApiBaseUrl,
 } from "@/lib/posts";
 import {
   listPrayerRequests,
@@ -149,6 +150,20 @@ function getYoutubeEmbedSrc(url: string): string | null {
   }
 }
 
+// Helper to detect if running in Capacitor native app
+function isCapacitorNative(): boolean {
+  if (typeof window === "undefined") return false;
+  // Check for Capacitor global object (most reliable)
+  if ((window as any).Capacitor?.isNativePlatform?.()) return true;
+  // iOS uses capacitor: protocol
+  if (window.location.protocol === "capacitor:") return true;
+  // Android Capacitor uses http://localhost with specific user agent
+  if (window.location.hostname === "localhost" && 
+      navigator.userAgent.includes("Android") &&
+      (window as any).Capacitor) return true;
+  return false;
+}
+
 // Helper to convert relative image URLs to full URLs for native apps
 function getImageUrl(url: string | undefined | null): string | null {
   if (!url) return null;
@@ -159,10 +174,7 @@ function getImageUrl(url: string | undefined | null): string | null {
   }
 
   // Check if running on native platform
-  const isNative =
-    typeof window !== "undefined" && window.location.protocol === "capacitor:";
-
-  if (isNative) {
+  if (isCapacitorNative()) {
     // Prepend production backend URL for native apps
     const baseUrl =
       import.meta.env.VITE_API_URL || "https://gospel-era.replit.app";
@@ -229,7 +241,7 @@ const STYLES = {
     flex: 1,
     overflowY: "auto" as const,
     background: "#ffffff",
-    paddingBottom: "calc(80px + env(safe-area-inset-bottom, 0px))",
+    paddingBottom: "calc(90px + env(safe-area-inset-bottom, 0px))",
   },
   bottomNav: {
     position: "fixed" as const,
@@ -238,16 +250,17 @@ const STYLES = {
     transform: "translateX(-50%)",
     width: "100%",
     maxWidth: "414px",
-    height: "calc(56px + env(safe-area-inset-bottom, 0px))",
+    minHeight: "70px",
+    height: "calc(70px + env(safe-area-inset-bottom, 0px))",
     paddingBottom: "env(safe-area-inset-bottom, 0px)",
     background: "#ffffff",
     borderTop: "1px solid #dbdbdb",
     display: "flex",
     justifyContent: "space-around",
-    alignItems: "flex-start",
-    paddingTop: "8px",
-    paddingLeft: "16px",
-    paddingRight: "16px",
+    alignItems: "center",
+    paddingTop: "4px",
+    paddingLeft: "8px",
+    paddingRight: "8px",
     zIndex: 1100,
   },
   searchContainer: {
@@ -448,6 +461,7 @@ export default function MobileApp() {
   const [leaderboardData, setLeaderboardData] = useState<any[]>([]);
   const [deletingPostId, setDeletingPostId] = useState<number | null>(null);
   const [editingPostId, setEditingPostId] = useState<number | null>(null);
+  const [blockingUserId, setBlockingUserId] = useState<string | null>(null);
   const [reportModalOpen, setReportModalOpen] = useState(false);
   const [reportTarget, setReportTarget] = useState<{
     type: "post" | "comment";
@@ -2123,6 +2137,41 @@ export default function MobileApp() {
     setDeletingPostId(null);
   };
 
+  const handleBlockUser = async (userId: string, displayName: string) => {
+    if (
+      !confirm(
+        `Are you sure you want to block ${displayName}? You will no longer see their posts, comments, or prayer requests.`,
+      )
+    ) {
+      return;
+    }
+
+    setBlockingUserId(userId);
+    try {
+      const response = await fetch(`${getApiBaseUrl()}/api/block`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
+        },
+        body: JSON.stringify({ blocked_id: userId }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to block user");
+      }
+
+      alert(`${displayName} has been blocked. Refreshing feed...`);
+      fetchData();
+    } catch (error: any) {
+      alert(`Failed to block user: ${error.message || "Unknown error"}`);
+    } finally {
+      setBlockingUserId(null);
+      setShowPostMenu({});
+    }
+  };
+
   const handleEditPost = (postId: number) => {
     const post = posts.find((p) => p.id === postId);
     if (!post) return;
@@ -2695,6 +2744,32 @@ export default function MobileApp() {
                             }}
                           >
                             Report
+                          </button>
+                        )}
+
+                        {/* Block User option - only show for other users' posts */}
+                        {post.author_id !== user?.id && (
+                          <button
+                            onClick={() => handleBlockUser(
+                              post.author_id,
+                              profiles.get(post.author_id)?.display_name ||
+                                profiles.get(post.author_id)?.email?.split("@")[0] ||
+                                "this user"
+                            )}
+                            disabled={blockingUserId === post.author_id}
+                            style={{
+                              width: "100%",
+                              padding: "12px 16px",
+                              border: "none",
+                              background: "none",
+                              textAlign: "left",
+                              fontSize: "14px",
+                              color: "#ef4444",
+                              cursor: "pointer",
+                              borderBottom: "1px solid #f0f0f0",
+                            }}
+                          >
+                            {blockingUserId === post.author_id ? "Blocking..." : "Block User"}
                           </button>
                         )}
 
@@ -4308,7 +4383,10 @@ export default function MobileApp() {
               transition: "transform 0.1s, opacity 0.1s",
             }}
           >
-            🔍
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="11" cy="11" r="8"/>
+              <path d="m21 21-4.35-4.35"/>
+            </svg>
             <span style={{ fontSize: "10px", marginTop: "2px" }}>Search</span>
           </div>
           <div
@@ -4342,7 +4420,11 @@ export default function MobileApp() {
               transition: "transform 0.1s, opacity 0.1s",
             }}
           >
-            ➕<span style={{ fontSize: "10px", marginTop: "2px" }}>Post</span>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="12" y1="5" x2="12" y2="19"/>
+              <line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            <span style={{ fontSize: "10px", marginTop: "2px" }}>Post</span>
           </div>
           <div
             onClick={() => {

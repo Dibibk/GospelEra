@@ -43,11 +43,64 @@ export function SettingsMobile({ onBack, onEditProfile, onSuccess }: SettingsMob
   const [showMediaRequestModal, setShowMediaRequestModal] = useState(false);
   const [settingsLoading, setSettingsLoading] = useState(true);
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+  const [blockedUsers, setBlockedUsers] = useState<Array<{blocked_id: string; display_name: string; created_at: string}>>([]);
+  const [loadingBlockedUsers, setLoadingBlockedUsers] = useState(true);
+  const [unblockingUserId, setUnblockingUserId] = useState<string | null>(null);
 
   // Load user settings from database on mount
   useEffect(() => {
     loadSettingsFromDatabase();
+    loadBlockedUsers();
   }, []);
+
+  const loadBlockedUsers = async () => {
+    setLoadingBlockedUsers(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) return;
+
+      const response = await fetch(`${getApiBaseUrl()}/api/blocked-users`, {
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setBlockedUsers(data);
+      }
+    } catch (error) {
+      console.error("Error loading blocked users:", error);
+    } finally {
+      setLoadingBlockedUsers(false);
+    }
+  };
+
+  const handleUnblockUser = async (blockedId: string, displayName: string) => {
+    if (!confirm(`Are you sure you want to unblock ${displayName}?`)) return;
+
+    setUnblockingUserId(blockedId);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) throw new Error("Not authenticated");
+
+      const response = await fetch(`${getApiBaseUrl()}/api/block/${blockedId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to unblock user");
+      }
+
+      setBlockedUsers(prev => prev.filter(u => u.blocked_id !== blockedId));
+      alert(`${displayName} has been unblocked.`);
+    } catch (error: any) {
+      alert(`Failed to unblock user: ${error.message}`);
+      await loadBlockedUsers();
+    } finally {
+      setUnblockingUserId(null);
+    }
+  };
 
   const loadSettingsFromDatabase = async () => {
     setSettingsLoading(true);
@@ -867,6 +920,78 @@ export function SettingsMobile({ onBack, onEditProfile, onSuccess }: SettingsMob
                 </span>
               </label>
             </div>
+          </div>
+
+          {/* Blocked Users Section */}
+          <div
+            style={{
+              background: "#ffffff",
+              borderRadius: "12px",
+              border: "1px solid #e5e5e5",
+              marginBottom: "24px",
+              overflow: "hidden",
+            }}
+          >
+            <div
+              style={{
+                padding: "16px 16px 8px",
+                fontSize: "13px",
+                fontWeight: 600,
+                color: "#8e8e8e",
+                textTransform: "uppercase",
+                letterSpacing: "0.5px",
+              }}
+            >
+              BLOCKED USERS
+            </div>
+
+            {loadingBlockedUsers ? (
+              <div style={{ padding: "16px", textAlign: "center", color: "#8e8e8e" }}>
+                Loading...
+              </div>
+            ) : blockedUsers.length === 0 ? (
+              <div style={{ padding: "16px", color: "#8e8e8e", fontSize: "14px" }}>
+                You haven't blocked anyone yet.
+              </div>
+            ) : (
+              blockedUsers.map((blocked) => (
+                <div
+                  key={blocked.blocked_id}
+                  style={{
+                    minHeight: "48px",
+                    borderTop: "1px solid #e5e5e5",
+                    padding: "12px 16px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                  }}
+                >
+                  <div>
+                    <div style={{ fontSize: "16px", color: "#000000" }}>
+                      {blocked.display_name}
+                    </div>
+                    <div style={{ fontSize: "12px", color: "#8e8e8e" }}>
+                      Blocked on {new Date(blocked.created_at).toLocaleDateString()}
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => handleUnblockUser(blocked.blocked_id, blocked.display_name)}
+                    disabled={unblockingUserId === blocked.blocked_id}
+                    style={{
+                      padding: "8px 16px",
+                      background: "#ffffff",
+                      border: "1px solid #dbdbdb",
+                      borderRadius: "8px",
+                      fontSize: "14px",
+                      color: "#0095f6",
+                      cursor: "pointer",
+                    }}
+                  >
+                    {unblockingUserId === blocked.blocked_id ? "..." : "Unblock"}
+                  </button>
+                </div>
+              ))
+            )}
           </div>
 
           {/* Account Deletion Section */}

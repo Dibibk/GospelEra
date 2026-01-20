@@ -95,15 +95,19 @@ export default function PrivacyPolicy() {
             </li>
             <li>
               <strong>User Content:</strong> Posts, comments, prayer requests,
-              and other content you share on the platform.
+              and other content you share on the platform. User-generated
+              content may also include links or embedded media, such as YouTube
+              videos, provided voluntarily by users.
             </li>
             <li>
               <strong>Usage Data:</strong> Information about how you interact
-              with the app, including features used and time spent.
+              with the app, including features used and time spent, to help
+              improve functionality and user experience
             </li>
             <li>
               <strong>Device Information:</strong> Device type, operating
-              system, and unique device identifiers.
+              system, and general device identifiers necessary for app
+              functionality and security.
             </li>
           </ul>
 
@@ -117,6 +121,10 @@ export default function PrivacyPolicy() {
             <li>Send notifications about activity on your posts</li>
             <li>Improve our app and develop new features</li>
             <li>Ensure community safety and enforce our guidelines</li>
+            <li>
+              We reserve the right to moderate or remove content that violates
+              our guidelines or applicable laws.
+            </li>
           </ul>
 
           <h2 style={{ fontSize: "18px", marginTop: "24px" }}>
@@ -129,17 +137,37 @@ export default function PrivacyPolicy() {
           <ul>
             <li>With your consent</li>
             <li>To comply with legal obligations</li>
-            <li>To protect the rights and safety of our users</li>
-            <li>With service providers who assist in operating our app</li>
+            <li>
+              To protect the rights, safety, and integrity of our users and
+              platform
+            </li>
+            <li>
+              With trusted service providers who assist in operating and
+              maintaining the app
+            </li>
+            <li>
+              We use trusted third-party services to support app functionality,
+              including Supabase (authentication and data storage),Firebase
+              (notifications),
+              <strong>Stripe (payments on web and Android)</strong>, and{" "}
+              <strong>Apple In-App Purchase (payments on iOS)</strong>.
+              User-embedded videos may also be displayed using YouTube.
+            </li>
+            <li>
+              Embedded third-party content is provided by users and remains
+              subject to the respective third-party platform’s terms and
+              policies.
+            </li>
           </ul>
 
           <h2 style={{ fontSize: "18px", marginTop: "24px" }}>
             4. Data Security
           </h2>
           <p>
-            We implement appropriate security measures to protect your
-            information. However, no method of transmission over the internet is
-            100% secure.
+            We implement reasonable and appropriate security measures to protect
+            your information. However, no method of transmission over the
+            internet or electronic storage is completely secure, and we cannot
+            guarantee absolute security.
           </p>
 
           <h2 style={{ fontSize: "18px", marginTop: "24px" }}>
@@ -151,6 +179,10 @@ export default function PrivacyPolicy() {
             <li>Request correction of inaccurate data</li>
             <li>Delete your account and associated data</li>
             <li>Opt out of promotional communications</li>
+            <li>
+              Users may request deletion of their account and associated data by
+              contacting us at ridible.support@ridible.com.
+            </li>
           </ul>
 
           <h2 style={{ fontSize: "18px", marginTop: "24px" }}>

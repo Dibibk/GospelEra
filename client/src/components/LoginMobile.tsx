@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, type RefObject } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/lib/supabaseClient";
+import { validatePassword } from "@/lib/passwordValidation";
 
 const REMEMBER_ME_KEY = "gospel_era_remember_me";
 const REMEMBERED_EMAIL_KEY = "gospel_era_remembered_email";
@@ -79,6 +80,13 @@ export function LoginMobile({ onSuccess }: LoginMobileProps) {
       }
       if (!faithAffirmed) {
         setLoginError("Please affirm your faith to create an account.");
+        return;
+      }
+
+      // Validate password for signup (enforces all password rules)
+      const passwordValidation = validatePassword(password);
+      if (!passwordValidation.valid) {
+        setLoginError(passwordValidation.error || "Invalid password.");
         return;
       }
     }
