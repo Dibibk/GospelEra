@@ -1,5 +1,31 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/lib/supabaseClient";
+import { Capacitor } from "@capacitor/core";
+
+// Helper to convert relative image URLs to full URLs for native apps
+function getImageUrl(url: string | undefined | null): string | null {
+  if (!url) return null;
+
+  // Already a full URL
+  if (url.startsWith("http://") || url.startsWith("https://")) {
+    return url;
+  }
+
+  // Check if running on native platform (works for both iOS and Android)
+  const isNative = Capacitor.isNativePlatform();
+
+  if (isNative) {
+    // Prepend production backend URL for native apps
+    const baseUrl =
+      import.meta.env.VITE_API_URL || "https://gospel-era.replit.app";
+    // Handle both /public-objects/ paths and raw paths
+    const path = url.startsWith("/") ? url : `/public-objects/${url}`;
+    return `${baseUrl}${path}`;
+  }
+
+  // For web, return formatted path
+  return url.startsWith("/") ? url : `/public-objects/${url}`;
+}
 
 interface AdminSupportMobileProps {
   isVisible: boolean;
@@ -319,17 +345,16 @@ export function AdminSupportMobile({
                 >
                   {user.avatar_url ? (
                     <img
-                      src={
-                        user.avatar_url.startsWith("/")
-                          ? user.avatar_url
-                          : `/public-objects/${user.avatar_url}`
-                      }
+                      src={getImageUrl(user.avatar_url) || ""}
                       alt="Avatar"
                       style={{
                         width: "40px",
                         height: "40px",
                         borderRadius: "50%",
                         objectFit: "cover",
+                      }}
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).style.display = 'none';
                       }}
                     />
                   ) : (
