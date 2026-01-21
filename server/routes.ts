@@ -3647,26 +3647,39 @@ Respond with JSON only:
       const { id } = req.params;
       const { status } = req.body;
 
+      console.log("Updating report:", { id, status, idType: typeof id });
+
       if (!['open', 'resolved', 'dismissed'].includes(status)) {
         return res.status(400).json({ error: "Invalid status. Must be 'open', 'resolved', or 'dismissed'" });
       }
 
-      const { data, error } = await supabaseAdmin
+      // Validate UUID format (reports table uses UUID for id)
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (!uuidRegex.test(id)) {
+        return res.status(400).json({ error: "Invalid report ID" });
+      }
+
+      const { data, error, count } = await supabaseAdmin
         .from('reports')
         .update({ status })
-        .eq('id', parseInt(id))
-        .select()
-        .single();
+        .eq('id', id)
+        .select();
 
       if (error) {
         console.error("Error updating report status:", error);
-        return res.status(500).json({ error: "Failed to update report status" });
+        return res.status(500).json({ error: `Failed to update report: ${error.message}` });
       }
 
-      res.json(data);
-    } catch (error) {
+      if (!data || data.length === 0) {
+        console.error("No report found with ID:", reportId);
+        return res.status(404).json({ error: "Report not found" });
+      }
+
+      console.log("Report updated successfully:", data[0]);
+      res.json(data[0]);
+    } catch (error: any) {
       console.error("Error updating report status:", error);
-      res.status(500).json({ error: "Failed to update report status" });
+      res.status(500).json({ error: error.message || "Failed to update report status" });
     }
   });
 

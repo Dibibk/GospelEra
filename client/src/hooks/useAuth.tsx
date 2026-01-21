@@ -88,10 +88,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(
-      (_event: any, session: Session | null) => {
+      (event: any, session: Session | null) => {
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
+        
+        // Handle PASSWORD_RECOVERY event - force password update page
+        if (event === 'PASSWORD_RECOVERY') {
+          console.log("PASSWORD_RECOVERY event detected - showing password update");
+          // Dispatch event to show password update page immediately
+          window.dispatchEvent(new CustomEvent('showPasswordUpdate'));
+        }
       },
     );
 
