@@ -145,9 +145,9 @@ export function LoginMobile({ onSuccess }: LoginMobileProps) {
     setLoginError("");
 
     // Use custom app URL scheme to redirect directly to the app after password reset
-    // Same approach as email confirmation
+    // Use email-confirmed path with type=recovery parameter for Android compatibility
     const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
-      redirectTo: "gospelera://password-reset",
+      redirectTo: "gospelera://email-confirmed?type=recovery",
     });
 
     if (error) {
