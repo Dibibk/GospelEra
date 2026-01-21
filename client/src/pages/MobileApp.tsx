@@ -588,9 +588,6 @@ export default function MobileApp() {
           const tokenHash = params.get('token_hash') || hashParams.token_hash;
           const type = params.get('type') || hashParams.type || 'signup';
           
-          // Check if this is a password reset (type=recovery)
-          const isPasswordReset = type === 'recovery';
-          
           // Check for access_token and refresh_token (standard flow)
           if (accessToken && refreshToken) {
             const { error } = await supabase.auth.setSession({
@@ -602,10 +599,6 @@ export default function MobileApp() {
               console.error("Error setting session from email confirmation:", error);
             } else {
               console.log("Session set successfully from email confirmation");
-              // If password reset, show password update page
-              if (isPasswordReset) {
-                window.dispatchEvent(new CustomEvent('showPasswordUpdate'));
-              }
             }
           }
           // Check for token_hash (PKCE flow)
@@ -619,10 +612,6 @@ export default function MobileApp() {
               console.error("Error verifying OTP from email confirmation:", error);
             } else {
               console.log("Email verified successfully");
-              // If password reset, show password update page
-              if (isPasswordReset) {
-                window.dispatchEvent(new CustomEvent('showPasswordUpdate'));
-              }
             }
           }
         } catch (err) {

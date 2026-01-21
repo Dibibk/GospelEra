@@ -21,18 +21,6 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-            <!-- Deep links (ADD THIS) -->
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-
-                <data android:scheme="gospelera" />
-                <data android:host="checkout" />
-                <data android:host="email-confirmed" />
-                <data android:host="password-reset" />
-            </intent-filter>
 
         </activity>
 
