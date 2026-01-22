@@ -1139,8 +1139,9 @@ export function SettingsMobile({ onBack, onEditProfile, onSuccess }: SettingsMob
                 color: "#6c757d",
               }}
             >
-              Link sharing permissions allow you to embed YouTube videos and
-              upload media files to enhance your posts.
+              Link sharing allows you to include YouTube links in your posts. 
+              When tapped, YouTube links open outside the app in the YouTube app or the device’s web browser. 
+              Gospel Era does not host, stream, or play YouTube videos within the app.
             </p>
             <div style={{ display: "flex", gap: "8px" }}>
               <button
