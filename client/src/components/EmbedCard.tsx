@@ -11,6 +11,9 @@ interface EmbedCardProps {
 
 export function EmbedCard({ videoId, start, title, author, className = '' }: EmbedCardProps) {
   const isNative = Capacitor.isNativePlatform();
+  const platform = Capacitor.getPlatform(); // 'ios', 'android', or 'web'
+  const isIOS = platform === 'ios';
+  const isAndroid = platform === 'android';
   
   // Convert to embed URL for iframe
   const getEmbedUrl = (videoId: string, start?: number): string => {
@@ -35,8 +38,49 @@ export function EmbedCard({ videoId, start, title, author, className = '' }: Emb
   const embedUrl = getEmbedUrl(videoId, start);
   const youtubeUrl = getYouTubeUrl(videoId, start);
   
-  // For native apps, show a clickable thumbnail that opens YouTube
-  if (isNative) {
+  // For iOS: Show plain text link (Apple App Store requirement 5.2.3)
+  if (isIOS) {
+    return (
+      <a 
+        href={youtubeUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={`block p-3 bg-gray-50 rounded-lg border border-gray-200 ${className}`}
+        data-testid="youtube-link"
+        style={{ textDecoration: 'none' }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span style={{ fontSize: '20px' }}>🔗</span>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <p style={{ 
+              fontSize: '14px', 
+              fontWeight: 500, 
+              color: '#1a73e8',
+              margin: 0,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap'
+            }}>
+              YouTube Video
+            </p>
+            <p style={{ 
+              fontSize: '12px', 
+              color: '#666',
+              margin: '2px 0 0 0',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap'
+            }}>
+              {youtubeUrl}
+            </p>
+          </div>
+        </div>
+      </a>
+    );
+  }
+  
+  // For Android: Show clickable thumbnail that opens YouTube
+  if (isAndroid) {
     return (
       <a 
         href={youtubeUrl}
