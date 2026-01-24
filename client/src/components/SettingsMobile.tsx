@@ -517,8 +517,7 @@ export function SettingsMobile({ onBack, onEditProfile, onSuccess }: SettingsMob
                   marginBottom: "16px",
                 }}
               >
-                Manage your ability to upload images and videos to posts,
-                comments, and prayers
+                Manage your ability to share link
               </div>
 
               {mediaEnabled ? (
@@ -526,7 +525,7 @@ export function SettingsMobile({ onBack, onEditProfile, onSuccess }: SettingsMob
                   style={{ display: "flex", alignItems: "center", gap: "8px" }}
                 >
                   <div style={{ fontSize: "14px", color: "#22c55e" }}>
-                    ✓ Media Uploads Enabled
+                    ✓ Media Link Share Enabled
                   </div>
                 </div>
               ) : (

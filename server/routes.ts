@@ -2071,7 +2071,7 @@ Respond in JSON format:
         return res.status(500).json({ error: "Failed to update request" });
       }
       
-      // Enable media uploads for the user in profiles
+      // Enable media sharing for the user in profiles
       const { error: profileError } = await supabaseAdmin
         .from('profiles')
         .update({

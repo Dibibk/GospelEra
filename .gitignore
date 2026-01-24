@@ -15,3 +15,22 @@ ios/App/Pods
 ios/App/*.xcworkspace
 android/app/build
 android/.gradle
+android/app/google-services.json
+client/src/lib/iosIAP copy.ts
+.idea/GospelEra.iml
+.idea/markdown.xml
+.gitignore
+.idea/misc.xml
+.idea/modules.xml
+.gitignore
+.idea/caches/deviceStreaming.xml
+android/.idea/compiler.xml
+.gitignore
+android/.idea/deviceManager.xml
+.gitignore
+.gitignore
+android/.idea/migrations.xml
+.gitignore
+.gitignore
+.idea/vcs.xml
+.gitignore

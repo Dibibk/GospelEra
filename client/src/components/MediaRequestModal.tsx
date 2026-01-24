@@ -62,8 +62,8 @@ export function MediaRequestModal({ open, onOpenChange, onSuccess }: MediaReques
             Request Media Access
           </DialogTitle>
           <DialogDescription className="text-primary-600 text-sm leading-relaxed">
-            Media uploads are a privilege granted to trusted community members to keep our app Christ-centered. 
-            If you feel led to share gospel images or videos, you can request access. Every upload must honor Jesus and align with our guidelines.
+            Media sharing are a privilege granted to trusted community members to keep our app Christ-centered. 
+            If you feel led to share gospel images or videos, you can request access. Every sharing must honor Jesus and align with our guidelines.
           </DialogDescription>
         </DialogHeader>
 
@@ -76,12 +76,12 @@ export function MediaRequestModal({ open, onOpenChange, onSuccess }: MediaReques
               id="reason"
               value={reason}
               onChange={(e) => setReason(e.target.value)}
-              placeholder="Share your heart for how you'd like to use media uploads to spread the Gospel and encourage the faith community..."
+              placeholder="Share your heart for how you'd like to use media sharing to spread the Gospel and encourage the faith community..."
               className="min-h-[120px] resize-none bg-white/80 border-primary-200 focus:border-gold-500 focus:ring-gold-500"
               disabled={submitting}
             />
             <p className="text-xs text-primary-500">
-              Please be specific about how you plan to use media uploads in a Christ-honoring way.
+              Please be specific about how you plan to use media sharing in a Christ-honoring way.
             </p>
           </div>
 

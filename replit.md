@@ -1,6 +1,6 @@
 # Overview
 
-Gospel Era is a full-stack web application designed as a social platform for the Gospel Community. It provides Instagram-like media uploads, robust user authentication, and rich community interaction features. The platform is built using React for the frontend and Express.js for the backend, leveraging technologies like TypeScript, shadcn/ui, Tailwind CSS, PostgreSQL with Drizzle ORM, and Replit Object Storage (with AWS S3 for production). Key features include a faith-centered UI, a comprehensive prayer request system with AI-powered spam detection, real-time leaderboards, and strong content moderation to maintain a Christ-centered environment. It is designed to be production-ready with PWA capabilities, extensive testing, and strong security measures.
+Gospel Era is a full-stack web application designed as a social platform for the Gospel Community. It provides media sharing, robust user authentication, and rich community interaction features. The platform is built using React for the frontend and Express.js for the backend, leveraging technologies like TypeScript, shadcn/ui, Tailwind CSS, PostgreSQL with Drizzle ORM, and Replit Object Storage (with AWS S3 for production). Key features include a faith-centered UI, a comprehensive prayer request system with AI-powered spam detection, real-time leaderboards, and strong content moderation to maintain a Christ-centered environment. It is designed to be production-ready with PWA capabilities, extensive testing, and strong security measures.
 
 # User Preferences
 
