@@ -67,7 +67,7 @@ describe('Posts Library - Mobile', () => {
   })
 
   describe('createPost - Mobile', () => {
-    it('should create posts with mobile media uploads', async () => {
+    it('should create posts with mobile media sharing', async () => {
       const newMobilePost = {
         title: 'Mobile Created Post',
         content: 'Posted from mobile',

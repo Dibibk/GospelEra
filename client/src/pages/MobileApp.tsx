@@ -618,6 +618,72 @@ export default function MobileApp() {
           console.error("Error processing email confirmation deep link:", err);
         }
       }
+      
+      // Handle password reset deep link
+      if (url.startsWith("gospelera://password-reset")) {
+        console.log("Password reset deep link received:", url);
+        
+        // Close browser if open
+        try {
+          await Browser.close();
+        } catch (e) {
+          // Browser might not be open, ignore
+        }
+        
+        // Extract tokens from URL
+        try {
+          const urlObj = new URL(url);
+          const params = urlObj.searchParams;
+          
+          // Also check hash params as fallback
+          const hashParams: Record<string, string> = {};
+          if (urlObj.hash) {
+            urlObj.hash.substring(1).split('&').forEach(param => {
+              const [key, value] = param.split('=');
+              if (key && value) hashParams[key] = decodeURIComponent(value);
+            });
+          }
+          
+          // Get tokens from query params first, then hash
+          const accessToken = params.get('access_token') || hashParams.access_token;
+          const refreshToken = params.get('refresh_token') || hashParams.refresh_token;
+          const tokenHash = params.get('token_hash') || hashParams.token_hash;
+          const type = params.get('type') || hashParams.type || 'recovery';
+          
+          // Check for access_token and refresh_token (standard flow)
+          if (accessToken && refreshToken) {
+            const { error } = await supabase.auth.setSession({
+              access_token: accessToken,
+              refresh_token: refreshToken,
+            });
+            
+            if (error) {
+              console.error("Error setting session from password reset:", error);
+            } else {
+              console.log("Session set successfully from password reset");
+              // Dispatch event to show password update page
+              window.dispatchEvent(new CustomEvent('showPasswordUpdate'));
+            }
+          }
+          // Check for token_hash (PKCE flow)
+          else if (tokenHash) {
+            const { error } = await supabase.auth.verifyOtp({
+              token_hash: tokenHash,
+              type: type as any,
+            });
+            
+            if (error) {
+              console.error("Error verifying OTP from password reset:", error);
+            } else {
+              console.log("Password reset verified successfully");
+              // Dispatch event to show password update page
+              window.dispatchEvent(new CustomEvent('showPasswordUpdate'));
+            }
+          }
+        } catch (err) {
+          console.error("Error processing password reset deep link:", err);
+        }
+      }
     });
   })();
 
@@ -1536,6 +1602,19 @@ export default function MobileApp() {
     setPublicProfileUserId(null); //Dibi
     setShowPasswordUpdate(false);
   };
+
+  // Listen for showPasswordUpdate event from deep link handler
+  useEffect(() => {
+    const handleShowPasswordUpdate = () => {
+      console.log("showPasswordUpdate event received");
+      setShowPasswordUpdate(true);
+    };
+    
+    window.addEventListener('showPasswordUpdate', handleShowPasswordUpdate);
+    return () => {
+      window.removeEventListener('showPasswordUpdate', handleShowPasswordUpdate);
+    };
+  }, []);
 
   // Check for password reset on mount
   useEffect(() => {
@@ -4674,8 +4753,9 @@ export default function MobileApp() {
                 color: "#6c757d",
               }}
             >
-              Link sharing permissions allow you to embed YouTube videos and
-              upload media files to enhance your posts.
+              Link sharing allows you to include YouTube links in your posts. 
+              When tapped, YouTube links open outside the app in the YouTube app or the device’s web browser. 
+              Gospel Era does not host, stream, or play YouTube videos within the app.
             </p>
             <div style={{ display: "flex", gap: "8px" }}>
               <button

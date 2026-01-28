@@ -11,6 +11,9 @@ interface EmbedCardProps {
 
 export function EmbedCard({ videoId, start, title, author, className = '' }: EmbedCardProps) {
   const isNative = Capacitor.isNativePlatform();
+  const platform = Capacitor.getPlatform(); // 'ios', 'android', or 'web'
+  const isIOS = platform === 'ios';
+  const isAndroid = platform === 'android';
   
   // Convert to embed URL for iframe
   const getEmbedUrl = (videoId: string, start?: number): string => {
@@ -35,8 +38,27 @@ export function EmbedCard({ videoId, start, title, author, className = '' }: Emb
   const embedUrl = getEmbedUrl(videoId, start);
   const youtubeUrl = getYouTubeUrl(videoId, start);
   
-  // For native apps, show a clickable thumbnail that opens YouTube
-  if (isNative) {
+  // For iOS: Show plain text URL only (Apple App Store requirement 5.2.3)
+  if (isIOS) {
+    return (
+      <a 
+        href={youtubeUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        data-testid="youtube-link"
+        style={{ 
+          color: '#1a73e8',
+          fontSize: '14px',
+          wordBreak: 'break-all'
+        }}
+      >
+        {youtubeUrl}
+      </a>
+    );
+  }
+  
+  // For Android: Show clickable thumbnail that opens YouTube
+  if (isAndroid) {
     return (
       <a 
         href={youtubeUrl}

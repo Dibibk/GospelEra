@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react";
 import { User } from "lucide-react";
+import { Capacitor } from "@capacitor/core";
 
 // Helper to convert relative image URLs to full URLs for native apps
 function getImageUrl(url: string | undefined | null): string | null {
@@ -10,9 +11,8 @@ function getImageUrl(url: string | undefined | null): string | null {
     return url;
   }
   
-  // Check if running on native platform
-  const isNative = typeof window !== 'undefined' && 
-    window.location.protocol === 'capacitor:';
+  // Check if running on native platform (works for both iOS and Android)
+  const isNative = Capacitor.isNativePlatform();
   
   if (isNative) {
     // Prepend production backend URL for native apps

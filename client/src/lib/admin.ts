@@ -1,4 +1,5 @@
 import { supabase } from './supabaseClient'
+import { getApiBaseUrl } from './posts'
 
 export async function getUserProfile(userId: string) {
   const { data, error } = await supabase
@@ -34,12 +35,32 @@ export async function listReports({ status = 'open', limit = 100 } = {}) {
 }
 
 export async function updateReportStatus(reportId: string, status: string) {
-  const { error } = await supabase
-    .from('reports')
-    .update({ status })
-    .eq('id', reportId)
+  const validStatuses = ['open', 'resolved', 'dismissed']
+  if (!validStatuses.includes(status)) {
+    throw new Error(`Invalid status. Must be one of: ${validStatuses.join(', ')}`)
+  }
 
-  if (error) throw error
+  const { data: { session } } = await supabase.auth.getSession()
+  const token = session?.access_token
+  if (!token) {
+    throw new Error('Not authenticated')
+  }
+
+  const baseUrl = getApiBaseUrl()
+  const response = await fetch(`${baseUrl}/api/admin/reports/${reportId}`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify({ status })
+  })
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}))
+    throw new Error(errorData.error || 'Failed to update report status')
+  }
+
   return { success: true }
 }
 

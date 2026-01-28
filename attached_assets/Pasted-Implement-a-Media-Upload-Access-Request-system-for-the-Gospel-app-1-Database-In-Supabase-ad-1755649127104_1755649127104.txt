@@ -22,10 +22,10 @@ Implement a "Media Upload Access Request" system for the Gospel app.
   - `denyMediaRequest(requestId, adminId)`: sets request.status='denied'.
 
 3. Client/User flow:
-- In `/settings` page, add **Media Uploads** section.
+- In `/settings` page, add **Media Sharing** section.
   - If `profile.media_enabled=false`, show a card:
     Title: "Media Upload Access"
-    Text: "By default, media uploads are restricted to protect the community. If you’d like to share gospel-centered images or videos, you can request access below."
+    Text: "By default, media sharing are restricted to protect the community. If you’d like to share gospel-centered images or videos, you can request access below."
     Button: **Request Access** → opens modal.
     Modal: textarea "Reason for request", Submit button → calls `requestMediaAccess(reason)`, then shows confirmation toast.
   - If request pending: show banner "Your request is under review."
@@ -53,6 +53,6 @@ Implement a "Media Upload Access Request" system for the Gospel app.
 
 6. UI/Copy (gospel tone):
 - Request card copy: 
-  "Media uploads are a privilege granted to trusted community members to keep our app Christ-centered. If you feel led to share gospel images or videos, you can request access. Every upload must honor Jesus and align with our guidelines."
+  "Media sharing are a privilege granted to trusted community members to keep our app Christ-centered. If you feel led to share gospel images or videos, you can request access. Every upload must honor Jesus and align with our guidelines."
 - Denied state copy:
-  "At this time, your request for media uploads was not approved. You can continue to post text prayers and scriptures, which remain the heart of our community."
+  "At this time, your request for media sharing was not approved. You can continue to post text prayers and scriptures, which remain the heart of our community."

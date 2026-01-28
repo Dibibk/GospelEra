@@ -311,7 +311,7 @@ export default function Settings() {
                           <CheckCircle className="h-6 w-6 text-white" />
                         </div>
                         <div>
-                          <h3 className="font-semibold text-green-800">Media Uploads Enabled</h3>
+                          <h3 className="font-semibold text-green-800">Media Sharing Enabled</h3>
                           <p className="text-sm text-green-600">
                             You can now upload images and videos to your posts, comments, and prayers.
                           </p>
@@ -356,14 +356,14 @@ export default function Settings() {
                         <div>
                           <h3 className="font-semibold text-red-800">Request Not Approved</h3>
                           <p className="text-sm text-red-600">
-                            At this time, your request for media uploads was not approved.
+                            At this time, your request for media sharing was not approved.
                           </p>
                         </div>
                         <Badge className="bg-red-100 text-red-800 border-red-300">Denied</Badge>
                       </div>
                       <Alert className="border-red-200 bg-red-50">
                         <AlertDescription className="text-red-700 text-sm">
-                          At this time, your request for media uploads was not approved. You can continue to post text prayers 
+                          At this time, your request for media sharing was not approved. You can continue to post text prayers 
                           and scriptures, which remain the heart of our community.
                         </AlertDescription>
                       </Alert>
@@ -391,7 +391,7 @@ export default function Settings() {
                       </div>
                       <Alert className="border-primary-200 bg-primary-50">
                         <AlertDescription className="text-primary-700 text-sm leading-relaxed">
-                          Media uploads are a privilege granted to trusted community members to keep our app Christ-centered. 
+                          Media sharing are a privilege granted to trusted community members to keep our app Christ-centered. 
                           If you feel led to share gospel images or videos, you can request access. Every upload must honor 
                           Jesus and align with our guidelines.
                         </AlertDescription>

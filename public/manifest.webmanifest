@@ -1,7 +1,7 @@
 {
   "name": "Gospel Era",
   "short_name": "Gospel Era",
-  "description": "A social platform for Gospel Community engagement with Instagram-style media uploads and spiritual content sharing",
+  "description": "A social platform for Gospel Community engagement with Instagram-style media sharing and spiritual content sharing",
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait-primary",

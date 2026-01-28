@@ -40,8 +40,9 @@ export function PasswordUpdateMobile({ onSuccess, onCancel }: PasswordUpdateMobi
     } else {
       setLoading(false);
       setSuccess(true);
-      // Wait 2 seconds then call onSuccess
-      setTimeout(() => {
+      // Wait 2 seconds, sign out, then redirect to login
+      setTimeout(async () => {
+        await supabase.auth.signOut();
         onSuccess();
       }, 2000);
     }
