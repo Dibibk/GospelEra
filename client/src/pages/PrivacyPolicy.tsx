@@ -94,10 +94,7 @@ export default function PrivacyPolicy() {
               profile details you provide during registration.
             </li>
             <li>
-              <strong>User Content:</strong> Posts, comments, prayer requests,
-              and other content you share on the platform. User-generated
-              content may also include links or embedded media, such as YouTube
-              videos, provided voluntarily by users.
+              <strong>User Content:</strong> User-generated content may include text, images, and external links voluntarily shared by users. Links to third-party platforms (such as YouTube) are shared as URLs only and open outside the app. Gospel Era does not host, stream, or embed third-party audio or video content.
             </li>
             <li>
               <strong>Usage Data:</strong> Information about how you interact
@@ -151,7 +148,7 @@ export default function PrivacyPolicy() {
               (notifications),
               <strong>Stripe (payments on web and Android)</strong>, and{" "}
               <strong>Apple In-App Purchase (payments on iOS)</strong>.
-              User-embedded videos may also be displayed using YouTube.
+              Any third-party links shared by users open externally and remain subject to the respective third-party platform’s terms and policies. Gospel Era does not embed, stream, or provide in-app playback of third-party audio or video content.
             </li>
             <li>
               Embedded third-party content is provided by users and remains

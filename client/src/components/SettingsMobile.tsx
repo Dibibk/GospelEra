@@ -517,8 +517,7 @@ export function SettingsMobile({ onBack, onEditProfile, onSuccess }: SettingsMob
                   marginBottom: "16px",
                 }}
               >
-                Manage your ability to upload images and videos to posts,
-                comments, and prayers
+                Manage your ability to share link
               </div>
 
               {mediaEnabled ? (
@@ -526,7 +525,7 @@ export function SettingsMobile({ onBack, onEditProfile, onSuccess }: SettingsMob
                   style={{ display: "flex", alignItems: "center", gap: "8px" }}
                 >
                   <div style={{ fontSize: "14px", color: "#22c55e" }}>
-                    ✓ Media Uploads Enabled
+                    ✓ Media Link Share Enabled
                   </div>
                 </div>
               ) : (
@@ -1139,8 +1138,9 @@ export function SettingsMobile({ onBack, onEditProfile, onSuccess }: SettingsMob
                 color: "#6c757d",
               }}
             >
-              Link sharing permissions allow you to embed YouTube videos and
-              upload media files to enhance your posts.
+              Link sharing allows you to include YouTube links in your posts. 
+              When tapped, YouTube links open outside the app in the YouTube app or the device’s web browser. 
+              Gospel Era does not host, stream, or play YouTube videos within the app.
             </p>
             <div style={{ display: "flex", gap: "8px" }}>
               <button

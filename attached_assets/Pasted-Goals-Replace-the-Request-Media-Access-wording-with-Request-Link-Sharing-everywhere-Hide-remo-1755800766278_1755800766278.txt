@@ -18,7 +18,7 @@ To: “Request Link Sharing”
 
 Help text under the dashed box: “You can request permission to share YouTube links. We don’t host uploads.”
 
-If there’s a Settings section, rename “Media Uploads” → “Link Sharing”.
+If there’s a Settings section, rename “Media sharing” → “Link Sharing”.
 
 2) Hide image/video uploads
 
